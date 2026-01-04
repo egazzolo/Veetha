@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Veetha Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body{font-family:Arial;padding:20px;background:#f5f5f5;margin:0}
+    h1{color:#333;margin-bottom:10px}
+    button{background:#4CAF50;color:white;border:none;padding:15px 30px;border-radius:8px;cursor:pointer;margin:10px 0;font-size:16px;font-weight:600}
+    button:hover{background:#45a049}
+    #time{color:#999;font-size:14px;margin-bottom:20px}
+    .card{background:white;padding:20px;margin:10px 0;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
+    .header{display:flex;justify-content:space-between;margin-bottom:15px;border-bottom:2px solid #4CAF50;padding-bottom:10px}
+    .stat{display:flex;justify-content:space-between;padding:5px 0}
+    .positive{color:#4CAF50;font-weight:bold}
+    .negative{color:#F44336;font-weight:bold}
+    .error-box{background:#ffebee;padding:20px;border-radius:10px;border-left:4px solid #c62828}
+  </style>
+</head>
+<body>
+  <h1>📊 Veetha Dashboard</h1>
+  <div id="time"></div>
+  <button id="btn">🔄 Refresh Data</button>
+  <div id="dash"><p style="text-align:center;color:#999;">Click "Refresh Data" to load campaigns...</p></div>
+
+  <script>
+    console.log('1. Script tag executing');
+    
+    window.addEventListener('load', function() {
+      console.log('2. Window loaded');
+      
+      // Check if Supabase loaded
+      if (typeof window.supabase === 'undefined') {
+        console.error('Supabase library failed to load!');
+        document.getElementById('dash').innerHTML = '<div class="error-box"><h3>Error</h3><p>Supabase library failed to load. Check your internet connection.</p></div>';
+        return;
+      }
+      
+      console.log('3. Supabase library loaded');
+      
+      const URL = 'https://bfgreozkoftncayzyzhz.supabase.co';
+      const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZ3Jlb3prb2Z0bmNheXp5emh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4MDA3NTksImV4cCI6MjA3NjM3Njc1OX0.dZKhStPxQVKrfLhg1ZnL1OW43YFF4SLkhEhhRr_NipM';
+      
+      console.log('4. Creating Supabase client...');
+      const db = window.supabase.createClient(URL, KEY);
+      console.log('5. Client created successfully!');
+      
+      async function loadData() {
+        console.log('6. loadData() called');
+        
+        const dashDiv = document.getElementById('dash');
+        const timeDiv = document.getElementById('time');
+        
+        if (!dashDiv) {
+          console.error('dash element not found!');
+          return;
+        }
+        
+        dashDiv.innerHTML = '<p style="text-align:center;">Loading...</p>';
+        
+        try {
+          console.log('7. Fetching from database...');
+          
+          const { data, error } = await db
+            .from('influencer_campaigns')
+            .select('*')
+            .order('campaign_start', { ascending: false });
+          
+          console.log('8. Database response:', { hasData: !!data, dataCount: data?.length, hasError: !!error });
+          
+          if (timeDiv) {
+            timeDiv.textContent = 'Last updated: ' + new Date().toLocaleString();
+          }
+          
+          if (error) {
+            console.error('Database error:', error);
+            dashDiv.innerHTML = '<div class="error-box"><h3>❌ Database Error</h3><p><strong>Message:</strong> ' + error.message + '</p><p><strong>Solution:</strong> Run this in Supabase SQL Editor:<br><code>alter table influencer_campaigns disable row level security;</code></p></div>';
+            return;
+          }
+          
+          if (!data || data.length === 0) {
+            console.warn('No campaigns found');
+            dashDiv.innerHTML = '<div class="error-box"><h3>⚠️ No Campaigns Found</h3><p>Connection successful! But no campaign data exists yet.</p><p>Add test campaigns in Supabase SQL Editor.</p></div>';
+            return;
+          }
+          
+          console.log('9. Building HTML for', data.length, 'campaigns');
+          
+          let totalSpent = 0;
+          let totalRevenue = 0;
+          let totalConversions = 0;
+          let campaignsHTML = '';
+          
+          data.forEach(function(c) {
+            const roi = c.cost_paid > 0 ? (((c.total_revenue - c.cost_paid) / c.cost_paid) * 100).toFixed(1) : 0;
+            totalSpent += parseFloat(c.cost_paid || 0);
+            totalRevenue += parseFloat(c.total_revenue || 0);
+            totalConversions += parseInt(c.total_conversions || 0);
+            
+            campaignsHTML += '<div class="card">';
+            campaignsHTML += '<div class="header"><h2 style="margin:0;">' + c.influencer_name + '</h2><span style="color:#4CAF50;font-weight:bold;">' + c.platform + '</span></div>';
+            campaignsHTML += '<div class="stat"><span>Promo Code:</span><strong style="color:#667eea;">' + c.promo_code + '</strong></div>';
+            campaignsHTML += '<div class="stat"><span>Followers:</span><strong>' + (c.followers ? c.followers.toLocaleString() : 'N/A') + '</strong></div>';
+            campaignsHTML += '<div class="stat"><span>Cost Paid:</span><strong>$' + parseFloat(c.cost_paid).toFixed(2) + '</strong></div>';
+            campaignsHTML += '<div class="stat"><span>Conversions:</span><strong>' + (c.total_conversions || 0) + '</strong></div>';
+            campaignsHTML += '<div class="stat"><span>Revenue:</span><strong>$' + parseFloat(c.total_revenue || 0).toFixed(2) + '</strong></div>';
+            campaignsHTML += '<div class="stat"><span>ROI:</span><span class="' + (roi >= 0 ? 'positive' : 'negative') + '">' + roi + '%</span></div>';
+            campaignsHTML += '<div style="margin-top:10px;padding-top:10px;border-top:1px solid #eee;font-size:12px;color:#999;">Started: ' + new Date(c.campaign_start).toLocaleDateString() + '</div>';
+            campaignsHTML += '</div>';
+          });
+          
+          const overallROI = totalSpent > 0 ? (((totalRevenue - totalSpent) / totalSpent) * 100).toFixed(1) : 0;
+          
+          let summaryHTML = '<div class="card" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;margin-bottom:20px;">';
+          summaryHTML += '<h2 style="margin-top:0;color:white;">📈 Overall Performance</h2>';
+          summaryHTML += '<div class="stat" style="color:white;"><span>Total Campaigns:</span><strong>' + data.length + '</strong></div>';
+          summaryHTML += '<div class="stat" style="color:white;"><span>Total Spent:</span><strong>$' + totalSpent.toFixed(2) + '</strong></div>';
+          summaryHTML += '<div class="stat" style="color:white;"><span>Total Revenue:</span><strong>$' + totalRevenue.toFixed(2) + '</strong></div>';
+          summaryHTML += '<div class="stat" style="color:white;"><span>Total Conversions:</span><strong>' + totalConversions + '</strong></div>';
+          summaryHTML += '<div class="stat" style="color:white;"><span>Overall ROI:</span><strong>' + overallROI + '%</strong></div>';
+          summaryHTML += '</div>';
+          
+          dashDiv.innerHTML = summaryHTML + campaignsHTML;
+          console.log('10. Dashboard rendered successfully! ✅');
+          
+        } catch (err) {
+          console.error('Error in loadData():', err);
+          dashDiv.innerHTML = '<div class="error-box"><h3>Error</h3><p>' + err.message + '</p><pre style="font-size:12px;background:#f5f5f5;padding:10px;overflow:auto;">' + err.stack + '</pre></div>';
+        }
+      }
+      
+      const button = document.getElementById('btn');
+      if (button) {
+        button.addEventListener('click', function() {
+          console.log('Button clicked!');
+          loadData();
+        });
+        console.log('11. Button listener attached ✅');
+      } else {
+        console.error('Button element not found!');
+      }
+      
+      console.log('12. Setup complete! Click "Refresh Data" to load campaigns.');
+    });
+  </script>
+</body>
+</html>

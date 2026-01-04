@@ -1,0 +1,478 @@
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Modal, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTheme } from '../utils/ThemeContext';
+import { useLanguage } from '../utils/LanguageContext';
+import { useUser } from '../utils/UserContext';
+import { supabase } from '../utils/supabase';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
+import * as XLSX from 'xlsx';
+
+export default function ExportReportScreen({ navigation }) {
+  const { theme } = useTheme();
+  const { t } = useLanguage();
+  const { profile } = useUser();
+
+  const [showPeriodModal, setShowPeriodModal] = useState(false);
+  const [showFormatModal, setShowFormatModal] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState(null); // 'weekly' or 'monthly'
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  // Handle period selection
+  const handlePeriodSelect = (period) => {
+    setSelectedPeriod(period);
+    setShowPeriodModal(false);
+    setShowFormatModal(true); // Go to format selection
+  };
+
+  // Handle format selection
+  const handleFormatSelect = async (format) => {
+    setShowFormatModal(false);
+    
+    if (format === 'pdf') {
+      await exportPDF();
+    } else {
+      await exportExcel();
+    }
+  };
+
+  // Fetch data based on period
+  const fetchData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      let startDate, endDate;
+
+      if (selectedPeriod === 'weekly') {
+        // Last 7 days
+        startDate = new Date();
+        startDate.setDate(startDate.getDate() - 6);
+        startDate.setHours(0, 0, 0, 0);
+        
+        endDate = new Date();
+        endDate.setHours(23, 59, 59, 999);
+      } else {
+        // Current month
+        startDate = new Date();
+        startDate.setDate(1);
+        startDate.setHours(0, 0, 0, 0);
+        
+        endDate = new Date();
+        endDate.setMonth(endDate.getMonth() + 1, 0);
+        endDate.setHours(23, 59, 59, 999);
+      }
+
+      // Fetch meals
+      const { data: meals, error } = await supabase
+        .from('meals')
+        .select('logged_at, calories, protein, carbs, fat')
+        .eq('user_id', user.id)
+        .gte('logged_at', startDate.toISOString())
+        .lte('logged_at', endDate.toISOString())
+        .order('logged_at', { ascending: true });
+
+      if (error) throw error;
+
+      // Group by date
+      const mealsByDate = {};
+      meals.forEach(meal => {
+        const date = new Date(meal.logged_at).toLocaleDateString('en-CA');
+        if (!mealsByDate[date]) {
+          mealsByDate[date] = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+        }
+        mealsByDate[date].calories += meal.calories || 0;
+        mealsByDate[date].protein += meal.protein || 0;
+        mealsByDate[date].carbs += meal.carbs || 0;
+        mealsByDate[date].fat += meal.fat || 0;
+      });
+
+      // Build daily data
+      const days = [];
+      const current = new Date(startDate);
+      while (current <= endDate) {
+        const dateStr = current.toLocaleDateString('en-CA');
+        const dayData = mealsByDate[dateStr] || { calories: 0, protein: 0, carbs: 0, fat: 0 };
+        
+        days.push({
+          date: new Date(current).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          calories: Math.round(dayData.calories),
+          protein: Math.round(dayData.protein),
+          carbs: Math.round(dayData.carbs),
+          fat: Math.round(dayData.fat),
+          goal: profile?.daily_calorie_goal || 2000,
+        });
+        
+        current.setDate(current.getDate() + 1);
+      }
+
+      return days;
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      return null;
+    }
+  };
+
+  // Export as PDF
+  const exportPDF = async () => {
+    try {
+      setExporting(true);
+      const data = await fetchData();
+      if (!data) {
+        Alert.alert('Error', 'Failed to fetch data');
+        return;
+      }
+
+      const periodLabel = selectedPeriod === 'weekly' ? 'Weekly' : 'Monthly';
+      const userName = profile?.full_name || 'User';
+
+      // Build HTML
+      const html = `
+        <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              h1 { color: #4CAF50; text-align: center; }
+              h2 { color: #333; margin-top: 30px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+              th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+              th { background-color: #4CAF50; color: white; }
+              tr:nth-child(even) { background-color: #f2f2f2; }
+              .summary { background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; }
+              .summary-item { display: flex; justify-content: space-between; margin: 10px 0; }
+            </style>
+          </head>
+          <body>
+            <h1>${periodLabel} Nutrition Report</h1>
+            <p><strong>Name:</strong> ${userName}</p>
+            <p><strong>Generated:</strong> ${new Date().toLocaleDateString()}</p>
+            
+            <h2>Daily Totals</h2>
+            <table>
+              <tr>
+                <th>Date</th>
+                <th>Calories</th>
+                <th>Goal</th>
+                <th>Protein (g)</th>
+                <th>Carbs (g)</th>
+                <th>Fat (g)</th>
+              </tr>
+              ${data.map(day => `
+                <tr>
+                  <td>${day.date}</td>
+                  <td>${day.calories}</td>
+                  <td>${day.goal}</td>
+                  <td>${day.protein}</td>
+                  <td>${day.carbs}</td>
+                  <td>${day.fat}</td>
+                </tr>
+              `).join('')}
+            </table>
+
+            <div class="summary">
+              <h2>Summary</h2>
+              <div class="summary-item">
+                <span>Total Calories:</span>
+                <strong>${data.reduce((sum, d) => sum + d.calories, 0).toLocaleString()}</strong>
+              </div>
+              <div class="summary-item">
+                <span>Avg Daily Calories:</span>
+                <strong>${Math.round(data.reduce((sum, d) => sum + d.calories, 0) / data.length)}</strong>
+              </div>
+              <div class="summary-item">
+                <span>Total Protein:</span>
+                <strong>${data.reduce((sum, d) => sum + d.protein, 0)}g</strong>
+              </div>
+              <div class="summary-item">
+                <span>Total Carbs:</span>
+                <strong>${data.reduce((sum, d) => sum + d.carbs, 0)}g</strong>
+              </div>
+              <div class="summary-item">
+                <span>Total Fat:</span>
+                <strong>${data.reduce((sum, d) => sum + d.fat, 0)}g</strong>
+              </div>
+            </div>
+          </body>
+        </html>
+      `;
+
+      const { uri } = await Print.createAsync({ html });
+      await Sharing.shareAsync(uri);
+
+      Alert.alert('Success', 'PDF exported successfully!');
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      Alert.alert('Error', 'Failed to export PDF');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // Export as Excel
+  const exportExcel = async () => {
+    try {
+      setExporting(true);
+      const data = await fetchData();
+      if (!data) {
+        Alert.alert('Error', 'Failed to fetch data');
+        return;
+      }
+
+      // Prepare data for Excel
+      const excelData = data.map(day => ({
+        'Date': day.date,
+        'Calories': day.calories,
+        'Goal': day.goal,
+        'Protein (g)': day.protein,
+        'Carbs (g)': day.carbs,
+        'Fat (g)': day.fat,
+      }));
+
+      // Create worksheet
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Nutrition Data');
+
+      // Write to file
+      const wbout = XLSX.write(wb, { type: 'base64', bookType: 'xlsx' });
+      const periodLabel = selectedPeriod === 'weekly' ? 'Weekly' : 'Monthly';
+      const fileName = `${periodLabel}_Report_${new Date().toLocaleDateString('en-CA')}.xlsx`;
+      const fileUri = FileSystem.documentDirectory + fileName;
+
+      await FileSystem.writeAsStringAsync(fileUri, wbout, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      await Sharing.shareAsync(fileUri);
+
+      Alert.alert('Success', 'Excel file exported successfully!');
+    } catch (error) {
+      console.error('Error exporting Excel:', error);
+      Alert.alert('Error', 'Failed to export Excel');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
+      <View style={[styles.header, { backgroundColor: theme.cardBackground }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Text style={[styles.backButtonText, { color: theme.primary }]}>← Back</Text>
+        </TouchableOpacity>
+        <Text style={[styles.title, { color: theme.text }]}>Export Report</Text>
+        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+          Download your nutrition data
+        </Text>
+      </View>
+
+      <ScrollView style={styles.content}>
+        <TouchableOpacity
+          style={[styles.bigButton, { backgroundColor: theme.primary }]}
+          onPress={() => setShowPeriodModal(true)}
+          disabled={exporting}
+        >
+          {exporting ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <>
+              <Text style={styles.bigButtonIcon}>📥</Text>
+              <Text style={styles.bigButtonText}>Start Export</Text>
+            </>
+          )}
+        </TouchableOpacity>
+
+        <View style={[styles.infoCard, { backgroundColor: theme.cardBackground }]}>
+          <Text style={[styles.infoTitle, { color: theme.text }]}>What's Included?</Text>
+          <Text style={[styles.infoText, { color: theme.textSecondary }]}>
+            • Daily calorie totals{'\n'}
+            • Macronutrient breakdown{'\n'}
+            • Goal vs actual comparison{'\n'}
+            • Summary statistics
+          </Text>
+        </View>
+      </ScrollView>
+
+      {/* Period Selection Modal */}
+      <Modal
+        visible={showPeriodModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowPeriodModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowPeriodModal(false)}
+        >
+          <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
+            <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>Select Period</Text>
+              
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: theme.primary }]}
+                onPress={() => handlePeriodSelect('weekly')}
+              >
+                <Text style={styles.modalButtonText}>📅 Last 7 Days</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: theme.primary }]}
+                onPress={() => handlePeriodSelect('monthly')}
+              >
+                <Text style={styles.modalButtonText}>📆 Current Month</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalCancelButton, { borderColor: theme.border }]}
+                onPress={() => setShowPeriodModal(false)}
+              >
+                <Text style={[styles.modalCancelText, { color: theme.text }]}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Format Selection Modal */}
+      <Modal
+        visible={showFormatModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowFormatModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowFormatModal(false)}
+        >
+          <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
+            <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>Select Format</Text>
+              
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: '#E53935' }]}
+                onPress={() => handleFormatSelect('pdf')}
+              >
+                <Text style={styles.modalButtonText}>📄 PDF Report</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: '#43A047' }]}
+                onPress={() => handleFormatSelect('excel')}
+              >
+                <Text style={styles.modalButtonText}>📊 Excel Spreadsheet</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalCancelButton, { borderColor: theme.border }]}
+                onPress={() => setShowFormatModal(false)}
+              >
+                <Text style={[styles.modalCancelText, { color: theme.text }]}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    padding: 20,
+    paddingTop: 10,
+  },
+  backButton: {
+    marginBottom: 10,
+  },
+  backButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  subtitle: {
+    fontSize: 14,
+  },
+  content: {
+    flex: 1,
+    padding: 20,
+  },
+  bigButton: {
+    padding: 30,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  bigButtonIcon: {
+    fontSize: 48,
+    marginBottom: 10,
+  },
+  bigButtonText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  infoCard: {
+    padding: 20,
+    borderRadius: 12,
+  },
+  infoTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  infoText: {
+    fontSize: 14,
+    lineHeight: 24,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '85%',
+    padding: 24,
+    borderRadius: 20,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalButton: {
+    padding: 18,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalCancelButton: {
+    padding: 18,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 2,
+    marginTop: 8,
+  },
+  modalCancelText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
