@@ -429,24 +429,15 @@ export default function ResultScreen({ route, navigation }) {
         console.log('Original URI:', food.image_url);
 
         try {
-          // Read image as base64 using expo-file-system (reliable in React Native)
-          console.log('Reading image file as base64...');
-          const base64Data = await FileSystem.readAsStringAsync(food.image_url, {
-            encoding: FileSystem.EncodingType.Base64,
-          });
-          console.log('✅ Base64 read, length:', base64Data.length);
+          // Fetch local file and convert to ArrayBuffer (reliable in RN 0.81+)
+          console.log('Reading image file...');
+          const response = await fetch(food.image_url);
+          const arrayBuffer = await response.arrayBuffer();
+          console.log('✅ ArrayBuffer created, size:', arrayBuffer.byteLength, 'bytes');
 
-          if (!base64Data || base64Data.length === 0) {
+          if (!arrayBuffer || arrayBuffer.byteLength === 0) {
             throw new Error('Image file is empty');
           }
-
-          // Convert base64 to Uint8Array for Supabase upload
-          const binaryString = atob(base64Data);
-          const bytes = new Uint8Array(binaryString.length);
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-          }
-          console.log('✅ Converted to bytes, size:', bytes.length, 'bytes');
 
           // Generate unique filename
           const fileName = `meal-${user.id}-${Date.now()}.jpg`;
@@ -455,14 +446,14 @@ export default function ResultScreen({ route, navigation }) {
           // Upload to Supabase Storage
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from('meal-images')
-            .upload(fileName, bytes, {
+            .upload(fileName, arrayBuffer, {
               contentType: 'image/jpeg',
               cacheControl: '3600',
               upsert: false
             });
 
           if (uploadError) {
-            console.error('❌ Upload failed:', uploadError);
+            console.error('❌ Upload failed:', JSON.stringify(uploadError));
             throw uploadError;
           }
 
@@ -480,7 +471,7 @@ export default function ResultScreen({ route, navigation }) {
 
         } catch (error) {
           console.error('❌ Image upload failed:', error.message);
-          console.error('Continuing without image...');
+          console.error('Full error:', JSON.stringify(error));
           // Don't block meal logging if image upload fails
         }
       } else if (food.image_url && food.image_url.startsWith('http')) {
