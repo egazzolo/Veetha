@@ -1,3 +1,4 @@
+// *** Dietary Restrictions ***
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -40,7 +41,6 @@ export default function OnboardingStep5({ navigation }) {
 
   const handleContinue = () => {
     // No validation needed - dietary restrictions are optional
-    // TODO: Save to user profile
     console.log('Dietary Restrictions:', selectedRestrictions);
 
     updateOnboardingData({

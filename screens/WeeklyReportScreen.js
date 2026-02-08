@@ -15,6 +15,7 @@ export default function WeeklyReportScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [weeklyData, setWeeklyData] = useState([]);
   const [waterData, setWaterData] = useState([]); 
+  const [exerciseData, setExerciseData] = useState([]);
   
   // Get last 7 days
   const getLast7Days = () => {
@@ -79,6 +80,32 @@ export default function WeeklyReportScreen({ navigation }) {
 
       if (waterError) throw waterError;
 
+      // Fetch exercise logs for last 7 days
+      const { data: exerciseLogs, error: exerciseError } = await supabase
+        .from('exercises')
+        .select('logged_at, calories_burned, activity_name, duration_minutes')
+        .eq('user_id', user.id)
+        .gte('logged_at', startDate.toISOString())
+        .lte('logged_at', endDate.toISOString())
+        .order('logged_at', { ascending: true });
+
+      if (exerciseError) throw exerciseError;
+
+      // Group exercise by date (ADD THIS)
+      const exerciseByDate = {};
+      exerciseLogs?.forEach(log => {
+        const exerciseDate = new Date(log.logged_at);
+        const dateStr = exerciseDate.toLocaleDateString('en-CA');
+        if (!exerciseByDate[dateStr]) {
+          exerciseByDate[dateStr] = {
+            totalBurned: 0,
+            count: 0
+          };
+        }
+        exerciseByDate[dateStr].totalBurned += log.calories_burned || 0;
+        exerciseByDate[dateStr].count += 1;
+      });
+
       // Group meals by date
       const mealsByDate = {};
       meals.forEach(meal => {
@@ -136,6 +163,18 @@ export default function WeeklyReportScreen({ navigation }) {
           goal: profile?.daily_water_goal_cups || 8,
         };
       });
+      
+      // Build exercise data
+      const weekExerciseData = last7Days.map(date => {
+        const dateStr = date.toLocaleDateString('en-CA');
+        return {
+          dateStr: formatDate(date),
+          burned: exerciseByDate[dateStr]?.totalBurned || 0,
+          count: exerciseByDate[dateStr]?.count || 0,
+        };
+      });
+
+      setExerciseData(weekExerciseData);
 
       setWeeklyData(weekData);
       setWaterData(weekWaterData);
@@ -315,6 +354,42 @@ export default function WeeklyReportScreen({ navigation }) {
           <Text style={[styles.cardSubtitle, { color: theme.textSecondary }]}>
             Daily water consumption
           </Text>
+
+          {/* Exercise Activity */}
+          <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
+            <Text style={[styles.cardTitle, { color: theme.text }]}>💪 {t('stats.wreport.exerciseActivity')}</Text>
+            <Text style={[styles.cardSubtitle, { color: theme.textSecondary }]}>
+              {t('stats.wreport.exerciseSubtitle')}
+            </Text>
+
+            {/* Table Header */}
+            <View style={styles.tableHeader}>
+              <Text style={[styles.tableHeaderCell, styles.dayColumn, { color: theme.text }]}>{t('stats.wreport.day')}</Text>
+              <Text style={[styles.tableHeaderCell, styles.macroColumn, { color: '#4CAF50' }]}>{t('stats.wreport.burned')}</Text>
+              <Text style={[styles.tableHeaderCell, styles.macroColumn, { color: '#2196F3' }]}>{t('stats.wreport.sessions')}</Text>
+            </View>
+
+            {/* Table Rows */}
+            {exerciseData.map((day, index) => (
+              <View 
+                key={index} 
+                style={[
+                  styles.tableRow,
+                  { backgroundColor: index % 2 === 0 ? theme.background : theme.cardBackground }
+                ]}
+              >
+                <Text style={[styles.tableCell, styles.dayColumn, { color: theme.text }]}>
+                  {day.dateStr}
+                </Text>
+                <Text style={[styles.tableCell, styles.macroColumn, { color: '#4CAF50' }]}>
+                  {day.burned} {t('common.kcal')}
+                </Text>
+                <Text style={[styles.tableCell, styles.macroColumn, { color: '#2196F3' }]}>
+                  {day.count}
+                </Text>
+              </View>
+            ))}
+          </View>
 
           {/* Table Header */}
           <View style={styles.tableHeader}>

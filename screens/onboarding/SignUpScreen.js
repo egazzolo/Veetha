@@ -133,7 +133,7 @@ export default function SignUpScreen({ navigation }) {
       if (error) {
         // Check if email already exists
         if (error.message.includes('already') || error.message.includes('exist')) {
-          Alert.alert('Email Already Registered', 'Please sign in instead.');
+          Alert.alert( t('signup.emailInUse'));
           setLoading(false);
           return;
         }
@@ -174,11 +174,13 @@ export default function SignUpScreen({ navigation }) {
         
         console.log('💾 Credentials saved for verification step');
         
-        // Show success message
+        // After successful signup, navigate directly to OnboardingStep1
         Alert.alert(
-          'Account Created! 🎉',
-          `We've sent a confirmation email to ${email}. Please check your inbox and confirm your email before completing setup.`,
-          [{ text: 'Continue', onPress: () => navigation.navigate('OnboardingStep1') }]
+          t('signup.success'),t('signup.accountCreated'),
+          [{ 
+            text: 'Continue', 
+            onPress: () => navigation.navigate('OnboardingStep1')
+          }]
         );
       }
 
@@ -452,6 +454,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 15,
     fontSize: 16,
+    color: '#842',
   },
   inputError: {
     borderColor: '#c62828',
@@ -473,6 +476,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 15,
     fontSize: 16,
+    color: '#900',
   },
   eyeButton: {
     padding: 15,

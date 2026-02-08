@@ -24,7 +24,7 @@ export default function OnboardingStep1b({ navigation }) {
           {/* Stat 1 */}
           <View style={[styles.statCard, { backgroundColor: theme.cardBackground }]}>
             <Text style={styles.statNumber}>2.7x</Text>
-            <Text style={[styles.statText, { color: theme.secondaryText }]}>
+            <Text style={[styles.statText, { color: theme.textSecondary }]}>
               {t('onboarding.step1bStat1')}
             </Text>
           </View>
@@ -32,7 +32,7 @@ export default function OnboardingStep1b({ navigation }) {
           {/* Stat 2 */}
           <View style={[styles.statCard, { backgroundColor: theme.cardBackground }]}>
             <Text style={styles.statNumber}>71%</Text>
-            <Text style={[styles.statText, { color: theme.secondaryText }]}>
+            <Text style={[styles.statText, { color: theme.textSecondary }]}>
               {t('onboarding.step1bStat2')}
             </Text>
           </View>
@@ -40,14 +40,14 @@ export default function OnboardingStep1b({ navigation }) {
           {/* Stat 3 */}
           <View style={[styles.statCard, { backgroundColor: theme.cardBackground }]}>
             <Text style={styles.statNumber}>14 days</Text>
-            <Text style={[styles.statText, { color: theme.secondaryText }]}>
+            <Text style={[styles.statText, { color: theme.textSecondary }]}>
               {t('onboarding.step1bStat3')}
             </Text>
           </View>
         </View>
 
         {/* Bottom Message */}
-        <Text style={[styles.message, { color: theme.secondaryText }]}>
+        <Text style={[styles.message, { color: theme.textSecondary }]}>
           {t('onboarding.step1bMessage')}
         </Text>
       </ScrollView>
@@ -111,12 +111,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     lineHeight: 22,
+    color: '#333',
   },
   message: {
     fontSize: 16,
     textAlign: 'center',
     lineHeight: 24,
     fontStyle: 'italic',
+    color: '#333',
   },
   buttonContainer: {
     position: 'absolute',

@@ -7,8 +7,10 @@ import { useUser } from '../utils/UserContext';
 import { supabase } from '../utils/supabase';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as XLSX from 'xlsx';
+import * as MediaLibrary from 'expo-media-library';
+import * as IntentLauncher from 'expo-intent-launcher';
 
 export default function ExportReportScreen({ navigation }) {
   const { theme } = useTheme();
@@ -120,7 +122,11 @@ export default function ExportReportScreen({ navigation }) {
   const exportPDF = async () => {
     try {
       setExporting(true);
+      console.log('🔍 Starting PDF export...');
+      
       const data = await fetchData();
+      console.log('🔍 Data fetched:', data?.length, 'days');
+      
       if (!data) {
         Alert.alert('Error', 'Failed to fetch data');
         return;
@@ -199,13 +205,19 @@ export default function ExportReportScreen({ navigation }) {
         </html>
       `;
 
-      const { uri } = await Print.createAsync({ html });
-      await Sharing.shareAsync(uri);
+      console.log('🔍 Creating PDF...');
+      const { uri } = await Print.printToFileAsync({ html });
+      console.log('✅ PDF created at:', uri);
+      
+      // Just share it
+      await Sharing.shareAsync(uri, {
+        mimeType: 'application/pdf',
+        dialogTitle: 'Save your PDF report'
+      });
 
-      Alert.alert('Success', 'PDF exported successfully!');
     } catch (error) {
-      console.error('Error exporting PDF:', error);
-      Alert.alert('Error', 'Failed to export PDF');
+      console.error('❌ PDF ERROR:', error);
+      Alert.alert('Error', `Failed to export PDF: ${error.message}`);
     } finally {
       setExporting(false);
     }
@@ -215,7 +227,11 @@ export default function ExportReportScreen({ navigation }) {
   const exportExcel = async () => {
     try {
       setExporting(true);
+      console.log('🔍 Starting Excel export...');
+
       const data = await fetchData();
+      console.log('🔍 Data fetched:', data?.length, 'days');
+
       if (!data) {
         Alert.alert('Error', 'Failed to fetch data');
         return;
@@ -236,22 +252,29 @@ export default function ExportReportScreen({ navigation }) {
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Nutrition Data');
 
-      // Write to file
+      // Generate base64 string
       const wbout = XLSX.write(wb, { type: 'base64', bookType: 'xlsx' });
+      
       const periodLabel = selectedPeriod === 'weekly' ? 'Weekly' : 'Monthly';
-      const fileName = `${periodLabel}_Report_${new Date().toLocaleDateString('en-CA')}.xlsx`;
-      const fileUri = FileSystem.documentDirectory + fileName;
+      const fileName = `Veetha_${periodLabel}_Report_${new Date().toLocaleDateString('en-CA')}.xlsx`;
+      const fileUri = FileSystem.cacheDirectory + fileName;
 
+      // Write file
       await FileSystem.writeAsStringAsync(fileUri, wbout, {
-        encoding: FileSystem.EncodingType.Base64,
+        encoding: 'base64'
       });
 
-      await Sharing.shareAsync(fileUri);
+      console.log('✅ Excel file created at:', fileUri);
+      
+      // Just share it
+      await Sharing.shareAsync(fileUri, {
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        dialogTitle: 'Save your Excel report'
+      });
 
-      Alert.alert('Success', 'Excel file exported successfully!');
     } catch (error) {
-      console.error('Error exporting Excel:', error);
-      Alert.alert('Error', 'Failed to export Excel');
+      console.error('❌ Excel ERROR:', error);
+      Alert.alert('Error', `Failed to export Excel: ${error.message}`);
     } finally {
       setExporting(false);
     }

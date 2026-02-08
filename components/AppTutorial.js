@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'; //E:
+import React, { useState, useEffect, useRef } from 'react'; //E:
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Modal, Image } from 'react-native';
 import { useLanguage } from '../utils/LanguageContext';
@@ -13,9 +13,11 @@ export default function AppTutorial({
   scrollViewRef, 
   mode, 
   setMode, 
-  onComplete, 
+  onComplete,
   onProfileRefresh 
 }) {
+  //return null;
+
   const { t } = useLanguage();
   const { theme } = useTheme();
   const { tutorialCompleted, currentStep, currentScreen, nextStep, skipTutorial } = useTutorial();
@@ -26,6 +28,18 @@ export default function AppTutorial({
   const [animFrame, setAnimFrame] = useState(0);
   const [animLoops, setAnimLoops] = useState(0);
 
+  const hasStartedRef = useRef(false);
+
+  useEffect(() => {
+    if (visible && stepConfig[currentStep]) {
+      console.log('📝 Current step content:', {
+        title: stepConfig[currentStep].title,
+        content: stepConfig[currentStep].content,
+        hasContent: !!stepConfig[currentStep].content,
+      });
+    }
+  }, [visible, currentStep, stepConfig]);
+
   // Measure components when tutorial starts
   useEffect(() => {
     console.log('🎯 AppTutorial effect:', {
@@ -33,24 +47,36 @@ export default function AppTutorial({
       screen,
       tutorialRefs,
       measuring,
+      hasStarted: hasStartedRef.current,
     });
     
     // Only check if currentScreen matches - startTutorial already checked the flags
-    if (currentScreen === screen && tutorialRefs && !measuring) {
+    if (currentScreen === screen && tutorialRefs && !measuring && !hasStartedRef.current ) {
       console.log('✅ Starting measurement...');
+      hasStartedRef.current = true;
       setMeasuring(true);
       measureAndCreateSteps();
     } else if (currentScreen !== screen) {
       console.log('❌ Not showing tutorial - wrong screen');
       setVisible(false);
       setStepConfig([]);
+      hasStartedRef.current = false;
     }
   }, [currentScreen, screen]);
 
   useEffect(() => {
-    if (!visible || !stepConfig[currentStep]?.images) return;
+    if (visible && stepConfig[currentStep]?.images) {
     
     const step = stepConfig[currentStep];
+
+    // DEBUG THEME
+    console.log('🎨 Theme colors:', {
+      text: theme.text,
+      textSecondary: theme.textSecondary,
+      textTertiary: theme.textTertiary,
+      cardBackground: theme.cardBackground,
+      primary: theme.primary,
+    });
     const frameCount = step.images.length;
     const maxLoops = step.loops || 3;
     
@@ -78,6 +104,7 @@ export default function AppTutorial({
     }, 1500); // Change frame every 500ms
     
     return () => clearInterval(interval);
+    }
   }, [visible, currentStep]);
 
   // Reset animation when step changes
@@ -88,6 +115,13 @@ export default function AppTutorial({
 
   const measureAndCreateSteps = async () => {
     console.log('📏 Starting measurements...');
+    console.log('🧪 Testing translations:', {
+      skip: t('tutorial.skip'),
+      next: t('tutorial.next'),
+      finish: t('tutorial.finish'),
+      homeStep1Title: t('tutorial.home.step1.title'),
+      scannerStep1Title: t('tutorial.scanner.step1.title'),
+    });
     console.log('📏 Refs available:', {
       caloriesCard: !!tutorialRefs.caloriesCard?.current,
       macroCards: !!tutorialRefs.macroCards?.current,
@@ -316,7 +350,7 @@ export default function AppTutorial({
             position: (width / 2) - 20 - 15,
           },
           title: t('tutorial.scanner.step3.title'),
-          content: t('tutorial.scanner.step3.content') + '\n\n' + t('tutorial.scanner.step4.content'),
+          content: `${t('tutorial.scanner.step3.content')}\n\n${t('tutorial.scanner.step4.content')}`,
           images: [
             require('../assets/images/camera_demo_1.png'),
             require('../assets/images/camera_demo_2.png'),
@@ -522,9 +556,30 @@ export default function AppTutorial({
 
   const step = stepConfig[currentStep];
 
+  console.log('🎯 Rendering step:', currentStep, {
+    hasTitle: !!step.title,
+    hasContent: !!step.content,
+    title: step.title,
+    content: step.content,
+  });
+
   // Check if step requires specific mode
   if (step.requireMode && mode !== step.requireMode) {
     return null; // Don't show step if mode doesn't match
+  }
+
+  if (!step || typeof step.title !== 'string' || typeof step.content !== 'string') {
+    console.error('❌ Invalid step:', step);
+    return null;
+  }
+
+  const skipText = t('tutorial.skip');
+  const finishText = t('tutorial.finish');
+  const nextText = t('tutorial.next');
+
+  if (typeof skipText !== 'string' || typeof finishText !== 'string' || typeof nextText !== 'string') {
+    console.error('❌ Invalid translations:', { skipText, finishText, nextText });
+    return null;
   }
 
   const handleNext = async () => {
@@ -618,6 +673,18 @@ export default function AppTutorial({
     }
   };
 
+  // Before return statement
+  const buttonText = currentStep === stepConfig.length - 1 
+    ? t('tutorial.finish') 
+    : t('tutorial.next');
+
+  console.log('🔍 Button text resolved:', typeof buttonText, buttonText);
+
+  if (typeof buttonText !== 'string') {
+    console.error('❌ Button text is not a string!', buttonText);
+    return null;
+  }
+
   return (
     <Modal
       visible={visible}
@@ -625,14 +692,15 @@ export default function AppTutorial({
       animationType="fade"
       onRequestClose={handleSkip}
     >
-      <View style={styles.overlay} pointerEvents="box-only">
+      <View style={styles.overlay} pointerEvents="box-none">
         {/* Gray overlay - everything except target */}
+
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
           {/* Top gray area */}
           {step.targetArea && (
             <View 
               style={[styles.grayArea, { height: step.targetArea.top }]} 
-              pointerEvents="box-only"
+              pointerEvents="none"
             />
           )}
           
@@ -647,7 +715,7 @@ export default function AppTutorial({
                   width: step.targetArea.left 
                 }
               ]} 
-              pointerEvents="box-only"
+              pointerEvents="none"
             />
           )}
           
@@ -663,7 +731,7 @@ export default function AppTutorial({
                   width: width - (step.targetArea.left + step.targetArea.width)
                 }
               ]} 
-              pointerEvents="box-only"
+              pointerEvents="none"
             />
           )}
           
@@ -677,7 +745,7 @@ export default function AppTutorial({
                   height: height - (step.targetArea.top + step.targetArea.height)
                 }
               ]} 
-              pointerEvents="box-only"
+              pointerEvents="none"
             />
           )}
 
@@ -709,7 +777,7 @@ export default function AppTutorial({
             ]} />
           ))}
         </View>
-
+        
         {/* Speech Bubble */}
         <View style={[
           styles.bubble,
@@ -756,13 +824,13 @@ export default function AppTutorial({
 
             <View style={[styles.stepIndicator, { backgroundColor: theme.background }]}>
               <Text style={[styles.stepText, { color: theme.textSecondary }]}>
-                {currentStep + 1}/{stepConfig.length}
+                {`${currentStep + 1}/${stepConfig.length}`}
               </Text>
             </View>
 
             <TouchableOpacity onPress={handleNext} style={[styles.nextButton, { backgroundColor: theme.primary }]}>
               <Text style={styles.nextButtonText}>
-                {currentStep === stepConfig.length - 1 ? t('tutorial.finish') : t('tutorial.next')}
+                {currentStep === (stepConfig.length - 1) ? t('tutorial.finish') : t('tutorial.next')}
               </Text>
             </TouchableOpacity>
           </View>

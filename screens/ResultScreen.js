@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Image, Modal, Animated, Alert } from 'react-native';
+import * as FileSystem from 'expo-file-system';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Image, Modal, Animated, Alert, Button } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Svg, Circle } from 'react-native-svg';
 import { supabase } from '../utils/supabase';
@@ -9,10 +10,28 @@ import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-g
 import AllergenWarningModal from '../components/AllergenWarningModal';
 import { useLanguage } from '../utils/LanguageContext';
 import { logMealLogged } from '../utils/analytics';
+import { searchFood } from '../utils/foodDatabase';
 
-// ============================================
+const detectServingUnit = (productName = '', servingSize) => {
+  const nameLower = String(productName || '').toLowerCase();
+  
+  const drinkKeywords = ['soda', 'juice', 'water', 'milk', 'coffee', 'tea', 'beer', 
+                         'wine', 'drink', 'beverage', 'cola', 'fanta', 'sprite',
+                         'gaseosa', 'refresco', 'limonada', 'nectar', 'gatorade',
+                         'energética', 'energy'];
+  
+  const isDrink = drinkKeywords.some(keyword => nameLower.includes(keyword));
+  
+  if (isDrink) {
+    // Check if serving size suggests liters vs milliliters
+    if (servingSize >= 1000) return 'L';
+    return 'ml';
+  }
+  
+  return 'g'; // Default to grams for food
+};
+
 // CIRCULAR PROGRESS COMPONENT
-// ============================================
 function CircularProgress({ percentage, size = 100, strokeWidth = 8, color = '#4CAF50', children }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
@@ -57,9 +76,7 @@ function CircularProgress({ percentage, size = 100, strokeWidth = 8, color = '#4
   );
 }
 
-// ============================================
 // AUTO-SIZED TEXT COMPONENT
-// ============================================
 function AutoSizedText({ value, baseSize = 48, minSize = 12, style }) {
   const text = String(value);
   let dynamicSize;
@@ -82,9 +99,7 @@ function AutoSizedText({ value, baseSize = 48, minSize = 12, style }) {
   );
 }
 
-// ============================================
 // NUTRIENT MODAL COMPONENT
-// ============================================
 function NutrientModal({ visible, nutrient, onClose, t }) {
   const nutrientInfo = {
     calories: {
@@ -149,9 +164,7 @@ function NutrientModal({ visible, nutrient, onClose, t }) {
   );
 }
 
-// ============================================
 // MAIN RESULT SCREEN
-// ============================================
 export default function ResultScreen({ route, navigation }) {
   const { food } = route.params;
   const { t } = useLanguage();
@@ -166,6 +179,11 @@ export default function ResultScreen({ route, navigation }) {
   const [showAllergenWarning, setShowAllergenWarning] = useState(false);
   const [savingMeal, setSavingMeal] = useState(false);
   const [allergenWarnings, setAllergenWarnings] = useState([]);
+  const [showWrongFoodModal, setShowWrongFoodModal] = useState(false);
+  const [wrongFoodInput, setWrongFoodInput] = useState('');
+  const [searchingFood, setSearchingFood] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   const [viewMode, setViewMode] = useState(
     route.params?.fromMode === 'photo' ? 'photo' : 'detailed'
   );
@@ -189,6 +207,34 @@ export default function ResultScreen({ route, navigation }) {
   };
 
   const dailyCalorieGoal = 2000; // Default, should come from user profile
+
+  const handleWrongFood = async () => {
+    if (!wrongFoodInput || !wrongFoodInput.trim()) {
+      Alert.alert('Enter a food name');
+      return;
+    }
+
+    const corrected = await searchFood(wrongFoodInput.trim());
+
+    if (!corrected) {
+      Alert.alert('Not found');
+      return;
+    }
+
+    setShowWrongFoodModal(false);
+
+    navigation.replace('Result', {
+      food: {
+        product_name: corrected.product_name,   // 🔥 REQUIRED
+        nutriments: corrected.nutriments,
+        serving_size: corrected.serving_size,
+        image_url: food.image_url,
+        detected_by_ai: false,
+        ai_detected_name: food.product_name,
+      },
+      fromMode: 'photo',
+    });
+  };
 
   const nutritionValues = React.useMemo(() => {
       const calculateNutrition = (per100g, grams) => {
@@ -364,94 +410,198 @@ export default function ResultScreen({ route, navigation }) {
 
   const handleLogMeal = async () => {
     try {
-      setSavingMeal(true);
-
-      Alert.alert(t('results.uploading'), t('results.pleaseWait'));
-      
+      setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
-      
       if (!user) {
-        alert('Please log in to save meals');
-        navigation.navigate('Login');
+        Alert.alert('Error', 'User not authenticated');
         return;
       }
 
-      // 📤 UPLOAD IMAGE TO SUPABASE STORAGE (NEW CODE)
-      let imageUrl = food.image_url;
-      
-      if (food.image_url && food.image_url.startsWith('file://')) {
-        try {
-          console.log('📤 Uploading image to storage...');
+      console.log('📝 Starting meal log process...');
+      console.log('Food data:', { name: food.name, calories: food.calories });
 
-          const uploadPromise = async () => {
-           const response = await fetch(food.image_url);
-            const blob = await response.blob();
-            
-            const fileName = `meal-${user.id}-${Date.now()}.jpg`;
-            const { data: uploadData, error: uploadError } = await supabase.storage
-              .from('meal-images')
-              .upload(fileName, blob, { contentType: 'image/jpeg' });
-            
-            if (!uploadError) {
-              const { data: urlData } = supabase.storage
-                .from('meal-images')
-                .getPublicUrl(fileName);
-              return urlData.publicUrl;
-            }
-            throw uploadError;
-          };
+      // STEP 1: Upload image to Supabase Storage (if photo was taken)
+      let imageUrl = null;
+
+      if (food.image_url && food.image_url.startsWith('file://')) {
+        console.log('='.repeat(50));
+        console.log('🖼️ IMAGE UPLOAD START');
+        console.log('Original URI:', food.image_url);
         
-          // ADD TIMEOUT:
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Upload timeout')), 10000) // 10 second timeout
-          );
+        try {
+          // Fetch the image file
+          console.log('Fetching image file...');
+          const response = await fetch(food.image_url);
+          console.log('✅ Fetch status:', response.status);
           
-          imageUrl = await Promise.race([uploadPromise(), timeoutPromise]);
-          console.log('✅ Image uploaded:', imageUrl);
-        } catch (err) {
-          console.error('❌ Upload failed, continuing without image:', err);
-          imageUrl = null; // Continue without image rather than hanging
+          // Convert to blob
+          const blob = await response.blob();
+          console.log('✅ Blob created, size:', blob.size, 'bytes');
+          
+          if (blob.size === 0) {
+            throw new Error('Image blob is empty');
+          }
+          
+          // Generate unique filename
+          const fileName = `meal-${user.id}-${Date.now()}.jpg`;
+          console.log('📤 Uploading to Supabase as:', fileName);
+          
+          // Upload to Supabase Storage
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('meal-images')
+            .upload(fileName, blob, { 
+              contentType: 'image/jpeg',
+              cacheControl: '3600',
+              upsert: false 
+            });
+          
+          if (uploadError) {
+            console.error('❌ Upload failed:', uploadError);
+            throw uploadError;
+          }
+          
+          console.log('✅ Upload successful! Path:', uploadData.path);
+          
+          // Get public URL
+          const { data: urlData } = supabase.storage
+            .from('meal-images')
+            .getPublicUrl(fileName);
+          
+          imageUrl = urlData.publicUrl;
+          console.log('✅ Public URL:', imageUrl);
+          console.log('🖼️ IMAGE UPLOAD END');
+          console.log('='.repeat(50));
+          
+        } catch (error) {
+          console.error('❌ Image upload failed:', error.message);
+          console.error('Continuing without image...');
+          // Don't block meal logging if image upload fails
+        }
+      } else {
+        console.log('ℹ️ No photo to upload (barcode scan or manual entry)');
+      }
+
+      // STEP 2: Check if food exists in food_database (by name or barcode)
+      console.log('🔍 Checking if food exists in database...');
+      
+      let productId;
+      
+      if (food.barcode) {
+        // Check by barcode first
+        const { data: existingProduct } = await supabase
+          .from('food_database')
+          .select('id')
+          .eq('barcode', food.barcode)
+          .maybeSingle();
+        
+        if (existingProduct) {
+          productId = existingProduct.id;
+          console.log('✅ Found existing product by barcode:', productId);
         }
       }
-          
-      // 💾 SAVE TO DATABASE (EXISTING CODE)
-      const { error } = await supabase.from('meals').insert({
-        user_id: user.id,
-        barcode: food.code || food.barcode,
-        product_name: food.product_name,
-        serving_grams: servingGrams,
-        calories: parseFloat(nutritionValues.calories) || 0,
-        protein: parseFloat(nutritionValues.protein) || 0,
-        carbs: parseFloat(nutritionValues.carbs) || 0,
-        fat: parseFloat(nutritionValues.fat) || 0,
-        fiber: parseFloat(nutritionValues.fiber) || 0,
-        sugar: parseFloat(nutritionValues.sugar) || 0,
-        sodium: parseFloat(nutritionValues.sodium) || 0,
-        image_url: imageUrl, // ← Use uploaded URL
-      });
-
-      if (error) throw error;
-
-      console.log('✅ Meal logged successfully');
-
-    await logMealLogged({
-      calories: parseFloat(nutritionValues.calories) || 0,
-      protein: parseFloat(nutritionValues.protein) || 0,
-      source: route.params?.fromMode === 'photo' ? 'photo' : 'barcode',
-    });
       
-      // Refresh meals list
-      await refreshMeals();
+      if (!productId) {
+        // Check by name
+        const { data: existingProduct } = await supabase
+          .from('food_database')
+          .select('id')
+          .eq('name', food.name)
+          .maybeSingle();
+        
+        if (existingProduct) {
+          productId = existingProduct.id;
+          console.log('✅ Found existing product by name:', productId);
+        }
+      }
 
-      // Show success and navigate back to home
-      alert(t('results.mealLogged'));
+      // STEP 3: Create new product if doesn't exist
+      if (!productId) {
+        console.log('➕ Creating new product in food_database...');
+        
+        const { data: newProduct, error: productError } = await supabase
+          .from('food_database')
+          .insert({
+            name: food.product_name || food.name || 'Unknown food',
+            barcode: food.barcode || null,
+            calories: food.calories || 0,
+            protein: food.protein || 0,
+            carbs: food.carbs || 0,
+            fat: food.fat || 0,
+            fiber: food.fiber || 0,
+            sugar: food.sugar || 0,
+            sodium: food.sodium || 0,
+            serving_unit: food.serving_unit || 'g',
+            source: food.source || 'photo_recognition',
+            detected_by_ai: food.detected_by_ai || false,
+            ai_confidence: food.ai_confidence || null,
+            image_url: imageUrl, // ✅ Store the uploaded image URL in food_database
+          })
+          .select('id')
+          .single();
+        
+        if (productError) {
+          console.error('❌ Error creating product:', productError);
+          throw productError;
+        }
+        
+        productId = newProduct.id;
+        console.log('✅ Created new product:', productId);
+      }
+
+      // STEP 4: Insert meal with product_id and image_url
+      console.log('💾 Inserting meal into meals table...');
+      console.log('   - product_id:', productId);
+      console.log('   - serving_grams:', servingGrams);
+      console.log('   - image_url:', imageUrl);
+      
+      const { error: mealError } = await supabase
+        .from('meals')
+        .insert({
+          user_id: user.id,
+          product_id: productId,
+          serving_grams: servingGrams,
+          barcode: food.barcode || null,
+          meal_type: null,
+          image_url: imageUrl, // ✅ Store image URL in meals table too
+          logged_at: new Date().toISOString(),
+        });
+      
+      if (mealError) {
+        console.error('❌ Error inserting meal:', mealError);
+        throw mealError;
+      }
+      
+      console.log('✅ Meal logged successfully!');
+      
+      // Track API usage if it was photo recognition
+      if (food.detected_by_ai) {
+        await supabase.from('api_tracking').insert({
+          user_id: user.id,
+          service: 'clarifai',
+          type: 'food_recognition',
+          success: true,
+          metadata: {
+            food_name: food.name,
+            confidence: food.ai_confidence,
+          },
+        });
+      }
+
+      // Navigate back to Home
+      Alert.alert('Success! ✅', `${food.name} logged`);
       navigation.navigate('Home');
-
+      
     } catch (error) {
-      console.error('Error logging meal:', error);
-      alert('Failed to log meal: ' + error.message);
+      console.error('❌ Error logging meal:', error);
+      
+      // Show the ACTUAL error to user (for debugging)
+      Alert.alert(
+        'Error Details', 
+        `${error.message}\n\nType: ${error.name || 'Unknown'}\n\nPlease screenshot this!`,
+        [{ text: 'OK' }]
+      );
     } finally {
-      setSavingMeal(false);
+      setLoading(false);
     }
   };
 
@@ -634,6 +784,14 @@ export default function ResultScreen({ route, navigation }) {
 
             <View style={styles.photoMealNameContainer}>
               <Text style={styles.photoMealName}>{food.product_name}</Text>
+
+              {route.params?.fromMode === 'photo' && (
+                <TouchableOpacity onPress={() => setShowWrongFoodModal(true)} style={{ marginTop: 6 }}>
+                  <Text style={{ color: '#4CAF50', fontWeight: '600', textAlign: 'center' }}>
+                    ✏️ Wrong food?
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
             
             {/* LEFT SWIPE INDICATOR (Delete) */}
@@ -754,23 +912,29 @@ export default function ResultScreen({ route, navigation }) {
                   )}
                   
                   {/* Product Header with Image */}
-                  {food.image_url ? (
-                    <View style={[styles.productHeader, isLandscapeImage && styles.productHeaderVertical]}>
+                  <View style={[styles.productHeader, isLandscapeImage && styles.productHeaderVertical]}>
+                    {food.image_url && (
                       <Image 
                         source={{ uri: food.image_url }} 
                         style={styles.productImage}
                         resizeMode="contain"
-                        onLoad={(e) => {
-                          const { width, height } = e.nativeEvent.source;
-                          const aspectRatio = width / height;
-                          setIsLandscapeImage(aspectRatio > 1);
-                        }}
                       />
-                      <Text style={styles.resultTitle}>{food.product_name}</Text>
-                    </View>
-                  ) : (
+                    )}
+
                     <Text style={styles.resultTitle}>{food.product_name}</Text>
-                  )}
+
+                    {/* 👇 WRONG FOOD BUTTON — ALWAYS AVAILABLE */}
+                    {route.params?.fromMode === 'photo' && (
+                      <TouchableOpacity
+                        style={{ marginTop: 6 }}
+                        onPress={() => setShowWrongFoodModal(true)}  // ✅ Correct
+                      >
+                        <Text style={{ color: '#2196F3', fontWeight: '600' }}>
+                          ✏️ Wrong food?
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
 
                   {food.image_url && (
                     <TouchableOpacity 
@@ -799,6 +963,14 @@ export default function ResultScreen({ route, navigation }) {
                           }}
                         >
                           <Text style={styles.logMealButtonText}>📸 {t('results.submitProduct')}</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          onPress={() => {
+                            setShowWrongFoodModal(true);
+                          }}
+                        >
+                          <Text>✏️ Wrong food?</Text>
                         </TouchableOpacity>
                         
                         <TouchableOpacity 
@@ -1024,6 +1196,93 @@ export default function ResultScreen({ route, navigation }) {
         onProceed={() => setShowAllergenWarning(false)}
         theme={theme}
       />
+
+      <Modal
+        visible={showWrongFoodModal}
+        transparent
+        animationType="fade"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.nutrientModalContent}>
+            <Text style={styles.modalTitle}>Wrong food?</Text>
+
+            <TextInput
+              style={styles.servingInput}
+              value={wrongFoodInput}
+              onChangeText={setWrongFoodInput}
+              placeholder="Enter correct food name"
+              autoFocus
+            />
+
+            <TouchableOpacity
+              style={[styles.logMealButton, { marginTop: 15 }]}
+              onPress={async () => {
+                if (!wrongFoodInput) return;
+
+                const corrected = await searchFood(wrongFoodInput);
+                if (!corrected) {
+                  Alert.alert('Not found');
+                  return;
+                }
+
+                setShowWrongFoodModal(false);
+
+                // Convert USDA format to OpenFoodFacts format
+                const convertedFood = {
+                  product_name: corrected.name || corrected.product_name,
+                  image_url: food.image_url,
+                  nutriments: {
+                    'energy-kcal_100g': corrected.nutrients['energy-kcal'] || corrected.nutrients['energy-kcal_100g'] || 0,
+                    proteins_100g: corrected.nutrients.proteins || corrected.nutrients.proteins_100g || 0,
+                    carbohydrates_100g: corrected.nutrients.carbohydrates || corrected.nutrients.carbohydrates_100g || 0,
+                    fat_100g: corrected.nutrients.fat || corrected.nutrients.fat_100g || 0,
+                    sodium_100g: corrected.nutrients.sodium || corrected.nutrients.sodium_100g || 0,
+                    sugars_100g: corrected.nutrients.sugar || corrected.nutrients.sugars_100g || 0,
+                    fiber_100g: corrected.nutrients.fiber || corrected.nutrients.fiber_100g || 0,
+                  },
+                  serving_quantity: 100,
+                  detected_by_ai: false,
+                  ai_detected_name: food.ai_detected_name,
+                  nutrition_source: corrected.source,
+                };
+
+                navigation.replace('Result', {
+                  food: convertedFood,
+                  fromMode: 'photo',
+                });
+              }}
+            >
+              <Text style={styles.logMealButtonText}>Search</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setShowWrongFoodModal(false)}
+              style={{ marginTop: 10 }}
+            >
+              <Text style={{ color: '#666' }}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {searchingFood && (
+      <View style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 9999,
+      }}>
+        <ActivityIndicator size="large" color="#4CAF50" />
+        <Text style={{ color: '#fff', marginTop: 12, fontSize: 16 }}>
+          Searching for food...
+        </Text>
+      </View>
+    )}
         </SafeAreaView>
   );
 }
@@ -1098,6 +1357,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     backgroundColor: 'white',
+    color: '#000',
   },
   servingHint: {
     fontSize: 12,
@@ -1260,7 +1520,7 @@ const styles = StyleSheet.create({
   },
   macroBadgesContainer: {
     position: 'absolute',
-    top: '15%',
+    top: '25%',
     alignSelf: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',

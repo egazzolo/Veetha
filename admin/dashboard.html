@@ -3,6 +3,11 @@
 <head>
   <title>Veetha Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    window.SUPABASE_URL = "https://bfgreozkoftncayzyzhz.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZ3Jlb3prb2Z0bmNheXp5emh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4MDA3NTksImV4cCI6MjA3NjM3Njc1OX0.dZKhStPxQVKrfLhg1ZnL1OW43YFF4SLkhEhhRr_NipM";
+  </script>
+
   <style>
     body{font-family:Arial;padding:20px;background:#f5f5f5;margin:0}
     h1{color:#333;margin-bottom:10px}
@@ -18,10 +23,42 @@
   </style>
 </head>
 <body>
+  <!-- AUTH UI -->
+  <div id="authBox" style="max-width:420px; margin: 24px 0; padding:16px; border:1px solid #ddd; border-radius:10px;">
+    <div id="authStatus" style="margin-bottom: 12px; font-weight:600;">Checking session...</div>
+
+    <form id="loginForm" style="display:block; gap:10px;">
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <input id="email" type="email" placeholder="Email" autocomplete="email" required style="padding:10px; border:1px solid #ccc; border-radius:8px;">
+        <input id="password" type="password" placeholder="Password" autocomplete="current-password" required style="padding:10px; border:1px solid #ccc; border-radius:8px;">
+        <button type="submit" style="padding:10px; border:0; border-radius:8px; cursor:pointer;">Log in</button>
+        <div id="loginMsg" style="margin-top:8px;"></div>
+      </div>
+    </form>
+
+    <div id="userBox" style="display:none;">
+      <div style="margin-bottom:10px;">
+        Logged in as: <span id="userEmail"></span>
+      </div>
+      <button id="logoutBtn" style="padding:10px; border:0; border-radius:8px; cursor:pointer;">Log out</button>
+    </div>
+  </div>
+
   <h1>📊 Veetha Dashboard</h1>
   <div id="time"></div>
   <button id="btn">🔄 Refresh Data</button>
   <div id="dash"><p style="text-align:center;color:#999;">Click "Refresh Data" to load campaigns...</p></div>
+
+  <div style="margin:10px 0;">
+    <label>
+      From:
+      <input type="date" id="fromDate">
+    </label>
+    <label style="margin-left:10px;">
+      To:
+      <input type="date" id="toDate">
+    </label>
+  </div>
 
   <script>
     console.log('1. Script tag executing');
@@ -38,11 +75,12 @@
       
       console.log('3. Supabase library loaded');
       
-      const URL = 'https://bfgreozkoftncayzyzhz.supabase.co';
-      const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmZ3Jlb3prb2Z0bmNheXp5emh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4MDA3NTksImV4cCI6MjA3NjM3Njc1OX0.dZKhStPxQVKrfLhg1ZnL1OW43YFF4SLkhEhhRr_NipM';
-      
       console.log('4. Creating Supabase client...');
-      const db = window.supabase.createClient(URL, KEY);
+      const db = window.supabase.createClient(
+        window.SUPABASE_URL,
+        window.SUPABASE_ANON_KEY
+      );
+
       console.log('5. Client created successfully!');
       
       async function loadData() {
@@ -60,11 +98,30 @@
         
         try {
           console.log('7. Fetching from database...');
+
+          const fromDate = document.getElementById('fromDate').value;
+          const toDate = document.getElementById('toDate').value;
+
           
-          const { data, error } = await db
+          const { data: sessionData } = await window.authSupabase.auth.getSession();
+          if (!sessionData?.session) {
+            dashDiv.innerHTML = '<div class="error-box"><h3>🔒 Login required</h3><p>Please log in to view campaigns.</p></div>';
+            return;
+          }
+
+          let query = window.authSupabase
             .from('influencer_campaigns')
-            .select('*')
-            .order('campaign_start', { ascending: false });
+            .select('*');
+
+          if (fromDate) {
+            query = query.gte('campaign_start', fromDate);
+          }
+
+          if (toDate) {
+            query = query.lte('campaign_start', toDate);
+          }
+
+          const { data, error } = await query.order('campaign_start', { ascending: false });
           
           console.log('8. Database response:', { hasData: !!data, dataCount: data?.length, hasError: !!error });
           
@@ -142,6 +199,77 @@
       
       console.log('12. Setup complete! Click "Refresh Data" to load campaigns.');
     });
+  </script>
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    // USE THE SAME VALUES YOU ALREADY HAVE
+    const SUPABASE_URL = window.SUPABASE_URL;
+    const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
+
+    // Auth-aware client
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Expose it so existing code can use it later
+    window.authSupabase = supabase;
+
+    // ----- AUTH UI HOOKS -----
+    const authStatus = document.getElementById("authStatus");
+    const loginForm = document.getElementById("loginForm");
+    const loginMsg = document.getElementById("loginMsg");
+    const userBox = document.getElementById("userBox");
+    const userEmail = document.getElementById("userEmail");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    function setLoggedOutUI(msg) {
+      authStatus.textContent = msg || "Not logged in";
+      loginForm.style.display = "block";
+      userBox.style.display = "none";
+    }
+
+    function setLoggedInUI(email) {
+      authStatus.textContent = "Authenticated";
+      loginForm.style.display = "none";
+      userBox.style.display = "block";
+      userEmail.textContent = email;
+    }
+
+    async function refreshSession() {
+      const { data } = await supabase.auth.getSession();
+      if (!data?.session) {
+        setLoggedOutUI();
+        return null;
+      }
+      setLoggedInUI(data.session.user.email);
+      return data.session;
+    }
+
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      loginMsg.textContent = "Logging in...";
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        loginMsg.textContent = error.message;
+        return;
+      }
+      loginMsg.textContent = "";
+      await refreshSession();
+    });
+
+    logoutBtn.addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      setLoggedOutUI("Logged out");
+    });
+
+    supabase.auth.onAuthStateChange((_e, session) => {
+      if (!session) setLoggedOutUI();
+      else setLoggedInUI(session.user.email);
+    });
+
+    await refreshSession();
   </script>
 </body>
 </html>

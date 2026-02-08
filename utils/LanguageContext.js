@@ -69,7 +69,7 @@ export function LanguageProvider({ children }) {
     }
   };
 
-  const t = (key) => {
+  const t = (key, params = {}) => {
     const keys = key.split('.');
     let value = TRANSLATIONS[language];
     
@@ -77,7 +77,19 @@ export function LanguageProvider({ children }) {
       value = value?.[k];
     }
     
-    return value || key; // Return key if translation not found
+    // If no translation found, return the key
+    if (!value) return key;
+    
+    // Replace {{variable}} placeholders with actual values
+    let translatedText = value;
+    Object.keys(params).forEach(param => {
+      translatedText = translatedText.replace(
+        new RegExp(`{{${param}}}`, 'g'),
+        params[param]
+      );
+    });
+    
+    return translatedText;
   };
 
   return (

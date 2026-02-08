@@ -1,4 +1,6 @@
+import StepsCard from '../components/StepsCard';
 import React, { useState, useEffect, useRef, useContext } from 'react';
+import * as Location from 'expo-location';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, RefreshControl, Alert, Modal, Platform, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -13,6 +15,8 @@ import { useUser, UserContext } from '../utils/UserContext';
 import { useLayout } from '../utils/LayoutContext';
 import { supabase } from '../utils/supabase';
 import { logScreen, logEvent } from '../utils/analytics';
+import { getSuggestionsForMealTime, LOCAL_FOODS } from '../utils/localFoods';
+import { Pedometer } from 'expo-sensors';
 import AppTutorial from '../components/AppTutorial';
 import AnimatedThemeWrapper from '../components/AnimatedThemeWrapper';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -26,8 +30,10 @@ import CalorieWarningBanner from '../components/CalorieWarningBanner';
 import FrameWarning from '../components/FrameWarning';
 import TutorialArrow from '../components/TutorialArrow';
 import MonthlyCalendar from '../components/MonthlyCalendar';
+import ExerciseButton from '../components/ExerciseButton';
+import WaterPitcher from '../components/WaterPitcher';
 
-// Circular Progress Component (FIXED - removed misplaced state)
+// Circular Progress Component
 function CircularProgress({ percentage, size = 100, strokeWidth = 8, color = '#4CAF50', children }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
@@ -72,9 +78,59 @@ function CircularProgress({ percentage, size = 100, strokeWidth = 8, color = '#4
   );
 }
 
-// ============================================
+// Add quick log function
+const handleQuickLog = async (food) => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Create product if doesn't exist
+    const { data: existingProduct } = await supabase
+      .from('food_database')
+      .select('id')
+      .eq('name', food.name)
+      .maybeSingle();
+
+    let productId;
+
+    if (existingProduct) {
+      productId = existingProduct.id;
+    } else {
+      const { data: newProduct } = await supabase
+        .from('food_database')
+        .insert({
+          name: food.name,
+          calories: food.calories,
+          protein: food.protein,
+          carbs: food.carbs,
+          fat: food.fat,
+          source: 'local_suggestion',
+        })
+        .select('id')
+        .single();
+      
+      productId = newProduct.id;
+    }
+
+    // Log meal
+    await supabase.from('meals').insert({
+      user_id: user.id,
+      product_id: productId,
+      serving_grams: 100,
+      image_url: imageUrl, 
+    });
+
+    await refreshMeals();
+    
+    Alert.alert('Logged! ✅', `${food.emoji} ${food.name} added`);
+    
+  } catch (error) {
+    console.error('Error quick logging:', error);
+    Alert.alert('Error', 'Failed to log meal');
+  }
+};
+
 // NUTRIENT MODAL COMPONENT
-// ============================================
 function NutrientModal({ visible, nutrient, onClose, theme, currentIntake, dailyGoal, t }) {
   const nutrientInfo = {
     calories: {
@@ -249,9 +305,14 @@ export default function HomeScreen({ navigation }) {
   const [showNutrientModal, setShowNutrientModal] = useState(false);
   const [selectedNutrient, setSelectedNutrient] = useState(null);
   const [toggledMeals, setToggledMeals] = useState(new Set());
+  const [exerciseCaloriesBurned, setExerciseCaloriesBurned] = useState(0);
+  const [stepCalories, setStepCalories] = useState(0);
   const { showGreeting, greetingText, checkAndShowGreeting, hideGreeting } = useGreeting();
   const [showArrowToScanner, setShowArrowToScanner] = useState(false);
   const [scannerCoords, setScannerCoords] = useState(null);
+  const [checkingTutorial, setCheckingTutorial] = useState(true);
+  const [quickSuggestions, setQuickSuggestions] = useState([]);
+  const [userCountry, setUserCountry] = useState(null);
 
   // Tutorial refs
   const profileButtonRef = useRef(null);
@@ -268,6 +329,83 @@ export default function HomeScreen({ navigation }) {
     year: new Date().getFullYear(), 
     month: new Date().getMonth() 
   });
+
+  const loadQuickSuggestions = async () => {
+    try {
+      // Get user location
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      
+      if (status === 'granted') {
+        const location = await Location.getCurrentPositionAsync({});
+        const [geocode] = await Location.reverseGeocodeAsync({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+        
+        const countryCode = geocode.isoCountryCode;
+        setUserCountry(countryCode);
+        
+        const { suggestions, mealType, country } = getSuggestionsForMealTime(countryCode);
+        setQuickSuggestions(suggestions);
+        
+        console.log(`🌍 Showing ${mealType} suggestions for ${country}`);
+      } else {
+        // Use default suggestions
+        const hour = new Date().getHours();
+        const mealType = hour < 11 ? 'breakfast' : hour < 16 ? 'lunch' : 'dinner';
+        setQuickSuggestions(DEFAULT_FOODS[mealType]);
+      }
+    } catch (error) {
+      console.error('Error loading suggestions:', error);
+    }
+  };
+
+  const loadExerciseCalories = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const today = new Date(selectedDate);
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const { data: exerciseData, error } = await supabase
+        .from('exercises')
+        .select('calories_burned')
+        .eq('user_id', user.id)
+        .gte('logged_at', today.toISOString())
+        .lt('logged_at', tomorrow.toISOString());
+
+      if (error) throw error;
+
+      const totalBurned = exerciseData?.reduce((sum, ex) => sum + (ex.calories_burned || 0), 0) || 0;
+      setExerciseCaloriesBurned(totalBurned);
+    } catch (error) {
+      console.error('Error loading exercise calories:', error);
+    }
+  };
+
+  const loadStepCalories = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser(); // ✅ Get user from auth
+      if (!user) return;
+
+      const today = selectedDate.toLocaleDateString('en-CA');
+      
+      const { data } = await supabase
+        .from('steps_logs')
+        .select('calories_burned')
+        .eq('user_id', user.id)
+        .eq('date', today)
+        .single();
+      
+      setStepCalories(data?.calories_burned || 0);
+    } catch (error) {
+      console.log('No step data for today');
+      setStepCalories(0);
+    }
+  };
 
   // Load water intake
   const loadWaterIntake = async () => {
@@ -335,6 +473,11 @@ export default function HomeScreen({ navigation }) {
   useEffect(() => {
     logScreen('Home');
   }, []);
+  
+  // Call in useEffect
+  useEffect(() => {
+    loadQuickSuggestions();
+  }, []);
 
   // Debug refs
   useEffect(() => {
@@ -347,10 +490,25 @@ export default function HomeScreen({ navigation }) {
   }, []);
 
   // Calculate totals from meals (with safety check)
-  const consumed = (meals || []).reduce((sum, meal) => sum + (meal.calories || 0), 0);
-  const consumedProtein = (meals || []).reduce((sum, meal) => sum + (meal.protein || 0), 0);
-  const consumedCarbs = (meals || []).reduce((sum, meal) => sum + (meal.carbs || 0), 0);
-  const consumedFat = (meals || []).reduce((sum, meal) => sum + (meal.fat || 0), 0);
+  const consumed = (meals || []).reduce((sum, meal) => {
+    if (!meal.product) return sum;
+    return sum + ((meal.product.calories * meal.serving_grams) / 100);
+  }, 0);
+
+  const consumedProtein = (meals || []).reduce((sum, meal) => {
+    if (!meal.product) return sum;
+    return sum + ((meal.product.protein * meal.serving_grams) / 100);
+  }, 0);
+
+  const consumedCarbs = (meals || []).reduce((sum, meal) => {
+    if (!meal.product) return sum;
+    return sum + ((meal.product.carbs * meal.serving_grams) / 100);
+  }, 0);
+
+  const consumedFat = (meals || []).reduce((sum, meal) => {
+    if (!meal.product) return sum;
+    return sum + ((meal.product.fat * meal.serving_grams) / 100);
+  }, 0);
 
   // Get daily goals from profile
   const totalCalories = profile?.daily_calorie_goal || 2000;
@@ -359,7 +517,7 @@ export default function HomeScreen({ navigation }) {
   const totalFat = profile?.daily_fat_goal || 65;
 
   // Calculate remaining
-  const remaining = totalCalories - consumed;
+  const remaining = totalCalories - consumed + exerciseCaloriesBurned + stepCalories;
 
   // Get user name for greeting
   const userName = profile?.display_name || profile?.full_name?.split(' ')[0] || 'there';
@@ -413,23 +571,22 @@ export default function HomeScreen({ navigation }) {
         })
       );
 
-      // Check if TODAY has any meals (LOCAL DATE)
+      // Check if TODAY has meals
       const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayStr = today.toLocaleDateString('en-CA'); // LOCAL DATE
+      const todayStr = today.toLocaleDateString('en-CA');
       const hasMealsToday = mealDates.has(todayStr);
 
-      // Start from yesterday if no meals today, or today if meals exist
+      // Start from TODAY if meals exist, otherwise YESTERDAY
       let checkDate = new Date();
       if (!hasMealsToday) {
-        checkDate.setDate(checkDate.getDate() - 1);
+        checkDate.setDate(checkDate.getDate() - 1); // Start from yesterday if no meals today
       }
       checkDate.setHours(0, 0, 0, 0);
 
       // Calculate streak by checking backwards
       let streak = 0;
       while (checkDate >= MIN_DATE) {
-        const dateStr = checkDate.toLocaleDateString('en-CA'); // LOCAL DATE
+        const dateStr = checkDate.toLocaleDateString('en-CA');
         
         if (mealDates.has(dateStr)) {
           streak++;
@@ -440,8 +597,13 @@ export default function HomeScreen({ navigation }) {
       }
 
       setCurrentStreak(streak);
-      console.log('🔥 Current streak:', streak, '| Has meals today:', hasMealsToday);
-      console.log('🔥 Meal dates:', Array.from(mealDates).slice(0, 5)); // Debug: show first 5 dates
+      console.log('🔥 Streak check:', {
+        todayStr,
+        hasMealsToday,
+        yesterdayStr: new Date(Date.now() - 86400000).toLocaleDateString('en-CA'),
+        datesWithMeals: Array.from(mealDates).slice(0, 5),
+        calculatedStreak: streak
+      });
     } catch (error) {
       console.error('Error calculating streak:', error);
     }
@@ -468,7 +630,21 @@ export default function HomeScreen({ navigation }) {
       
       const { data, error } = await supabase
         .from('meals')
-        .select('*')
+        .select(`
+          *,
+          product:food_database (
+            name,
+            calories,
+            protein,
+            carbs,
+            fat,
+            fiber,
+            sugar,
+            sodium,
+            serving_unit,
+            image_url
+          )
+        `)
         .eq('user_id', user.id)
         .gte('logged_at', startOfDay.toISOString())
         .lte('logged_at', endOfDay.toISOString())
@@ -486,29 +662,30 @@ export default function HomeScreen({ navigation }) {
   };
 
   // Fetch monthly data for calendar
-  const fetchMonthlyData = async () => {
+  const fetchMonthlyData = async (targetYear, targetMonth) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
       // Use provided year/month or default to current
-      const targetYear = year ?? new Date().getFullYear();
-      const targetMonth = month ?? new Date().getMonth();
+      const year = targetYear ?? new Date().getFullYear();
+      const month = targetMonth ?? new Date().getMonth();
       
-      const firstDay = new Date(targetYear, targetMonth, 1);
+      const firstDay = new Date(year, month, 1);
       firstDay.setHours(0, 0, 0, 0);
-      const lastDay = new Date(targetYear, targetMonth + 1, 0);
+      const lastDay = new Date(year, month + 1, 0);
       lastDay.setHours(23, 59, 59, 999);
 
-      // Get first and last day of CURRENT MONTH (local time)
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = now.getMonth();
-
-      // Get ALL meals from current month in ONE query
+      // Get ALL meals from selected month in ONE query
       const { data: meals, error } = await supabase
         .from('meals')
-        .select('logged_at, calories')
+        .select(`
+          logged_at,
+          serving_grams,
+          product:food_database (
+            calories
+          )
+        `)
         .eq('user_id', user.id)
         .gte('logged_at', firstDay.toISOString())
         .lte('logged_at', lastDay.toISOString())
@@ -527,7 +704,7 @@ export default function HomeScreen({ navigation }) {
         mealsByDate[dateStr].push(meal);
       });
 
-      // Build month data for ALL days in current month
+      // Build month data for ALL days in selected month
       const monthData = [];
       const daysInMonth = new Date(year, month + 1, 0).getDate();
       
@@ -536,7 +713,11 @@ export default function HomeScreen({ navigation }) {
         const dateStr = date.toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
         const dayMeals = mealsByDate[dateStr] || [];
 
-        const totalCalories = dayMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
+        const totalCalories = dayMeals.reduce((sum, m) => {
+          if (!m.product) return sum; // Skip if product was deleted
+          const calculatedCalories = (m.product.calories * m.serving_grams) / 100;
+          return sum + calculatedCalories;
+        }, 0);
 
         monthData.push({
           date: dateStr,
@@ -547,7 +728,7 @@ export default function HomeScreen({ navigation }) {
       }
 
       setMonthlyData(monthData);
-      console.log('📅 Loaded', monthData.length, 'days for calendar');
+      console.log('📅 Loaded', monthData.length, 'days for', year, month);
     } catch (error) {
       console.error('Error fetching monthly data:', error);
     }
@@ -557,6 +738,8 @@ export default function HomeScreen({ navigation }) {
   useEffect(() => {
     loadMealsForDate(selectedDate);
     loadWaterIntake();
+    loadExerciseCalories();
+    loadStepCalories();
     calculateStreak();
     fetchMonthlyData(calendarMonth.year, calendarMonth.month);
   }, [selectedDate, calendarMonth]);
@@ -584,44 +767,34 @@ export default function HomeScreen({ navigation }) {
 
     // Start tutorial on first load - WAIT for FRESH data AND layout
     useEffect(() => {
-      // STEP 1: Wait for fresh data from Supabase
       if (!freshDataLoaded) {
-        console.log('⏳ Waiting for fresh data before checking tutorial...');
+        console.log('⏳ Waiting for fresh data...');
         return;
       }
 
-      // Try to load profile if missing
-      const checkProfile = async () => {
-        if (!profile && !userLoading) {
-          console.log('⚠️ Profile is null, manually fetching...');
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            const { data } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', user.id)
-              .single();
-            
-            console.log('📊 Manually fetched profile:', data);
-          }
-        }
-      };
-      
-      checkProfile();
-      
-      console.log('🎓 Tutorial check:', {
-        completed: tutorialCompleted,
-        profileTutorialFlag: profile?.tutorial_completed,
-        layout,
-        profile: !!profile,
-        profileLoaded: profile?.id ? true : false,
-        loading: loading || userLoading,
-        freshDataLoaded,  // ← Add this to the log
-      });
-      
-      // Check the ACTUAL profile flags, not the context value
+      // Check if tutorial is already completed
+      if (profile?.tutorial_completed) {
+        console.log('✅ Tutorial already completed - unfreezing screen');
+        setCheckingTutorial(false); // UNFREEZE
+        return;
+      }
+
+      // Tutorial needs to start - UNFREEZE so user can interact with it
       if (!profile?.tutorial_completed && layout === 'cards' && profile?.id && !loading && !userLoading && !tutorialStartedRef.current) {
+        
+        let checkCount = 0;
+        const MAX_CHECKS = 10;
+        let timeoutId;
+        
         const checkRefsReady = () => {
+          checkCount++;
+          
+          if (checkCount > MAX_CHECKS) {
+            console.log('⚠️ Refs check timeout - unfreezing anyway');
+            setCheckingTutorial(false); // UNFREEZE even if refs not ready
+            return;
+          }
+          
           const refsReady = 
             caloriesCardRef.current !== null &&
             macroCardsRef.current !== null &&
@@ -636,21 +809,31 @@ export default function HomeScreen({ navigation }) {
           });
           
           if (refsReady) {
-            console.log('✅ All refs ready! Waiting for layout to settle...');
+            console.log('✅ All refs ready! Starting tutorial...');
+            setCheckingTutorial(false); // UNFREEZE before tutorial starts
             setTimeout(() => {
-              console.log('✅ Starting tutorial NOW');
               tutorialStartedRef.current = true;
               startTutorial('Home');
-            }, 800);
+            }, 500); // Small delay to ensure unfreeze happens first
           } else {
             console.log('⏳ Refs not ready yet, checking again in 500ms...');
-            setTimeout(checkRefsReady, 500);
+            timeoutId = setTimeout(checkRefsReady, 500);
           }
         };
         
-        setTimeout(checkRefsReady, 1500);
+        timeoutId = setTimeout(checkRefsReady, 1500);
+        
+        return () => {
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+            console.log('🧹 Cleaned up refs check timeout');
+          }
+        };
+      } else {
+        // If none of the above conditions are met, unfreeze anyway
+        setCheckingTutorial(false);
       }
-    }, [tutorialCompleted, layout, profile, loading, userLoading, freshDataLoaded]);  // ← Add freshDataLoaded
+    }, [tutorialCompleted, layout, profile, loading, userLoading, freshDataLoaded]);
 
   // Refresh meals when screen focuses
   useFocusEffect(
@@ -887,7 +1070,10 @@ export default function HomeScreen({ navigation }) {
 
       const { data: yesterdayMeals, error } = await supabase
         .from('meals')
-        .select('*')
+        .select(`
+          *,
+          product:food_database (*)
+        `)
         .eq('user_id', user.id)
         .gte('logged_at', yesterday.toISOString())
         .lte('logged_at', endOfYesterday.toISOString());
@@ -999,16 +1185,16 @@ export default function HomeScreen({ navigation }) {
                   onComplete={hideGreeting}
                 />
 
-                {/* Streak Badge */}
-                {currentStreak > 0 && (
-                  <View style={styles.streakBadgeWrapper}>
-                    <View style={[styles.streakBadge, { backgroundColor: '#FF6B35' }]}>
-                      <Text style={styles.streakEmoji}>🔥</Text>
-                      <Text style={styles.streakNumber}>{currentStreak}</Text>
-                      <Text style={styles.streakLabel}>{t('home.dayStreak')}</Text>
-                    </View>
+                {/* Streak Badge - Always visible */}
+                <View style={styles.streakBadgeWrapper}>
+                  <View style={[styles.streakBadge, { backgroundColor: '#FF6B35' }]}>
+                    <Text style={styles.streakEmoji}>🔥</Text>
+                    <Text style={styles.streakNumber}>{currentStreak}</Text>
+                    <Text style={styles.streakLabel}>
+                      {currentStreak === 1 ? t('home.dayStreak') : t('home.daysStreak')}
+                    </Text>
                   </View>
-                )}
+                </View>
 
                 {/* Date Navigation */}
                 <View style={styles.dateNavigation}>
@@ -1088,6 +1274,7 @@ export default function HomeScreen({ navigation }) {
                     setSelectedNutrient={setSelectedNutrient}
                     setShowNutrientModal={setShowNutrientModal}
                     navigation={navigation}
+                    exerciseCaloriesBurned={exerciseCaloriesBurned}
                   />
                 ) : (
                   <CardsLayout
@@ -1117,7 +1304,8 @@ export default function HomeScreen({ navigation }) {
                     setShowNutrientModal={setShowNutrientModal}
                     navigation={navigation}
                     caloriesCardRef={caloriesCardRef}
-                    macroCardsRef={macroCardsRef} 
+                    macroCardsRef={macroCardsRef}
+                    exerciseCaloriesBurned={exerciseCaloriesBurned}
                   />
                 )}
 
@@ -1127,32 +1315,27 @@ export default function HomeScreen({ navigation }) {
                 {/* Exercise & Water Cards - SIDE BY SIDE */}
                 <View style={styles.activityCardsRow}>
                   {/* Exercise Card - LEFT SIDE */}
-                  <View style={[styles.activityCard, { backgroundColor: theme.cardBackground }]}>
-                    <Text style={[styles.activityCardTitle, { color: theme.text }]}>
-                      💪 {t('home.exercise')}
-                    </Text>
-                    <Text style={[styles.activitySubtext, { color: theme.textSecondary }]}>
-                      {t('home.comingSoon')}
-                    </Text>
-                  </View>
+                  <ExerciseButton theme={theme} navigation={navigation} />
 
-                  {/* Water Card - RIGHT SIDE */}
+                  {/* Water Intake with Animated Pitcher */}
                   <View style={[styles.activityCard, { backgroundColor: theme.cardBackground }]}>
-                    <Text style={[styles.waterProgress, { color: theme.text }]}>
-                      💧 {t('home.water')} {waterIntake} / {profile?.daily_water_goal_cups || 8}
-                    </Text>
-                    <Text style={[styles.waterUnit, { color: theme.textSecondary }]}>
-                      {profile?.water_unit_preference || t('goalsPreferences.cups')}
-                    </Text>
+                    <WaterPitcher 
+                      cups={waterIntake} 
+                      maxCups={profile?.daily_water_goal_cups || 8}
+                      theme={theme}
+                    />
+                    
+                    {/* Water Control Buttons */}
                     <View style={styles.waterButtons}>
-                      <TouchableOpacity
+                      <TouchableOpacity 
                         style={[styles.waterButton, { backgroundColor: theme.border }]}
                         onPress={handleSubtractWater}
                         disabled={waterIntake <= 0}
                       >
                         <Text style={[styles.waterButtonText, { color: theme.text }]}>−</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity
+                      
+                      <TouchableOpacity 
                         style={[styles.waterButton, { backgroundColor: theme.primary }]}
                         onPress={handleAddWater}
                       >
@@ -1161,6 +1344,8 @@ export default function HomeScreen({ navigation }) {
                     </View>
                   </View>
                 </View>
+
+                {/*<StepsCard />*/}
 
                 {/* Meals List */}
                 <MealsList
@@ -1849,5 +2034,75 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 20,
     fontWeight: 'bold',
+  },
+  centerContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  quickEntrySection: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  quickEntryHeader: {
+    marginBottom: 12,
+  },
+  quickEntryTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  quickEntrySubtitle: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  quickEntryScroll: {
+    marginHorizontal: -5,
+  },
+  quickEntryCard: {
+    width: 90,
+    padding: 12,
+    borderRadius: 12,
+    marginHorizontal: 5,
+    alignItems: 'center',
+  },
+  quickEntryEmoji: {
+    fontSize: 32,
+    marginBottom: 6,
+  },
+  quickEntryName: {
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  quickEntryCals: {
+    fontSize: 10,
+  },
+  waterCard: {
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 15,
+    alignItems: 'center',
+    flex: 1,
+  },
+  waterButtonsContainer: {
+    flexDirection: 'row',
+    marginTop: 15,
+    gap: 10,
+  },
+  waterButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    flex: 1,
+  },
+  waterButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    textAlign: 'center',
+    fontSize: 14,
   },
 });

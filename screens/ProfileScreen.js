@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Switch, Alert, Linking } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Switch, Alert, Linking, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../utils/supabase';
@@ -22,6 +22,7 @@ export default function ProfileScreen({ navigation }) {
   const { theme, isDark, toggleTheme } = useTheme();
   const { t } = useLanguage();
   const [refreshing, setRefreshing] = useState(false);
+  const [checkingTutorial, setCheckingTutorial] = useState(true);
   const { profile, loading, refreshProfile, refreshMeals } = useUser();
   const { startTutorial } = useTutorial();
 
@@ -57,7 +58,10 @@ export default function ProfileScreen({ navigation }) {
     const checkProfileTutorial = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          setCheckingTutorial(false);
+          return;
+        }
 
         const { data: profileData } = await supabase
           .from('profiles')
@@ -65,20 +69,29 @@ export default function ProfileScreen({ navigation }) {
           .eq('id', user.id)
           .single();
 
-        if (!profileData?.profile_tutorial_completed) {
-          console.log('🎓 Starting Profile tutorial');
-          // Check if refs are ready
-          setTimeout(() => {
-            if (statsGridRef.current && editButtonRef.current) {
-              startTutorial('Profile');
-            } else {
-              console.log('⏳ Refs not ready, trying again...');
-              setTimeout(() => startTutorial('Profile'), 2000);
-            }
-          }, 1500);
+        // If tutorial already completed, unfreeze immediately
+        if (profileData?.profile_tutorial_completed) {
+          console.log('✅ Profile tutorial already completed - unfreezing');
+          setCheckingTutorial(false);
+          return;
         }
+
+        // Tutorial needs to start - unfreeze and start
+        console.log('🎓 Starting Profile tutorial');
+        setCheckingTutorial(false); // Unfreeze before tutorial
+        
+        setTimeout(() => {
+          if (statsGridRef.current && editButtonRef.current) {
+            startTutorial('Profile');
+          } else {
+            console.log('⏳ Refs not ready, trying again...');
+            setTimeout(() => startTutorial('Profile'), 2000);
+          }
+        }, 500);
+        
       } catch (error) {
         console.error('Error checking profile tutorial:', error);
+        setCheckingTutorial(false); // Unfreeze on error
       }
     };
 
@@ -147,6 +160,77 @@ export default function ProfileScreen({ navigation }) {
             }
           }
         },
+      ]
+    );
+  };
+
+  const handleDeleteAccount = async () => {
+    Alert.alert(
+      t('profile.deleteAccount'),
+      t('profile.deleteWarning'),
+      [
+        {
+          text: t('common.cancel'),
+          style: 'cancel'
+        },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            Alert.alert(
+              t('profile.finalConfirmation'),
+              t('profile.deleteConfirmMessage'),
+              [
+                {
+                  text: t('common.cancel'),
+                  style: 'cancel'
+                },
+                {
+                  text: t('profile.yesDeleteEverything'),
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      const { data: { session } } = await supabase.auth.getSession();
+                      if (!session) return;
+
+                      const { data, error } = await supabase.functions.invoke('delete-user', {
+                        headers: {
+                          Authorization: `Bearer ${session.access_token}`
+                        }
+                      });
+
+                      if (error) throw error;
+
+                      await supabase.auth.signOut();
+
+                      Alert.alert(
+                        t('profile.accountDeleted'),
+                        t('profile.accountDeletedMessage'),
+                        [
+                          {
+                            text: t('common.ok'),
+                            onPress: () => {
+                              navigation.reset({
+                                index: 0,
+                                routes: [{ name: 'Landing' }],
+                              });
+                            }
+                          }
+                        ]
+                      );
+                    } catch (error) {
+                      console.error('Error deleting account:', error);
+                      Alert.alert(
+                        t('common.error'),
+                        `${t('profile.deleteError')}: ${error.message}`
+                      );
+                    }
+                  }
+                }
+              ]
+            );
+          }
+        }
       ]
     );
   };
@@ -431,6 +515,13 @@ export default function ProfileScreen({ navigation }) {
                 <Text style={styles.logoutText}>{t('profile.logOut')}</Text>
               </TouchableOpacity>
 
+              <TouchableOpacity
+                style={[styles.deleteButton, { backgroundColor: theme.error || '#ff3b30' }]}
+                onPress={handleDeleteAccount}
+              >
+                <Text style={styles.deleteButtonText}>🗑️ Delete Account</Text>
+              </TouchableOpacity>
+
               {/* Bottom Padding */}
               <View style={{ height: 100 }} />
             </ScrollView>
@@ -455,6 +546,23 @@ export default function ProfileScreen({ navigation }) {
             navigation={navigation}
             activeScreen="Profile"
           />
+
+          {/* Freeze overlay during tutorial check */}
+          {checkingTutorial && (
+            <View style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 9999,
+            }}>
+              <ActivityIndicator size="large" color={theme.primary} />
+            </View>
+          )}
         </SafeAreaView>
       </GestureDetector>
     </GestureHandlerRootView>
@@ -621,5 +729,17 @@ const styles = StyleSheet.create({
   menuArrow: {
     fontSize: 24,
     marginLeft: 10,
+  },
+  deleteButton: {
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginTop: 20,
+  },
+  deleteButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

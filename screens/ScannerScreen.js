@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert, Modal, TextInput, ActivityIndicator, Animated } from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraView } from 'expo-camera';
 import { useTheme } from '../utils/ThemeContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { useLanguage } from '../utils/LanguageContext';
@@ -14,9 +14,13 @@ import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-ha
 import { useSwipeNavigation } from '../utils/useSwipeNavigation';
 import { searchFood } from '../utils/foodDatabase';
 import { useUser, UserContext } from '../utils/UserContext';
-import { analyzePhoto, imageUriToBase64, logClarifaiUsage } from '../utils/clarifaiApi';
+import { analyzePhoto as analyzeClarifai, imageUriToBase64 as clarifaiToBase64 } from '../utils/clarifaiApi';
+import { analyzePhoto as analyzeGoogle, imageUriToBase64 as googleToBase64 } from '../utils/visionApi';
 
-const DAILY_PHOTO_LIMIT = 10;
+const DAILY_PHOTO_LIMIT = 30;
+
+// 🔄 API TOGGLE - Switch between Clarifai and Google Vision
+const USE_GOOGLE_VISION = false; // ← Change to true when $4.99 runs out
 
 export default function ScannerScreen({ navigation }) {
   const { theme } = useTheme();
@@ -32,20 +36,99 @@ export default function ScannerScreen({ navigation }) {
   const modeToggleRef = useRef(null);
   const captureButtonRef = useRef(null);
   const backButtonRef = useRef(null);
-  
-  const [permission, requestPermission] = useCameraPermissions();
+
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showArrowToProfile, setShowArrowToProfile] = useState(false);
   const [showManualInput, setShowManualInput] = useState(false);
   const [manualBarcode, setManualBarcode] = useState('');
-  const [mode, setMode] = useState('barcode'); // 'barcode' or 'photo'
+  const [mode, setMode] = useState('barcode');
+  const [checkingTutorial, setCheckingTutorial] = useState(true);
   
   // Swipe navigation (only when camera is idle, not during scan)
   const swipeGesture = useSwipeNavigation(navigation, 'Scanner', mode === 'barcode' && !scanned);
   // 🎨 ANIMATION: Photo tips fade out after 3 seconds
   const photoTipsOpacity = useRef(new Animated.Value(1)).current;
   const [showPhotoTips, setShowPhotoTips] = useState(true);
+
+  // Check number of Clarifai calls per month
+  const checkMonthlyPhotoLimit = async (user) => {
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    firstDayOfMonth.setHours(0, 0, 0, 0);
+    
+    const apiName = USE_GOOGLE_VISION ? 'google_vision' : 'clarifai';
+    const monthlyLimit = USE_GOOGLE_VISION ? 950 : 900; // Google: 950, Clarifai: 900
+
+    const { data: monthlyPhotos, error } = await supabase
+      .from('api_tracking')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('service', apiName)  // ← Dynamic API name
+      .gte('created_at', today + 'T00:00:00')
+      .lte('created_at', today + 'T23:59:59');
+
+    if (error) {
+      console.error('Error checking photo limit:', error);
+    } else {
+      const photosUsed = monthlyPhotos?.length || 0;
+
+      // Check if limit reached
+      if (photosUsed >= monthlyLimit) {
+        Alert.alert(
+          'Monthly Limit Reached',
+          `You've used all ${monthlyLimit} photo requests for this month using ${USE_GOOGLE_VISION ? 'Google Vision' : 'Clarifai'}. Try again tomorrow!`
+        );
+        return;
+      }
+
+      // ⚠️ WARNING when near limit
+      if (photosUsed >= monthlyLimit - 50) {
+        Alert.alert(
+          'Low on Photo Scans',
+          `⚠️ You have ${monthlyLimit - photosUsed} photo requests left this month.`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Continue', onPress: () => proceedWithPhotoCapture() }
+          ]
+        );
+        return;
+      }
+    }
+
+    if (error) {
+      console.error('Error checking photo limit:', error);
+      return true; // Allow on error
+    }
+
+    const photosUsedThisMonth = monthlyPhotos?.length || 0;
+    const MONTHLY_LIMIT = 900; // Leave buffer under 1000
+
+    console.log(`📸 Photo usage: ${photosUsedThisMonth}/${MONTHLY_LIMIT} this month`);
+
+    if (photosUsedThisMonth >= MONTHLY_LIMIT) {
+      const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const resetDate = nextMonth.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+      
+      Alert.alert(
+        'Monthly Limit Reached',
+        `You've used all ${MONTHLY_LIMIT} photo scans for this month. Your limit resets on ${resetDate}.\n\nTip: Use barcode scanning for packaged foods (unlimited!)`,
+        [{ text: 'OK' }]
+      );
+      return false;
+    }
+
+    // Warn at 850 uses (50 left)
+    if (photosUsedThisMonth >= 850) {
+      Alert.alert(
+        'Low on Photo Scans',
+        `You've used ${photosUsedThisMonth}/${MONTHLY_LIMIT} scans. ${MONTHLY_LIMIT - photosUsedThisMonth} remaining this month.`,
+        [{ text: 'OK' }]
+      );
+    }
+
+    return true;
+  };
 
   // Measure back button for arrow
   const measureBackButton = () => {
@@ -67,6 +150,7 @@ export default function ScannerScreen({ navigation }) {
       console.log('📷 Scanner focused - resetting state');
       setScanned(false);
       setLoading(false);
+      lastPhotoTime.current = 0;
     }, [])
   );
   
@@ -137,7 +221,10 @@ export default function ScannerScreen({ navigation }) {
     const checkScannerTutorial = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          setCheckingTutorial(false);
+          return;
+        }
 
         const { data: profile } = await supabase
           .from('profiles')
@@ -145,12 +232,21 @@ export default function ScannerScreen({ navigation }) {
           .eq('id', user.id)
           .single();
 
-        if (!profile?.scanner_tutorial_completed) {
-          console.log('🎓 Starting Scanner tutorial');
-          setTimeout(() => startTutorial('Scanner'), 500);
+        // If tutorial already completed, unfreeze immediately
+        if (profile?.scanner_tutorial_completed) {
+          console.log('✅ Scanner tutorial already completed - unfreezing');
+          setCheckingTutorial(false);
+          return;
         }
+
+        // Tutorial needs to start - unfreeze and start
+        console.log('🎓 Starting Scanner tutorial');
+        setCheckingTutorial(false); // Unfreeze before tutorial
+        setTimeout(() => startTutorial('Scanner'), 500);
+        
       } catch (error) {
         console.error('Error checking scanner tutorial:', error);
+        setCheckingTutorial(false); // Unfreeze on error
       }
     };
 
@@ -158,25 +254,25 @@ export default function ScannerScreen({ navigation }) {
   }, []);
 
   // Request camera permission
-  if (!permission) {
-    return <View style={styles.container}><ActivityIndicator size="large" /></View>;
-  }
+  //if (!permission) {
+  //  return <View style={styles.container}><ActivityIndicator size="large" /></View>;
+  //}
 
-  if (!permission.granted) {
-    return (
-      <View style={[styles.permissionContainer, { backgroundColor: theme.background }]}>
-        <Text style={[styles.permissionText, { color: theme.text }]}>
-          {t('scanner.cameraPermission')}
-        </Text>
-        <TouchableOpacity
-          style={[styles.permissionButton, { backgroundColor: theme.primary }]}
-          onPress={requestPermission}
-        >
-          <Text style={styles.permissionButtonText}>{t('scanner.grantPermission')}</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  //if (!permission.granted) {
+  //  return (
+  //    <View style={[styles.permissionContainer, { backgroundColor: theme.background }]}>
+  //      <Text style={[styles.permissionText, { color: theme.text }]}>
+  //        {t('scanner.cameraPermission')}
+  //      </Text>
+  //      <TouchableOpacity
+  //        style={[styles.permissionButton, { backgroundColor: theme.primary }]}
+  //        onPress={requestPermission}
+  //      >
+  //        <Text style={styles.permissionButtonText}>{t('scanner.grantPermission')}</Text>
+  //      </TouchableOpacity>
+  //    </View>
+  //  );
+  //}
 
   // Fetch food info from OpenFoodFacts
   const fetchFoodInfo = async (barcode) => {
@@ -278,16 +374,20 @@ export default function ScannerScreen({ navigation }) {
     }
   };
 
-  // Analyze food photo with Clarifai
+  // Analyze food photo with AI (Clarifai or Google Vision)
   const analyzeFoodPhoto = async (photoUri) => {
     try {
       setLoading(true);
-      console.log("📸 Analyzing food photo with Clarifai...");
+      console.log(`📸 Analyzing food photo with ${USE_GOOGLE_VISION ? 'Google Vision' : 'Clarifai'}...`);
 
-      // Convert image to base64 and analyze with Clarifai
-      const base64 = await imageUriToBase64(photoUri);
+      // Convert image to base64
+      const imageToBase64 = USE_GOOGLE_VISION ? googleToBase64 : clarifaiToBase64;
+      const base64 = await imageToBase64(photoUri);
+      
+      // Analyze with selected API
+      const analyzePhoto = USE_GOOGLE_VISION ? analyzeGoogle : analyzeClarifai;
       const result = await analyzePhoto(base64);
-      const concepts = result.allConcepts;
+      
       const foodName = result.foodName;
       const confidence = result.confidence;
 
@@ -295,7 +395,8 @@ export default function ScannerScreen({ navigation }) {
 
       // ✅ CONFIDENCE THRESHOLD CHECK
       if (confidence < 60) {
-        await logApiCall('clarifai', 'food_recognition', false, 'Low confidence', {
+        const apiName = USE_GOOGLE_VISION ? 'google_vision' : 'clarifai';
+        await logApiCall(apiName, 'food_recognition', false, 'Low confidence', {
           detected_food: foodName,
           confidence: confidence
         });
@@ -324,26 +425,28 @@ export default function ScannerScreen({ navigation }) {
       await proceedWithFood(foodName, confidence, photoUri);
 
     } catch (error) {
-      console.error('❌ Clarifai error:', error);
-      
-      await logApiCall('clarifai', 'food_recognition', false, error.message, {
-        error_type: error.message || 'unknown'
-      });
-      
+      console.error('❌ Error analyzing photo:', error);
       Alert.alert(
         t('scanner.error'),
-        error.message || t('scanner.photoAnalysisFailed')
+        error.message || t('scanner.photoAnalysisFailed'),
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setLoading(false);
+              setScanned(false);
+            },
+          },
+        ]
       );
-      setLoading(false);
-      setScanned(false);
     }
   };
 
   // Proceed with food after confidence check
   const proceedWithFood = async (foodName, confidence, photoUri) => {
     try {
-      // Log successful AI detection
-      await logApiCall('clarifai', 'food_recognition', true, null, {
+      const apiName = USE_GOOGLE_VISION ? 'google_vision' : 'clarifai';
+      await logApiCall(apiName, 'food_recognition', true, null, {
         detected_food: foodName,
         confidence: confidence,
         total_concepts: 1,
@@ -698,6 +801,22 @@ export default function ScannerScreen({ navigation }) {
               visible={showArrowToBack}
             />
           )}
+          {/* Freeze overlay during tutorial check */}
+          {checkingTutorial && (
+            <View style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 9999,
+            }}>
+              <ActivityIndicator size="large" color="#4CAF50" />
+            </View>
+          )}
         </View>
       </SafeAreaView>
     </GestureDetector>
@@ -713,27 +832,27 @@ const styles = StyleSheet.create({
   camera: {
     flex: 1,
   },
-  permissionContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  permissionText: {
-    fontSize: 18,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  permissionButton: {
-    paddingHorizontal: 30,
-    paddingVertical: 15,
-    borderRadius: 10,
-  },
-  permissionButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+  // permissionContainer: {
+  //   flex: 1,
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  //   padding: 20,
+  // },
+  // permissionText: {
+  //   fontSize: 18,
+  //   textAlign: 'center',
+  //   marginBottom: 20,
+  // },
+  // permissionButton: {
+  //   paddingHorizontal: 30,
+  //   paddingVertical: 15,
+  //   borderRadius: 10,
+  // },
+  // permissionButtonText: {
+  //   color: '#fff',
+  //   fontSize: 16,
+  //   fontWeight: 'bold',
+  // },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',

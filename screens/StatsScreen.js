@@ -10,17 +10,21 @@ import { useFocusEffect } from '@react-navigation/native';
 import { logScreen, logEvent, logMealLogged } from '../utils/analytics';
 import AnimatedThemeWrapper from '../components/AnimatedThemeWrapper';
 import BottomNav from '../components/BottomNav';
+import ExerciseHistoryScreen from './ExerciseHistoryScreen';
 
 const { width } = Dimensions.get('window');
 
 export default function StatsScreen({ navigation }) {
   const { theme, isDark } = useTheme();
   const { t } = useLanguage();
-  const [selectedPeriod, setSelectedPeriod] = useState('week');
   const [weeklyData, setWeeklyData] = useState([]);
   const [monthlyData, setMonthlyData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState(null);
+  const [activeTab, setActiveTab] = useState('week');
+  const [isPremium, setIsPremium] = useState(false);
+  const [currentStreak, setCurrentStreak] = useState(0);
+  const MIN_DATE = new Date(2025, 10, 1); // November 1, 2025
 
   // Swipe navigation
   const swipeGesture = useSwipeNavigation(navigation, 'Stats');
@@ -41,6 +45,25 @@ export default function StatsScreen({ navigation }) {
       setProfile(data);
     } catch (error) {
       console.error('Error fetching profile:', error);
+    }
+  };
+
+  const checkPremiumStatus = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('ispremium')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      return data?.ispremium || false;
+    } catch (error) {
+      console.error('Error checking premium status:', error);
+      return false;
     }
   };
 
@@ -189,45 +212,66 @@ export default function StatsScreen({ navigation }) {
     }
   };
 
-  // Calculate streak (same logic as HomeScreen)
-  const calculateStreak = () => {
-    if (monthlyData.length === 0) return 0;
-    
-    // Check if TODAY has any meals
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayStr = today.toISOString().split('T')[0];
-    const todayData = monthlyData.find(d => d.date === todayStr);
-    const hasMealsToday = todayData?.hasData || false;
-    
-    // Create a Set of dates with meals for fast lookup
-    const datesWithMeals = new Set(
-      monthlyData.filter(d => d.hasData).map(d => d.date)
-    );
-    
-    // Start from yesterday if no meals today, or today if meals exist
-    let checkDate = new Date();
-    if (!hasMealsToday) {
-      checkDate.setDate(checkDate.getDate() - 1);
-    }
-    checkDate.setHours(0, 0, 0, 0);
-    
-    // Calculate streak by checking backwards
-    let streak = 0;
-    const MIN_DATE = new Date(2025, 10, 1); // November 1, 2025
-    
-    while (checkDate >= MIN_DATE) {
-      const dateStr = checkDate.toISOString().split('T')[0];
-      
-      if (datesWithMeals.has(dateStr)) {
-        streak++;
-        checkDate.setDate(checkDate.getDate() - 1);
-      } else {
-        break; // Streak broken
+  // Calculate current logging streak
+  const calculateStreak = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get ALL meals from MIN_DATE to today in ONE query
+      const { data: mealsData, error } = await supabase
+        .from('meals')
+        .select('logged_at')
+        .eq('user_id', user.id)
+        .gte('logged_at', MIN_DATE.toISOString())
+        .order('logged_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Convert meals to set of dates (YYYY-MM-DD) IN LOCAL TIMEZONE
+      const mealDates = new Set(
+        mealsData.map(meal => {
+          const mealDate = new Date(meal.logged_at);
+          return mealDate.toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
+        })
+      );
+
+      // Check if TODAY has meals
+      const today = new Date();
+      const todayStr = today.toLocaleDateString('en-CA');
+      const hasMealsToday = mealDates.has(todayStr);
+
+      // Start from TODAY if meals exist, otherwise YESTERDAY
+      let checkDate = new Date();
+      if (!hasMealsToday) {
+        checkDate.setDate(checkDate.getDate() - 1); // Start from yesterday if no meals today
       }
+      checkDate.setHours(0, 0, 0, 0);
+
+      // Calculate streak by checking backwards
+      let streak = 0;
+      while (checkDate >= MIN_DATE) {
+        const dateStr = checkDate.toLocaleDateString('en-CA');
+        
+        if (mealDates.has(dateStr)) {
+          streak++;
+          checkDate.setDate(checkDate.getDate() - 1);
+        } else {
+          break;
+        }
+      }
+
+      setCurrentStreak(streak);
+      console.log('🔥 Streak check:', {
+        todayStr,
+        hasMealsToday,
+        yesterdayStr: new Date(Date.now() - 86400000).toLocaleDateString('en-CA'),
+        datesWithMeals: Array.from(mealDates).slice(0, 5),
+        calculatedStreak: streak
+      });
+    } catch (error) {
+      console.error('Error calculating streak:', error);
     }
-    
-    return streak;
   };
 
   // Fetch all data in parallel
@@ -256,6 +300,8 @@ export default function StatsScreen({ navigation }) {
 
   useEffect(() => {
     logScreen('Stats');
+    checkPremiumStatus().then(setIsPremium);
+    calculateStreak();
   }, []);
 
   // Initial load
@@ -282,7 +328,7 @@ export default function StatsScreen({ navigation }) {
   );
 
   // Calculate statistics
-  const daysWithData = selectedPeriod === 'week'
+  const daysWithData = activeTab === 'week'
     ? weeklyData.filter(d => d.mealsCount > 0)
     : monthlyData.filter(d => d.hasData);
   const avgCalories = daysWithData.length > 0
@@ -311,9 +357,6 @@ export default function StatsScreen({ navigation }) {
     ? Math.round((daysUnderGoal / daysWithData.length) * 100)
     : 0;
 
-  // Monthly streak
-  const currentStreak = calculateStreak();
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <GestureDetector gesture={swipeGesture}>
@@ -331,19 +374,27 @@ export default function StatsScreen({ navigation }) {
               {/* Period Selector */}
               <View style={[styles.periodSelector, { backgroundColor: theme.cardBackground }]}>
                 <TouchableOpacity
-                  style={[styles.periodButton, selectedPeriod === 'week' && { backgroundColor: theme.primary }]}
-                  onPress={() => setSelectedPeriod('week')}
+                  style={[styles.periodButton, activeTab === 'week' && { backgroundColor: theme.primary }]}
+                  onPress={() => setActiveTab('week')}
                 >
-                  <Text style={[styles.periodText, { color: selectedPeriod === 'week' ? '#fff' : theme.textSecondary }]}>
+                  <Text style={[styles.periodText, { color: activeTab === 'week' ? '#fff' : theme.textSecondary }]}>
                     {t('stats.week')}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.periodButton, selectedPeriod === 'month' && { backgroundColor: theme.primary }]}
-                  onPress={() => setSelectedPeriod('month')}
+                  style={[styles.periodButton, activeTab === 'month' && { backgroundColor: theme.primary }]}
+                  onPress={() => setActiveTab('month')}
                 >
-                  <Text style={[styles.periodText, { color: selectedPeriod === 'month' ? '#fff' : theme.textSecondary }]}>
+                  <Text style={[styles.periodText, { color: activeTab === 'month' ? '#fff' : theme.textSecondary }]}>
                     {t('stats.month')}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[ styles.periodButton, activeTab === 'exercise' && { backgroundColor: theme.primary }]}
+                  onPress={() => setActiveTab('exercise')}
+                >
+                  <Text style={[ styles.periodText, { color: activeTab === 'exercise' ? '#fff' : theme.textSecondary }]}>
+                    {t('stats.exercise')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -360,7 +411,7 @@ export default function StatsScreen({ navigation }) {
                   <Text style={[styles.summaryValue, { color: theme.success }]}>{daysWithData.length}</Text>
                   <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>{t('stats.daysLogged')}</Text>
                   <Text style={[styles.summaryUnit, { color: theme.textTertiary }]}>
-                    {selectedPeriod === 'week' 
+                    {activeTab === 'week' 
                       ? (t('stats.thisWeek') || 'this week')
                       : (t('stats.thisMonth') || 'this month')
                     }
@@ -374,7 +425,7 @@ export default function StatsScreen({ navigation }) {
                 </View>
               </View>
 
-              {selectedPeriod === 'week' && (
+              {activeTab === 'week' && (
                 <>
                   {/* Weekly Bar Chart */}
                   <View style={[styles.chartCard, { backgroundColor: theme.cardBackground }]}>
@@ -481,43 +532,10 @@ export default function StatsScreen({ navigation }) {
                     </View>
 
                   </View>
-                  
-                  {/* REPORTS SECTION */}
-                  <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-                      {t('stats.reports')}
-                    </Text>
-                    
-                    <TouchableOpacity 
-                      style={[styles.settingItem, { backgroundColor: theme.cardBackground }]}
-                      onPress={() => navigation.navigate('WeeklyReport')}
-                    >
-                      <View style={styles.settingLeft}>
-                        <Text style={styles.settingIcon}>📊</Text>
-                        <Text style={[styles.settingLabel, { color: theme.text }]}>
-                          {t('stats.weeklyReport')}
-                        </Text>
-                      </View>
-                      <Text style={styles.settingArrow}>›</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={[styles.settingItem, { backgroundColor: theme.cardBackground }]}
-                      onPress={() => navigation.navigate('ExportReport')}
-                    >
-                      <View style={styles.settingLeft}>
-                        <Text style={styles.settingIcon}>📥</Text>
-                        <Text style={[styles.settingLabel, { color: theme.text }]}>
-                          Export Report
-                        </Text>
-                      </View>
-                      <Text style={styles.settingArrow}>›</Text>
-                    </TouchableOpacity>
-                  </View>
                 </>
               )}
 
-              {selectedPeriod === 'month' && (
+              {activeTab === 'month' && (
                 <>
                   {/* Monthly Calendar */}
                   <View style={[styles.chartCard, { backgroundColor: theme.cardBackground }]}>
@@ -671,6 +689,46 @@ export default function StatsScreen({ navigation }) {
                   </View>
                 </>
               )}
+
+              {activeTab === 'exercise' && (
+                <ExerciseHistoryScreen 
+                  route={{ params: { theme, isPremium } }} 
+                  nestedInScrollView={true}
+                />
+              )}
+
+              {/* REPORTS SECTION */}
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>
+                  {t('stats.reports')}
+                </Text>
+                
+                <TouchableOpacity 
+                  style={[styles.settingItem, { backgroundColor: theme.cardBackground }]}
+                  onPress={() => navigation.navigate('WeeklyReport')}
+                >
+                  <View style={styles.settingLeft}>
+                    <Text style={styles.settingIcon}>📊</Text>
+                    <Text style={[styles.settingLabel, { color: theme.text }]}>
+                      {t('stats.weeklyReport')}
+                    </Text>
+                  </View>
+                  <Text style={styles.settingArrow}>›</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.settingItem, { backgroundColor: theme.cardBackground }]}
+                  onPress={() => navigation.navigate('ExportReport')}
+                >
+                  <View style={styles.settingLeft}>
+                    <Text style={styles.settingIcon}>📥</Text>
+                    <Text style={[styles.settingLabel, { color: theme.text }]}>
+                      Export Report
+                    </Text>
+                  </View>
+                  <Text style={styles.settingArrow}>›</Text>
+                </TouchableOpacity>
+              </View>
 
               {/* Bottom Padding */}
               <View style={{ height: 100 }} />

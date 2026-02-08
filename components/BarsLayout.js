@@ -17,6 +17,7 @@ export default function BarsLayout({
   fatPercent,
   setSelectedNutrient,
   setShowNutrientModal,
+  exerciseCaloriesBurned,
 }) {
   return (
     <View>
@@ -43,6 +44,11 @@ export default function BarsLayout({
           <Text style={[styles.remainingText, { color: remaining >= 0 ? theme.success : theme.error }]}>
             {Math.abs(Math.round(remaining))} {remaining >= 0 ? t('home.remaining') : t('home.over')}
           </Text>
+          {exerciseCaloriesBurned > 0 && (
+            <Text style={[styles.exerciseCaloriesText, { color: '#4CAF50', marginTop: 4 }]}>
+              +{Math.round(exerciseCaloriesBurned)} {t('home.fromExercise')}
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -204,5 +210,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     minWidth: 70,
     textAlign: 'right',
+  },
+  exerciseCaloriesText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

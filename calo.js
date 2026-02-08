@@ -42,7 +42,11 @@ import AdminDashboardScreen from './screens/AdminDashboardScreen';
 import TermsOfServiceScreen from './screens/TermsOfServiceScreen';
 import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen';
 import WeeklyReportScreen from './screens/WeeklyReportScreen';
-import TestScreen from './screens/TestScreen'; 
+import TestScreen from './screens/TestScreen';
+import ExerciseCategoryScreen from './screens/ExerciseFlow/ExerciseCategoryScreen';
+import ExerciseActivityScreen from './screens/ExerciseFlow/ExerciseActivityScreen';
+import ExerciseIntensityScreen from './screens/ExerciseFlow/ExerciseIntensityScreen';
+import ExerciseLogModal from './screens/ExerciseFlow/ExerciseLogModal';
 
 // Import contexts and utilities
 import { OnboardingProvider } from './utils/OnboardingContext';
@@ -67,13 +71,6 @@ function AppNavigator() {
   const checkAuthState = async () => {
     try {
       console.log('🔍 Checking auth state on app start...');
-      
-      if (__DEV__) {
-        console.log('🔧 Development mode detected - starting at Landing');
-        setInitialRoute('Landing');
-        setLoading(false);
-        return;
-      }
       
       const { data: { session }, error } = await supabase.auth.getSession();
       
@@ -176,6 +173,10 @@ function AppNavigator() {
 
           {/* Main App Screens */}
           <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="ExerciseCategoryScreen" component={ExerciseCategoryScreen} options={{ headerShown: false }}/>
+          <Stack.Screen name="ExerciseActivityScreen" component={ExerciseActivityScreen} options={{ headerShown: false }}/>
+          <Stack.Screen name="ExerciseIntensityScreen" component={ExerciseIntensityScreen} options={{ headerShown: false }}/>
+          <Stack.Screen name="ExerciseLogModal" component={ExerciseLogModal} options={{ headerShown: false }}/>
           <Stack.Screen name="Scanner" component={ScannerScreen} />
           <Stack.Screen name="Result" component={ResultScreen} />
           <Stack.Screen name="ManualEntry" component={ManualEntryScreen} />

@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useOnboarding } from '../../utils/OnboardingContext';
 import { useLanguage } from '../../utils/LanguageContext';
 
-
 export default function OnboardingStep7({ navigation }) {
   const { updateOnboardingData } = useOnboarding();
   const { t } = useLanguage(); 
@@ -22,7 +21,6 @@ export default function OnboardingStep7({ navigation }) {
 
   const handleContinue = () => {
     // No validation needed - this is optional
-    // TODO: Save to user profile
     console.log('Referral Source:', source);
 
     updateOnboardingData({

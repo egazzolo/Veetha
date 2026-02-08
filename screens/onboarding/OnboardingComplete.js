@@ -69,7 +69,7 @@ export default function OnboardingComplete({ navigation }) {
   };
 
   const handleStartTracking = async () => {
-    if (processing) return; // Prevent double-tap
+    if (processing) return;
     
     try {
       setProcessing(true);
@@ -78,22 +78,6 @@ export default function OnboardingComplete({ navigation }) {
       // Get saved credentials
       const savedEmail = await AsyncStorage.getItem('pendingUserEmail');
       const savedPassword = await AsyncStorage.getItem('pendingUserPassword');
-
-      // Check if profile already exists
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('email', savedEmail)
-        .maybeSingle();
-      
-      if (existingProfile) {
-        Alert.alert(
-          'Account Already Exists',
-          'This email already has a profile. Please log in instead.',
-          [{ text: 'Go to Login', onPress: () => navigation.navigate('Login') }]
-        );
-        return;
-      }
 
       if (!savedEmail || !savedPassword) {
         console.log('❌ No saved credentials found');
@@ -144,10 +128,79 @@ export default function OnboardingComplete({ navigation }) {
         return;
       }
 
-      // Success! Email was verified, proceed to save profile
+      // Success! Email was verified
       if (data.session && data.user) {
-        console.log('✅ Email verified! Proceeding to save profile...');
-        await saveProfileAndNavigate(data.user);
+        console.log('✅ Email verified! User signed in:', data.user.email);
+        
+        // Check if profile was auto-created by trigger
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', data.user.id)
+          .maybeSingle();
+        
+        if (existingProfile) {
+          console.log('📝 Profile already exists (auto-created by trigger), updating with onboarding data...');
+          
+          // Calculate daily calorie goal
+          const dailyCalorieGoal = calculateDailyCalories(onboardingData);
+          
+          // Update the existing profile with onboarding data
+          const profileData = {
+            full_name: data.user.email.split('@')[0],
+            gender: onboardingData.gender,
+            age: parseInt(onboardingData.age),
+            height_ft: onboardingData.unit === 'imperial' ? parseInt(onboardingData.heightFeet) : null,
+            height_in: onboardingData.unit === 'imperial' ? parseInt(onboardingData.heightInches) : null,
+            height_cm: onboardingData.unit === 'metric' ? parseInt(onboardingData.heightCm) : null,
+            weight_lbs: onboardingData.unit === 'imperial' ? parseFloat(onboardingData.weight) : null,
+            weight_kg: onboardingData.unit === 'metric' ? parseFloat(onboardingData.weight) : null,
+            unit_preference: onboardingData.unit,
+            goal: onboardingData.goal,
+            target_weight_lbs: onboardingData.unit === 'imperial' && onboardingData.targetWeight 
+              ? parseFloat(onboardingData.targetWeight) 
+              : null,
+            target_weight_kg: onboardingData.unit === 'metric' && onboardingData.targetWeight 
+              ? parseFloat(onboardingData.targetWeight) 
+              : null,
+            activity_level: onboardingData.activityLevel,
+            dietary_restrictions: onboardingData.dietaryRestrictions || [],
+            daily_calorie_goal: dailyCalorieGoal,
+            referral_source: onboardingData.referralSource || null,
+          };
+          
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update(profileData)
+            .eq('id', data.user.id);
+          
+          if (updateError) throw updateError;
+          
+          console.log('✅ Profile updated with onboarding data');
+        } else {
+          console.log('📝 No profile exists, creating new one...');
+          await saveProfileAndNavigate(data.user);
+          return;
+        }
+        
+        // Clear temporary credentials
+        await AsyncStorage.removeItem('pendingUserEmail');
+        await AsyncStorage.removeItem('pendingUserPassword');
+        await AsyncStorage.removeItem('greeting_shown');
+        await AsyncStorage.removeItem('last_app_open');
+        
+        // Refresh UserContext
+        await refreshProfile();
+        
+        // Clear onboarding data
+        clearOnboardingData();
+        
+        // Navigate to Home
+        console.log('🏠 Navigating to Home...');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
       }
 
     } catch (error) {

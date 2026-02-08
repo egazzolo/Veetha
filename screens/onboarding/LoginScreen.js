@@ -52,10 +52,10 @@ export default function LoginScreen({ navigation }) {
       if (data?.user) {
         console.log('Login successful!', data.user);
 
-        // Fetch profile to get display name
+        // Fetch profile to get display name AND check onboarding status
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('display_name, full_name')
+          .select('display_name, full_name, daily_calorie_goal')
           .eq('id', data.user.id)
           .single();
 
@@ -70,17 +70,22 @@ export default function LoginScreen({ navigation }) {
         // Clear greeting timestamp so it shows on login
         await AsyncStorage.removeItem('last_app_open');
         
-        // Navigate to home after successful login
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Home' }],
-        });
-
-        // Navigate to Home
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Home' }],
-        });
+        // Navigate based on onboarding status
+        if (profileData?.daily_calorie_goal) {
+          // Onboarding complete - go to Home
+          console.log('✅ Onboarding complete - navigating to Home');
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Home' }],
+          });
+        } else {
+          // Onboarding incomplete - force to OnboardingStep1
+          console.log('⚠️ Onboarding incomplete - navigating to OnboardingStep1');
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'OnboardingStep1' }],
+          });
+        }
       }
 
     } catch (err) {
@@ -95,8 +100,7 @@ export default function LoginScreen({ navigation }) {
     } finally {
       setLoading(false);
     }
-  };
-
+  }
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <KeyboardAvoidingView 
@@ -251,6 +255,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 15,
     fontSize: 16,
+    color: '#650',
   },
   passwordContainer: {
     flexDirection: 'row',
@@ -263,6 +268,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 15,
     fontSize: 16,
+    color: '#800',
   },
   eyeButton: {
     padding: 15,

@@ -1,3 +1,4 @@
+// *** Goal: Gain, maintain or lose weight ***
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

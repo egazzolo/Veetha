@@ -120,8 +120,8 @@ Our Content and Marks are protected by copyright and trademark laws (and various
 The Content and Marks are provided in or through the Services "AS IS" for your personal, non-commercial use only.
 Your use of our Services
 Subject to your compliance with these Legal Terms, including the "PROHIBITED ACTIVITIES" section below, we grant you a non-exclusive, non-transferable, revocable license to:
-	access the Services; and
-	download or print a copy of any portion of the Content to which you have properly gained access,
+-	access the Services; and
+-	download or print a copy of any portion of the Content to which you have properly gained access,
 solely for your personal, non-commercial use.
 
 Except as set out in this section or elsewhere in our Legal Terms, no part of the Services and no Content or Marks may be copied, reproduced, aggregated, republished, uploaded, posted, publicly displayed, encoded, translated, transmitted, distributed, sold, licensed, or otherwise exploited for any commercial purpose whatsoever, without our express prior written permission.
@@ -137,10 +137,10 @@ Please review this section and the "PROHIBITED ACTIVITIES" section carefully pri
 Submissions: By directly sending us any question, comment, suggestion, idea, feedback, or other information about the Services ("Submissions"), you agree to assign to us all intellectual property rights in such Submission. You agree that we shall own this Submission and be entitled to its unrestricted use and dissemination for any lawful purpose, commercial or otherwise, without acknowledgment or compensation to you.
 
 You are responsible for what you post or upload: By sending us Submissions through any part of the Services you:
-	confirm that you have read and agree with our "PROHIBITED ACTIVITIES" and will not post, send, publish, upload, or transmit through the Services any Submission that is illegal, harassing, hateful, harmful, defamatory, obscene, bullying, abusive, discriminatory, threatening to any person or group, sexually explicit, false, inaccurate, deceitful, or misleading;
-	to the extent permissible by applicable law, waive any and all moral rights to any such Submission;
-	warrant that any such Submission are original to you or that you have the necessary rights and licenses to submit such Submissions and that you have full authority to grant us the above-mentioned rights in relation to your Submissions; and
-	warrant and represent that your Submissions do not constitute confidential information.
+-	confirm that you have read and agree with our "PROHIBITED ACTIVITIES" and will not post, send, publish, upload, or transmit through the Services any Submission that is illegal, harassing, hateful, harmful, defamatory, obscene, bullying, abusive, discriminatory, threatening to any person or group, sexually explicit, false, inaccurate, deceitful, or misleading;
+-	to the extent permissible by applicable law, waive any and all moral rights to any such Submission;
+-	warrant that any such Submission are original to you or that you have the necessary rights and licenses to submit such Submissions and that you have full authority to grant us the above-mentioned rights in relation to your Submissions; and
+-	warrant and represent that your Submissions do not constitute confidential information.
 You are solely responsible for your Submissions and you expressly agree to reimburse us for any and all losses that we may suffer because of your breach of (a) this section, (b) any third party’s intellectual property rights, or (c) applicable law.
 
 3. USER REPRESENTATIONS
@@ -181,53 +181,53 @@ We may include software for use in connection with our Services. If such softwar
 You may not access or use the Services for any purpose other than that for which we make the Services available. The Services may not be used in connection with any commercial endeavors except those that are specifically endorsed or approved by us.
 
 As a user of the Services, you agree not to:
-	Systematically retrieve data or other content from the Services to create or compile, directly or indirectly, a collection, compilation, database, or directory without written permission from us.
-	Trick, defraud, or mislead us and other users, especially in any attempt to learn sensitive account information such as user passwords.
-	Circumvent, disable, or otherwise interfere with security-related features of the Services, including features that prevent or restrict the use or copying of any Content or enforce limitations on the use of the Services and/or the Content contained therein.
-	Disparage, tarnish, or otherwise harm, in our opinion, us and/or the Services.
-	Use any information obtained from the Services in order to harass, abuse, or harm another person.
-	Make improper use of our support services or submit false reports of abuse or misconduct.
-	Use the Services in a manner inconsistent with any applicable laws or regulations.
-	Engage in unauthorized framing of or linking to the Services.
-	Upload or transmit (or attempt to upload or to transmit) viruses, Trojan horses, or other material, including excessive use of capital letters and spamming (continuous posting of repetitive text), that interferes with any party’s uninterrupted use and enjoyment of the Services or modifies, impairs, disrupts, alters, or interferes with the use, features, functions, operation, or maintenance of the Services.
-	Engage in any automated use of the system, such as using scripts to send comments or messages, or using any data mining, robots, or similar data gathering and extraction tools.
-	Delete the copyright or other proprietary rights notice from any Content.
-	Attempt to impersonate another user or person or use the username of another user.
-	Upload or transmit (or attempt to upload or to transmit) any material that acts as a passive or active information collection or transmission mechanism, including without limitation, clear graphics interchange formats ("gifs"), 1×1 pixels, web bugs, cookies, or other similar devices (sometimes referred to as "spyware" or "passive collection mechanisms" or "pcms").
-	Interfere with, disrupt, or create an undue burden on the Services or the networks or services connected to the Services.
-	Harass, annoy, intimidate, or threaten any of our employees or agents engaged in providing any portion of the Services to you.
-	Attempt to bypass any measures of the Services designed to prevent or restrict access to the Services, or any portion of the Services.
-	Copy or adapt the Services' software, including but not limited to Flash, PHP, HTML, JavaScript, or other code.
-	Except as permitted by applicable law, decipher, decompile, disassemble, or reverse engineer any of the software comprising or in any way making up a part of the Services.
-	Except as may be the result of standard search engine or Internet browser usage, use, launch, develop, or distribute any automated system, including without limitation, any spider, robot, cheat utility, scraper, or offline reader that accesses the Services, or use or launch any unauthorized script or other software.
-	Use a buying agent or purchasing agent to make purchases on the Services.
-	Make any unauthorized use of the Services, including collecting usernames and/or email addresses of users by electronic or other means for the purpose of sending unsolicited email, or creating user accounts by automated means or under false pretenses.
-	Use the Services as part of any effort to compete with us or otherwise use the Services and/or the Content for any revenue-generating endeavor or commercial enterprise.
-	Use the Services to advertise or offer to sell goods and services.
-	Sell or otherwise transfer your profile.
-	Use the app to provide medical advice or diagnosis to other users.
-	Intentionally submit false or misleading nutrition information.
-	Upload inappropriate, offensive, or non-food-related images.
-	Attempt to reverse engineer, decompile, or extract the app's source code.
-	Use the app if under 13 years of age.
-	Share login credentials or allow others to access your account.
-	Use automated tools, bots, or scripts to interact with the app.
+-	Systematically retrieve data or other content from the Services to create or compile, directly or indirectly, a collection, compilation, database, or directory without written permission from us.
+-	Trick, defraud, or mislead us and other users, especially in any attempt to learn sensitive account information such as user passwords.
+-	Circumvent, disable, or otherwise interfere with security-related features of the Services, including features that prevent or restrict the use or copying of any Content or enforce limitations on the use of the Services and/or the Content contained therein.
+-	Disparage, tarnish, or otherwise harm, in our opinion, us and/or the Services.
+-	Use any information obtained from the Services in order to harass, abuse, or harm another person.
+-	Make improper use of our support services or submit false reports of abuse or misconduct.
+-	Use the Services in a manner inconsistent with any applicable laws or regulations.
+-	Engage in unauthorized framing of or linking to the Services.
+-	Upload or transmit (or attempt to upload or to transmit) viruses, Trojan horses, or other material, including excessive use of capital letters and spamming (continuous posting of repetitive text), that interferes with any party’s uninterrupted use and enjoyment of the Services or modifies, impairs, disrupts, alters, or interferes with the use, features, functions, operation, or maintenance of the Services.
+-	Engage in any automated use of the system, such as using scripts to send comments or messages, or using any data mining, robots, or similar data gathering and extraction tools.
+-	Delete the copyright or other proprietary rights notice from any Content.
+-	Attempt to impersonate another user or person or use the username of another user.
+-	Upload or transmit (or attempt to upload or to transmit) any material that acts as a passive or active information collection or transmission mechanism, including without limitation, clear graphics interchange formats ("gifs"), 1×1 pixels, web bugs, cookies, or other similar devices (sometimes referred to as "spyware" or "passive collection mechanisms" or "pcms").
+-	Interfere with, disrupt, or create an undue burden on the Services or the networks or services connected to the Services.
+-	Harass, annoy, intimidate, or threaten any of our employees or agents engaged in providing any portion of the Services to you.
+-	Attempt to bypass any measures of the Services designed to prevent or restrict access to the Services, or any portion of the Services.
+-	Copy or adapt the Services' software, including but not limited to Flash, PHP, HTML, JavaScript, or other code.
+-	Except as permitted by applicable law, decipher, decompile, disassemble, or reverse engineer any of the software comprising or in any way making up a part of the Services.
+-	Except as may be the result of standard search engine or Internet browser usage, use, launch, develop, or distribute any automated system, including without limitation, any spider, robot, cheat utility, scraper, or offline reader that accesses the Services, or use or launch any unauthorized script or other software.
+-	Use a buying agent or purchasing agent to make purchases on the Services.
+-	Make any unauthorized use of the Services, including collecting usernames and/or email addresses of users by electronic or other means for the purpose of sending unsolicited email, or creating user accounts by automated means or under false pretenses.
+-	Use the Services as part of any effort to compete with us or otherwise use the Services and/or the Content for any revenue-generating endeavor or commercial enterprise.
+-	Use the Services to advertise or offer to sell goods and services.
+-	Sell or otherwise transfer your profile.
+-	Use the app to provide medical advice or diagnosis to other users.
+-	Intentionally submit false or misleading nutrition information.
+-	Upload inappropriate, offensive, or non-food-related images.
+-	Attempt to reverse engineer, decompile, or extract the app's source code.
+-	Use the app if under 13 years of age.
+-	Share login credentials or allow others to access your account.
+-	Use automated tools, bots, or scripts to interact with the app.
 
 9. USER GENERATED CONTRIBUTIONS
 The Services does not offer users to submit or post content. We may provide you with the opportunity to create, submit, post, display, transmit, perform, publish, distribute, or broadcast content and materials to us or on the Services, including but not limited to text, writings, video, audio, photographs, graphics, comments, suggestions, or personal information or other material (collectively, "Contributions"). Contributions may be viewable by other users of the Services and through third-party websites. When you create or make available any Contributions, you thereby represent and warrant that:
-	The creation, distribution, transmission, public display, or performance, and the accessing, downloading, or copying of your Contributions do not and will not infringe the proprietary rights, including but not limited to the copyright, patent, trademark, trade secret, or moral rights of any third party.
-	You are the creator and owner of or have the necessary licenses, rights, consents, releases, and permissions to use and to authorize us, the Services, and other users of the Services to use your Contributions in any manner contemplated by the Services and these Legal Terms.
-	You have the written consent, release, and/or permission of each and every identifiable individual person in your Contributions to use the name or likeness of each and every such identifiable individual person to enable inclusion and use of your Contributions in any manner contemplated by the Services and these Legal Terms.
-	Your Contributions are not false, inaccurate, or misleading.
-	Your Contributions are not unsolicited or unauthorized advertising, promotional materials, pyramid schemes, chain letters, spam, mass mailings, or other forms of solicitation.
-	Your Contributions are not obscene, lewd, lascivious, filthy, violent, harassing, libelous, slanderous, or otherwise objectionable (as determined by us).
-	Your Contributions do not ridicule, mock, disparage, intimidate, or abuse anyone.
-	Your Contributions are not used to harass or threaten (in the legal sense of those terms) any other person and to promote violence against a specific person or class of people.
-	Your Contributions do not violate any applicable law, regulation, or rule.
-	Your Contributions do not violate the privacy or publicity rights of any third party.
-	Your Contributions do not violate any applicable law concerning child pornography, or otherwise intended to protect the health or well-being of minors.
-	Your Contributions do not include any offensive comments that are connected to race, national origin, gender, sexual preference, or physical handicap.
-	Your Contributions do not otherwise violate, or link to material that violates, any provision of these Legal Terms, or any applicable law or regulation.
+-	The creation, distribution, transmission, public display, or performance, and the accessing, downloading, or copying of your Contributions do not and will not infringe the proprietary rights, including but not limited to the copyright, patent, trademark, trade secret, or moral rights of any third party.
+-	You are the creator and owner of or have the necessary licenses, rights, consents, releases, and permissions to use and to authorize us, the Services, and other users of the Services to use your Contributions in any manner contemplated by the Services and these Legal Terms.
+-	You have the written consent, release, and/or permission of each and every identifiable individual person in your Contributions to use the name or likeness of each and every such identifiable individual person to enable inclusion and use of your Contributions in any manner contemplated by the Services and these Legal Terms.
+-	Your Contributions are not false, inaccurate, or misleading.
+-	Your Contributions are not unsolicited or unauthorized advertising, promotional materials, pyramid schemes, chain letters, spam, mass mailings, or other forms of solicitation.
+-	Your Contributions are not obscene, lewd, lascivious, filthy, violent, harassing, libelous, slanderous, or otherwise objectionable (as determined by us).
+-	Your Contributions do not ridicule, mock, disparage, intimidate, or abuse anyone.
+-	Your Contributions are not used to harass or threaten (in the legal sense of those terms) any other person and to promote violence against a specific person or class of people.
+-	Your Contributions do not violate any applicable law, regulation, or rule.
+-	Your Contributions do not violate the privacy or publicity rights of any third party.
+-	Your Contributions do not violate any applicable law concerning child pornography, or otherwise intended to protect the health or well-being of minors.
+-	Your Contributions do not include any offensive comments that are connected to race, national origin, gender, sexual preference, or physical handicap.
+-	Your Contributions do not otherwise violate, or link to material that violates, any provision of these Legal Terms, or any applicable law or regulation.
 Any use of the Services in violation of the foregoing violates these Legal Terms and may result in, among other things, termination or suspension of your rights to use the Services.
 
 10. CONTRIBUTION LICENSE
@@ -358,9 +358,9 @@ Ces Conditions d'Utilisation sont fournies en anglais uniquement.
 Ang mga Tuntunin ng Serbisyo ay ibinibigay sa Ingles lamang.
 
 This Privacy Notice for Enzo Gazzolo (doing business as Veetha) ("we," "us," or "our"), describes how and why we might access, collect, store, use, and/or share ("process") your personal information when you use our services ("Services"), including when you:
-	Download and use our mobile application (Veetha), or any other application of ours that links to this Privacy Notice
-	Use Veetha. Veetha is a mobile nutrition tracking application that helps users monitor their daily food intake, track calories and macronutrients, and achieve their health and fitness goals. The app provides two main ways to log meals: 1. Barcode Scanning (Free): Users can scan product barcodes to quickly log packaged foods and retrieve nutritional information from our database. 2. AI Photo Recognition (Premium - $3.99/month): Users can take photos of their meals, and our artificial intelligence technology identifies the food items and estimates their nutritional content. Additional features include: - Personalized daily calorie and macro goals based on user profile (age, gender, height, weight, activity level, and health objectives) - Comprehensive nutrition tracking with detailed breakdowns of proteins, carbohydrates, fats, and micronutrients - Progress tracking with daily, weekly, and monthly statistics and charts - Streak tracking to maintain consistent logging habits - Dietary preference and restriction management (vegetarian, vegan, keto, allergies, etc.) - Multi-language support (English, Spanish, French, Filipino) - Meal history and logging features Veetha uses the Mifflin-St Jeor equation to calculate personalized calorie recommendations. The app is designed to provide nutritional estimates and tracking tools, not medical advice. Users with medical conditions, dietary restrictions, or health concerns should consult healthcare professionals before making dietary changes. The app is available on Android devices through the Google Play Store, with iOS support planned for future release.
-	Engage with us in other related ways, including any marketing or events
+-	Download and use our mobile application (Veetha), or any other application of ours that links to this Privacy Notice
+-	Use Veetha. Veetha is a mobile nutrition tracking application that helps users monitor their daily food intake, track calories and macronutrients, and achieve their health and fitness goals. The app provides two main ways to log meals: 1. Barcode Scanning (Free): Users can scan product barcodes to quickly log packaged foods and retrieve nutritional information from our database. 2. AI Photo Recognition (Premium - $3.99/month): Users can take photos of their meals, and our artificial intelligence technology identifies the food items and estimates their nutritional content. Additional features include: - Personalized daily calorie and macro goals based on user profile (age, gender, height, weight, activity level, and health objectives) - Comprehensive nutrition tracking with detailed breakdowns of proteins, carbohydrates, fats, and micronutrients - Progress tracking with daily, weekly, and monthly statistics and charts - Streak tracking to maintain consistent logging habits - Dietary preference and restriction management (vegetarian, vegan, keto, allergies, etc.) - Multi-language support (English, Spanish, French, Filipino) - Meal history and logging features Veetha uses the Mifflin-St Jeor equation to calculate personalized calorie recommendations. The app is designed to provide nutritional estimates and tracking tools, not medical advice. Users with medical conditions, dietary restrictions, or health concerns should consult healthcare professionals before making dietary changes. The app is available on Android devices through the Google Play Store, with iOS support planned for future release.
+-	Engage with us in other related ways, including any marketing or events
 Questions or concerns? Reading this Privacy Notice will help you understand your privacy rights and choices. We are responsible for making decisions about how your personal information is processed. If you do not agree with our policies and practices, please do not use our Services. If you still have any questions or concerns, please contact us at veetha.app@gmail.com.
 
 
@@ -413,9 +413,9 @@ In Short: We collect personal information that you provide to us.
 We collect personal information that you voluntarily provide to us when you register on the Services, express an interest in obtaining information about us or our products and Services, when you participate in activities on the Services, or otherwise when you contact us.
 
 Personal Information Provided by You. The personal information that we collect depends on the context of your interactions with us and the Services, the choices you make, and the products and features you use. The personal information we collect may include the following:
-	names
-	email addresses
-	passwords
+-	names
+-	email addresses
+-	passwords
 Sensitive Information. We do not process sensitive information.
 
 Payment Data. We may collect data necessary to process your payment if you choose to make purchases, such as your payment instrument number, and the security code associated with your payment instrument. All payment data is handled and stored by Google Play Store / Google Payments, Apple App Store / Apple Pay and RevenueCat. You may find their privacy notice link(s) here: https://payments.google.com/payments/apis-secure/u/0/get_legal_document?ldo=0&ldt=privacynotice, https://www.apple.com/legal/privacy/ and https://www.revenuecat.com/privacy.
@@ -425,8 +425,8 @@ Veetha does not directly collect, store, or process any payment card information
 Social Media Login Data. We may provide you with the option to register with us using your existing social media account details, like your Facebook, X, or other social media account. If you choose to register in this way, we will collect certain profile information about you from the social media provider, as described in the section called "HOW DO WE HANDLE YOUR SOCIAL LOGINS?" below.
 
 Application Data. If you use our application(s), we also may collect the following information if you choose to provide us with access or permission:
-	Mobile Device Access. We may request access or permission to certain features from your mobile device, including your mobile device's camera, photo library/gallery, and other features. If you wish to change our access or permissions, you may do so in your device's settings.
-	Mobile Device Data. We automatically collect device information (such as your mobile device ID, model, and manufacturer), operating system, version information and system configuration information, device and application identification numbers, browser type and version, hardware model Internet service provider and/or mobile carrier, and Internet Protocol (IP) address (or proxy server). If you are using our application(s), we may also collect information about the phone network associated with your mobile device, your mobile device’s operating system or platform, the type of mobile device you use, your mobile device’s unique device ID, and information about the features of our application(s) you accessed.
+-	Mobile Device Access. We may request access or permission to certain features from your mobile device, including your mobile device's camera, photo library/gallery, and other features. If you wish to change our access or permissions, you may do so in your device's settings.
+-	Mobile Device Data. We automatically collect device information (such as your mobile device ID, model, and manufacturer), operating system, version information and system configuration information, device and application identification numbers, browser type and version, hardware model Internet service provider and/or mobile carrier, and Internet Protocol (IP) address (or proxy server). If you are using our application(s), we may also collect information about the phone network associated with your mobile device, your mobile device’s operating system or platform, the type of mobile device you use, your mobile device’s unique device ID, and information about the features of our application(s) you accessed.
 This information is primarily needed to maintain the security and operation of our application(s), for troubleshooting, and for our internal analytics and reporting purposes.
 
 All personal information that you provide to us must be true, complete, and accurate, and you must notify us of any changes to such personal information.
@@ -436,8 +436,8 @@ In Short: Some information — such as your Internet Protocol (IP) address and/o
 We automatically collect certain information when you visit, use, or navigate the Services. This information does not reveal your specific identity (like your name or contact information) but may include device and usage information, such as your IP address, browser and device characteristics, operating system, language preferences, referring URLs, device name, country, location, information about how and when you use our Services, and other technical information. This information is primarily needed to maintain the security and operation of our Services, and for our internal analytics and reporting purposes.
 
 The information we collect includes:
-	Log and Usage Data. Log and usage data is service-related, diagnostic, usage, and performance information our servers automatically collect when you access or use our Services and which we record in log files. Depending on how you interact with us, this log data may include your IP address, device information, browser type, and settings and information about your activity in the Services (such as the date/time stamps associated with your usage, pages and files viewed, searches, and other actions you take such as which features you use), device event information (such as system activity, error reports (sometimes called "crash dumps"), and hardware settings).
-	Device Data. We collect device data such as information about your computer, phone, tablet, or other device you use to access the Services. Depending on the device used, this device data may include information such as your IP address (or proxy server), device and application identification numbers, location, browser type, hardware model, Internet service provider and/or mobile carrier, operating system, and system configuration information.
+-	Log and Usage Data. Log and usage data is service-related, diagnostic, usage, and performance information our servers automatically collect when you access or use our Services and which we record in log files. Depending on how you interact with us, this log data may include your IP address, device information, browser type, and settings and information about your activity in the Services (such as the date/time stamps associated with your usage, pages and files viewed, searches, and other actions you take such as which features you use), device event information (such as system activity, error reports (sometimes called "crash dumps"), and hardware settings).
+-	Device Data. We collect device data such as information about your computer, phone, tablet, or other device you use to access the Services. Depending on the device used, this device data may include information such as your IP address (or proxy server), device and application identification numbers, location, browser type, hardware model, Internet service provider and/or mobile carrier, operating system, and system configuration information.
 Google API
 Our use of information received from Google APIs will adhere to Google API Services User Data Policy, including the Limited Use requirements.
 
@@ -446,19 +446,19 @@ Our use of information received from Google APIs will adhere to Google API Servi
 In Short: We process your information to provide, improve, and administer our Services, communicate with you, for security and fraud prevention, and to comply with law. We process the personal information for the following purposes listed below. We may also process your information for other purposes only with your prior explicit consent.
 
 We process your personal information for a variety of reasons, depending on how you interact with our Services, including:
-	To facilitate account creation and authentication and otherwise manage user accounts. We may process your information so you can create and log in to your account, as well as keep your account in working order.
-	To deliver and facilitate delivery of services to the user. We may process your information to provide you with the requested service.
-	To respond to user inquiries/offer support to users. We may process your information to respond to your inquiries and solve any potential issues you might have with the requested service.
-	To send administrative information to you. We may process your information to send you details about our products and services, changes to our terms and policies, and other similar information.
-	To protect our Services. We may process your information as part of our efforts to keep our Services safe and secure, including fraud monitoring and prevention.
-	To identify usage trends. We may process information about how you use our Services to better understand how they are being used so we can improve them.
-	To save or protect an individual's vital interest. We may process your information when necessary to save or protect an individual’s vital interest, such as to prevent harm.
-	To calculate personalized nutrition goals. We use personal information including age, gender, height, weight, activity level, and health objectives to calculate personalized daily calorie and macronutrient goals using the Mifflin-St Jeor equation. This is the core feature of our nutrition tracking service.
-	To provide AI-powered food recognition. For premium subscribers, we use uploaded food photos along with user's dietary preferences to provide AI-powered food identification and nutrition estimation. Photos are processed to identify food items and calculate nutritional content.
-	To manage dietary restrictions and allergies. We use information about user allergies, diet types (vegetarian, vegan, keto, etc.), and dietary preferences to filter meal recommendations and ensure recipe suggestions are safe and appropriate for each user.
-	To track progress and maintain streak data. We use meal logging history and timestamps to calculate streak days, generate progress statistics, and display weekly and monthly nutrition charts. This helps users monitor their consistency and achievement of health goals.
-	To improve AI food recognition accuracy. We analyze food photos uploaded by users (in aggregate and anonymized form) to train and improve our machine learning models for food identification. This helps us provide more accurate nutrition estimates for all users. Individual photos are not shared or used for marketing purposes.
-	To analyze app performance and fix technical issues. We use Firebase Analytics and crash reporting to monitor app performance, identify bugs, diagnose technical problems, and understand which devices or operating systems experience issues. This data is used only to maintain and improve app stability.
+-	To facilitate account creation and authentication and otherwise manage user accounts. We may process your information so you can create and log in to your account, as well as keep your account in working order.
+-	To deliver and facilitate delivery of services to the user. We may process your information to provide you with the requested service.
+-	To respond to user inquiries/offer support to users. We may process your information to respond to your inquiries and solve any potential issues you might have with the requested service.
+-	To send administrative information to you. We may process your information to send you details about our products and services, changes to our terms and policies, and other similar information.
+-	To protect our Services. We may process your information as part of our efforts to keep our Services safe and secure, including fraud monitoring and prevention.
+-	To identify usage trends. We may process information about how you use our Services to better understand how they are being used so we can improve them.
+-	To save or protect an individual's vital interest. We may process your information when necessary to save or protect an individual’s vital interest, such as to prevent harm.
+-	To calculate personalized nutrition goals. We use personal information including age, gender, height, weight, activity level, and health objectives to calculate personalized daily calorie and macronutrient goals using the Mifflin-St Jeor equation. This is the core feature of our nutrition tracking service.
+-	To provide AI-powered food recognition. For premium subscribers, we use uploaded food photos along with user's dietary preferences to provide AI-powered food identification and nutrition estimation. Photos are processed to identify food items and calculate nutritional content.
+-	To manage dietary restrictions and allergies. We use information about user allergies, diet types (vegetarian, vegan, keto, etc.), and dietary preferences to filter meal recommendations and ensure recipe suggestions are safe and appropriate for each user.
+-	To track progress and maintain streak data. We use meal logging history and timestamps to calculate streak days, generate progress statistics, and display weekly and monthly nutrition charts. This helps users monitor their consistency and achievement of health goals.
+-	To improve AI food recognition accuracy. We analyze food photos uploaded by users (in aggregate and anonymized form) to train and improve our machine learning models for food identification. This helps us provide more accurate nutrition estimates for all users. Individual photos are not shared or used for marketing purposes.
+-	To analyze app performance and fix technical issues. We use Firebase Analytics and crash reporting to monitor app performance, identify bugs, diagnose technical problems, and understand which devices or operating systems experience issues. This data is used only to maintain and improve app stability.
 
 3. WHAT LEGAL BASES DO WE RELY ON TO PROCESS YOUR INFORMATION?
 In Short: We only process your personal information when we believe it is necessary and we have a valid legal reason (i.e., legal basis) to do so under applicable law, like with your consent, to comply with laws, to provide you with services to enter into or fulfill our contractual obligations, to protect your rights, or to fulfill our legitimate business interests.
@@ -466,34 +466,34 @@ In Short: We only process your personal information when we believe it is necess
 If you are located in the EU or UK, this section applies to you.
 
 The General Data Protection Regulation (GDPR) and UK GDPR require us to explain the valid legal bases we rely on in order to process your personal information. As such, we may rely on the following legal bases to process your personal information:
-	Consent. We may process your information if you have given us permission (i.e., consent) to use your personal information for a specific purpose. You can withdraw your consent at any time. Learn more about withdrawing your consent.
-	Performance of a Contract. We may process your personal information when we believe it is necessary to fulfill our contractual obligations to you, including providing our Services or at your request prior to entering into a contract with you.
-	Legitimate Interests. We may process your information when we believe it is reasonably necessary to achieve our legitimate business interests and those interests do not outweigh your interests and fundamental rights and freedoms. For example, we may process your personal information for some of the purposes described in order to:
-	Analyze how our Services are used so we can improve them to engage and retain users
-	Diagnose problems and/or prevent fraudulent activities
-	In order to continuously improve the accuracy and reliability of our AI-powered food recognition feature, ensuring users receive better nutrition estimates over time.
-	In order to ensure the app functions properly for all users across different devices and operating systems, and to quickly identify and resolve technical problems that affect user experience.
-	Legal Obligations. We may process your information where we believe it is necessary for compliance with our legal obligations, such as to cooperate with a law enforcement body or regulatory agency, exercise or defend our legal rights, or disclose your information as evidence in litigation in which we are involved.
+-	Consent. We may process your information if you have given us permission (i.e., consent) to use your personal information for a specific purpose. You can withdraw your consent at any time. Learn more about withdrawing your consent.
+-	Performance of a Contract. We may process your personal information when we believe it is necessary to fulfill our contractual obligations to you, including providing our Services or at your request prior to entering into a contract with you.
+-	Legitimate Interests. We may process your information when we believe it is reasonably necessary to achieve our legitimate business interests and those interests do not outweigh your interests and fundamental rights and freedoms. For example, we may process your personal information for some of the purposes described in order to:
+-	Analyze how our Services are used so we can improve them to engage and retain users
+-	Diagnose problems and/or prevent fraudulent activities
+-	In order to continuously improve the accuracy and reliability of our AI-powered food recognition feature, ensuring users receive better nutrition estimates over time.
+-	In order to ensure the app functions properly for all users across different devices and operating systems, and to quickly identify and resolve technical problems that affect user experience.
+-	Legal Obligations. We may process your information where we believe it is necessary for compliance with our legal obligations, such as to cooperate with a law enforcement body or regulatory agency, exercise or defend our legal rights, or disclose your information as evidence in litigation in which we are involved.
 
-	Vital Interests. We may process your information where we believe it is necessary to protect your vital interests or the vital interests of a third party, such as situations involving potential threats to the safety of any person.
+-	Vital Interests. We may process your information where we believe it is necessary to protect your vital interests or the vital interests of a third party, such as situations involving potential threats to the safety of any person.
 
 If you are located in Canada, this section applies to you.
 
 We may process your information if you have given us specific permission (i.e., express consent) to use your personal information for a specific purpose, or in situations where your permission can be inferred (i.e., implied consent). You can withdraw your consent at any time.
 
 In some exceptional cases, we may be legally permitted under applicable law to process your information without your consent, including, for example:
-	If collection is clearly in the interests of an individual and consent cannot be obtained in a timely way
-	For investigations and fraud detection and prevention
-	For business transactions provided certain conditions are met
-	If it is contained in a witness statement and the collection is necessary to assess, process, or settle an insurance claim
-	For identifying injured, ill, or deceased persons and communicating with next of kin
-	If we have reasonable grounds to believe an individual has been, is, or may be victim of financial abuse
-	If it is reasonable to expect collection and use with consent would compromise the availability or the accuracy of the information and the collection is reasonable for purposes related to investigating a breach of an agreement or a contravention of the laws of Canada or a province
-	If disclosure is required to comply with a subpoena, warrant, court order, or rules of the court relating to the production of records
-	If it was produced by an individual in the course of their employment, business, or profession and the collection is consistent with the purposes for which the information was produced
-	If the collection is solely for journalistic, artistic, or literary purposes
-	If the information is publicly available and is specified by the regulations
-	We may disclose de-identified information for approved research or statistics projects, subject to ethics oversight and confidentiality commitments
+-	If collection is clearly in the interests of an individual and consent cannot be obtained in a timely way
+-	For investigations and fraud detection and prevention
+-	For business transactions provided certain conditions are met
+-	If it is contained in a witness statement and the collection is necessary to assess, process, or settle an insurance claim
+-	For identifying injured, ill, or deceased persons and communicating with next of kin
+-	If we have reasonable grounds to believe an individual has been, is, or may be victim of financial abuse
+-	If it is reasonable to expect collection and use with consent would compromise the availability or the accuracy of the information and the collection is reasonable for purposes related to investigating a breach of an agreement or a contravention of the laws of Canada or a province
+-	If disclosure is required to comply with a subpoena, warrant, court order, or rules of the court relating to the production of records
+-	If it was produced by an individual in the course of their employment, business, or profession and the collection is consistent with the purposes for which the information was produced
+-	If the collection is solely for journalistic, artistic, or literary purposes
+-	If the information is publicly available and is specified by the regulations
+-	We may disclose de-identified information for approved research or statistics projects, subject to ethics oversight and confidentiality commitments
 
 4. WHEN AND WITH WHOM DO WE SHARE YOUR PERSONAL INFORMATION?
 In Short: We may share information in specific situations described in this section and/or with the following third parties.
@@ -501,33 +501,33 @@ In Short: We may share information in specific situations described in this sect
 Vendors, Consultants, and Other Third-Party Service Providers. We may share your data with third-party vendors, service providers, contractors, or agents ("third parties") who perform services for us or on our behalf and require access to such information to do that work. We have contracts in place with our third parties, which are designed to help safeguard your personal information. This means that they cannot do anything with your personal information unless we have instructed them to do it. They will also not share your personal information with any organization apart from us. They also commit to protect the data they hold on our behalf and to retain it for the period we instruct.
 
 The third parties we may share personal information with are as follows:
-	Allow Users to Connect to Their Third-Party Accounts
+-	Allow Users to Connect to Their Third-Party Accounts
 Facebook account and Google account
-	Cloud Computing Services
+-	Cloud Computing Services
 Google Cloud Platform
-	Functionality and Infrastructure Optimization
+-	Functionality and Infrastructure Optimization
 Firebase Hosting and Cloud Firestore
-	Invoice and Billing
+-	Invoice and Billing
 Apple Pay and Google Wallet
-	User Account Registration and Authentication
+-	User Account Registration and Authentication
 Facebook Login and Google Sign-In
-	Web and Mobile Analytics
+-	Web and Mobile Analytics
 Google Analytics for Firebase
-	Website Performance Monitoring
+-	Website Performance Monitoring
 Firebase Crash Reporting
-	Website Testing
+-	Website Testing
 Google Play Console and TestFlight
-	Subscription Management
+-	Subscription Management
 RevenueCat - Manages premium subscriptions and in-app purchase processing
-	Database and Backend Services
+-	Database and Backend Services
 Supabase - Cloud database hosting, user authentication, and data storage (US East - Ohio region)
-	Recipe and Meal Recommendations API
+-	Recipe and Meal Recommendations API
 Spoonacular - Provides recipe data and meal recommendations based on user dietary preferences (future feature)
-	AI-Powered Food Recognition
+-	AI-Powered Food Recognition
 Machine learning model for identifying food items from photos and estimating nutritional content (Premium feature)
 
 We also may need to share your personal information in the following situations:
-	Business Transfers. We may share or transfer your information in connection with, or during negotiations of, any merger, sale of company assets, financing, or acquisition of all or a portion of our business to another company.
+-	Business Transfers. We may share or transfer your information in connection with, or during negotiations of, any merger, sale of company assets, financing, or acquisition of all or a portion of our business to another company.
 
 5. DO WE USE COOKIES AND OTHER TRACKING TECHNOLOGIES?
 In Short: We may use cookies and other tracking technologies to collect and store your information.
@@ -554,7 +554,7 @@ We provide the AI Products through third-party service providers ("AI Service Pr
 Our AI Products
 
 Our AI Products are designed for the following functions:
-	Image analysis
+-	Image analysis
 
 How We Process Your Data Using AI
 
@@ -563,11 +563,11 @@ All personal information processed using our AI Products is handled in line with
 How to Opt Out
 
 We believe in giving you the power to decide how your data is used. To opt out, you can:
-	Contact us using the contact information provided
-	Log in to your account settings and update your user account
-	Log in to your account settings and update your user account
-	Contact us using the contact information provided
-	Veetha offers AI-powered photo food recognition in both free and premium tiers: FREE USERS: Limited to 5 photo scans per day. Users can opt out by using the barcode scanning feature instead of taking photos. PREMIUM USERS ($3.99/month or $39.99/year): Increased limit of 50 photo scans per day. Users can opt out by canceling their premium subscription through their app store settings (Google Play Store or Apple App Store), or by using barcode scanning instead. Photos uploaded by users are analyzed by Clarifai's food recognition API and may be used in aggregate (anonymized) form to train and improve our custom food recognition database. Users can delete their photos at any time through the app.
+-	Contact us using the contact information provided
+-	Log in to your account settings and update your user account
+-	Log in to your account settings and update your user account
+-	Contact us using the contact information provided
+-	Veetha offers AI-powered photo food recognition in both free and premium tiers: FREE USERS: Limited to 5 photo scans per day. Users can opt out by using the barcode scanning feature instead of taking photos. PREMIUM USERS ($3.99/month or $39.99/year): Increased limit of 50 photo scans per day. Users can opt out by canceling their premium subscription through their app store settings (Google Play Store or Apple App Store), or by using barcode scanning instead. Photos uploaded by users are analyzed by Clarifai's food recognition API and may be used in aggregate (anonymized) form to train and improve our custom food recognition database. Users can delete their photos at any time through the app.
 
 7. HOW DO WE HANDLE YOUR SOCIAL LOGINS?
 In Short: If you choose to register or log in to our Services using a social media account, we may have access to certain information about you.
@@ -620,10 +620,10 @@ Withdrawing your consent: If we are relying on your consent to process your pers
 However, please note that this will not affect the lawfulness of the processing before its withdrawal nor, when applicable law allows, will it affect the processing of your personal information conducted in reliance on lawful processing grounds other than consent.
 Account Information
 If you would at any time like to review or change the information in your account or terminate your account, you can:
-	Log in to your account settings and update your user account.
-	Contact us using the contact information provided.
-	To update your account: Open the Veetha app, navigate to the Profile screen, and tap "Edit Profile" to modify your personal information, goals, or dietary preferences.
-	To delete your account: Open the Veetha app, go to the Profile screen, scroll to the "Legal" section, and tap "Delete Account." This will permanently remove all your data including meal logs, photos, and profile information within 30 days.
+-	Log in to your account settings and update your user account.
+-	Contact us using the contact information provided.
+-	To update your account: Open the Veetha app, navigate to the Profile screen, and tap "Edit Profile" to modify your personal information, goals, or dietary preferences.
+-	To delete your account: Open the Veetha app, go to the Profile screen, scroll to the "Legal" section, and tap "Delete Account." This will permanently remove all your data including meal logs, photos, and profile information within 30 days.
 Upon your request to terminate your account, we will deactivate or delete your account and information from our active databases. However, we may retain some information in our files to prevent fraud, troubleshoot problems, assist with any investigations, enforce our legal terms and/or comply with applicable legal requirements.
 
 If you have questions or comments about your privacy rights, you may email us at veetha.app@gmail.com.
@@ -677,17 +677,17 @@ NO
 
 
 We may also collect other personal information outside of these categories through instances where you interact with us in person, online, or by phone or mail in the context of:
-	Receiving help through our customer support channels;
-	Participation in customer surveys or contests; and
-	Facilitation in the delivery of our Services and to respond to your inquiries.
+-	Receiving help through our customer support channels;
+-	Participation in customer surveys or contests; and
+-	Facilitation in the delivery of our Services and to respond to your inquiries.
 We will use and retain the collected personal information as needed to provide the Services or for:
-	Category A - As long as the user has an account with us
-	Category B - As long as the user has an account with us
-	Category C - As long as the user has an account with us
-	Category D - As long as the user has an account with us
-	Category F - As long as the user has an account with us
-	Category H - As long as the user has an account with us
-	Category K - As long as the user has an account with us
+-	Category A - As long as the user has an account with us
+-	Category B - As long as the user has an account with us
+-	Category C - As long as the user has an account with us
+-	Category D - As long as the user has an account with us
+-	Category F - As long as the user has an account with us
+-	Category H - As long as the user has an account with us
+-	Category K - As long as the user has an account with us
 Sources of Personal Information
 Learn more about the sources of personal information we collect in "WHAT INFORMATION DO WE COLLECT?"
 How We Use and Share Personal Information
@@ -700,31 +700,31 @@ We may disclose your personal information with our service providers pursuant to
 We may use your personal information for our own business purposes, such as for undertaking internal research for technological development and demonstration. This is not considered to be "selling" of your personal information.
 
 We have not sold or shared any personal information to third parties for a business or commercial purpose in the preceding twelve (12) months. We have disclosed the following categories of personal information to third parties for a business or commercial purpose in the preceding twelve (12) months:
-	Category A. Identifiers
-	Category B. Personal information as defined in the California Customer Records law
-	Category C. Characteristics of protected classifications under state or federal law
-	Category D. Commercial information
-	Category F. Internet or other electronic network activity information
-	Category H. Audio, electronic, visual, and similar information
-	Category K. Inferences drawn from collected personal information
+-	Category A. Identifiers
+-	Category B. Personal information as defined in the California Customer Records law
+-	Category C. Characteristics of protected classifications under state or federal law
+-	Category D. Commercial information
+-	Category F. Internet or other electronic network activity information
+-	Category H. Audio, electronic, visual, and similar information
+-	Category K. Inferences drawn from collected personal information
 The categories of third parties to whom we disclosed personal information for a business or commercial purpose can be found under "WHEN AND WITH WHOM DO WE SHARE YOUR PERSONAL INFORMATION?"
 Your Rights
 You have rights under certain US state data protection laws. However, these rights are not absolute, and in certain cases, we may decline your request as permitted by law. These rights include:
-	Right to know whether or not we are processing your personal data
-	Right to access your personal data
-	Right to correct inaccuracies in your personal data
-	Right to request the deletion of your personal data
-	Right to obtain a copy of the personal data you previously shared with us
-	Right to non-discrimination for exercising your rights
-	Right to opt out of the processing of your personal data if it is used for targeted advertising (or sharing as defined under California’s privacy law), the sale of personal data, or profiling in furtherance of decisions that produce legal or similarly significant effects ("profiling")
+-	Right to know whether or not we are processing your personal data
+-	Right to access your personal data
+-	Right to correct inaccuracies in your personal data
+-	Right to request the deletion of your personal data
+-	Right to obtain a copy of the personal data you previously shared with us
+-	Right to non-discrimination for exercising your rights
+-	Right to opt out of the processing of your personal data if it is used for targeted advertising (or sharing as defined under California’s privacy law), the sale of personal data, or profiling in furtherance of decisions that produce legal or similarly significant effects ("profiling")
 Depending upon the state where you live, you may also have the following rights:
-	Right to access the categories of personal data being processed (as permitted by applicable law, including the privacy law in Minnesota)
-	Right to obtain a list of the categories of third parties to which we have disclosed personal data (as permitted by applicable law, including the privacy law in California, Delaware, and Maryland)
-	Right to obtain a list of specific third parties to which we have disclosed personal data (as permitted by applicable law, including the privacy law in Minnesota and Oregon)
-	Right to obtain a list of third parties to which we have sold personal data (as permitted by applicable law, including the privacy law in Connecticut)
-	Right to review, understand, question, and depending on where you live, correct how personal data has been profiled (as permitted by applicable law, including the privacy law in Connecticut and Minnesota)
-	Right to limit use and disclosure of sensitive personal data (as permitted by applicable law, including the privacy law in California)
-	Right to opt out of the collection of sensitive data and personal data collected through the operation of a voice or facial recognition feature (as permitted by applicable law, including the privacy law in Florida)
+-	Right to access the categories of personal data being processed (as permitted by applicable law, including the privacy law in Minnesota)
+-	Right to obtain a list of the categories of third parties to which we have disclosed personal data (as permitted by applicable law, including the privacy law in California, Delaware, and Maryland)
+-	Right to obtain a list of specific third parties to which we have disclosed personal data (as permitted by applicable law, including the privacy law in Minnesota and Oregon)
+-	Right to obtain a list of third parties to which we have sold personal data (as permitted by applicable law, including the privacy law in Connecticut)
+-	Right to review, understand, question, and depending on where you live, correct how personal data has been profiled (as permitted by applicable law, including the privacy law in Connecticut and Minnesota)
+-	Right to limit use and disclosure of sensitive personal data (as permitted by applicable law, including the privacy law in California)
+-	Right to opt out of the collection of sensitive data and personal data collected through the operation of a voice or facial recognition feature (as permitted by applicable law, including the privacy law in Florida)
 How to Exercise Your Rights
 To exercise these rights, you can contact us by submitting a data subject access request, by emailing us at veetha.app@gmail.com, or by referring to the contact details at the bottom of this document.
 

@@ -165,16 +165,19 @@ export default function EditProfileScreen({ navigation }) {
       // Refresh profile context
       await refreshProfile();
 
-      Alert.alert(
-        t('editProfile.success'),
-        t('editProfile.profileUpdated'),
-        [
-          {
-            text: t('editProfile.ok'),
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
+      // Wait for language to update, then show message in new language
+      setTimeout(() => {
+        Alert.alert(
+          t('editProfile.success'),
+          t('editProfile.profileUpdated'),
+          [
+            {
+              text: t('editProfile.ok'),
+              onPress: () => navigation.goBack(),
+            },
+          ]
+        );
+      }, 200);
     } catch (error) {
       console.error('Error saving profile:', error);
       Alert.alert(t('editProfile.error'), t('editProfile.failedToSave'));

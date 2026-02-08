@@ -16,6 +16,46 @@ export default function ManualEntryScreen({ navigation }) {
   const [saving, setSaving] = useState(false);
   const [sugar, setSugar] = useState('');
   const [sodium, setSodium] = useState('');
+  const [searchingNutrition, setSearchingNutrition] = useState(false);
+
+  const handleSearchNutrition = async () => {
+    if (!mealName.trim()) {
+      Alert.alert('Enter a food name first', 'Please type a food name before searching');
+      return;
+    }
+
+    setSearchingNutrition(true);
+
+    try {
+      // Use your existing searchFood function from foodDatabase.js
+      const nutritionData = await searchFood(mealName.trim());
+
+      if (nutritionData) {
+        // Auto-fill the form with found nutrition
+        setCalories(nutritionData.nutriments['energy-kcal']?.toString() || '');
+        setProtein(nutritionData.nutriments.proteins?.toString() || '');
+        setCarbs(nutritionData.nutriments.carbohydrates?.toString() || '');
+        setFat(nutritionData.nutriments.fat?.toString() || '');
+        setSugar(nutritionData.nutriments.sugar?.toString() || '');
+        setSodium(nutritionData.nutriments.sodium?.toString() || '');
+
+        Alert.alert(
+          'Nutrition Found! ✅',
+          `We found nutrition info for "${nutritionData.name}". You can edit it if needed.`
+        );
+      } else {
+        Alert.alert(
+          'Not Found',
+          'We couldn\'t find nutrition info for this food. Please enter it manually or try a different search term.'
+        );
+      }
+    } catch (error) {
+      console.error('Error searching nutrition:', error);
+      Alert.alert('Error', 'Failed to search for nutrition info');
+    } finally {
+      setSearchingNutrition(false);
+    }
+  };
 
   const handleSave = async () => {
     // Validation
@@ -107,6 +147,16 @@ export default function ManualEntryScreen({ navigation }) {
                 onChangeText={setMealName}
               />
             </View>
+
+            <TouchableOpacity
+              style={[styles.searchButton, { backgroundColor: theme.primary }]}
+              onPress={handleSearchNutrition}
+              disabled={searchingNutrition || !mealName.trim()}
+            >
+              <Text style={styles.searchButtonText}>
+                {searchingNutrition ? '🔍 Searching...' : '🔍 Find Nutrition Info'}
+              </Text>
+            </TouchableOpacity>
 
             {/* Serving Size */}
             <View style={styles.inputGroup}>
@@ -290,5 +340,16 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     fontSize: 16,
+  },
+  searchButton: {
+    marginVertical: 15,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  searchButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

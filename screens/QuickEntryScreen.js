@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Location from 'expo-location';
 import { supabase } from '../utils/supabase';
 import { useUser } from '../utils/UserContext';
 import { useTheme } from '../utils/ThemeContext';
 import { useLanguage } from '../utils/LanguageContext';
+import { getSuggestionsForMealTime, LOCAL_FOODS, DEFAULT_FOODS } from '../utils/localFoods';
 
 export default function QuickEntryScreen({ navigation }) {
   const { refreshMeals } = useUser();
@@ -18,9 +20,99 @@ export default function QuickEntryScreen({ navigation }) {
   const [carbs, setCarbs] = useState('');
   const [fat, setFat] = useState('');
   const [saving, setSaving] = useState(false);
+  
+  // NEW: Quick suggestions
+  const [quickSuggestions, setQuickSuggestions] = useState([]);
+  const [userCountry, setUserCountry] = useState(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Load suggestions on mount
+  useEffect(() => {
+    loadQuickSuggestions();
+  }, []);
+
+  const loadQuickSuggestions = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      
+      if (status === 'granted') {
+        const location = await Location.getCurrentPositionAsync({});
+        const [geocode] = await Location.reverseGeocodeAsync({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+        
+        const countryCode = geocode.isoCountryCode;
+        setUserCountry(countryCode);
+        
+        const { suggestions, mealType, country } = getSuggestionsForMealTime(countryCode);
+        setQuickSuggestions(suggestions);
+        
+        console.log(`🌍 Showing ${mealType} suggestions for ${country}`);
+      } else {
+        // Use default suggestions
+        const hour = new Date().getHours();
+        const mealType = hour < 11 ? 'breakfast' : hour < 16 ? 'lunch' : 'dinner';
+        setQuickSuggestions(DEFAULT_FOODS[mealType] || []);
+      }
+    } catch (error) {
+      console.error('Error loading suggestions:', error);
+    }
+  };
+
+  const handleQuickLog = async (food) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Create product if doesn't exist
+      const { data: existingProduct } = await supabase
+        .from('food_database')
+        .select('id')
+        .eq('name', food.name)
+        .maybeSingle();
+
+      let productId;
+
+      if (existingProduct) {
+        productId = existingProduct.id;
+      } else {
+        const { data: newProduct } = await supabase
+          .from('food_database')
+          .insert({
+            name: food.name,
+            calories: food.calories,
+            protein: food.protein,
+            carbs: food.carbs,
+            fat: food.fat,
+            source: 'local_suggestion',
+          })
+          .select('id')
+          .single();
+        
+        productId = newProduct.id;
+      }
+
+      // Log meal
+      await supabase.from('meals').insert({
+        user_id: user.id,
+        product_id: productId,
+        serving_grams: 100,
+      });
+
+      await refreshMeals();
+      
+      Alert.alert('Logged! ✅', `${food.emoji} ${food.name} added`, [
+        { text: 'OK', onPress: () => navigation.navigate('Home') }
+      ]);
+      
+    } catch (error) {
+      console.error('Error quick logging:', error);
+      Alert.alert('Error', 'Failed to log meal');
+    }
+  };
 
   const handleSave = async () => {
-    // Validation
     if (!mealName.trim()) {
       Alert.alert('Missing Info', 'Please enter a meal name');
       return;
@@ -35,29 +127,42 @@ export default function QuickEntryScreen({ navigation }) {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        Alert.alert('Error', 'Please log in to save meals');
+        Alert.alert('Error', 'Please log in');
         navigation.navigate('Login');
         return;
       }
 
-      // Save to database
-      const { error } = await supabase.from('meals').insert({
+      // Create product in food_database
+      const { data: newProduct, error: productError } = await supabase
+        .from('food_database')
+        .insert({
+          name: mealName.trim(),
+          calories: parseFloat(calories),
+          protein: parseFloat(protein) || 0,
+          carbs: parseFloat(carbs) || 0,
+          fat: parseFloat(fat) || 0,
+          fiber: 0,
+          sugar: 0,
+          sodium: 0,
+          source: 'manual_entry',
+          added_by_user_id: user.id,
+          serving_unit: 'g',
+        })
+        .select('id')
+        .single();
+
+      if (productError) throw productError;
+
+      // Log meal with product_id
+      const { error: mealError } = await supabase.from('meals').insert({
         user_id: user.id,
-        product_name: mealName.trim(),
+        product_id: newProduct.id,
         serving_grams: parseFloat(servingGrams) || 100,
-        calories: parseFloat(calories) || 0,
-        protein: parseFloat(protein) || 0,
-        carbs: parseFloat(carbs) || 0,
-        fat: parseFloat(fat) || 0,
-        fiber: 0,
-        sugar: 0,
-        sodium: 0,
-        image_url: null,
+        serving_unit: 'g',
       });
 
-      if (error) throw error;
+      if (mealError) throw mealError;
 
-      // Refresh meals list
       await refreshMeals();
 
       Alert.alert('Success! ✅', 'Meal logged successfully', [
@@ -87,10 +192,55 @@ export default function QuickEntryScreen({ navigation }) {
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
+        {/* Quick Suggestions Dropdown */}
+        {quickSuggestions.length > 0 && (
+          <View style={[styles.suggestionsCard, { backgroundColor: theme.cardBackground }]}>
+            <TouchableOpacity 
+              style={styles.suggestionsHeader}
+              onPress={() => setShowSuggestions(!showSuggestions)}
+            >
+              <View>
+                <Text style={[styles.suggestionsTitle, { color: theme.text }]}>
+                  ⚡ Quick Add
+                </Text>
+                <Text style={[styles.suggestionsSubtitle, { color: theme.textSecondary }]}>
+                  {userCountry ? `Popular in ${LOCAL_FOODS[userCountry]?.name || 'your area'}` : 'Common foods'}
+                </Text>
+              </View>
+              <Text style={[styles.dropdownArrow, { color: theme.text }]}>
+                {showSuggestions ? '▲' : '▼'}
+              </Text>
+            </TouchableOpacity>
+
+            {showSuggestions && (
+              <View style={styles.suggestionsList}>
+                {quickSuggestions.map((food, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={[styles.suggestionItem, { borderBottomColor: theme.border }]}
+                    onPress={() => handleQuickLog(food)}
+                  >
+                    <Text style={styles.suggestionEmoji}>{food.emoji}</Text>
+                    <View style={styles.suggestionInfo}>
+                      <Text style={[styles.suggestionName, { color: theme.text }]}>
+                        {food.name}
+                      </Text>
+                      <Text style={[styles.suggestionCals, { color: theme.textSecondary }]}>
+                        {food.calories} kcal • {food.protein}g protein
+                      </Text>
+                    </View>
+                    <Text style={[styles.addButton, { color: theme.primary }]}>+ Add</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Manual Entry Form */}
         <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Meal Details</Text>
 
-          {/* Meal Name */}
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: theme.textSecondary }]}>Meal Name *</Text>
             <TextInput
@@ -106,7 +256,6 @@ export default function QuickEntryScreen({ navigation }) {
             />
           </View>
 
-          {/* Serving Size */}
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: theme.textSecondary }]}>Serving Size (grams)</Text>
             <TextInput
@@ -123,7 +272,6 @@ export default function QuickEntryScreen({ navigation }) {
             />
           </View>
 
-          {/* Calories */}
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: theme.textSecondary }]}>Calories (kcal) *</Text>
             <TextInput
@@ -142,7 +290,6 @@ export default function QuickEntryScreen({ navigation }) {
 
           <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 20 }]}>Macros (Optional)</Text>
 
-          {/* Protein */}
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: theme.textSecondary }]}>Protein (g)</Text>
             <TextInput
@@ -159,7 +306,6 @@ export default function QuickEntryScreen({ navigation }) {
             />
           </View>
 
-          {/* Carbs */}
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: theme.textSecondary }]}>Carbs (g)</Text>
             <TextInput
@@ -176,7 +322,6 @@ export default function QuickEntryScreen({ navigation }) {
             />
           </View>
 
-          {/* Fat */}
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: theme.textSecondary }]}>Fat (g)</Text>
             <TextInput
@@ -193,7 +338,6 @@ export default function QuickEntryScreen({ navigation }) {
             />
           </View>
 
-          {/* Save Button */}
           <TouchableOpacity 
             style={[styles.saveButton, { backgroundColor: theme.primary }, saving && { opacity: 0.6 }]}
             onPress={handleSave}
@@ -204,9 +348,8 @@ export default function QuickEntryScreen({ navigation }) {
             </Text>
           </TouchableOpacity>
 
-          {/* Hint */}
           <Text style={[styles.hint, { color: theme.textTertiary }]}>
-            💡 Tip: You only need to enter meal name and calories. Macros are optional!
+            💡 Tip: Use Quick Add for common foods, or enter custom meals below
           </Text>
         </View>
       </ScrollView>
@@ -244,6 +387,56 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
+  },
+  suggestionsCard: {
+    borderRadius: 16,
+    padding: 15,
+    marginBottom: 20,
+  },
+  suggestionsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  suggestionsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  suggestionsSubtitle: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  dropdownArrow: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  suggestionsList: {
+    marginTop: 15,
+  },
+  suggestionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  suggestionEmoji: {
+    fontSize: 28,
+    marginRight: 12,
+  },
+  suggestionInfo: {
+    flex: 1,
+  },
+  suggestionName: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  suggestionCals: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  addButton: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   card: {
     borderRadius: 16,

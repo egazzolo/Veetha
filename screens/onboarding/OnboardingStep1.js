@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useCameraPermissions } from 'expo-camera';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -7,12 +8,20 @@ import { useLanguage } from '../../utils/LanguageContext';
 
 //*** GENDER AND DOB SCREEN ***
 export default function OnboardingStep1({ navigation }) {
+  const [permission, requestPermission] = useCameraPermissions();
   const { updateOnboardingData } = useOnboarding();
   const [gender, setGender] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [error, setError] = useState('');
   const { t } = useLanguage();
+
+  useEffect(() => {
+    // Request camera permission when screen loads
+    if (!permission?.granted) {
+      requestPermission();
+    }
+  }, []);
 
   const calculateAge = (dateOfBirth) => {
     if (!dateOfBirth) return null;

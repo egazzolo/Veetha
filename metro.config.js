@@ -9,4 +9,6 @@ config.resolver.assetExts.push(
   'avi'
 );
 
+config.resolver.sourceExts.push('ts', 'tsx'); 
+
 module.exports = config;

@@ -1,10 +1,10 @@
+//*** HEIGHT AND WEIGHT SCREEN ***
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useOnboarding } from '../../utils/OnboardingContext';
 import { useLanguage } from '../../utils/LanguageContext';
 
-//*** HEIGHT AND WEIGHT SCREEN ***
 export default function OnboardingStep2({ navigation }) {
   const { updateOnboardingData } = useOnboarding();
   const [unit, setUnit] = useState('imperial'); // 'imperial' or 'metric'
@@ -139,6 +139,7 @@ export default function OnboardingStep2({ navigation }) {
                     <TextInput
                       style={styles.input}
                       placeholder="5"
+                      placeholderTextColor="#999" 
                       value={heightFeet}
                       onChangeText={setHeightFeet}
                       keyboardType="number-pad"
@@ -150,6 +151,7 @@ export default function OnboardingStep2({ navigation }) {
                     <TextInput
                       style={styles.input}
                       placeholder="7"
+                      placeholderTextColor="#999" 
                       value={heightInches}
                       onChangeText={setHeightInches}
                       keyboardType="number-pad"
@@ -163,6 +165,7 @@ export default function OnboardingStep2({ navigation }) {
                   <TextInput
                     style={styles.input}
                     placeholder="170"
+                    placeholderTextColor="#999" 
                     value={heightCm}
                     onChangeText={setHeightCm}
                     keyboardType="number-pad"
@@ -180,6 +183,7 @@ export default function OnboardingStep2({ navigation }) {
                 <TextInput
                   style={styles.input}
                   placeholder={unit === 'imperial' ? '165' : '75'}
+                  placeholderTextColor="#999" 
                   value={weight}
                   onChangeText={setWeight}
                   keyboardType="decimal-pad"
@@ -311,6 +315,7 @@ const styles = StyleSheet.create({
     padding: 15,
     fontSize: 16,
     paddingRight: 50,
+    color: '#333',
   },
   unitLabel: {
     position: 'absolute',

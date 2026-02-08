@@ -6,7 +6,7 @@ const USDA_API_BASE = 'https://api.nal.usda.gov/fdc/v1';
 // ⚠️ IMPORTANT: USDA now requires API key (even DEMO_KEY works)
 // Get FREE key at: https://fdc.nal.usda.gov/api-key-signup.html
 // Takes 2 minutes - just enter your email!
-const USDA_API_KEY = 'xxf8tDI78gYGFPkmn6ORw5KNQ0gzgfbH9ar7X3aB'; // Replace with your key OR use 'DEMO_KEY' (30 requests/hour)
+const USDA_API_KEY = 'xxf8tDI78gYGFPkmn6ORw5KNQ0gzgfbH9ar7X3aB'; // 30 requests/hour
 
 /**
  * Search for food in USDA database
@@ -15,6 +15,12 @@ const USDA_API_KEY = 'xxf8tDI78gYGFPkmn6ORw5KNQ0gzgfbH9ar7X3aB'; // Replace with
  * @returns {Promise<Array>} - Array of food items with nutrition data
  */
 export async function searchUSDAFood(query, pageSize = 5) {
+  const q = query?.trim();
+  if (!q) {
+    console.log('⚠️ Skipping USDA search: empty query');
+    return [];
+  }
+
   try {
     console.log('🔍 Searching USDA for:', query);
     
@@ -25,7 +31,7 @@ export async function searchUSDAFood(query, pageSize = 5) {
     
     // Build API URL with API key
     const params = new URLSearchParams({
-      query: query,
+      query: q,
       pageSize: pageSize.toString(),
       dataType: 'Survey (FNDDS)', // Prioritize survey foods (most complete data)
       api_key: USDA_API_KEY, // ✅ NOW REQUIRED
@@ -143,8 +149,13 @@ export async function getBestUSDAMatch(query) {
     const scoredResults = results.map(food => {
       let score = 0;
       
-      // Prefer foods with complete nutrition data
+      // REQUIRE at least calories - skip foods with no nutrition data
       const nutrients = food.nutrients;
+      if (nutrients['energy-kcal'] === 0) {
+        return { ...food, score: -1000 }; // Heavily penalize zero-calorie results
+      }
+      
+      // Prefer foods with complete nutrition data
       if (nutrients['energy-kcal'] > 0) score += 10;
       if (nutrients.proteins > 0) score += 5;
       if (nutrients.carbohydrates > 0) score += 5;
@@ -156,13 +167,44 @@ export async function getBestUSDAMatch(query) {
       // Prefer branded foods for specific items
       if (food.brand) score += 5;
       
-      // Fuzzy match with query
+      // Fuzzy match with query - EXACT matches get huge boost
       const nameLower = food.name.toLowerCase();
       const queryLower = query.toLowerCase();
+
+      // Penalize "fried", "cooked", "breaded", "coated"
+      if (nameLower.includes('fried')) score -= 50;
+      if (nameLower.includes('breaded')) score -= 50;
+      if (nameLower.includes('coated')) score -= 50;
+      if (nameLower.includes('baked')) score -= 30;
+
+      // Boost raw items if searching for raw
+      if (queryLower.includes('raw') && nameLower.includes('raw')) score += 30;
+
+      // Boost skinless if searching for skinless
+      if (queryLower.includes('skinless') && nameLower.includes('skinless')) score += 30;
+
+      // General fuzzy match
       if (nameLower.includes(queryLower)) score += 15;
+
+      console.log(`   - ${food.name} (score: ${score})`);
       
       return { ...food, score };
     });
+
+    // Remove foods with no nutrition data
+    const validResults = scoredResults.filter(food => food.score > 0);
+
+    if (validResults.length === 0) {
+      console.log('❌ No valid nutrition data found');
+      return null;
+    }
+
+    // Sort by score (highest first)
+    validResults.sort((a, b) => b.score - a.score);
+
+    console.log('🏆 Best match:', validResults[0].name, '(score:', validResults[0].score + ')');
+
+    return validResults[0];
 
     // Sort by score (highest first)
     scoredResults.sort((a, b) => b.score - a.score);

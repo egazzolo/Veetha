@@ -8,7 +8,7 @@ import { supabase } from './supabase';
 const CLARIFAI_API_URL = 'https://api.clarifai.com/v2/users/clarifai/apps/main/models/food-item-v1-recognition/outputs';
 
 const CLARIFAI_PATS = [
-  '2d1d8118c5f24171873a0f6d5c877b10',   // Account 1 - 1000 free requests
+  '0ed585249a8e45909afbc2e71033e02b',   // Account 1 - 1000 free requests
   '61cccd8ce09a4192b0b60e0394738893',  // Account 2 - another 1000 free
   // -- Total Clarifai requests this month (RUN IN SUPABASE SQL TO SEE HOW MANY REQUESTS HAVE BEEN MADE)
       //SELECT COUNT(*) as requests_this_month
@@ -64,14 +64,14 @@ export async function analyzePhoto(imageBase64) {
     const response = await fetch(CLARIFAI_API_URL, {
       method: 'POST',
       headers: {
-        'Authorization': `Key ${currentPAT}`,
+        'Authorization': `Bearer ${currentPAT}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        user_app_id: {
-          user_id: "clarifai",
-          app_id: "main"
-        },
+          user_app_id: {
+            user_id: "clarifai",
+            app_id: "main"
+          },
         inputs: [
           {
             data: {

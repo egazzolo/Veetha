@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, Pressable } from 'react-native';
 
 export default function MealsList({
   theme,
@@ -16,6 +16,16 @@ export default function MealsList({
   navigation,
   mealsListRef,
 }) {
+  const [selectedMeal, setSelectedMeal] = useState(null);
+
+  const handleMealPress = (meal) => {
+    setSelectedMeal(meal);
+  };
+
+  const closePostIt = () => {
+    setSelectedMeal(null);
+  };
+
   return (
     <View 
       ref={mealsListRef}
@@ -79,98 +89,218 @@ export default function MealsList({
           </Text>
         </View>
       ) : (
-        meals.map((meal) => (
-          <TouchableOpacity
-            key={meal.id}
-            style={[styles.mealCard, { backgroundColor: theme.cardBackground }]}
-            onLongPress={() => handleMealLongPress(meal)}
-            activeOpacity={0.7}
-          >
-            {/* Image Section - 35% */}
-            <View style={styles.imageSection}>
-              {meal.image_url ? (
-                <Image 
-                  source={{ uri: meal.image_url }} 
-                  style={styles.mealImage}
-                  resizeMode="contain"
-                />
-              ) : (
-                <View style={styles.placeholderImage}>
-                  <Text style={styles.placeholderEmoji}>🍽️</Text>
-                </View>
-              )}
-            </View>
+        meals.map((meal) => {
+          // Calculate actual nutrition based on serving size
+          const product = meal.product;
+          if (!product) return null; // Skip if product was deleted
+          
+          const actualCalories = (product.calories * meal.serving_grams) / 100;
+          const actualProtein = (product.protein * meal.serving_grams) / 100;
+          const actualCarbs = (product.carbs * meal.serving_grams) / 100;
+          const actualFat = (product.fat * meal.serving_grams) / 100;
+          const actualSodium = (product.sodium * meal.serving_grams) / 100;
+          const actualSugar = (product.sugar * meal.serving_grams) / 100;
+          const actualFiber = (product.fiber * meal.serving_grams) / 100;
+          
+          return (
+            <TouchableOpacity
+              key={meal.id}
+              style={[styles.mealCard, { backgroundColor: theme.cardBackground }]}
+              onPress={() => handleMealPress({
+                ...meal,
+                product_name: product.name,
+                calories: actualCalories,
+                protein: actualProtein,
+                carbs: actualCarbs,
+                fat: actualFat,
+                sodium: actualSodium,
+                sugar: actualSugar,
+                fiber: actualFiber,
+                serving_unit: product.serving_unit,
+              })}
+              onLongPress={() => handleMealLongPress(meal)}
+              activeOpacity={0.7}
+            >
+              {/* Image Section */}
+              <View style={styles.imageSection}>
+                {meal.image_url || product.image_url ? (
+                  <Image 
+                    source={{ uri: meal.image_url || product.image_url }} 
+                    style={styles.mealImage}
+                    resizeMode="contain"
+                  />
+                ) : (
+                  <View style={styles.placeholderImage}>
+                    <Text style={styles.placeholderEmoji}>🍽️</Text>
+                  </View>
+                )}
+              </View>
 
-            {/* Product Name & Macros Section - 35% */}
-            <View style={styles.infoSection}>
-              <Text 
-                style={[styles.productName, { color: theme.text }]} 
-                numberOfLines={2}
-                ellipsizeMode="tail"
-              >
-                {meal.product_name}
-              </Text>
-              
-              {/* Serving Size */}
-              <Text style={[styles.servingSize, { color: theme.textTertiary }]}>
-                {meal.serving_grams}g
-              </Text>
-              
-              {/* Primary macros - Top row */}
-              <View style={styles.macrosContainer}>
-                <View style={styles.macroRow}>
-                  <Text style={styles.macroEmoji}>💪</Text>
-                  <Text style={styles.proteinText}>
-                    {Math.round(meal.protein || 0)}g
-                  </Text>
+              {/* Product Name & Macros Section */}
+              <View style={styles.infoSection}>
+                <Text 
+                  style={[styles.productName, { color: theme.text }]} 
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                >
+                  {product.name}
+                </Text>
+                
+                <Text style={[styles.servingSize, { color: theme.textTertiary }]}>
+                  {meal.serving_grams}{product.serving_unit}
+                </Text>
+                
+                {/* Primary macros */}
+                <View style={styles.macrosContainer}>
+                  <View style={styles.macroRow}>
+                    <Text style={styles.macroEmoji}>💪</Text>
+                    <Text style={styles.proteinText}>
+                      {Math.round(actualProtein)}g
+                    </Text>
+                  </View>
+                  <View style={styles.macroRow}>
+                    <Text style={styles.macroEmoji}>🌾</Text>
+                    <Text style={styles.carbsText}>
+                      {Math.round(actualCarbs)}g
+                    </Text>
+                  </View>
+                  <View style={styles.macroRow}>
+                    <Text style={styles.macroEmoji}>🥑</Text>
+                    <Text style={styles.fatText}>
+                      {Math.round(actualFat)}g
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.macroRow}>
-                  <Text style={styles.macroEmoji}>🌾</Text>
-                  <Text style={styles.carbsText}>
-                    {Math.round(meal.carbs || 0)}g
-                  </Text>
-                </View>
-                <View style={styles.macroRow}>
-                  <Text style={styles.macroEmoji}>🥑</Text>
-                  <Text style={styles.fatText}>
-                    {Math.round(meal.fat || 0)}g
-                  </Text>
+
+                {/* Secondary macros */}
+                <View style={styles.macrosContainer}>
+                  <View style={styles.macroRow}>
+                    <Text style={styles.macroEmoji}>🧂</Text>
+                    <Text style={styles.sodiumText}>
+                      {Math.round(actualSodium)}mg
+                    </Text>
+                  </View>
+                  <View style={styles.macroRow}>
+                    <Text style={styles.macroEmoji}>🍬</Text>
+                    <Text style={styles.sugarText}>
+                      {Math.round(actualSugar)}g
+                    </Text>
+                  </View>
+                  <View style={styles.macroRow}>
+                    <Text style={styles.macroEmoji}>🌿</Text>
+                    <Text style={styles.fiberText}>
+                      {Math.round(actualFiber)}g
+                    </Text>
+                  </View>
                 </View>
               </View>
 
-              {/* Secondary macros - Bottom row */}
-              <View style={styles.macrosContainer}>
-                <View style={styles.macroRow}>
-                  <Text style={styles.macroEmoji}>🧂</Text>
-                  <Text style={styles.sodiumText}>
-                    {Math.round(meal.sodium || 0)}mg
-                  </Text>
-                </View>
-                <View style={styles.macroRow}>
-                  <Text style={styles.macroEmoji}>🍬</Text>
-                  <Text style={styles.sugarText}>
-                    {Math.round(meal.sugar || 0)}g
-                  </Text>
-                </View>
-                <View style={styles.macroRow}>
-                  <Text style={styles.macroEmoji}>🌿</Text>
-                  <Text style={styles.fiberText}>
-                    {Math.round(meal.fiber || 0)}g
-                  </Text>
-                </View>
+              {/* Calories Section */}
+              <View style={styles.caloriesSection}>
+                <Text style={styles.caloriesNumber}>
+                  {Math.round(actualCalories)}
+                </Text>
+                <Text style={styles.caloriesLabel}>{t('home.kcal')}</Text>
               </View>
-            </View>
-
-            {/* Calories Section - 30% */}
-            <View style={styles.caloriesSection}>
-              <Text style={styles.caloriesNumber}>
-                {Math.round(meal.calories || 0)}
-              </Text>
-              <Text style={styles.caloriesLabel}>{t('home.kcal')}</Text>
-            </View>
-          </TouchableOpacity>
-        ))
+            </TouchableOpacity>
+          );
+        })
       )}
+
+      {/* Post-it Note Modal */}
+      <Modal
+        visible={selectedMeal !== null}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={closePostIt}
+      >
+        <Pressable 
+          style={styles.modalOverlay}
+          onPress={closePostIt}
+        >
+          <Pressable 
+            style={styles.postItContainer}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={styles.postIt}>
+              {/* Post-it Header */}
+              <View style={styles.postItHeader}>
+                <Text style={styles.postItTitle} numberOfLines={2}>
+                  {selectedMeal?.product_name}
+                </Text>
+              </View>
+
+              {/* Calories */}
+              <View style={styles.postItCalories}>
+                <Text style={styles.postItCaloriesText}>
+                  {Math.round(selectedMeal?.calories || 0)} kcal
+                </Text>
+              </View>
+
+              {/* Divider line */}
+              <View style={styles.postItDivider} />
+
+              {/* Macros */}
+              <View style={styles.postItMacros}>
+                <View style={styles.postItMacroRow}>
+                  <Text style={styles.postItMacroEmoji}>💪</Text>
+                  <Text style={styles.postItMacroLabel}>Protein:</Text>
+                  <Text style={styles.postItMacroValue}>
+                    {Math.round(selectedMeal?.protein || 0)}g
+                  </Text>
+                </View>
+
+                <View style={styles.postItMacroRow}>
+                  <Text style={styles.postItMacroEmoji}>🌾</Text>
+                  <Text style={styles.postItMacroLabel}>Carbs:</Text>
+                  <Text style={styles.postItMacroValue}>
+                    {Math.round(selectedMeal?.carbs || 0)}g
+                  </Text>
+                </View>
+
+                <View style={styles.postItMacroRow}>
+                  <Text style={styles.postItMacroEmoji}>🥑</Text>
+                  <Text style={styles.postItMacroLabel}>Fat:</Text>
+                  <Text style={styles.postItMacroValue}>
+                    {Math.round(selectedMeal?.fat || 0)}g
+                  </Text>
+                </View>
+
+                <View style={styles.postItMacroRow}>
+                  <Text style={styles.postItMacroEmoji}>🧂</Text>
+                  <Text style={styles.postItMacroLabel}>Sodium:</Text>
+                  <Text style={styles.postItMacroValue}>
+                    {Math.round(selectedMeal?.sodium || 0)}mg
+                  </Text>
+                </View>
+
+                <View style={styles.postItMacroRow}>
+                  <Text style={styles.postItMacroEmoji}>🍬</Text>
+                  <Text style={styles.postItMacroLabel}>Sugar:</Text>
+                  <Text style={styles.postItMacroValue}>
+                    {Math.round(selectedMeal?.sugar || 0)}g
+                  </Text>
+                </View>
+
+                <View style={styles.postItMacroRow}>
+                  <Text style={styles.postItMacroEmoji}>🌿</Text>
+                  <Text style={styles.postItMacroLabel}>Fiber:</Text>
+                  <Text style={styles.postItMacroValue}>
+                    {Math.round(selectedMeal?.fiber || 0)}g
+                  </Text>
+                </View>
+              </View>
+
+              {/* Serving size footer */}
+              <View style={styles.postItFooter}>
+                <Text style={styles.postItServingText}>
+                  {t('mealslist.serving')}: {selectedMeal?.serving_grams}{selectedMeal?.serving_unit || 'g'}
+                </Text>
+              </View>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -377,5 +507,89 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 10,
+  },
+  // Post-it Note Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  postItContainer: {
+    transform: [{ rotate: '-1deg' }],
+  },
+  postIt: {
+    backgroundColor: '#FFEB3B',
+    width: 280,
+    minHeight: 320,
+    padding: 20,
+    borderRadius: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 2, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
+    borderTopWidth: 20,
+    borderTopColor: '#FDD835',
+  },
+  postItHeader: {
+    marginBottom: 12,
+  },
+  postItTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    fontFamily: 'Courier',
+  },
+  postItCalories: {
+    marginBottom: 8,
+  },
+  postItCaloriesText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2E7D32',
+    fontFamily: 'Courier',
+  },
+  postItDivider: {
+    height: 1,
+    backgroundColor: '#D4C100',
+    marginVertical: 12,
+  },
+  postItMacros: {
+    gap: 8,
+  },
+  postItMacroRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  postItMacroEmoji: {
+    fontSize: 16,
+    width: 20,
+  },
+  postItMacroLabel: {
+    fontSize: 14,
+    color: '#1a1a1a',
+    fontWeight: '600',
+    flex: 1,
+    fontFamily: 'Courier',
+  },
+  postItMacroValue: {
+    fontSize: 14,
+    color: '#1a1a1a',
+    fontWeight: 'bold',
+    fontFamily: 'Courier',
+  },
+  postItFooter: {
+    marginTop: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#D4C100',
+  },
+  postItServingText: {
+    fontSize: 12,
+    color: '#4a4a4a',
+    fontStyle: 'italic',
+    fontFamily: 'Courier',
   },
 });

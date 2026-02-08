@@ -66,6 +66,7 @@ export default function CardsLayout({
   caloriesCardRef,
   macroCardsRef,
   tutorialCompleted,
+  exerciseCaloriesBurned,
 }) {
   return (
     <View>
@@ -217,6 +218,11 @@ export default function CardsLayout({
         <Text style={[styles.remainingText, { color: remaining >= 0 ? theme.success : theme.error }]}>
           {Math.abs(Math.round(remaining))} kcal {remaining >= 0 ? t('home.remaining') : t('home.over')}
         </Text>
+        {exerciseCaloriesBurned > 0 && (
+          <Text style={[styles.exerciseCaloriesText, { color: '#4CAF50' }]}>
+            +{Math.round(exerciseCaloriesBurned)} {t('home.fromExercise')}
+          </Text>
+        )}
       </View>
     </View>
   );
@@ -270,5 +276,10 @@ const styles = StyleSheet.create({
   remainingText: {
     fontSize: 16,
     fontWeight: '700',
+  },
+  exerciseCaloriesText: {
+    fontSize: 14,
+    marginTop: 4,
+    fontWeight: '600',
   },
 });

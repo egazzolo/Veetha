@@ -10,6 +10,22 @@ import { getBestUSDAMatch, searchFoodVariants } from './usdaApi';
  * @returns {Promise<Object|null>} - Food data with nutrition
  */
 export async function searchFood(foodName) {
+  if (!foodName || typeof foodName !== 'string') {
+    console.log('⚠️ searchFood: invalid input');
+    return null;
+  }
+
+  const q = foodName.trim();
+  if (!q) {
+    console.log('⚠️ searchFood: empty query');
+    return null;
+  }
+
+  if (!foodName || typeof foodName !== 'string') return null;
+
+  const normalized = foodName.toLowerCase().trim();
+  if (!normalized) return null;
+  
   try {
     console.log('🔍 Searching for food:', foodName);
     
@@ -107,8 +123,9 @@ async function searchLocalFoodDatabase(foodName) {
 export async function saveFoodToDatabase(foodData, detectedName = null) {
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    
-    const normalized = foodData.name.toLowerCase().trim();
+
+    const foodName = foodData.name || foodData.product_name;
+    const normalized = foodName.toLowerCase().trim();
     
     // Check if already exists
     const { data: existing } = await supabase
@@ -135,7 +152,7 @@ export async function saveFoodToDatabase(foodData, detectedName = null) {
     const { error } = await supabase
       .from('food_database')
       .insert({
-        name: foodData.name,
+        name: foodName,
         name_normalized: normalized,
         detected_by_ai: detectedName !== null,
         source: foodData.source || 'usda',
