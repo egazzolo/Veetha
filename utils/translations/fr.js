@@ -356,6 +356,7 @@ export default {
     done: 'Terminé',
     exercise: 'Exercice',
     water: 'Eau',
+    noWaterYet: "Pas encore d'eau",
     comingSoon: 'Bientôt disponible',
     fromExercise: 'de l\'exercice',
 
@@ -622,6 +623,45 @@ export default {
     takeAnotherPhoto: 'Prendre une autre photo',
     scanAgain: 'Scanner à nouveau',
     scanBarcode: 'Scanner le code-barres',
+    submitProduct: 'Soumettre un Produit',
+    monthlyLimitReached: 'Limite Mensuelle Atteinte',
+    monthlyLimitMessage: "Vous avez utilisé vos {limit} analyses photo ce mois-ci. Votre limite sera réinitialisée le {date}.\n\nAstuce : Utilisez le scanner de codes-barres pour les produits emballés (illimité !)",
+    dailyLimitReached: 'Limite Quotidienne Atteinte',
+    dailyLimitMessage: "Vous avez utilisé vos {limit} demandes photo aujourd'hui. Réessayez demain !",
+    lastRequest: 'Dernière Demande',
+    lastRequestMessage: "Il vous reste 1 demande photo aujourd'hui.",
+    lowOnScans: 'Peu de Scans Restants',
+    lowOnScansMessage: 'Il vous reste {remaining} demandes photo ce mois-ci.',
+    waitBetweenPhotos: 'Veuillez patienter un moment entre les photos.',
+  },
+
+  // Submit Product Screen
+  submitProduct: {
+    title: 'Soumettre un Produit',
+    subtitle: 'Aidez-nous à enrichir notre base de données ! Remplissez ce que vous pouvez.',
+    barcode: 'Code-barres',
+    productName: 'Nom du Produit',
+    productNamePlaceholder: 'ex. Lait d\'avoine bio',
+    servingSize: 'Taille de Portion',
+    servingSizePlaceholder: 'ex. 240ml, 30g, 1 tasse',
+    nutritionInfo: 'Informations Nutritionnelles',
+    calories: 'Calories',
+    proteinG: 'Protéines (g)',
+    carbsG: 'Glucides (g)',
+    fatG: 'Lipides (g)',
+    sugarG: 'Sucres (g)',
+    sodiumMg: 'Sodium (mg)',
+    photos: 'Photos',
+    photosHint: 'Prenez des photos de l\'étiquette pour aider nos réviseurs',
+    nutritionLabel: 'Tableau Nutritionnel',
+    ingredients: 'Ingrédients',
+    productPhoto: 'Face du Produit',
+    submit: 'Soumettre pour Révision',
+    missingInfo: 'Information Manquante',
+    enterName: 'Veuillez entrer le nom du produit',
+    thankYou: 'Merci !',
+    submitted: 'Produit soumis pour révision. Nous l\'ajouterons bientôt à la base de données !',
+    failedToSubmit: 'Échec de la soumission. Veuillez réessayer.',
   },
 
   //Results Screen
@@ -657,6 +697,9 @@ export default {
     enterManually: 'Entrer manuellement',
 
     //Alerts - Alertes
+    enterFoodName: "Entrez un nom d'aliment",
+    notFound: 'Non trouvé',
+    notAuthenticated: 'Utilisateur non authentifié. Veuillez vous connecter.',
     mealLogged: 'Repas enregistré ! ✅',
     
     // Photo view

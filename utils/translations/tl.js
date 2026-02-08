@@ -356,6 +356,7 @@ export default {
     done: 'Tapos na',
     exercise: 'Ehersisyo',
     water: 'Tubig',
+    noWaterYet: 'Wala pang tubig',
     comingSoon: 'Malapit na',
     fromExercise: 'mula sa ehersisyo',
 
@@ -622,6 +623,45 @@ export default {
     takeAnotherPhoto: 'Kumuha ng Ibang Larawan',
     scanAgain: 'Mag-scan Ulit',
     scanBarcode: 'I-scan ang Barcode',
+    submitProduct: 'Magsumite ng Produkto',
+    monthlyLimitReached: 'Naabot na ang Buwanang Limitasyon',
+    monthlyLimitMessage: "Nagamit mo na lahat ng {limit} na photo scan ngayong buwan. Mare-reset ang iyong limit sa {date}.\n\nTip: Gamitin ang barcode scanner para sa mga naka-package na pagkain (walang limit!)",
+    dailyLimitReached: 'Naabot na ang Araw-araw na Limitasyon',
+    dailyLimitMessage: "Nagamit mo na lahat ng {limit} na photo request ngayon. Subukan ulit bukas!",
+    lastRequest: 'Huling Request',
+    lastRequestMessage: 'May 1 photo request ka na lang ngayon.',
+    lowOnScans: 'Kaunti na lang ang Natitira',
+    lowOnScansMessage: 'May {remaining} na photo request ka pa ngayong buwan.',
+    waitBetweenPhotos: 'Maghintay muna ng ilang sandali sa pagitan ng mga litrato.',
+  },
+
+  // Submit Product Screen
+  submitProduct: {
+    title: 'Magsumite ng Produkto',
+    subtitle: 'Tulungan kaming palakihin ang aming database! Punan ang kaya mo.',
+    barcode: 'Barcode',
+    productName: 'Pangalan ng Produkto',
+    productNamePlaceholder: 'hal. Organic Oat Milk',
+    servingSize: 'Sukat ng Serving',
+    servingSizePlaceholder: 'hal. 240ml, 30g, 1 tasa',
+    nutritionInfo: 'Impormasyon sa Nutrisyon',
+    calories: 'Calories',
+    proteinG: 'Protina (g)',
+    carbsG: 'Carbs (g)',
+    fatG: 'Taba (g)',
+    sugarG: 'Asukal (g)',
+    sodiumMg: 'Sodium (mg)',
+    photos: 'Mga Larawan',
+    photosHint: 'Kunan ng litrato ang label para matulungan ang aming mga reviewer',
+    nutritionLabel: 'Nutrition Facts',
+    ingredients: 'Mga Sangkap',
+    productPhoto: 'Harap ng Produkto',
+    submit: 'Isumite para sa Pagsusuri',
+    missingInfo: 'Kulang na Impormasyon',
+    enterName: 'Pakilagay ang pangalan ng produkto',
+    thankYou: 'Salamat!',
+    submitted: 'Naisumite na ang produkto para sa pagsusuri. Idaragdag namin ito sa database sa lalong madaling panahon!',
+    failedToSubmit: 'Hindi naisumite ang produkto. Pakisubukan muli.',
   },
 
   //Results Screen
@@ -657,6 +697,9 @@ export default {
     enterManually: 'I-enter Nang Manu-mano',
 
     // Alerts - Mga Alerto
+    enterFoodName: 'Maglagay ng pangalan ng pagkain',
+    notFound: 'Hindi natagpuan',
+    notAuthenticated: 'Hindi naka-authenticate ang user. Mag-log in muna.',
     mealLogged: 'Na-log na ang pagkain! ✅',
     
     // Photo view

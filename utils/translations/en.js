@@ -356,6 +356,7 @@ export default {
     done: 'Done',
     exercise: 'Exercise',
     water: 'Water',
+    noWaterYet: 'No water yet',
     comingSoon: 'Coming soon',
     fromExercise: 'from exercise',
 
@@ -622,6 +623,45 @@ export default {
     takeAnotherPhoto: 'Take Another Photo',
     scanAgain: 'Scan Again',
     scanBarcode: 'Scan Barcode',
+    submitProduct: 'Submit Product',
+    monthlyLimitReached: 'Monthly Limit Reached',
+    monthlyLimitMessage: "You've used all {limit} photo scans for this month. Your limit resets on {date}.\n\nTip: Use barcode scanning for packaged foods (unlimited!)",
+    dailyLimitReached: 'Daily Limit Reached',
+    dailyLimitMessage: "You've used all {limit} photo requests for today. Try again tomorrow!",
+    lastRequest: 'Last Request',
+    lastRequestMessage: 'You have 1 photo request left today.',
+    lowOnScans: 'Low on Photo Scans',
+    lowOnScansMessage: "You have {remaining} photo requests left this month.",
+    waitBetweenPhotos: 'Please wait a moment between photos.',
+  },
+
+  // Submit Product Screen
+  submitProduct: {
+    title: 'Submit Product',
+    subtitle: 'Help us grow our database! Fill in what you can.',
+    barcode: 'Barcode',
+    productName: 'Product Name',
+    productNamePlaceholder: 'e.g. Organic Oat Milk',
+    servingSize: 'Serving Size',
+    servingSizePlaceholder: 'e.g. 240ml, 30g, 1 cup',
+    nutritionInfo: 'Nutrition Info',
+    calories: 'Calories',
+    proteinG: 'Protein (g)',
+    carbsG: 'Carbs (g)',
+    fatG: 'Fat (g)',
+    sugarG: 'Sugar (g)',
+    sodiumMg: 'Sodium (mg)',
+    photos: 'Photos',
+    photosHint: 'Take photos of the label to help our reviewers',
+    nutritionLabel: 'Nutrition Facts',
+    ingredients: 'Ingredients',
+    productPhoto: 'Product Front',
+    submit: 'Submit for Review',
+    missingInfo: 'Missing Info',
+    enterName: 'Please enter the product name',
+    thankYou: 'Thank You!',
+    submitted: 'Product submitted for review. We\'ll add it to the database soon!',
+    failedToSubmit: 'Failed to submit product. Please try again.',
   },
 
   //Results Screen
@@ -657,6 +697,9 @@ export default {
     enterManually: 'Enter Manually',
 
     // Alerts
+    enterFoodName: 'Enter a food name',
+    notFound: 'Not found',
+    notAuthenticated: 'User not authenticated. Please log in.',
     mealLogged: 'Meal logged! ✅',
     
     // Photo view

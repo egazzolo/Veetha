@@ -356,6 +356,7 @@ export default {
     done: 'Listo',
     exercise: 'Ejercicio',
     water: 'Agua',
+    noWaterYet: 'Sin agua aún',
     comingSoon: 'Próximamente',
     fromExercise: 'del ejercicio',
 
@@ -622,6 +623,45 @@ export default {
     takeAnotherPhoto: 'Tomar Otra Foto',
     scanAgain: 'Escanear de Nuevo',
     scanBarcode: 'Escanea el código de barra',
+    submitProduct: 'Enviar Producto',
+    monthlyLimitReached: 'Límite Mensual Alcanzado',
+    monthlyLimitMessage: "Has usado todas las {limit} fotos de este mes. Tu límite se restablece el {date}.\n\nConsejo: ¡Usa el escáner de código de barras para productos empacados (ilimitado!)",
+    dailyLimitReached: 'Límite Diario Alcanzado',
+    dailyLimitMessage: "Has usado todas las {limit} solicitudes de fotos de hoy. ¡Inténtalo mañana!",
+    lastRequest: 'Última Solicitud',
+    lastRequestMessage: 'Te queda 1 solicitud de foto hoy.',
+    lowOnScans: 'Pocas Fotos Restantes',
+    lowOnScansMessage: 'Te quedan {remaining} solicitudes de fotos este mes.',
+    waitBetweenPhotos: 'Por favor espera un momento entre fotos.',
+  },
+
+  // Submit Product Screen
+  submitProduct: {
+    title: 'Enviar Producto',
+    subtitle: '¡Ayúdanos a crecer nuestra base de datos! Llena lo que puedas.',
+    barcode: 'Código de barras',
+    productName: 'Nombre del Producto',
+    productNamePlaceholder: 'ej. Leche de Avena Orgánica',
+    servingSize: 'Tamaño de Porción',
+    servingSizePlaceholder: 'ej. 240ml, 30g, 1 taza',
+    nutritionInfo: 'Información Nutricional',
+    calories: 'Calorías',
+    proteinG: 'Proteína (g)',
+    carbsG: 'Carbohidratos (g)',
+    fatG: 'Grasa (g)',
+    sugarG: 'Azúcar (g)',
+    sodiumMg: 'Sodio (mg)',
+    photos: 'Fotos',
+    photosHint: 'Toma fotos de la etiqueta para ayudar a nuestros revisores',
+    nutritionLabel: 'Info. Nutricional',
+    ingredients: 'Ingredientes',
+    productPhoto: 'Frente del Producto',
+    submit: 'Enviar para Revisión',
+    missingInfo: 'Información Faltante',
+    enterName: 'Por favor ingresa el nombre del producto',
+    thankYou: '¡Gracias!',
+    submitted: '¡Producto enviado para revisión. Lo agregaremos a la base de datos pronto!',
+    failedToSubmit: 'Error al enviar el producto. Por favor intenta de nuevo.',
   },
 
   //Results Screen
@@ -657,6 +697,9 @@ export default {
     enterManually: 'Ingresar Manualmente',
 
     // Alerts - Alertas
+    enterFoodName: 'Ingresa un nombre de alimento',
+    notFound: 'No encontrado',
+    notAuthenticated: 'Usuario no autenticado. Por favor inicia sesión.',
     mealLogged: '¡Comida registrada! ✅',
     
     // Photo view

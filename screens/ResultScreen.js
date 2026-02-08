@@ -210,14 +210,14 @@ export default function ResultScreen({ route, navigation }) {
 
   const handleWrongFood = async () => {
     if (!wrongFoodInput || !wrongFoodInput.trim()) {
-      Alert.alert('Enter a food name');
+      Alert.alert(t('results.enterFoodName'));
       return;
     }
 
     const corrected = await searchFood(wrongFoodInput.trim());
 
     if (!corrected) {
-      Alert.alert('Not found');
+      Alert.alert(t('results.notFound'));
       return;
     }
 
@@ -413,7 +413,7 @@ export default function ResultScreen({ route, navigation }) {
       setSavingMeal(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        Alert.alert('Error', 'User not authenticated');
+        Alert.alert(t('common.error'), t('results.notAuthenticated'));
         return;
       }
 
@@ -610,7 +610,7 @@ export default function ResultScreen({ route, navigation }) {
       await refreshMeals();
 
       // Navigate back to Home
-      Alert.alert('Success! ✅', `${food.product_name} logged`);
+      Alert.alert(t('results.mealLogged'), `${food.product_name}`);
       navigation.navigate('Home');
       
     } catch (error) {
@@ -618,8 +618,8 @@ export default function ResultScreen({ route, navigation }) {
       
       // Show the ACTUAL error to user (for debugging)
       Alert.alert(
-        'Error Details', 
-        `${error.message}\n\nType: ${error.name || 'Unknown'}\n\nPlease screenshot this!`,
+        t('common.error'),
+        `${error.message}`,
         [{ text: 'OK' }]
       );
     } finally {
@@ -1243,7 +1243,7 @@ export default function ResultScreen({ route, navigation }) {
 
                 const corrected = await searchFood(wrongFoodInput);
                 if (!corrected) {
-                  Alert.alert('Not found');
+                  Alert.alert(t('results.notFound'));
                   return;
                 }
 

@@ -76,8 +76,8 @@ export default function ScannerScreen({ navigation }) {
       // Check if limit reached
       if (photosUsed >= monthlyLimit) {
         Alert.alert(
-          'Monthly Limit Reached',
-          `You've used all ${monthlyLimit} photo requests for this month using ${USE_GOOGLE_VISION ? 'Google Vision' : 'Clarifai'}. Try again tomorrow!`
+          t('scanner.monthlyLimitReached'),
+          t('scanner.monthlyLimitMessage').replace('{limit}', monthlyLimit).replace('{date}', '')
         );
         return;
       }
@@ -85,11 +85,11 @@ export default function ScannerScreen({ navigation }) {
       // ⚠️ WARNING when near limit
       if (photosUsed >= monthlyLimit - 50) {
         Alert.alert(
-          'Low on Photo Scans',
-          `⚠️ You have ${monthlyLimit - photosUsed} photo requests left this month.`,
+          t('scanner.lowOnScans'),
+          t('scanner.lowOnScansMessage').replace('{remaining}', monthlyLimit - photosUsed),
           [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Continue', onPress: () => proceedWithPhotoCapture() }
+            { text: t('common.cancel'), style: 'cancel' },
+            { text: t('common.continue'), onPress: () => proceedWithPhotoCapture() }
           ]
         );
         return;
@@ -111,9 +111,9 @@ export default function ScannerScreen({ navigation }) {
       const resetDate = nextMonth.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
       
       Alert.alert(
-        'Monthly Limit Reached',
-        `You've used all ${MONTHLY_LIMIT} photo scans for this month. Your limit resets on ${resetDate}.\n\nTip: Use barcode scanning for packaged foods (unlimited!)`,
-        [{ text: 'OK' }]
+        t('scanner.monthlyLimitReached'),
+        t('scanner.monthlyLimitMessage').replace('{limit}', MONTHLY_LIMIT).replace('{date}', resetDate),
+        [{ text: t('common.ok') }]
       );
       return false;
     }
@@ -121,9 +121,9 @@ export default function ScannerScreen({ navigation }) {
     // Warn at 850 uses (50 left)
     if (photosUsedThisMonth >= 850) {
       Alert.alert(
-        'Low on Photo Scans',
-        `You've used ${photosUsedThisMonth}/${MONTHLY_LIMIT} scans. ${MONTHLY_LIMIT - photosUsedThisMonth} remaining this month.`,
-        [{ text: 'OK' }]
+        t('scanner.lowOnScans'),
+        t('scanner.lowOnScansMessage').replace('{remaining}', MONTHLY_LIMIT - photosUsedThisMonth),
+        [{ text: t('common.ok') }]
       );
     }
 
@@ -332,7 +332,14 @@ export default function ScannerScreen({ navigation }) {
           t('scanner.productNotFound'),
           t('scanner.notInDatabase'),
           [
-            { text: t('scanner.ok'), onPress: () => setScanned(false) },
+            { text: t('scanner.cancel'), onPress: () => setScanned(false), style: 'cancel' },
+            {
+              text: t('scanner.submitProduct'),
+              onPress: () => {
+                setScanned(false);
+                navigation.navigate('SubmitProduct', { barcode });
+              },
+            },
           ]
         );
       }
@@ -518,7 +525,7 @@ export default function ScannerScreen({ navigation }) {
       // ⏱️ RATE LIMIT CHECK (3 seconds between photos)
       const now = Date.now();
       if (now - lastPhotoTime.current < 3000) {
-        Alert.alert(t('scanner.error'), 'Please wait a moment between photos.');
+        Alert.alert(t('scanner.error'), t('scanner.waitBetweenPhotos'));
         return;
       }
 
@@ -543,8 +550,8 @@ export default function ScannerScreen({ navigation }) {
           // Check if limit reached
           if (photosUsed >= DAILY_PHOTO_LIMIT) {
             Alert.alert(
-              'Daily Limit Reached',
-              `You've used all ${DAILY_PHOTO_LIMIT} photo requests for today. Try again tomorrow!`
+              t('scanner.dailyLimitReached'),
+              t('scanner.dailyLimitMessage').replace('{limit}', DAILY_PHOTO_LIMIT)
             );
             return;
           }
@@ -552,17 +559,11 @@ export default function ScannerScreen({ navigation }) {
           // ⚠️ WARNING when 1 request left
           if (photosUsed === DAILY_PHOTO_LIMIT - 1) {
             Alert.alert(
-              'Last Request',
-              `⚠️ You have 1 photo request left today.`,
+              t('scanner.lastRequest'),
+              t('scanner.lastRequestMessage'),
               [
-                {
-                  text: 'Cancel',
-                  style: 'cancel',
-                },
-                {
-                  text: 'Continue',
-                  onPress: () => proceedWithPhotoCapture(),
-                },
+                { text: t('common.cancel'), style: 'cancel' },
+                { text: t('common.continue'), onPress: () => proceedWithPhotoCapture() },
               ]
             );
             return;
