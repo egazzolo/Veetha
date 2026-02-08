@@ -2003,11 +2003,10 @@ const styles = StyleSheet.create({
   },
   activityCard: {
     flex: 1,
-    padding: 15,
+    padding: 10,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 100,
   },
   activityCardTitle: {
     fontSize: 14,

@@ -1,71 +1,88 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Svg, Rect, Defs, LinearGradient, Stop } from 'react-native-svg';
+import { Svg, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
+
+// Single filled water glass
+function WaterGlass({ size }) {
+  return (
+    <Svg width={size} height={size * 1.25} viewBox="0 0 24 30">
+      <Defs>
+        <LinearGradient id="waterFill" x1="0%" y1="0%" x2="0%" y2="100%">
+          <Stop offset="0%" stopColor="#4FC3F7" stopOpacity="0.85" />
+          <Stop offset="100%" stopColor="#0288D1" stopOpacity="0.95" />
+        </LinearGradient>
+      </Defs>
+      {/* Glass body with water fill */}
+      <Path
+        d="M4 2 L3 26 Q3 29 6 29 L18 29 Q21 29 21 26 L20 2 Z"
+        fill="url(#waterFill)"
+      />
+      {/* Glass outline */}
+      <Path
+        d="M4 2 L3 26 Q3 29 6 29 L18 29 Q21 29 21 26 L20 2 Z"
+        fill="none"
+        stroke="#B0BEC5"
+        strokeWidth="1.2"
+      />
+      {/* Rim highlight */}
+      <Path
+        d="M4 2 L20 2"
+        stroke="#B0BEC5"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
 
 export default function WaterPitcher({ cups, maxCups = 8, theme }) {
-  // Calculate fill percentage (0-100)
   const fillPercent = Math.min((cups / maxCups) * 100, 100);
-  
-  // Pitcher dimensions
-  const pitcherHeight = 200;
-  const pitcherWidth = 120;
-  const waterHeight = (pitcherHeight * fillPercent) / 100;
+
+  // Dynamic glass sizing: shrink glasses to fit within fixed card height
+  // Available width ~130px, max glasses area height ~70px
+  const CONTAINER_WIDTH = 130;
+  const MAX_GLASSES_HEIGHT = 70;
+  const GAP = 3;
+
+  let glassSize = 28;
+
+  if (cups > 0) {
+    // Find the largest size where all glasses fit
+    for (let size = 28; size >= 12; size -= 2) {
+      const perRow = Math.floor(CONTAINER_WIDTH / (size + GAP));
+      const rows = Math.ceil(cups / perRow);
+      const totalHeight = rows * (size * 1.25 + GAP);
+      if (totalHeight <= MAX_GLASSES_HEIGHT) {
+        glassSize = size;
+        break;
+      }
+      glassSize = size;
+    }
+  }
 
   return (
     <View style={styles.container}>
-      <Svg height={pitcherHeight + 20} width={pitcherWidth + 40}>
-        {/* Water Gradient */}
-        <Defs>
-          <LinearGradient id="waterGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor="#4FC3F7" stopOpacity="0.8" />
-            <Stop offset="100%" stopColor="#0288D1" stopOpacity="0.9" />
-          </LinearGradient>
-        </Defs>
-
-        {/* Pitcher Outline */}
-        <Rect
-          x="20"
-          y="10"
-          width={pitcherWidth}
-          height={pitcherHeight}
-          rx="15"
-          ry="15"
-          fill="none"
-          stroke={theme.border}
-          strokeWidth="3"
-        />
-
-        {/* Water Fill */}
-        <Rect
-          x="23"
-          y={10 + pitcherHeight - waterHeight}
-          width={pitcherWidth - 6}
-          height={waterHeight}
-          rx="12"
-          ry="12"
-          fill="url(#waterGrad)"
-        />
-
-        {/* Pitcher Handle */}
-        <Rect
-          x={pitcherWidth + 15}
-          y="60"
-          width="15"
-          height="80"
-          rx="8"
-          fill="none"
-          stroke={theme.border}
-          strokeWidth="3"
-        />
-      </Svg>
-
-      {/* Text Display */}
+      {/* Cups count */}
       <Text style={[styles.cupsText, { color: theme.text }]}>
-        {cups} / {maxCups} cups
+        {cups} / {maxCups}
       </Text>
-      
+
+      {/* Glasses grid */}
+      <View style={styles.glassesGrid}>
+        {cups > 0 ? (
+          Array.from({ length: cups }).map((_, i) => (
+            <WaterGlass key={i} size={glassSize} />
+          ))
+        ) : (
+          <Text style={[styles.emptyText, { color: theme.textTertiary }]}>
+            No water yet
+          </Text>
+        )}
+      </View>
+
+      {/* Percentage */}
       <Text style={[styles.percentText, { color: theme.textSecondary }]}>
-        {Math.round(fillPercent)}% of daily goal
+        {Math.round(fillPercent)}%
       </Text>
     </View>
   );
@@ -74,15 +91,27 @@ export default function WaterPitcher({ cups, maxCups = 8, theme }) {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 4,
   },
   cupsText: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: 'bold',
-    marginTop: 10,
+  },
+  glassesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 3,
+    minHeight: 30,
+    maxHeight: 70,
+    marginVertical: 4,
+  },
+  emptyText: {
+    fontSize: 11,
+    fontStyle: 'italic',
   },
   percentText: {
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: 11,
   },
 });
