@@ -124,7 +124,21 @@ export function UserProvider({ children }) {
       
       const { data, error } = await supabase
         .from('meals')
-        .select('*')
+        .select(`
+          *,
+          product:food_database (
+            name,
+            calories,
+            protein,
+            carbs,
+            fat,
+            fiber,
+            sugar,
+            sodium,
+            serving_unit,
+            image_url
+          )
+        `)
         .eq('user_id', userId)
         .gte('logged_at', `${today}T00:00:00`)
         .lte('logged_at', `${today}T23:59:59`)
