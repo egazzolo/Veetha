@@ -410,7 +410,7 @@ export default function ResultScreen({ route, navigation }) {
 
   const handleLogMeal = async () => {
     try {
-      setLoading(true);
+      setSavingMeal(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         Alert.alert('Error', 'User not authenticated');
@@ -418,7 +418,7 @@ export default function ResultScreen({ route, navigation }) {
       }
 
       console.log('📝 Starting meal log process...');
-      console.log('Food data:', { name: food.name, calories: food.calories });
+      console.log('Food data:', { name: food.product_name, nutriments: food.nutriments });
 
       // STEP 1: Upload image to Supabase Storage (if photo was taken)
       let imageUrl = null;
@@ -427,51 +427,57 @@ export default function ResultScreen({ route, navigation }) {
         console.log('='.repeat(50));
         console.log('🖼️ IMAGE UPLOAD START');
         console.log('Original URI:', food.image_url);
-        
+
         try {
-          // Fetch the image file
-          console.log('Fetching image file...');
-          const response = await fetch(food.image_url);
-          console.log('✅ Fetch status:', response.status);
-          
-          // Convert to blob
-          const blob = await response.blob();
-          console.log('✅ Blob created, size:', blob.size, 'bytes');
-          
-          if (blob.size === 0) {
-            throw new Error('Image blob is empty');
+          // Read image as base64 using expo-file-system (reliable in React Native)
+          console.log('Reading image file as base64...');
+          const base64Data = await FileSystem.readAsStringAsync(food.image_url, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          console.log('✅ Base64 read, length:', base64Data.length);
+
+          if (!base64Data || base64Data.length === 0) {
+            throw new Error('Image file is empty');
           }
-          
+
+          // Convert base64 to Uint8Array for Supabase upload
+          const binaryString = atob(base64Data);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          console.log('✅ Converted to bytes, size:', bytes.length, 'bytes');
+
           // Generate unique filename
           const fileName = `meal-${user.id}-${Date.now()}.jpg`;
           console.log('📤 Uploading to Supabase as:', fileName);
-          
+
           // Upload to Supabase Storage
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from('meal-images')
-            .upload(fileName, blob, { 
+            .upload(fileName, bytes, {
               contentType: 'image/jpeg',
               cacheControl: '3600',
-              upsert: false 
+              upsert: false
             });
-          
+
           if (uploadError) {
             console.error('❌ Upload failed:', uploadError);
             throw uploadError;
           }
-          
+
           console.log('✅ Upload successful! Path:', uploadData.path);
-          
+
           // Get public URL
           const { data: urlData } = supabase.storage
             .from('meal-images')
             .getPublicUrl(fileName);
-          
+
           imageUrl = urlData.publicUrl;
           console.log('✅ Public URL:', imageUrl);
           console.log('🖼️ IMAGE UPLOAD END');
           console.log('='.repeat(50));
-          
+
         } catch (error) {
           console.error('❌ Image upload failed:', error.message);
           console.error('Continuing without image...');
@@ -505,7 +511,7 @@ export default function ResultScreen({ route, navigation }) {
         const { data: existingProduct } = await supabase
           .from('food_database')
           .select('id')
-          .eq('name', food.name)
+          .eq('name', food.product_name || food.name)
           .maybeSingle();
         
         if (existingProduct) {
@@ -518,23 +524,25 @@ export default function ResultScreen({ route, navigation }) {
       if (!productId) {
         console.log('➕ Creating new product in food_database...');
         
+        // Extract per-100g nutrition from nutriments object
+        const n = food.nutriments || {};
         const { data: newProduct, error: productError } = await supabase
           .from('food_database')
           .insert({
             name: food.product_name || food.name || 'Unknown food',
             barcode: food.barcode || null,
-            calories: food.calories || 0,
-            protein: food.protein || 0,
-            carbs: food.carbs || 0,
-            fat: food.fat || 0,
-            fiber: food.fiber || 0,
-            sugar: food.sugar || 0,
-            sodium: food.sodium || 0,
-            serving_unit: food.serving_unit || 'g',
-            source: food.source || 'photo_recognition',
+            calories: n['energy-kcal_100g'] || food.calories || 0,
+            protein: n.proteins_100g || food.protein || 0,
+            carbs: n.carbohydrates_100g || food.carbs || 0,
+            fat: n.fat_100g || food.fat || 0,
+            fiber: n.fiber_100g || food.fiber || 0,
+            sugar: n.sugars_100g || food.sugar || 0,
+            sodium: n.sodium_100g || food.sodium || 0,
+            serving_unit: food.serving_unit || detectServingUnit(food.product_name, servingGrams),
+            source: food.source || (food.detected_by_ai ? 'photo_recognition' : 'manual'),
             detected_by_ai: food.detected_by_ai || false,
             ai_confidence: food.ai_confidence || null,
-            image_url: imageUrl, // ✅ Store the uploaded image URL in food_database
+            image_url: imageUrl,
           })
           .select('id')
           .single();
@@ -581,14 +589,17 @@ export default function ResultScreen({ route, navigation }) {
           type: 'food_recognition',
           success: true,
           metadata: {
-            food_name: food.name,
+            food_name: food.product_name,
             confidence: food.ai_confidence,
           },
         });
       }
 
+      // Refresh meals list before navigating
+      await refreshMeals();
+
       // Navigate back to Home
-      Alert.alert('Success! ✅', `${food.name} logged`);
+      Alert.alert('Success! ✅', `${food.product_name} logged`);
       navigation.navigate('Home');
       
     } catch (error) {
@@ -601,7 +612,7 @@ export default function ResultScreen({ route, navigation }) {
         [{ text: 'OK' }]
       );
     } finally {
-      setLoading(false);
+      setSavingMeal(false);
     }
   };
 
