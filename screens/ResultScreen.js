@@ -483,8 +483,12 @@ export default function ResultScreen({ route, navigation }) {
           console.error('Continuing without image...');
           // Don't block meal logging if image upload fails
         }
+      } else if (food.image_url && food.image_url.startsWith('http')) {
+        // Remote URL (e.g., from OpenFoodFacts barcode scan) — use directly
+        imageUrl = food.image_url;
+        console.log('🌐 Using remote image URL:', imageUrl);
       } else {
-        console.log('ℹ️ No photo to upload (barcode scan or manual entry)');
+        console.log('ℹ️ No image available');
       }
 
       // STEP 2: Check if food exists in food_database (by name or barcode)
@@ -496,27 +500,43 @@ export default function ResultScreen({ route, navigation }) {
         // Check by barcode first
         const { data: existingProduct } = await supabase
           .from('food_database')
-          .select('id')
+          .select('id, image_url')
           .eq('barcode', food.barcode)
           .maybeSingle();
-        
+
         if (existingProduct) {
           productId = existingProduct.id;
           console.log('✅ Found existing product by barcode:', productId);
+
+          // Update image_url if the existing product doesn't have one
+          if (!existingProduct.image_url && imageUrl) {
+            await supabase.from('food_database')
+              .update({ image_url: imageUrl })
+              .eq('id', productId);
+            console.log('🖼️ Updated existing product with image URL');
+          }
         }
       }
-      
+
       if (!productId) {
         // Check by name
         const { data: existingProduct } = await supabase
           .from('food_database')
-          .select('id')
+          .select('id, image_url')
           .eq('name', food.product_name || food.name)
           .maybeSingle();
-        
+
         if (existingProduct) {
           productId = existingProduct.id;
           console.log('✅ Found existing product by name:', productId);
+
+          // Update image_url if the existing product doesn't have one
+          if (!existingProduct.image_url && imageUrl) {
+            await supabase.from('food_database')
+              .update({ image_url: imageUrl })
+              .eq('id', productId);
+            console.log('🖼️ Updated existing product with image URL');
+          }
         }
       }
 
