@@ -128,11 +128,15 @@ export default function ExportReportScreen({ navigation }) {
       console.log('🔍 Data fetched:', data?.length, 'days');
       
       if (!data) {
-        Alert.alert('Error', 'Failed to fetch data');
+        Alert.alert(t('common.error'), t('stats.exportReport.fetchFailed'));
         return;
       }
 
-      const periodLabel = selectedPeriod === 'weekly' ? 'Weekly' : 'Monthly';
+      const periodLabel =
+        selectedPeriod === 'weekly'
+          ? t('stats.exportReport.weekly')
+          : t('stats.exportReport.monthly');
+
       const userName = profile?.full_name || 'User';
 
       // Build HTML
@@ -152,7 +156,7 @@ export default function ExportReportScreen({ navigation }) {
             </style>
           </head>
           <body>
-            <h1>${periodLabel} Nutrition Report</h1>
+            <h1>${t('stats.exportReport.nutritionReportTitle', { period: periodLabel })}</h1>
             <p><strong>Name:</strong> ${userName}</p>
             <p><strong>Generated:</strong> ${new Date().toLocaleDateString()}</p>
             
@@ -212,7 +216,7 @@ export default function ExportReportScreen({ navigation }) {
       // Just share it
       await Sharing.shareAsync(uri, {
         mimeType: 'application/pdf',
-        dialogTitle: 'Save your PDF report'
+        dialogTitle: t('stats.exportReport.savePdf')
       });
 
     } catch (error) {
@@ -233,7 +237,7 @@ export default function ExportReportScreen({ navigation }) {
       console.log('🔍 Data fetched:', data?.length, 'days');
 
       if (!data) {
-        Alert.alert('Error', 'Failed to fetch data');
+        Alert.alert(t('common.error'), t('stats.exportReport.fetchFailed'));
         return;
       }
 
@@ -255,7 +259,11 @@ export default function ExportReportScreen({ navigation }) {
       // Generate base64 string
       const wbout = XLSX.write(wb, { type: 'base64', bookType: 'xlsx' });
       
-      const periodLabel = selectedPeriod === 'weekly' ? 'Weekly' : 'Monthly';
+      const periodLabel =
+        selectedPeriod === 'weekly'
+          ? t('stats.exportReport.weekly')
+          : t('stats.exportReport.monthly');
+
       const fileName = `Veetha_${periodLabel}_Report_${new Date().toLocaleDateString('en-CA')}.xlsx`;
       const fileUri = FileSystem.cacheDirectory + fileName;
 
@@ -269,7 +277,7 @@ export default function ExportReportScreen({ navigation }) {
       // Just share it
       await Sharing.shareAsync(fileUri, {
         mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        dialogTitle: 'Save your Excel report'
+        dialogTitle: t('stats.exportReport.saveExcel')
       });
 
     } catch (error) {
@@ -284,11 +292,15 @@ export default function ExportReportScreen({ navigation }) {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
       <View style={[styles.header, { backgroundColor: theme.cardBackground }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={[styles.backButtonText, { color: theme.primary }]}>← Back</Text>
+          <Text style={[styles.backButtonText, { color: theme.primary }]}>
+            {t('stats.wreport.back')}
+          </Text>
         </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.text }]}>Export Report</Text>
+        <Text style={[styles.title, { color: theme.text }]}>
+          {t('stats.exportReport.title')}
+        </Text>
         <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-          Download your nutrition data
+          {t('stats.exportReport.subtitle')}
         </Text>
       </View>
 
@@ -303,18 +315,22 @@ export default function ExportReportScreen({ navigation }) {
           ) : (
             <>
               <Text style={styles.bigButtonIcon}>📥</Text>
-              <Text style={styles.bigButtonText}>Start Export</Text>
+              <Text style={styles.bigButtonText}>
+                {t('stats.exportReport.startExport')}
+              </Text>
             </>
           )}
         </TouchableOpacity>
 
         <View style={[styles.infoCard, { backgroundColor: theme.cardBackground }]}>
-          <Text style={[styles.infoTitle, { color: theme.text }]}>What's Included?</Text>
+          <Text style={[styles.infoTitle, { color: theme.text }]}>
+            {t('stats.exportReport.whatsIncluded')}
+          </Text>
           <Text style={[styles.infoText, { color: theme.textSecondary }]}>
-            • Daily calorie totals{'\n'}
-            • Macronutrient breakdown{'\n'}
-            • Goal vs actual comparison{'\n'}
-            • Summary statistics
+            • {t('stats.exportReport.dailyCalories')}{'\n'}
+            • {t('stats.exportReport.macroBreakdown')}{'\n'}
+            • {t('stats.exportReport.goalComparison')}{'\n'}
+            • {t('stats.exportReport.summaryStats')}
           </Text>
         </View>
       </ScrollView>
@@ -333,27 +349,35 @@ export default function ExportReportScreen({ navigation }) {
         >
           <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
             <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
-              <Text style={[styles.modalTitle, { color: theme.text }]}>Select Period</Text>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>
+                {t('stats.exportReport.selectPeriod')}
+              </Text>
               
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: theme.primary }]}
                 onPress={() => handlePeriodSelect('weekly')}
               >
-                <Text style={styles.modalButtonText}>📅 Last 7 Days</Text>
+                <Text style={styles.modalButtonText}>
+                  📅 {t('stats.exportReport.last7Days')}
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: theme.primary }]}
                 onPress={() => handlePeriodSelect('monthly')}
               >
-                <Text style={styles.modalButtonText}>📆 Current Month</Text>
+                <Text style={styles.modalButtonText}>
+                  📆 {t('stats.exportReport.currentMonth')}
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.modalCancelButton, { borderColor: theme.border }]}
                 onPress={() => setShowPeriodModal(false)}
               >
-                <Text style={[styles.modalCancelText, { color: theme.text }]}>Cancel</Text>
+                <Text style={[styles.modalCancelText, { color: theme.text }]}>
+                  {t('common.cancel')}
+                </Text>
               </TouchableOpacity>
             </View>
           </TouchableOpacity>
@@ -374,27 +398,35 @@ export default function ExportReportScreen({ navigation }) {
         >
           <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
             <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
-              <Text style={[styles.modalTitle, { color: theme.text }]}>Select Format</Text>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>
+                {t('stats.exportReport.selectFormat')}
+              </Text>
               
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: '#E53935' }]}
                 onPress={() => handleFormatSelect('pdf')}
               >
-                <Text style={styles.modalButtonText}>📄 PDF Report</Text>
+                <Text style={styles.modalButtonText}>
+                  📄 {t('stats.exportReport.pdfReport')}
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: '#43A047' }]}
                 onPress={() => handleFormatSelect('excel')}
               >
-                <Text style={styles.modalButtonText}>📊 Excel Spreadsheet</Text>
+                <Text style={styles.modalButtonText}>
+                  📊 {t('stats.exportReport.excelSpreadsheet')}
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.modalCancelButton, { borderColor: theme.border }]}
                 onPress={() => setShowFormatModal(false)}
               >
-                <Text style={[styles.modalCancelText, { color: theme.text }]}>Cancel</Text>
+                <Text style={[styles.modalCancelText, { color: theme.text }]}>
+                  {t('common.cancel')}
+                </Text>
               </TouchableOpacity>
             </View>
           </TouchableOpacity>

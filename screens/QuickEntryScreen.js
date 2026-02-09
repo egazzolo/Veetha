@@ -102,23 +102,41 @@ export default function QuickEntryScreen({ navigation }) {
 
       await refreshMeals();
       
-      Alert.alert('Logged! ✅', `${food.emoji} ${food.name} added`, [
-        { text: 'OK', onPress: () => navigation.navigate('Home') }
-      ]);
+      Alert.alert(
+        t('stats.quickEntry.loggedTitle'),
+        t('stats.quickEntry.loggedMessage', {
+          meal: `${food.emoji} ${food.name}`
+        }),
+        [
+          {
+            text: t('common.ok'),
+            onPress: () => navigation.navigate('Home')
+          }
+        ]
+      );
       
     } catch (error) {
       console.error('Error quick logging:', error);
-      Alert.alert('Error', 'Failed to log meal');
+      Alert.alert(
+        t('common.error'),
+        t('stats.quickEntry.failedLog')
+      );
     }
   };
 
   const handleSave = async () => {
     if (!mealName.trim()) {
-      Alert.alert('Missing Info', 'Please enter a meal name');
+      Alert.alert(
+        t('stats.quickEntry.missingInfo'),
+        t('stats.quickEntry.enterMealName')
+      )
       return;
     }
     if (!calories || parseFloat(calories) <= 0) {
-      Alert.alert('Missing Info', 'Please enter calories');
+      Alert.alert(
+        t('stats.quickEntry.missingInfo'),
+        t('stats.quickEntry.enterCalories')
+      )
       return;
     }
 
@@ -127,7 +145,10 @@ export default function QuickEntryScreen({ navigation }) {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        Alert.alert('Error', 'Please log in');
+      Alert.alert(
+        t('common.error'),
+        t('stats.quickEntry.pleaseLogin')
+      );
         navigation.navigate('Login');
         return;
       }
@@ -165,13 +186,23 @@ export default function QuickEntryScreen({ navigation }) {
 
       await refreshMeals();
 
-      Alert.alert('Success! ✅', 'Meal logged successfully', [
-        { text: 'OK', onPress: () => navigation.navigate('Home') }
-      ]);
+      Alert.alert(
+        t('stats.quickEntry.successTitle'),
+        t('stats.quickEntry.successMessage'),
+        [
+          {
+            text: t('common.ok'),
+            onPress: () => navigation.navigate('Home')
+          }
+        ]
+      );
 
     } catch (error) {
       console.error('Error saving meal:', error);
-      Alert.alert('Error', 'Failed to save meal: ' + error.message);
+      Alert.alert(
+        t('common.error'),
+        t('stats.quickEntry.failedSave') + ': ' + error.message
+      );
     } finally {
       setSaving(false);
     }
@@ -187,7 +218,9 @@ export default function QuickEntryScreen({ navigation }) {
         >
           <Text style={[styles.backArrow, { color: theme.text }]}>←</Text>
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.text }]}>Quick Entry</Text>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>
+          {t('stats.quickEntry.title')}
+        </Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -201,10 +234,12 @@ export default function QuickEntryScreen({ navigation }) {
             >
               <View>
                 <Text style={[styles.suggestionsTitle, { color: theme.text }]}>
-                  ⚡ Quick Add
+                  {t('stats.quickEntry.quickAdd')}
                 </Text>
                 <Text style={[styles.suggestionsSubtitle, { color: theme.textSecondary }]}>
-                  {userCountry ? `Popular in ${LOCAL_FOODS[userCountry]?.name || 'your area'}` : 'Common foods'}
+                  {userCountry
+                    ? t('stats.quickEntry.popularIn', { country: LOCAL_FOODS[userCountry]?.name })
+                    : t('stats.quickEntry.commonFoods')}
                 </Text>
               </View>
               <Text style={[styles.dropdownArrow, { color: theme.text }]}>
@@ -229,7 +264,9 @@ export default function QuickEntryScreen({ navigation }) {
                         {food.calories} kcal • {food.protein}g protein
                       </Text>
                     </View>
-                    <Text style={[styles.addButton, { color: theme.primary }]}>+ Add</Text>
+                    <Text style={[styles.addButton, { color: theme.primary }]}>
+                      {t('stats.quickEntry.add')}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -239,17 +276,21 @@ export default function QuickEntryScreen({ navigation }) {
 
         {/* Manual Entry Form */}
         <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Meal Details</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>
+            {t('stats.quickEntry.mealDetails')}
+          </Text>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>Meal Name *</Text>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>
+              {t('stats.quickEntry.mealName')}
+            </Text>
             <TextInput
               style={[styles.input, { 
                 backgroundColor: theme.background, 
                 color: theme.text,
                 borderColor: theme.border 
               }]}
-              placeholder="e.g., Chicken Salad"
+              placeholder={t('stats.quickEntry.mealNamePlaceholder')}
               placeholderTextColor={theme.textTertiary}
               value={mealName}
               onChangeText={setMealName}
@@ -257,7 +298,9 @@ export default function QuickEntryScreen({ navigation }) {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>Serving Size (grams)</Text>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>
+              {t('stats.quickEntry.servingSize')}
+            </Text>
             <TextInput
               style={[styles.input, { 
                 backgroundColor: theme.background, 
@@ -273,7 +316,9 @@ export default function QuickEntryScreen({ navigation }) {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>Calories (kcal) *</Text>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>
+              {t('stats.quickEntry.calories')}
+            </Text>
             <TextInput
               style={[styles.input, { 
                 backgroundColor: theme.background, 
@@ -288,10 +333,14 @@ export default function QuickEntryScreen({ navigation }) {
             />
           </View>
 
-          <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 20 }]}>Macros (Optional)</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 20 }]}>
+            {t('stats.quickEntry.macros')}
+          </Text>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>Protein (g)</Text>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>
+              {t('stats.quickEntry.protein')}
+            </Text>
             <TextInput
               style={[styles.input, { 
                 backgroundColor: theme.background, 
@@ -307,7 +356,9 @@ export default function QuickEntryScreen({ navigation }) {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>Carbs (g)</Text>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>
+              {t('stats.quickEntry.carbs')}
+            </Text>
             <TextInput
               style={[styles.input, { 
                 backgroundColor: theme.background, 
@@ -323,7 +374,9 @@ export default function QuickEntryScreen({ navigation }) {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>Fat (g)</Text>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>
+              {t('stats.quickEntry.fat')}
+            </Text>
             <TextInput
               style={[styles.input, { 
                 backgroundColor: theme.background, 
@@ -344,12 +397,14 @@ export default function QuickEntryScreen({ navigation }) {
             disabled={saving}
           >
             <Text style={styles.saveButtonText}>
-              {saving ? 'Saving...' : '✓ Save Meal'}
+              {saving
+                ? t('stats.quickEntry.saving')
+                : t('stats.quickEntry.saveMeal')}
             </Text>
           </TouchableOpacity>
 
           <Text style={[styles.hint, { color: theme.textTertiary }]}>
-            💡 Tip: Use Quick Add for common foods, or enter custom meals below
+            {t('stats.quickEntry.tip')}
           </Text>
         </View>
       </ScrollView>

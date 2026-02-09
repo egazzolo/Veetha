@@ -418,7 +418,13 @@ export default {
       gotIt: 'Nakuha ko na!',
     },
     mealsList: {
-     serving: 'Sukatan:', 
+      serving: 'Sukatan:',
+      protein: 'Protina',
+      carbs: 'Carbohydrates',
+      fat: 'Taba',
+      sodium: 'Sodium',
+      sugar: 'Asukal',
+      fiber: 'Hibla'
     }
   },
 
@@ -761,12 +767,12 @@ export default {
       back: '← Bumalik',
       reports: 'Mga Ulat',
       weeklyReport: 'Lingguhang Ulat',
-      subtitle: '',
-      card1Title: '',
-      card1Subtitle: '',
-      consumed: '',
-      goal: '',
-      card2Title: '',
+      subtitle: 'Buod ng huling 7 araw',
+      card1Title: 'Arawang calories',
+      card1Subtitle: 'Nakonsumo vs target',
+      consumed: 'Nakonsumo',
+      goal: 'Target',
+      card2Title: 'Breakdown ng macronutrients',
       card2Subtitle: '',
       protein: '💪 Protina',
       carbs: '🌾 Carbs',
@@ -779,6 +785,73 @@ export default {
       burned: 'Nasunog',
       sessions: 'Mga Sesyon',
       exportReport: 'I-export ang Ulat'
+    },
+    exportReport: {
+      title: 'I-export ang ulat',
+      subtitle: 'I-download ang iyong nutrition data',
+      startExport: 'Simulan ang export',
+
+      whatsIncluded: 'Ano ang kasama?',
+      dailyCalories: 'Arawang kabuuang calories',
+      macroBreakdown: 'Breakdown ng macronutrients',
+      goalComparison: 'Goal kumpara sa actual',
+      summaryStats: 'Buod ng stats',
+
+      selectPeriod: 'Piliin ang period',
+      last7Days: 'Huling 7 araw',
+      currentMonth: 'Kasalukuyang buwan',
+
+      selectFormat: 'Piliin ang format',
+      pdfReport: 'PDF ulat',
+      excelSpreadsheet: 'Excel spreadsheet',
+
+      weekly: 'Lingguhan',
+      monthly: 'Buwanang',
+
+      nutritionReportTitle: 'Ulat sa nutrisyon - {{period}}',
+
+      savePdf: 'I-save ang PDF report',
+      saveExcel: 'I-save ang Excel report',
+
+      fetchFailed: 'Hindi makuha ang data'
+    },
+    quickEntry: {
+      title: 'Mabilis na Entry',
+      quickAdd: '⚡ Mabilis na Add',
+      popularIn: 'Sikat sa {{country}}',
+      commonFoods: 'Karaniwang pagkain',
+      add: '+ Add',
+
+      mealDetails: 'Detalye ng pagkain',
+      mealName: 'Pangalan ng pagkain *',
+      mealNamePlaceholder: 'hal.: Chicken Salad',
+      servingSize: 'Laki ng serving (grams)',
+      calories: 'Calories (kcal) *',
+
+      macros: 'Macros (Opsyonal)',
+      protein: 'Protein (g)',
+      carbs: 'Carbs (g)',
+      fat: 'Fat (g)',
+
+      saving: 'Nagse-save...',
+      saveMeal: '✓ I-save ang pagkain',
+
+      tip: '💡 Tip: Gamitin ang Quick Add para sa karaniwang pagkain o maglagay ng custom meal sa itaas',
+
+      loggedTitle: 'Na-log! ✅',
+      loggedMessage: '{{meal}} nadagdag',
+
+      missingInfo: 'Kulang ang impormasyon',
+      enterMealName: 'Maglagay ng pangalan ng pagkain',
+      enterCalories: 'Maglagay ng calories',
+
+      pleaseLogin: 'Mag-login muna',
+
+      successTitle: 'Tagumpay! ✅',
+      successMessage: 'Matagumpay na na-log ang pagkain',
+
+      failedLog: 'Hindi na-log ang pagkain',
+      failedSave: 'Hindi na-save ang pagkain'
     },
   },
 

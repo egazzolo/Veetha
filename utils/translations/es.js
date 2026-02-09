@@ -419,7 +419,13 @@ export default {
     },
     mealsList: {
       serving: 'Porción:',
-    }
+      protein: 'Proteína',
+      carbs: 'Carbohidratos',
+      fat: 'Grasa',
+      sodium: 'Sodio',
+      sugar: 'Azúcar',
+      fiber: 'Fibra'
+        }
   },
 
   // Exercise Feature
@@ -761,12 +767,12 @@ export default {
       back: '← Atras',
       weeklyReport: 'Reporte Semanal',
       loadingReport: 'Cargando reporte...',
-      subtitle: 'Últimos 7 días',
+      subtitle: 'Resumen de los últimos 7 días',
       card1Title: 'Calorías diarias',
       card1Subtitle: 'Lo consumido vs el Objetivo',
       consumed: 'Consumido',
       goal: 'Objetivo',
-      card2Title: '',
+      card2Title: 'Desglose de macronutrientes',
       card2Subtitle: 'Proteínas, carbohidratos y grasa',
       protein: '💪 Proteína',
       carbs: '🌾 Carbos',
@@ -779,6 +785,73 @@ export default {
       burned: 'Quemado',
       sessions: 'Sesiones',
       exportReport: 'Exportar Reporte'
+    },
+    exportReport: {
+      title: 'Exportar reporte',
+      subtitle: 'Descarga tus datos nutricionales',
+      startExport: 'Iniciar exportación',
+
+      whatsIncluded: '¿Qué incluye?',
+      dailyCalories: 'Totales diarios de calorías',
+      macroBreakdown: 'Desglose de macronutrientes',
+      goalComparison: 'Comparación objetivo vs real',
+      summaryStats: 'Estadísticas resumidas',
+
+      selectPeriod: 'Seleccionar período',
+      last7Days: 'Últimos 7 días',
+      currentMonth: 'Mes actual',
+
+      selectFormat: 'Seleccionar formato',
+      pdfReport: 'Reporte PDF',
+      excelSpreadsheet: 'Hoja de cálculo Excel',
+
+      weekly: 'Semanal',
+      monthly: 'Mensual',
+
+      nutritionReportTitle: 'Reporte nutricional {{period}}',
+
+      savePdf: 'Guardar reporte PDF',
+      saveExcel: 'Guardar reporte Excel',
+
+      fetchFailed: 'Error al obtener datos'
+    },
+    quickEntry: {
+      title: 'Entrada rápida',
+      quickAdd: '⚡ Añadir rápido',
+      popularIn: 'Popular en {{country}}',
+      commonFoods: 'Comidas comunes',
+      add: '+ Añadir',
+
+      mealDetails: 'Detalles de la comida',
+      mealName: 'Nombre de la comida *',
+      mealNamePlaceholder: 'ej.: Ensalada de pollo',
+      servingSize: 'Tamaño de porción (gramos)',
+      calories: 'Calorías (kcal) *',
+
+      macros: 'Macros (Opcional)',
+      protein: 'Proteína (g)',
+      carbs: 'Carbohidratos (g)',
+      fat: 'Grasa (g)',
+
+      saving: 'Guardando...',
+      saveMeal: '✓ Guardar comida',
+
+      tip: '💡 Consejo: Usa Añadir rápido para comidas comunes o introduce comidas personalizadas arriba',
+
+      loggedTitle: '¡Registrado! ✅',
+      loggedMessage: '{{meal}} añadido',
+
+      missingInfo: 'Información faltante',
+      enterMealName: 'Por favor introduce un nombre de comida',
+      enterCalories: 'Por favor introduce calorías',
+
+      pleaseLogin: 'Por favor inicia sesión',
+
+      successTitle: '¡Éxito! ✅',
+      successMessage: 'Comida registrada correctamente',
+
+      failedLog: 'Error al registrar la comida',
+      failedSave: 'Error al guardar la comida'
     },
   },
   

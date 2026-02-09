@@ -419,6 +419,12 @@ export default {
     },
     mealsList: {
       serving: 'Portion:',
+      protein: 'Protéines',
+      carbs: 'Glucides',
+      fat: 'Lipides',
+      sodium: 'Sodium',
+      sugar: 'Sucre',
+      fiber: 'Fibres'
     }
   },
 
@@ -761,12 +767,12 @@ export default {
       back: '← Retour',
       reports: 'Rapports',
       weeklyReport: 'Rapport Hebdomadaire',
-      subtitle: '',
-      card1Title: '',
-      card1Subtitle: '',
-      consumed: '',
-      goal: '',
-      card2Title: '',
+      subtitle: 'Résumé des 7 derniers jours',
+      card1Title: 'Calories quotidiennes',
+      card1Subtitle: 'Consommé vs objectif',
+      consumed: 'Consommé',
+      goal: 'Objectif',
+      card2Title: 'Répartition des macronutriments',
       card2Subtitle: '',
       protein: '💪 Protéine',
       carbs: '🌾 Glucides',
@@ -779,6 +785,73 @@ export default {
       burned: 'Brûlé',
       sessions: 'Séances',
       exportReport: 'Exporter le Rapport'
+    },
+    exportReport: {
+      title: 'Exporter le rapport',
+      subtitle: 'Téléchargez vos données nutritionnelles',
+      startExport: "Démarrer l'export",
+
+      whatsIncluded: 'Contenu inclus',
+      dailyCalories: 'Calories quotidiennes totales',
+      macroBreakdown: 'Répartition des macronutriments',
+      goalComparison: 'Objectif vs réel',
+      summaryStats: 'Statistiques récapitulatives',
+
+      selectPeriod: 'Sélectionner la période',
+      last7Days: '7 derniers jours',
+      currentMonth: 'Mois actuel',
+
+      selectFormat: 'Sélectionner le format',
+      pdfReport: 'Rapport PDF',
+      excelSpreadsheet: 'Tableur Excel',
+
+      weekly: 'Hebdomadaire',
+      monthly: 'Mensuel',
+
+      nutritionReportTitle: 'Rapport nutritionnel {{period}}',
+
+      savePdf: 'Enregistrer le rapport PDF',
+      saveExcel: 'Enregistrer le rapport Excel',
+
+      fetchFailed: 'Impossible de récupérer les données'
+    },
+    quickEntry: {
+      title: 'Entrée rapide',
+      quickAdd: '⚡ Ajout rapide',
+      popularIn: 'Populaire en {{country}}',
+      commonFoods: 'Aliments courants',
+      add: '+ Ajouter',
+
+      mealDetails: 'Détails du repas',
+      mealName: 'Nom du repas *',
+      mealNamePlaceholder: 'ex.: Salade de poulet',
+      servingSize: 'Taille de portion (grammes)',
+      calories: 'Calories (kcal) *',
+
+      macros: 'Macros (Optionnel)',
+      protein: 'Protéines (g)',
+      carbs: 'Glucides (g)',
+      fat: 'Lipides (g)',
+
+      saving: 'Enregistrement...',
+      saveMeal: '✓ Enregistrer le repas',
+
+      tip: '💡 Astuce : utilisez Ajout rapide pour les aliments courants ou saisissez des repas personnalisés ci-dessus',
+
+      loggedTitle: 'Enregistré ! ✅',
+      loggedMessage: '{{meal}} ajouté',
+
+      missingInfo: 'Informations manquantes',
+      enterMealName: 'Veuillez entrer un nom de repas',
+      enterCalories: 'Veuillez entrer les calories',
+
+      pleaseLogin: 'Veuillez vous connecter',
+
+      successTitle: 'Succès ! ✅',
+      successMessage: 'Repas enregistré avec succès',
+
+      failedLog: 'Échec de l’enregistrement du repas',
+      failedSave: 'Échec de la sauvegarde du repas'
     },
   },
 

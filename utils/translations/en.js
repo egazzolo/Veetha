@@ -419,6 +419,12 @@ export default {
     },
     mealsList: {
       serving: 'Serving:',
+      protein: 'Protein',
+      carbs: 'Carbs',
+      fat: 'Fat',
+      sodium: 'Sodium',
+      sugar: 'Sugar',
+      fiber: 'Fiber'
     }
   },
 
@@ -779,6 +785,73 @@ export default {
       burned: 'Burned',
       sessions: 'Sessions',
       exportReport: 'Export Report'
+    },
+    exportReport: {
+      title: 'Export Report',
+      subtitle: 'Download your nutrition data',
+      startExport: 'Start Export',
+
+      whatsIncluded: "What's Included?",
+      dailyCalories: 'Daily calorie totals',
+      macroBreakdown: 'Macronutrient breakdown',
+      goalComparison: 'Goal vs actual comparison',
+      summaryStats: 'Summary statistics',
+
+      selectPeriod: 'Select Period',
+      last7Days: 'Last 7 Days',
+      currentMonth: 'Current Month',
+
+      selectFormat: 'Select Format',
+      pdfReport: 'PDF Report',
+      excelSpreadsheet: 'Excel Spreadsheet',
+
+      weekly: 'Weekly',
+      monthly: 'Monthly',
+
+      nutritionReportTitle: '{{period}} Nutrition Report',
+
+      savePdf: 'Save your PDF report',
+      saveExcel: 'Save your Excel report',
+
+      fetchFailed: 'Failed to fetch data'
+    },
+    quickEntry: {
+      title: 'Quick Entry',
+      quickAdd: '⚡ Quick Add',
+      popularIn: 'Popular in {{country}}',
+      commonFoods: 'Common foods',
+      add: '+ Add',
+
+      mealDetails: 'Meal Details',
+      mealName: 'Meal Name *',
+      mealNamePlaceholder: 'e.g., Chicken Salad',
+      servingSize: 'Serving Size (grams)',
+      calories: 'Calories (kcal) *',
+
+      macros: 'Macros (Optional)',
+      protein: 'Protein (g)',
+      carbs: 'Carbs (g)',
+      fat: 'Fat (g)',
+
+      saving: 'Saving...',
+      saveMeal: '✓ Save Meal',
+
+      tip: '💡 Tip: Use Quick Add for common foods, or enter custom meals above',
+
+      loggedTitle: 'Logged! ✅',
+      loggedMessage: '{{meal}} added',
+
+      missingInfo: 'Missing Info',
+      enterMealName: 'Please enter a meal name',
+      enterCalories: 'Please enter calories',
+
+      pleaseLogin: 'Please log in',
+
+      successTitle: 'Success! ✅',
+      successMessage: 'Meal logged successfully',
+
+      failedLog: 'Failed to log meal',
+      failedSave: 'Failed to save meal'
     },
   },
 

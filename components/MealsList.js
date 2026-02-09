@@ -244,7 +244,7 @@ export default function MealsList({
               <View style={styles.postItMacros}>
                 <View style={styles.postItMacroRow}>
                   <Text style={styles.postItMacroEmoji}>💪</Text>
-                  <Text style={styles.postItMacroLabel}>Protein:</Text>
+                  <Text style={styles.postItMacroLabel}>{t('home.mealsList.protein')}:</Text>
                   <Text style={styles.postItMacroValue}>
                     {Math.round(selectedMeal?.protein || 0)}g
                   </Text>
@@ -252,7 +252,7 @@ export default function MealsList({
 
                 <View style={styles.postItMacroRow}>
                   <Text style={styles.postItMacroEmoji}>🌾</Text>
-                  <Text style={styles.postItMacroLabel}>Carbs:</Text>
+                  <Text style={styles.postItMacroLabel}>{t('home.mealsList.carbs')}:</Text>
                   <Text style={styles.postItMacroValue}>
                     {Math.round(selectedMeal?.carbs || 0)}g
                   </Text>
@@ -260,7 +260,7 @@ export default function MealsList({
 
                 <View style={styles.postItMacroRow}>
                   <Text style={styles.postItMacroEmoji}>🥑</Text>
-                  <Text style={styles.postItMacroLabel}>Fat:</Text>
+                  <Text style={styles.postItMacroLabel}>{t('home.mealsList.fat')}:</Text>
                   <Text style={styles.postItMacroValue}>
                     {Math.round(selectedMeal?.fat || 0)}g
                   </Text>
@@ -268,7 +268,7 @@ export default function MealsList({
 
                 <View style={styles.postItMacroRow}>
                   <Text style={styles.postItMacroEmoji}>🧂</Text>
-                  <Text style={styles.postItMacroLabel}>Sodium:</Text>
+                  <Text style={styles.postItMacroLabel}>{t('home.mealsList.sodium')}:</Text>
                   <Text style={styles.postItMacroValue}>
                     {Math.round(selectedMeal?.sodium || 0)}mg
                   </Text>
@@ -276,7 +276,7 @@ export default function MealsList({
 
                 <View style={styles.postItMacroRow}>
                   <Text style={styles.postItMacroEmoji}>🍬</Text>
-                  <Text style={styles.postItMacroLabel}>Sugar:</Text>
+                  <Text style={styles.postItMacroLabel}>{t('home.mealsList.sugar')}:</Text>
                   <Text style={styles.postItMacroValue}>
                     {Math.round(selectedMeal?.sugar || 0)}g
                   </Text>
@@ -284,7 +284,7 @@ export default function MealsList({
 
                 <View style={styles.postItMacroRow}>
                   <Text style={styles.postItMacroEmoji}>🌿</Text>
-                  <Text style={styles.postItMacroLabel}>Fiber:</Text>
+                  <Text style={styles.postItMacroLabel}>{t('home.mealsList.fiber')}:</Text>
                   <Text style={styles.postItMacroValue}>
                     {Math.round(selectedMeal?.fiber || 0)}g
                   </Text>
@@ -294,7 +294,7 @@ export default function MealsList({
               {/* Serving size footer */}
               <View style={styles.postItFooter}>
                 <Text style={styles.postItServingText}>
-                  {t('mealslist.serving')}: {selectedMeal?.serving_grams}{selectedMeal?.serving_unit || 'g'}
+                  {t('home.mealsList.serving')}: {selectedMeal?.serving_grams}{selectedMeal?.serving_unit || 'g'}
                 </Text>
               </View>
             </View>
