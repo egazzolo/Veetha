@@ -32,12 +32,38 @@ export default function ExportReportScreen({ navigation }) {
 
   // Handle format selection
   const handleFormatSelect = async (format) => {
+
     setShowFormatModal(false);
-    
-    if (format === 'pdf') {
-      await exportPDF();
-    } else {
-      await exportExcel();
+
+    try {
+
+      setExporting(true);
+
+      const data = await fetchData();
+
+      if (!data || data.length === 0) {
+        Alert.alert(t('common.error'), t('stats.exportReport.fetchFailed'));
+        return;
+      }
+
+      navigation.navigate('ReportViewer', {
+        reportData: {
+          nutrition: data,
+          exercise: null,
+          water: null,
+        },
+        reportType: selectedPeriod,
+        exportFormat: format
+      });
+
+    } catch (error) {
+
+      console.error(error);
+
+    } finally {
+
+      setExporting(false);
+
     }
   };
 
@@ -71,7 +97,15 @@ export default function ExportReportScreen({ navigation }) {
       // Fetch meals
       const { data: meals, error } = await supabase
         .from('meals')
-        .select('logged_at, calories, protein, carbs, fat')
+        .select(`
+          logged_at,
+          food_database (
+            calories,
+            protein,
+            carbs,
+            fat
+          )
+        `)
         .eq('user_id', user.id)
         .gte('logged_at', startDate.toISOString())
         .lte('logged_at', endDate.toISOString())
@@ -86,10 +120,10 @@ export default function ExportReportScreen({ navigation }) {
         if (!mealsByDate[date]) {
           mealsByDate[date] = { calories: 0, protein: 0, carbs: 0, fat: 0 };
         }
-        mealsByDate[date].calories += meal.calories || 0;
-        mealsByDate[date].protein += meal.protein || 0;
-        mealsByDate[date].carbs += meal.carbs || 0;
-        mealsByDate[date].fat += meal.fat || 0;
+        mealsByDate[date].calories += meal.food_database?.calories || 0;
+        mealsByDate[date].protein += meal.food_database?.protein || 0;
+        mealsByDate[date].carbs += meal.food_database?.carbs || 0;
+        mealsByDate[date].fat += meal.food_database?.fat || 0;
       });
 
       // Build daily data
@@ -157,18 +191,18 @@ export default function ExportReportScreen({ navigation }) {
           </head>
           <body>
             <h1>${t('stats.exportReport.nutritionReportTitle', { period: periodLabel })}</h1>
-            <p><strong>Name:</strong> ${userName}</p>
-            <p><strong>Generated:</strong> ${new Date().toLocaleDateString()}</p>
+            <p><strong>${t('stats.exportReport.name')}:</strong> ${userName}</p>
+            <p><strong>${t('stats.exportReport.generated')}:</strong> ${new Date().toLocaleDateString()}</p>
             
-            <h2>Daily Totals</h2>
+            <h2>${t('stats.exportReport.dailyTotals')}</h2>
             <table>
               <tr>
-                <th>Date</th>
-                <th>Calories</th>
-                <th>Goal</th>
-                <th>Protein (g)</th>
-                <th>Carbs (g)</th>
-                <th>Fat (g)</th>
+                <th>${t('stats.exportReport.date')}</th>
+                <th>${t('stats.exportReport.calories')}</th>
+                <th>${t('stats.exportReport.goal')}</th>
+                <th>${t('stats.exportReport.protein')}</th>
+                <th>${t('stats.exportReport.carbs')}</th>
+                <th>${t('stats.exportReport.fat')}</th>
               </tr>
               ${data.map(day => `
                 <tr>
@@ -183,25 +217,25 @@ export default function ExportReportScreen({ navigation }) {
             </table>
 
             <div class="summary">
-              <h2>Summary</h2>
+              <h2>${t('stats.exportReport.summary')}</h2>
               <div class="summary-item">
-                <span>Total Calories:</span>
+                <span>${t('stats.exportReport.totalCalories')}:</span>
                 <strong>${data.reduce((sum, d) => sum + d.calories, 0).toLocaleString()}</strong>
               </div>
               <div class="summary-item">
-                <span>Avg Daily Calories:</span>
+                <span>${t('stats.exportReport.avgDailyCalories')}:</span>
                 <strong>${Math.round(data.reduce((sum, d) => sum + d.calories, 0) / data.length)}</strong>
               </div>
               <div class="summary-item">
-                <span>Total Protein:</span>
+                <span>${t('stats.exportReport.totalProtein')}:</span>
                 <strong>${data.reduce((sum, d) => sum + d.protein, 0)}g</strong>
               </div>
               <div class="summary-item">
-                <span>Total Carbs:</span>
+                <span>${t('stats.exportReport.totalCarbs')}:</span>
                 <strong>${data.reduce((sum, d) => sum + d.carbs, 0)}g</strong>
               </div>
               <div class="summary-item">
-                <span>Total Fat:</span>
+                <span>${t('stats.exportReport.totalFat')}:</span>
                 <strong>${data.reduce((sum, d) => sum + d.fat, 0)}g</strong>
               </div>
             </div>
@@ -243,12 +277,12 @@ export default function ExportReportScreen({ navigation }) {
 
       // Prepare data for Excel
       const excelData = data.map(day => ({
-        'Date': day.date,
-        'Calories': day.calories,
-        'Goal': day.goal,
-        'Protein (g)': day.protein,
-        'Carbs (g)': day.carbs,
-        'Fat (g)': day.fat,
+        [t('stats.exportReport.date')]: day.date,
+        [t('stats.exportReport.calories')]: day.calories,
+        [t('stats.exportReport.goal')]: day.goal,
+        [t('stats.exportReport.protein')]: day.protein,
+        [t('stats.exportReport.carbs')]: day.carbs,
+        [t('stats.exportReport.fat')]: day.fat,
       }));
 
       // Create worksheet

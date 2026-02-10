@@ -95,7 +95,15 @@ export default function StatsScreen({ navigation }) {
       // Get ALL meals from current week in ONE query
       const { data: meals, error } = await supabase
         .from('meals')
-        .select('logged_at, calories, protein, carbs, fat')
+        .select(`
+          logged_at,
+          food_database (
+            calories,
+            protein,
+            carbs,
+            fat
+          )
+        `)
         .eq('user_id', user.id)
         .gte('logged_at', startDate.toISOString())
         .lte('logged_at', endDate.toISOString())
@@ -123,10 +131,10 @@ export default function StatsScreen({ navigation }) {
         const dateStr = date.toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
         const dayMeals = mealsByDate[dateStr] || [];
 
-        const totalCalories = dayMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
-        const totalProtein = dayMeals.reduce((sum, m) => sum + (m.protein || 0), 0);
-        const totalCarbs = dayMeals.reduce((sum, m) => sum + (m.carbs || 0), 0);
-        const totalFat = dayMeals.reduce((sum, m) => sum + (m.fat || 0), 0);
+        const totalCalories = dayMeals.reduce((sum, m) => sum + (m.food_database?.calories || 0), 0);
+        const totalProtein = dayMeals.reduce((sum, m) => sum + (m.food_database?.protein || 0), 0);
+        const totalCarbs = dayMeals.reduce((sum, m) => sum + (m.food_database?.carbs || 0), 0);
+        const totalFat = dayMeals.reduce((sum, m) => sum + (m.food_database?.fat || 0), 0);
 
         weekData.push({
           day: date.toLocaleDateString('en-US', { weekday: 'short' }),
@@ -167,7 +175,12 @@ export default function StatsScreen({ navigation }) {
       // Get ALL meals from current month in ONE query
       const { data: meals, error } = await supabase
         .from('meals')
-        .select('logged_at, calories')
+        .select(`
+          logged_at,
+          food_database (
+            calories
+          )
+        `)
         .eq('user_id', user.id)
         .gte('logged_at', firstDay.toISOString())
         .lte('logged_at', lastDay.toISOString())
@@ -195,7 +208,7 @@ export default function StatsScreen({ navigation }) {
         const dateStr = date.toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
         const dayMeals = mealsByDate[dateStr] || [];
 
-        const totalCalories = dayMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
+        const totalCalories = dayMeals.reduce((sum, m) => sum + (m.food_database?.calories || 0), 0);
 
         monthData.push({
           date: dateStr,
@@ -703,27 +716,14 @@ export default function StatsScreen({ navigation }) {
                   {t('stats.reports')}
                 </Text>
                 
-                <TouchableOpacity 
-                  style={[styles.settingItem, { backgroundColor: theme.cardBackground }]}
-                  onPress={() => navigation.navigate('WeeklyReport')}
-                >
-                  <View style={styles.settingLeft}>
-                    <Text style={styles.settingIcon}>📊</Text>
-                    <Text style={[styles.settingLabel, { color: theme.text }]}>
-                      {t('stats.weeklyReport')}
-                    </Text>
-                  </View>
-                  <Text style={styles.settingArrow}>›</Text>
-                </TouchableOpacity>
-
                 <TouchableOpacity
                   style={[styles.settingItem, { backgroundColor: theme.cardBackground }]}
                   onPress={() => navigation.navigate('ExportReport')}
                 >
                   <View style={styles.settingLeft}>
-                    <Text style={styles.settingIcon}>📥</Text>
+                    <Text style={styles.settingIcon}>📄</Text>
                     <Text style={[styles.settingLabel, { color: theme.text }]}>
-                      Export Report
+                      {t('stats.reports')}
                     </Text>
                   </View>
                   <Text style={styles.settingArrow}>›</Text>

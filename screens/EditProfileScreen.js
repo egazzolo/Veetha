@@ -6,6 +6,7 @@ import { supabase } from '../utils/supabase';
 import { useUser } from '../utils/UserContext';
 import { useLanguage } from '../utils/LanguageContext';
 import { logScreen, logEvent } from '../utils/analytics';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 export default function EditProfileScreen({ navigation }) {
   const { theme } = useTheme();
@@ -24,6 +25,7 @@ export default function EditProfileScreen({ navigation }) {
   const [heightFeet, setHeightFeet] = useState('');
   const [heightInches, setHeightInches] = useState('');
   const [unitSystem, setUnitSystem] = useState('metric');
+  const [showSuccessAfterSave, setShowSuccessAfterSave] = useState(false);
 
   useEffect(() => {
     logScreen('EditProfile');
@@ -33,6 +35,23 @@ export default function EditProfileScreen({ navigation }) {
   useEffect(() => {
     loadProfile();
   }, []);
+
+  useEffect(() => {
+    if (showSuccessAfterSave) {
+      Alert.alert(
+        t('editProfile.success'),
+        t('editProfile.profileUpdated'),
+        [
+          {
+            text: t('editProfile.ok'),
+            onPress: () => navigation.goBack(),
+          },
+        ]
+      );
+
+      setShowSuccessAfterSave(false);
+    }
+  }, [language, showSuccessAfterSave]);
 
   const loadProfile = async () => {
     try {
@@ -125,7 +144,7 @@ export default function EditProfileScreen({ navigation }) {
 
       // Apply language change NOW (on save)
       if (tempLanguage !== language) {
-        setLanguage(tempLanguage);
+        await setLanguage(tempLanguage);
       }
 
       // Convert measurements to metric for storage
@@ -165,19 +184,8 @@ export default function EditProfileScreen({ navigation }) {
       // Refresh profile context
       await refreshProfile();
 
-      // Wait for language to update, then show message in new language
-      setTimeout(() => {
-        Alert.alert(
-          t('editProfile.success'),
-          t('editProfile.profileUpdated'),
-          [
-            {
-              text: t('editProfile.ok'),
-              onPress: () => navigation.goBack(),
-            },
-          ]
-        );
-      }, 200);
+      setShowSuccessAfterSave(true);
+
     } catch (error) {
       console.error('Error saving profile:', error);
       Alert.alert(t('editProfile.error'), t('editProfile.failedToSave'));
@@ -200,14 +208,12 @@ export default function EditProfileScreen({ navigation }) {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
       <Pressable style={{ flex: 1 }} onPress={() => setShowLanguageDropdown(false)}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={{ flex: 1 }}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-        >
-          <ScrollView 
+
+          <KeyboardAwareScrollView
             style={styles.scrollView}
             contentContainerStyle={{ paddingBottom: 40 }}
+            enableOnAndroid={true}
+            extraScrollHeight={30}
             keyboardShouldPersistTaps="handled"
           >
             {/* Header */}
@@ -274,7 +280,7 @@ export default function EditProfileScreen({ navigation }) {
                       tempLanguage === 'en' ? '🇬🇧 English' :
                       tempLanguage === 'es' ? '🇪🇸 Español' :
                       tempLanguage === 'fr' ? '🇫🇷 Français' :
-                      tempLanguage === 'fil' ? '🇵🇭 Filipino' :
+                      tempLanguage === 'tl' ? '🇵🇭 Filipino' :
                       ''
                     }
                   </Text>
@@ -462,8 +468,8 @@ export default function EditProfileScreen({ navigation }) {
                 <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>{t('editProfile.cancel')}</Text>
               </TouchableOpacity>
             </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+          </KeyboardAwareScrollView>
+
       </Pressable>
     </SafeAreaView>
   );

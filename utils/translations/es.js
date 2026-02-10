@@ -784,36 +784,41 @@ export default {
       day: 'Día',
       burned: 'Quemado',
       sessions: 'Sesiones',
-      exportReport: 'Exportar Reporte'
+      exportReport: 'Exportar Reporte',
+      kcal: 'kcal',
     },
     exportReport: {
       title: 'Exportar reporte',
       subtitle: 'Descarga tus datos nutricionales',
       startExport: 'Iniciar exportación',
-
       whatsIncluded: '¿Qué incluye?',
       dailyCalories: 'Totales diarios de calorías',
       macroBreakdown: 'Desglose de macronutrientes',
       goalComparison: 'Comparación objetivo vs real',
       summaryStats: 'Estadísticas resumidas',
-
       selectPeriod: 'Seleccionar período',
       last7Days: 'Últimos 7 días',
       currentMonth: 'Mes actual',
-
       selectFormat: 'Seleccionar formato',
       pdfReport: 'Reporte PDF',
       excelSpreadsheet: 'Hoja de cálculo Excel',
-
       weekly: 'Semanal',
       monthly: 'Mensual',
-
       nutritionReportTitle: 'Reporte nutricional {{period}}',
-
       savePdf: 'Guardar reporte PDF',
       saveExcel: 'Guardar reporte Excel',
-
-      fetchFailed: 'Error al obtener datos'
+      fetchFailed: 'Error al obtener datos',
+      name: 'Nombre',
+      generated: 'Generado',
+      dailyTotals: 'Totales diarios',
+      date: 'Fecha',
+      calories: 'Calorías',
+      summary: 'Resumen',
+      totalCalories: 'Calorías totales',
+      avgDailyCalories: 'Promedio diario de calorías',
+      totalProtein: 'Proteína total',
+      totalCarbs: 'Carbohidratos totales',
+      totalFat: 'Grasa total',
     },
     quickEntry: {
       title: 'Entrada rápida',

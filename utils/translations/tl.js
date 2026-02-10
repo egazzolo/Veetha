@@ -784,36 +784,41 @@ export default {
       day: 'Araw',
       burned: 'Nasunog',
       sessions: 'Mga Sesyon',
-      exportReport: 'I-export ang Ulat'
+      exportReport: 'I-export ang Ulat',
+      kcal: 'kcal',
     },
     exportReport: {
       title: 'I-export ang ulat',
       subtitle: 'I-download ang iyong nutrition data',
       startExport: 'Simulan ang export',
-
       whatsIncluded: 'Ano ang kasama?',
       dailyCalories: 'Arawang kabuuang calories',
       macroBreakdown: 'Breakdown ng macronutrients',
       goalComparison: 'Goal kumpara sa actual',
       summaryStats: 'Buod ng stats',
-
       selectPeriod: 'Piliin ang period',
       last7Days: 'Huling 7 araw',
       currentMonth: 'Kasalukuyang buwan',
-
       selectFormat: 'Piliin ang format',
       pdfReport: 'PDF ulat',
       excelSpreadsheet: 'Excel spreadsheet',
-
       weekly: 'Lingguhan',
       monthly: 'Buwanang',
-
       nutritionReportTitle: 'Ulat sa nutrisyon - {{period}}',
-
       savePdf: 'I-save ang PDF report',
       saveExcel: 'I-save ang Excel report',
-
-      fetchFailed: 'Hindi makuha ang data'
+      fetchFailed: 'Hindi makuha ang data',
+      name: 'Pangalan',
+      generated: 'Nabuo noong',
+      dailyTotals: 'Pang-araw-araw na kabuuan',
+      date: 'Petsa',
+      calories: 'Calories',
+      summary: 'Buod',
+      totalCalories: 'Kabuuang Calories',
+      avgDailyCalories: 'Karaniwang Calories bawat araw',
+      totalProtein: 'Kabuuang Protina',
+      totalCarbs: 'Kabuuang Carbs',
+      totalFat: 'Kabuuang Taba',
     },
     quickEntry: {
       title: 'Mabilis na Entry',

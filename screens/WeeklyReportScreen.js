@@ -11,6 +11,7 @@ export default function WeeklyReportScreen({ navigation }) {
   const { theme } = useTheme();
   const { t } = useLanguage();
   const { profile } = useUser();
+  const { language } = useLanguage();
   
   const [loading, setLoading] = useState(true);
   const [weeklyData, setWeeklyData] = useState([]);
@@ -31,7 +32,8 @@ export default function WeeklyReportScreen({ navigation }) {
 
   // Format date based on unit system
   const formatDate = (date) => {
-    const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+    const locale = language === 'es' ? 'es-ES' : 'en-US';
+    const dayName = date.toLocaleDateString(locale, { weekday: 'short' });
     const month = date.getMonth() + 1;
     const day = date.getDate();
     
@@ -61,7 +63,15 @@ export default function WeeklyReportScreen({ navigation }) {
       // Fetch all meals from last 7 days
       const { data: meals, error } = await supabase
         .from('meals')
-        .select('calories, protein, carbs, fat, logged_at')
+        .select(`
+          logged_at,
+          food_database:product_id (
+            calories,
+            protein,
+            carbs,
+            fat
+          )
+        `)
         .eq('user_id', user.id)
         .gte('logged_at', startDate.toISOString())
         .lte('logged_at', endDate.toISOString())
@@ -121,10 +131,10 @@ export default function WeeklyReportScreen({ navigation }) {
           };
         }
         
-        mealsByDate[dateStr].calories += meal.calories || 0;
-        mealsByDate[dateStr].protein += meal.protein || 0;
-        mealsByDate[dateStr].carbs += meal.carbs || 0;
-        mealsByDate[dateStr].fat += meal.fat || 0;
+        mealsByDate[dateStr].calories += meal.food_database?.calories || 0;
+        mealsByDate[dateStr].protein += meal.food_database?.protein || 0;
+        mealsByDate[dateStr].carbs += meal.food_database?.carbs || 0;
+        mealsByDate[dateStr].fat += meal.food_database?.fat || 0;
       });
 
       // Group water by date
@@ -229,9 +239,9 @@ export default function WeeklyReportScreen({ navigation }) {
           
           {/* Table Header */}
           <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderCell, styles.dayColumn, { color: theme.text }]}>Day</Text>
-            <Text style={[styles.tableHeaderCell, styles.macroColumn, { color: '#4CAF50' }]}>Consumed</Text>
-            <Text style={[styles.tableHeaderCell, styles.macroColumn, { color: '#FF9800' }]}>Goal</Text>
+            <Text style={[styles.tableHeaderCell, styles.dayColumn, { color: theme.text }]}>{t('stats.wreport.day')}</Text>
+            <Text style={[styles.tableHeaderCell, styles.macroColumn, { color: '#4CAF50' }]}>{t('stats.wreport.consumed')}</Text>
+            <Text style={[styles.tableHeaderCell, styles.macroColumn, { color: '#FF9800' }]}>{t('stats.wreport.goal')}</Text>
           </View>
 
           {/* Table Rows */}
@@ -317,7 +327,7 @@ export default function WeeklyReportScreen({ navigation }) {
 
           {/* Table Header */}
           <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderCell, styles.dayColumn, { color: theme.text }]}>Day</Text>
+            <Text style={[styles.tableHeaderCell, styles.dayColumn, { color: theme.text }]}>{t('stats.wreport.day')}</Text>
             <Text style={[styles.tableHeaderCell, styles.macroColumn, { color: '#2196F3' }]}>{t('stats.wreport.protein')}</Text>
             <Text style={[styles.tableHeaderCell, styles.macroColumn, { color: '#FF9800' }]}>{t('stats.wreport.carbs')}</Text>
             <Text style={[styles.tableHeaderCell, styles.macroColumn, { color: '#9C27B0' }]}>{t('stats.wreport.fat')}</Text>
@@ -350,9 +360,9 @@ export default function WeeklyReportScreen({ navigation }) {
 
         {/* Water Intake */}
         <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
-          <Text style={[styles.cardTitle, { color: theme.text }]}>💧 Water Intake</Text>
+          <Text style={[styles.cardTitle, { color: theme.text }]}>💧 {t('stats.wreport.waterIntake')}</Text>
           <Text style={[styles.cardSubtitle, { color: theme.textSecondary }]}>
-            Daily water consumption
+            {t('stats.wreport.waterSubtitle')}
           </Text>
 
           {/* Exercise Activity */}
@@ -393,9 +403,9 @@ export default function WeeklyReportScreen({ navigation }) {
 
           {/* Table Header */}
           <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderCell, styles.dayColumn, { color: theme.text }]}>Day</Text>
-            <Text style={[styles.tableHeaderCell, styles.macroColumn, { color: '#2196F3' }]}>Consumed</Text>
-            <Text style={[styles.tableHeaderCell, styles.macroColumn, { color: '#FF9800' }]}>Goal</Text>
+            <Text style={[styles.tableHeaderCell, styles.dayColumn, { color: theme.text }]}>{t('stats.wreport.day')}</Text>
+            <Text style={[styles.tableHeaderCell, styles.macroColumn, { color: '#2196F3' }]}>{t('stats.wreport.consumed')}</Text>
+            <Text style={[styles.tableHeaderCell, styles.macroColumn, { color: '#FF9800' }]}>{t('stats.wreport.goal')}</Text>
           </View>
 
           {/* Table Rows */}

@@ -25,6 +25,7 @@ module.exports = {
       }
     },
     android: {
+      softwareKeyboardLayoutMode: "resize",
       package: "com.yourname.veetha",
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { supabase } from '../utils/supabase';
@@ -224,190 +224,204 @@ export default function QuickEntryScreen({ navigation }) {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
-        {/* Quick Suggestions Dropdown */}
-        {quickSuggestions.length > 0 && (
-          <View style={[styles.suggestionsCard, { backgroundColor: theme.cardBackground }]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={{
+            ...styles.scrollContent,
+            flexGrow: 1,
+            paddingBottom: 120,
+          }}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Quick Suggestions Dropdown */}
+          {quickSuggestions.length > 0 && (
+            <View style={[styles.suggestionsCard, { backgroundColor: theme.cardBackground }]}>
+              <TouchableOpacity 
+                style={styles.suggestionsHeader}
+                onPress={() => setShowSuggestions(!showSuggestions)}
+              >
+                <View>
+                  <Text style={[styles.suggestionsTitle, { color: theme.text }]}>
+                    {t('stats.quickEntry.quickAdd')}
+                  </Text>
+                  <Text style={[styles.suggestionsSubtitle, { color: theme.textSecondary }]}>
+                    {userCountry
+                      ? t('stats.quickEntry.popularIn', { country: LOCAL_FOODS[userCountry]?.name })
+                      : t('stats.quickEntry.commonFoods')}
+                  </Text>
+                </View>
+                <Text style={[styles.dropdownArrow, { color: theme.text }]}>
+                  {showSuggestions ? '▲' : '▼'}
+                </Text>
+              </TouchableOpacity>
+
+              {showSuggestions && (
+                <View style={styles.suggestionsList}>
+                  {quickSuggestions.map((food, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={[styles.suggestionItem, { borderBottomColor: theme.border }]}
+                      onPress={() => handleQuickLog(food)}
+                    >
+                      <Text style={styles.suggestionEmoji}>{food.emoji}</Text>
+                      <View style={styles.suggestionInfo}>
+                        <Text style={[styles.suggestionName, { color: theme.text }]}>
+                          {food.name}
+                        </Text>
+                        <Text style={[styles.suggestionCals, { color: theme.textSecondary }]}>
+                          {food.calories} kcal • {food.protein}g protein
+                        </Text>
+                      </View>
+                      <Text style={[styles.addButton, { color: theme.primary }]}>
+                        {t('stats.quickEntry.add')}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* Manual Entry Form */}
+          <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              {t('stats.quickEntry.mealDetails')}
+            </Text>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>
+                {t('stats.quickEntry.mealName')}
+              </Text>
+              <TextInput
+                style={[styles.input, { 
+                  backgroundColor: theme.background, 
+                  color: theme.text,
+                  borderColor: theme.border 
+                }]}
+                placeholder={t('stats.quickEntry.mealNamePlaceholder')}
+                placeholderTextColor={theme.textTertiary}
+                value={mealName}
+                onChangeText={setMealName}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>
+                {t('stats.quickEntry.servingSize')}
+              </Text>
+              <TextInput
+                style={[styles.input, { 
+                  backgroundColor: theme.background, 
+                  color: theme.text,
+                  borderColor: theme.border 
+                }]}
+                placeholder="100"
+                placeholderTextColor={theme.textTertiary}
+                keyboardType="numeric"
+                value={servingGrams}
+                onChangeText={setServingGrams}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>
+                {t('stats.quickEntry.calories')}
+              </Text>
+              <TextInput
+                style={[styles.input, { 
+                  backgroundColor: theme.background, 
+                  color: theme.text,
+                  borderColor: theme.border 
+                }]}
+                placeholder="0"
+                placeholderTextColor={theme.textTertiary}
+                keyboardType="numeric"
+                value={calories}
+                onChangeText={setCalories}
+              />
+            </View>
+
+            <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 20 }]}>
+              {t('stats.quickEntry.macros')}
+            </Text>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>
+                {t('stats.quickEntry.protein')}
+              </Text>
+              <TextInput
+                style={[styles.input, { 
+                  backgroundColor: theme.background, 
+                  color: theme.text,
+                  borderColor: theme.border 
+                }]}
+                placeholder="0"
+                placeholderTextColor={theme.textTertiary}
+                keyboardType="numeric"
+                value={protein}
+                onChangeText={setProtein}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>
+                {t('stats.quickEntry.carbs')}
+              </Text>
+              <TextInput
+                style={[styles.input, { 
+                  backgroundColor: theme.background, 
+                  color: theme.text,
+                  borderColor: theme.border 
+                }]}
+                placeholder="0"
+                placeholderTextColor={theme.textTertiary}
+                keyboardType="numeric"
+                value={carbs}
+                onChangeText={setCarbs}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>
+                {t('stats.quickEntry.fat')}
+              </Text>
+              <TextInput
+                style={[styles.input, { 
+                  backgroundColor: theme.background, 
+                  color: theme.text,
+                  borderColor: theme.border 
+                }]}
+                placeholder="0"
+                placeholderTextColor={theme.textTertiary}
+                keyboardType="numeric"
+                value={fat}
+                onChangeText={setFat}
+              />
+            </View>
+
             <TouchableOpacity 
-              style={styles.suggestionsHeader}
-              onPress={() => setShowSuggestions(!showSuggestions)}
+              style={[styles.saveButton, { backgroundColor: theme.primary }, saving && { opacity: 0.6 }]}
+              onPress={handleSave}
+              disabled={saving}
             >
-              <View>
-                <Text style={[styles.suggestionsTitle, { color: theme.text }]}>
-                  {t('stats.quickEntry.quickAdd')}
-                </Text>
-                <Text style={[styles.suggestionsSubtitle, { color: theme.textSecondary }]}>
-                  {userCountry
-                    ? t('stats.quickEntry.popularIn', { country: LOCAL_FOODS[userCountry]?.name })
-                    : t('stats.quickEntry.commonFoods')}
-                </Text>
-              </View>
-              <Text style={[styles.dropdownArrow, { color: theme.text }]}>
-                {showSuggestions ? '▲' : '▼'}
+              <Text style={styles.saveButtonText}>
+                {saving
+                  ? t('stats.quickEntry.saving')
+                  : t('stats.quickEntry.saveMeal')}
               </Text>
             </TouchableOpacity>
 
-            {showSuggestions && (
-              <View style={styles.suggestionsList}>
-                {quickSuggestions.map((food, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={[styles.suggestionItem, { borderBottomColor: theme.border }]}
-                    onPress={() => handleQuickLog(food)}
-                  >
-                    <Text style={styles.suggestionEmoji}>{food.emoji}</Text>
-                    <View style={styles.suggestionInfo}>
-                      <Text style={[styles.suggestionName, { color: theme.text }]}>
-                        {food.name}
-                      </Text>
-                      <Text style={[styles.suggestionCals, { color: theme.textSecondary }]}>
-                        {food.calories} kcal • {food.protein}g protein
-                      </Text>
-                    </View>
-                    <Text style={[styles.addButton, { color: theme.primary }]}>
-                      {t('stats.quickEntry.add')}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          </View>
-        )}
-
-        {/* Manual Entry Form */}
-        <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            {t('stats.quickEntry.mealDetails')}
-          </Text>
-
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>
-              {t('stats.quickEntry.mealName')}
+            <Text style={[styles.hint, { color: theme.textTertiary }]}>
+              {t('stats.quickEntry.tip')}
             </Text>
-            <TextInput
-              style={[styles.input, { 
-                backgroundColor: theme.background, 
-                color: theme.text,
-                borderColor: theme.border 
-              }]}
-              placeholder={t('stats.quickEntry.mealNamePlaceholder')}
-              placeholderTextColor={theme.textTertiary}
-              value={mealName}
-              onChangeText={setMealName}
-            />
           </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>
-              {t('stats.quickEntry.servingSize')}
-            </Text>
-            <TextInput
-              style={[styles.input, { 
-                backgroundColor: theme.background, 
-                color: theme.text,
-                borderColor: theme.border 
-              }]}
-              placeholder="100"
-              placeholderTextColor={theme.textTertiary}
-              keyboardType="numeric"
-              value={servingGrams}
-              onChangeText={setServingGrams}
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>
-              {t('stats.quickEntry.calories')}
-            </Text>
-            <TextInput
-              style={[styles.input, { 
-                backgroundColor: theme.background, 
-                color: theme.text,
-                borderColor: theme.border 
-              }]}
-              placeholder="0"
-              placeholderTextColor={theme.textTertiary}
-              keyboardType="numeric"
-              value={calories}
-              onChangeText={setCalories}
-            />
-          </View>
-
-          <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 20 }]}>
-            {t('stats.quickEntry.macros')}
-          </Text>
-
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>
-              {t('stats.quickEntry.protein')}
-            </Text>
-            <TextInput
-              style={[styles.input, { 
-                backgroundColor: theme.background, 
-                color: theme.text,
-                borderColor: theme.border 
-              }]}
-              placeholder="0"
-              placeholderTextColor={theme.textTertiary}
-              keyboardType="numeric"
-              value={protein}
-              onChangeText={setProtein}
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>
-              {t('stats.quickEntry.carbs')}
-            </Text>
-            <TextInput
-              style={[styles.input, { 
-                backgroundColor: theme.background, 
-                color: theme.text,
-                borderColor: theme.border 
-              }]}
-              placeholder="0"
-              placeholderTextColor={theme.textTertiary}
-              keyboardType="numeric"
-              value={carbs}
-              onChangeText={setCarbs}
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>
-              {t('stats.quickEntry.fat')}
-            </Text>
-            <TextInput
-              style={[styles.input, { 
-                backgroundColor: theme.background, 
-                color: theme.text,
-                borderColor: theme.border 
-              }]}
-              placeholder="0"
-              placeholderTextColor={theme.textTertiary}
-              keyboardType="numeric"
-              value={fat}
-              onChangeText={setFat}
-            />
-          </View>
-
-          <TouchableOpacity 
-            style={[styles.saveButton, { backgroundColor: theme.primary }, saving && { opacity: 0.6 }]}
-            onPress={handleSave}
-            disabled={saving}
-          >
-            <Text style={styles.saveButtonText}>
-              {saving
-                ? t('stats.quickEntry.saving')
-                : t('stats.quickEntry.saveMeal')}
-            </Text>
-          </TouchableOpacity>
-
-          <Text style={[styles.hint, { color: theme.textTertiary }]}>
-            {t('stats.quickEntry.tip')}
-          </Text>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
