@@ -296,6 +296,7 @@ export default function HomeScreen({ navigation }) {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [monthlyData, setMonthlyData] = useState([]);
   const [waterIntake, setWaterIntake] = useState(0);
+  const [updatingWater, setUpdatingWater] = useState(false);
   const [meals, setMeals] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -460,8 +461,26 @@ export default function HomeScreen({ navigation }) {
 
       setUpdatingWater(true);
 
-      // KEEP YOUR EXISTING SUPABASE UPDATE HERE
-      // paste your existing DB logic here
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const dateStr = selectedDate.toLocaleDateString('en-CA');
+
+      const newAmount = waterIntake - 1;
+
+      const { error } = await supabase.from('water_logs').upsert({
+        user_id: user.id,
+        date: dateStr,
+        cups: newAmount,
+      }, {
+        onConflict: 'user_id,date'
+      });
+
+      if (error) {
+        console.error('Error updating water:', error);
+        return;
+      }
+
+      setWaterIntake(newAmount);
 
     } catch (e) {
 
@@ -1329,21 +1348,25 @@ export default function HomeScreen({ navigation }) {
                     />
                     
                     {/* Water Control Buttons */}
+                    {updatingWater && (
+                      <Text style={{ fontSize: 11, color: theme.textSecondary, textAlign: 'center', marginBottom: 4 }}>Loading...</Text>
+                    )}
                     <View style={styles.waterButtons}>
-                      <TouchableOpacity 
-                        style={[styles.waterButton, { backgroundColor: theme.border }]}
+                      <TouchableOpacity
+                        style={[styles.waterButton, { backgroundColor: theme.border }, updatingWater && { opacity: 0.5 }]}
                         onPress={handleSubtractWater}
-                        disabled={waterIntake <= 0}
+                        disabled={waterIntake <= 0 || updatingWater}
                       >
                         {updatingWater
                           ? <ActivityIndicator color={theme.text} />
                           : <Text style={[styles.waterButtonText, { color: theme.text }]}>−</Text>
                         }
                       </TouchableOpacity>
-                      
-                      <TouchableOpacity 
-                        style={[styles.waterButton, { backgroundColor: theme.primary }]}
+
+                      <TouchableOpacity
+                        style={[styles.waterButton, { backgroundColor: theme.primary }, updatingWater && { opacity: 0.5 }]}
                         onPress={handleAddWater}
+                        disabled={updatingWater}
                       >
                         {updatingWater
                           ? <ActivityIndicator color="#fff" />
