@@ -44,6 +44,7 @@ export default function ScannerScreen({ navigation }) {
   const [manualBarcode, setManualBarcode] = useState('');
   const [mode, setMode] = useState('barcode');
   const [checkingTutorial, setCheckingTutorial] = useState(true);
+  const [loggingMeal, setLoggingMeal] = useState(false);
   
   // Swipe navigation (only when camera is idle, not during scan)
   const swipeGesture = useSwipeNavigation(navigation, 'Scanner', mode === 'barcode' && !scanned);

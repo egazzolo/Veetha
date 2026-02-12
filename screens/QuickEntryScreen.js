@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { supabase } from '../utils/supabase';
@@ -20,8 +20,6 @@ export default function QuickEntryScreen({ navigation }) {
   const [carbs, setCarbs] = useState('');
   const [fat, setFat] = useState('');
   const [saving, setSaving] = useState(false);
-  
-  // NEW: Quick suggestions
   const [quickSuggestions, setQuickSuggestions] = useState([]);
   const [userCountry, setUserCountry] = useState(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -92,13 +90,6 @@ export default function QuickEntryScreen({ navigation }) {
         
         productId = newProduct.id;
       }
-
-      // Log meal
-      await supabase.from('meals').insert({
-        user_id: user.id,
-        product_id: productId,
-        serving_grams: 100,
-      });
 
       await refreshMeals();
       
@@ -409,11 +400,13 @@ export default function QuickEntryScreen({ navigation }) {
               onPress={handleSave}
               disabled={saving}
             >
-              <Text style={styles.saveButtonText}>
-                {saving
-                  ? t('stats.quickEntry.saving')
-                  : t('stats.quickEntry.saveMeal')}
-              </Text>
+              {saving ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.saveButtonText}>
+                  {t('stats.quickEntry.saveMeal')}
+                </Text>
+              )}
             </TouchableOpacity>
 
             <Text style={[styles.hint, { color: theme.textTertiary }]}>

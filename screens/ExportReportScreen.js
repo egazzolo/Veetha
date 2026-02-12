@@ -46,15 +46,34 @@ export default function ExportReportScreen({ navigation }) {
         return;
       }
 
-      navigation.navigate('ReportViewer', {
-        reportData: {
-          nutrition: data,
-          exercise: null,
-          water: null,
-        },
-        reportType: selectedPeriod,
-        exportFormat: format
-      });
+      // ✅ PDF → go to preview screen
+      if (format === 'pdf') {
+
+        const html = buildReportHTML(data);
+
+        const periodLabel =
+          selectedPeriod === 'weekly'
+            ? t('stats.exportReport.weekly')
+            : t('stats.exportReport.monthly');
+
+        navigation.navigate('ReportViewer', {
+          reportHTML: html,
+          reportType: selectedPeriod,
+          exportFormat: format,
+          rawData: data,
+          periodLabel: periodLabel   // 👈 ADD THIS
+        });
+
+        return;
+      }
+
+      // ✅ EXCEL → export using full layout (same as PDF)
+      if (format === 'excel') {
+
+        await exportExcel();
+
+        return;
+      }
 
     } catch (error) {
 
@@ -152,6 +171,106 @@ export default function ExportReportScreen({ navigation }) {
     }
   };
 
+  const buildReportHTML = (data) => {
+
+    const periodLabel =
+      selectedPeriod === 'weekly'
+        ? t('stats.exportReport.weekly')
+        : t('stats.exportReport.monthly');
+
+    const userName = profile?.full_name || 'User';
+
+    const totalCalories = data.reduce((sum, d) => sum + d.calories, 0);
+    const avgCalories = Math.round(totalCalories / data.length);
+    const totalProtein = data.reduce((sum, d) => sum + d.protein, 0);
+    const totalCarbs = data.reduce((sum, d) => sum + d.carbs, 0);
+    const totalFat = data.reduce((sum, d) => sum + d.fat, 0);
+
+    return `
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          h1 { color: #4CAF50; text-align: center; }
+          h2 { color: #333; margin-top: 30px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+          th { background-color: #4CAF50; color: white; }
+          tr:nth-child(even) { background-color: #f2f2f2; }
+          .summary { background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; }
+          .summary-item { display: flex; justify-content: space-between; margin: 10px 0; }
+        </style>
+      </head>
+
+      <body>
+
+        <h1>${t('stats.exportReport.nutritionReportTitle', { period: periodLabel })}</h1>
+
+        <p><strong>${t('stats.exportReport.name')}:</strong> ${userName}</p>
+
+        <p><strong>${t('stats.exportReport.generated')}:</strong>
+          ${new Date().toLocaleDateString()}
+        </p>
+
+        <h2>${t('stats.exportReport.dailyTotals')}</h2>
+
+        <table>
+          <tr>
+            <th>${t('stats.exportReport.date')}</th>
+            <th>${t('stats.exportReport.calories')}</th>
+            <th>${t('stats.exportReport.goal')}</th>
+            <th>${t('stats.exportReport.protein')}</th>
+            <th>${t('stats.exportReport.carbs')}</th>
+            <th>${t('stats.exportReport.fat')}</th>
+          </tr>
+
+          ${data.map(day => `
+            <tr>
+              <td>${day.date}</td>
+              <td>${day.calories}</td>
+              <td>${day.goal}</td>
+              <td>${day.protein}</td>
+              <td>${day.carbs}</td>
+              <td>${day.fat}</td>
+            </tr>
+          `).join('')}
+        </table>
+
+        <div class="summary">
+          <h2>${t('stats.exportReport.summary')}</h2>
+
+          <div class="summary-item">
+            <span>${t('stats.exportReport.totalCalories')}:</span>
+            <strong>${totalCalories.toLocaleString()}</strong>
+          </div>
+
+          <div class="summary-item">
+            <span>${t('stats.exportReport.avgDailyCalories')}:</span>
+            <strong>${avgCalories}</strong>
+          </div>
+
+          <div class="summary-item">
+            <span>${t('stats.exportReport.totalProtein')}:</span>
+            <strong>${totalProtein}g</strong>
+          </div>
+
+          <div class="summary-item">
+            <span>${t('stats.exportReport.totalCarbs')}:</span>
+            <strong>${totalCarbs}g</strong>
+          </div>
+
+          <div class="summary-item">
+            <span>${t('stats.exportReport.totalFat')}:</span>
+            <strong>${totalFat}g</strong>
+          </div>
+
+        </div>
+
+      </body>
+    </html>
+    `;
+  };
+
   // Export as PDF
   const exportPDF = async () => {
     try {
@@ -166,82 +285,8 @@ export default function ExportReportScreen({ navigation }) {
         return;
       }
 
-      const periodLabel =
-        selectedPeriod === 'weekly'
-          ? t('stats.exportReport.weekly')
-          : t('stats.exportReport.monthly');
+      const html = buildReportHTML(data);
 
-      const userName = profile?.full_name || 'User';
-
-      // Build HTML
-      const html = `
-        <html>
-          <head>
-            <style>
-              body { font-family: Arial, sans-serif; padding: 20px; }
-              h1 { color: #4CAF50; text-align: center; }
-              h2 { color: #333; margin-top: 30px; }
-              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-              th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-              th { background-color: #4CAF50; color: white; }
-              tr:nth-child(even) { background-color: #f2f2f2; }
-              .summary { background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; }
-              .summary-item { display: flex; justify-content: space-between; margin: 10px 0; }
-            </style>
-          </head>
-          <body>
-            <h1>${t('stats.exportReport.nutritionReportTitle', { period: periodLabel })}</h1>
-            <p><strong>${t('stats.exportReport.name')}:</strong> ${userName}</p>
-            <p><strong>${t('stats.exportReport.generated')}:</strong> ${new Date().toLocaleDateString()}</p>
-            
-            <h2>${t('stats.exportReport.dailyTotals')}</h2>
-            <table>
-              <tr>
-                <th>${t('stats.exportReport.date')}</th>
-                <th>${t('stats.exportReport.calories')}</th>
-                <th>${t('stats.exportReport.goal')}</th>
-                <th>${t('stats.exportReport.protein')}</th>
-                <th>${t('stats.exportReport.carbs')}</th>
-                <th>${t('stats.exportReport.fat')}</th>
-              </tr>
-              ${data.map(day => `
-                <tr>
-                  <td>${day.date}</td>
-                  <td>${day.calories}</td>
-                  <td>${day.goal}</td>
-                  <td>${day.protein}</td>
-                  <td>${day.carbs}</td>
-                  <td>${day.fat}</td>
-                </tr>
-              `).join('')}
-            </table>
-
-            <div class="summary">
-              <h2>${t('stats.exportReport.summary')}</h2>
-              <div class="summary-item">
-                <span>${t('stats.exportReport.totalCalories')}:</span>
-                <strong>${data.reduce((sum, d) => sum + d.calories, 0).toLocaleString()}</strong>
-              </div>
-              <div class="summary-item">
-                <span>${t('stats.exportReport.avgDailyCalories')}:</span>
-                <strong>${Math.round(data.reduce((sum, d) => sum + d.calories, 0) / data.length)}</strong>
-              </div>
-              <div class="summary-item">
-                <span>${t('stats.exportReport.totalProtein')}:</span>
-                <strong>${data.reduce((sum, d) => sum + d.protein, 0)}g</strong>
-              </div>
-              <div class="summary-item">
-                <span>${t('stats.exportReport.totalCarbs')}:</span>
-                <strong>${data.reduce((sum, d) => sum + d.carbs, 0)}g</strong>
-              </div>
-              <div class="summary-item">
-                <span>${t('stats.exportReport.totalFat')}:</span>
-                <strong>${data.reduce((sum, d) => sum + d.fat, 0)}g</strong>
-              </div>
-            </div>
-          </body>
-        </html>
-      `;
 
       console.log('🔍 Creating PDF...');
       const { uri } = await Print.printToFileAsync({ html });
@@ -263,63 +308,106 @@ export default function ExportReportScreen({ navigation }) {
 
   // Export as Excel
   const exportExcel = async () => {
+
     try {
+
       setExporting(true);
-      console.log('🔍 Starting Excel export...');
 
       const data = await fetchData();
-      console.log('🔍 Data fetched:', data?.length, 'days');
 
       if (!data) {
         Alert.alert(t('common.error'), t('stats.exportReport.fetchFailed'));
         return;
       }
 
-      // Prepare data for Excel
-      const excelData = data.map(day => ({
-        [t('stats.exportReport.date')]: day.date,
-        [t('stats.exportReport.calories')]: day.calories,
-        [t('stats.exportReport.goal')]: day.goal,
-        [t('stats.exportReport.protein')]: day.protein,
-        [t('stats.exportReport.carbs')]: day.carbs,
-        [t('stats.exportReport.fat')]: day.fat,
-      }));
-
-      // Create worksheet
-      const ws = XLSX.utils.json_to_sheet(excelData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Nutrition Data');
-
-      // Generate base64 string
-      const wbout = XLSX.write(wb, { type: 'base64', bookType: 'xlsx' });
-      
+      // SAME calculations as PDF
       const periodLabel =
         selectedPeriod === 'weekly'
           ? t('stats.exportReport.weekly')
           : t('stats.exportReport.monthly');
 
-      const fileName = `Veetha_${periodLabel}_Report_${new Date().toLocaleDateString('en-CA')}.xlsx`;
-      const fileUri = FileSystem.cacheDirectory + fileName;
+      const userName = profile?.full_name || 'User';
 
-      // Write file
+      const totalCalories = data.reduce((sum,d)=>sum+d.calories,0);
+      const avgCalories = Math.round(totalCalories / data.length);
+      const totalProtein = data.reduce((sum,d)=>sum+d.protein,0);
+      const totalCarbs = data.reduce((sum,d)=>sum+d.carbs,0);
+      const totalFat = data.reduce((sum,d)=>sum+d.fat,0);
+
+      // FULL STRUCTURE (MATCHES PDF)
+      const excelData = [
+
+        { A: t('stats.exportReport.nutritionReportTitle',{period:periodLabel}) },
+
+        {},
+
+        { A: t('stats.exportReport.name'), B: userName },
+        { A: t('stats.exportReport.generated'), B: new Date().toLocaleDateString() },
+
+        {},
+
+        { A: t('stats.exportReport.dailyTotals') },
+
+        {},
+
+        {
+          A: t('stats.exportReport.date'),
+          B: t('stats.exportReport.calories'),
+          C: t('stats.exportReport.goal'),
+          D: t('stats.exportReport.protein'),
+          E: t('stats.exportReport.carbs'),
+          F: t('stats.exportReport.fat'),
+        },
+
+        ...data.map(day => ({
+          A: day.date,
+          B: day.calories,
+          C: day.goal,
+          D: day.protein,
+          E: day.carbs,
+          F: day.fat,
+        })),
+
+        {},
+
+        { A: t('stats.exportReport.summary') },
+
+        { A: t('stats.exportReport.totalCalories'), B: totalCalories },
+        { A: t('stats.exportReport.avgDailyCalories'), B: avgCalories },
+        { A: t('stats.exportReport.totalProtein'), B: `${totalProtein}g` },
+        { A: t('stats.exportReport.totalCarbs'), B: `${totalCarbs}g` },
+        { A: t('stats.exportReport.totalFat'), B: `${totalFat}g` },
+
+      ];
+
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Nutrition');
+
+      const wbout = XLSX.write(wb, { type:'base64', bookType:'xlsx' });
+
+      const fileUri =
+        FileSystem.cacheDirectory +
+        `Veetha_${periodLabel}_Report_${new Date().toLocaleDateString('en-CA')}.xlsx`;
+
       await FileSystem.writeAsStringAsync(fileUri, wbout, {
-        encoding: 'base64'
+        encoding:'base64'
       });
 
-      console.log('✅ Excel file created at:', fileUri);
-      
-      // Just share it
       await Sharing.shareAsync(fileUri, {
-        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        dialogTitle: t('stats.exportReport.saveExcel')
+        mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
 
-    } catch (error) {
-      console.error('❌ Excel ERROR:', error);
-      Alert.alert('Error', `Failed to export Excel: ${error.message}`);
+    } catch(error) {
+
+      console.error(error);
+
     } finally {
+
       setExporting(false);
+
     }
+
   };
 
   return (

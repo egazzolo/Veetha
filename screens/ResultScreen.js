@@ -1180,9 +1180,17 @@ export default function ResultScreen({ route, navigation }) {
                         onPress={handleLogMeal}
                         disabled={savingMeal}
                       >
-                        <Text style={styles.logMealButtonText}>
-                          {savingMeal ? t('results.saving') : `✓ ${t('results.logMeal')}`}
-                        </Text>
+                        {savingMeal ? (
+
+                          <ActivityIndicator color="#fff" />
+
+                        ) : (
+
+                          <Text style={styles.logMealButtonText}>
+                            ✓ {t('results.logMeal')}
+                          </Text>
+
+                        )}
                       </TouchableOpacity>
 
                       {/* Scan Again Button */}
