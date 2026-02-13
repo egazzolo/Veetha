@@ -433,18 +433,21 @@ export default function HomeScreen({ navigation }) {
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      const dateStr = selectedDate.toLocaleDateString('en-CA');
 
-      const { error } = await supabase
-        .from('water_logs')
-        .insert({
-          user_id: user.id,
-          created_at: new Date().toISOString(),
-        });
+      const newAmount = waterIntake + 1;
+
+      const { error } = await supabase.from('water_logs').upsert({
+        user_id: user.id,
+        date: dateStr,
+        cups: newAmount,
+      }, {
+        onConflict: 'user_id,date'
+      });
 
       if (error) throw error;
 
-      // 🔥 UPDATE UI IMMEDIATELY
-      setWaterIntake(prev => prev + 1);
+      setWaterIntake(newAmount);
 
     } catch (e) {
 
