@@ -13,3 +13,29 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: false,
   },
 });
+// ✅ HARD RESET for corrupted Supabase auth session
+export async function resetSupabaseAuthStorage() {
+  try {
+    const keys = await AsyncStorage.getAllKeys();
+
+    // remove only supabase-related keys
+    const supabaseKeys = keys.filter((k) => {
+      const lower = k.toLowerCase();
+      return (
+        lower.includes("supabase") ||
+        lower.startsWith("sb-") ||
+        lower.includes("auth-token")
+      );
+    });
+
+    if (supabaseKeys.length > 0) {
+      await AsyncStorage.multiRemove(supabaseKeys);
+    }
+
+    await supabase.auth.signOut();
+
+    console.log("✅ Supabase auth storage reset complete");
+  } catch (err) {
+    console.log("resetSupabaseAuthStorage error:", err);
+  }
+}
