@@ -1,7 +1,7 @@
 import StepsCard from '../components/StepsCard';
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import * as Location from 'expo-location';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, RefreshControl, Alert, Modal, Platform, Animated } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, RefreshControl, Alert, Modal, Platform, Animated, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSwipeNavigation } from '../utils/useSwipeNavigation';
@@ -283,8 +283,8 @@ function NutrientModal({ visible, nutrient, onClose, theme, currentIntake, daily
 export default function HomeScreen({ navigation }) {
   const { theme, isDark } = useTheme();
   const { t } = useLanguage();
-  const { profile, loading: userLoading, refreshProfile } = useUser();
-  const { user } = useUser();
+  const { user, profile, loading: userLoading, refreshProfile } = useUser();
+  console.log("👤 USER FROM CONTEXT:", user);
   const { layout } = useLayout();
   const { startTutorial, tutorialCompleted } = useTutorial();
   const { freshDataLoaded } = useContext(UserContext);
@@ -314,7 +314,6 @@ export default function HomeScreen({ navigation }) {
   const [checkingTutorial, setCheckingTutorial] = useState(true);
   const [quickSuggestions, setQuickSuggestions] = useState([]);
   const [userCountry, setUserCountry] = useState(null);
-  const [updatingWater, setUpdatingWater] = useState(false);
 
   // Tutorial refs
   const profileButtonRef = useRef(null);
@@ -435,12 +434,17 @@ export default function HomeScreen({ navigation }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      await supabase
+      const { error } = await supabase
         .from('water_logs')
         .insert({
           user_id: user.id,
           created_at: new Date().toISOString(),
         });
+
+      if (error) throw error;
+
+      // 🔥 UPDATE UI IMMEDIATELY
+      setWaterIntake(prev => prev + 1);
 
     } catch (e) {
 
@@ -481,6 +485,32 @@ export default function HomeScreen({ navigation }) {
       }
 
       setWaterIntake(newAmount);
+
+      // 🔥 get latest water log
+      const { data, error: fetchError } = await supabase
+        .from('water_logs')
+        .select('id')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (fetchError) throw fetchError;
+
+      if (!data || data.length === 0) {
+        setUpdatingWater(false);
+        return;
+      }
+
+      // 🔥 delete last glass
+      const { error: deleteError } = await supabase
+        .from('water_logs')
+        .delete()
+        .eq('id', data[0].id);
+
+      if (deleteError) throw deleteError;
+
+      // 🔥 UPDATE UI IMMEDIATELY
+      setWaterIntake(prev => Math.max(prev - 1, 0));
 
     } catch (e) {
 
@@ -1079,7 +1109,17 @@ export default function HomeScreen({ navigation }) {
   const copyYesterdaysMeals = async () => {
     try {
       setCopyingMeals(true);
-      const { data: { user } } = await supabase.auth.getUser();
+
+      if (userLoading) {
+        console.log("⏳ User still loading, blocking copy");
+        return;
+      }
+
+      if (!user) {
+        console.log("❌ No user after loading completed");
+        Alert.alert(t('home.error'), "Authentication error. Please restart the app.");
+        return;
+      }
       
       // Get yesterday's date in LOCAL time
       const yesterday = new Date(selectedDate);
@@ -1349,7 +1389,7 @@ export default function HomeScreen({ navigation }) {
                     
                     {/* Water Control Buttons */}
                     {updatingWater && (
-                      <Text style={{ fontSize: 11, color: theme.textSecondary, textAlign: 'center', marginBottom: 4 }}>Loading...</Text>
+                      <ActivityIndicator size="small" color={theme.primary} />
                     )}
                     <View style={styles.waterButtons}>
                       <TouchableOpacity
