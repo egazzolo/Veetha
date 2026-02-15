@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, Pressable } from 'react-native';
 
+const FOOD_IMAGES = {
+  'Causa rellena': require('../assets/foods/causa_rellena.jpg'),
+  'Pan con mantequilla': require('../assets/foods/pan_con_mantequilla.jpg'),
+  'Pan con palta': require('../assets/foods/pan_con_palta.jpg'),
+  'Papa a la huancaína': require('../assets/foods/sapa_a_la_huancahina.jpg'),
+  'Papa rellena': require('../assets/foods/papa_rellena.jpg'),
+  'Tamales': require('../assets/foods/tamales.jpg'),
+};
+
 export default function MealsList({
   theme,
   t,
@@ -123,9 +132,15 @@ export default function MealsList({
             >
               {/* Image Section */}
               <View style={styles.imageSection}>
-                {meal.image_url || product.image_url ? (
-                  <Image 
-                    source={{ uri: meal.image_url || product.image_url }} 
+                {FOOD_IMAGES[product.name] ? (
+                  <Image
+                    source={FOOD_IMAGES[product.name]}
+                    style={styles.mealImage}
+                    resizeMode="cover"
+                  />
+                ) : meal.image_url || product.image_url ? (
+                  <Image
+                    source={{ uri: meal.image_url || product.image_url }}
                     style={styles.mealImage}
                     resizeMode="contain"
                   />

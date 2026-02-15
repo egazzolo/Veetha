@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, KeyboardAvoidingView, Platform, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { supabase } from '../utils/supabase';
@@ -7,6 +7,15 @@ import { useUser } from '../utils/UserContext';
 import { useTheme } from '../utils/ThemeContext';
 import { useLanguage } from '../utils/LanguageContext';
 import { getSuggestionsForMealTime, LOCAL_FOODS, DEFAULT_FOODS } from '../utils/localFoods';
+
+const FOOD_IMAGES = {
+  'Causa rellena': require('../assets/foods/causa_rellena.jpg'),
+  'Pan con mantequilla': require('../assets/foods/pan_con_mantequilla.jpg'),
+  'Pan con palta': require('../assets/foods/pan_con_palta.jpg'),
+  'Papa a la huancaína': require('../assets/foods/sapa_a_la_huancahina.jpg'),
+  'Papa rellena': require('../assets/foods/papa_rellena.jpg'),
+  'Tamales': require('../assets/foods/tamales.jpg'),
+};
 
 export default function QuickEntryScreen({ navigation }) {
   const { refreshMeals } = useUser();
@@ -248,7 +257,7 @@ export default function QuickEntryScreen({ navigation }) {
         >
           <View style={[styles.suggestionsCard, { backgroundColor: theme.cardBackground }]}>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.suggestionsHeader}
               onPress={() => setShowSuggestions(!showSuggestions)}
             >
@@ -282,7 +291,11 @@ export default function QuickEntryScreen({ navigation }) {
                     style={[styles.suggestionItem, { borderBottomColor: theme.border }]}
                     onPress={() => handleQuickLog(food)}
                   >
-                    <Text style={styles.suggestionEmoji}>{food.emoji}</Text>
+                    {FOOD_IMAGES[food.name] ? (
+                      <Image source={FOOD_IMAGES[food.name]} style={styles.suggestionImage} />
+                    ) : (
+                      <Text style={styles.suggestionEmoji}>{food.emoji}</Text>
+                    )}
                     <View style={styles.suggestionInfo}>
                       <Text style={[styles.suggestionName, { color: theme.text }]}>
                         {food.name}
@@ -507,6 +520,12 @@ const styles = StyleSheet.create({
   },
   suggestionEmoji: {
     fontSize: 28,
+    marginRight: 12,
+  },
+  suggestionImage: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
     marginRight: 12,
   },
   suggestionInfo: {
