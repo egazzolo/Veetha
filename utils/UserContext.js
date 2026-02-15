@@ -6,6 +6,7 @@ const UserContext = createContext();
 
 export function UserProvider({ children }) {
   const [profile, setProfile] = useState(null);
+  const [user, setUser] = useState(null);
   const [meals, setMeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cacheLoaded, setCacheLoaded] = useState(false);
@@ -75,25 +76,34 @@ export function UserProvider({ children }) {
     try {
       console.log('🔍 UserContext: Loading user data...');
       
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      console.log('👤 UserContext: User =', user?.id);
-      
-      if (!user) {
+      const { data } = await supabase.auth.getUser();
+      const authUser = data?.user;
+
+      setUser(authUser);
+
+      if (!authUser) {
         console.log('❌ UserContext: No user found');
         setLoading(false);
         return;
       }
 
+      //console.log('👤 UserContext: User =', authUser.id);
+
       // Load profile
+      if (!authUser?.id) {
+        console.log('❌ UserContext: authUser has no id');
+        setLoading(false);
+        return;
+      }
+
       const { data: profileData, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', authUser.id)
         .maybeSingle();
 
-      console.log('📊 UserContext: Profile data =', profileData);
-      console.log('📊 UserContext: Profile error =', error);
+      //console.log('📊 UserContext: Profile data =', profileData);
+      //console.log('📊 UserContext: Profile error =', error);
 
       if (profileData) {
         loadedProfile = profileData;  // ← ADD THIS LINE
@@ -106,7 +116,7 @@ export function UserProvider({ children }) {
       }
 
       // Load today's meals
-      await loadTodaysMeals(user.id);
+      await loadTodaysMeals(authUser.id);
 
     } catch (error) {
       console.error('❌ UserContext: Error =', error);
@@ -156,10 +166,12 @@ export function UserProvider({ children }) {
   };
 
   const refreshMeals = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await loadTodaysMeals(user.id);
-    }
+    const { data } = await supabase.auth.getUser();
+    const authUser = data?.user;
+
+    if (!authUser?.id) return;
+
+    await loadTodaysMeals(authUser.id);
   };
 
   const refreshProfile = async () => {
@@ -176,6 +188,7 @@ export function UserProvider({ children }) {
 
   return (
     <UserContext.Provider value={{ 
+      user,
       profile, 
       meals, 
       loading: loading && !cacheLoaded, // Only show loading if no cache

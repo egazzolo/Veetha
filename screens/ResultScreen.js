@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import * as FileSystem from 'expo-file-system';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Image, Modal, Animated, Alert, Button } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Image, Modal, Animated, Alert, Button, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Svg, Circle } from 'react-native-svg';
 import { supabase } from '../utils/supabase';

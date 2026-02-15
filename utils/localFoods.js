@@ -4,9 +4,9 @@ export const LOCAL_FOODS = {
   'PE': { // Peru
     name: 'Peru',
     breakfast: [
-      { name: 'Pan con mantequilla', emoji: '🍞', calories: 250, protein: 6, carbs: 35, fat: 10 },
-      { name: 'Pan con palta', emoji: '🥑', calories: 320, protein: 8, carbs: 38, fat: 16 },
-      { name: 'Tamales', emoji: '🫔', calories: 280, protein: 10, carbs: 40, fat: 9 },
+      { name: 'Pan con mantequilla', emoji: '🍞', calories: 250, protein: 6, carbs: 35, fat: 10, image_url: require('../assets/foods/pan_con_mantequilla.jpg') },
+      { name: 'Pan con palta', emoji: '🥑', calories: 320, protein: 8, carbs: 38, fat: 16, image_url: require('../assets/foods/pan_con_palta.jpg') },
+      { name: 'Tamales', emoji: '🫔', calories: 280, protein: 10, carbs: 40, fat: 9, image_url: require('../assets/foods/tamales.jpg') },
       { name: 'Chicharrón', emoji: '🥓', calories: 450, protein: 25, carbs: 5, fat: 38 },
       { name: 'Café con leche', emoji: '☕', calories: 80, protein: 4, carbs: 10, fat: 3 },
       { name: 'Jugo de naranja', emoji: '🍊', calories: 110, protein: 2, carbs: 26, fat: 0 },
@@ -18,8 +18,8 @@ export const LOCAL_FOODS = {
       { name: 'Ají de gallina', emoji: '🌶️', calories: 480, protein: 28, carbs: 40, fat: 20 },
     ],
     dinner: [
-      { name: 'Causa rellena', emoji: '🥔', calories: 350, protein: 15, carbs: 45, fat: 12 },
-      { name: 'Papa a la huancaína', emoji: '🧀', calories: 320, protein: 12, carbs: 35, fat: 16 },
+      { name: 'Causa rellena', emoji: '🥔', calories: 350, protein: 15, carbs: 45, fat: 12, image_url: require('../assets/foods/causa_rellena.jpg') },
+      { name: 'Papa a la huancaína', emoji: '🧀', calories: 320, protein: 12, carbs: 35, fat: 16, image_url: require('../assets/foods/papa_a_la_huancahina.jpg') },
       { name: 'Sopa de pollo', emoji: '🍲', calories: 220, protein: 18, carbs: 25, fat: 6 },
     ]
   },

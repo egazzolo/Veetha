@@ -60,10 +60,13 @@ export default function QuickEntryScreen({ navigation }) {
 
   const handleQuickLog = async (food) => {
     try {
+
+      setSaving(true); // loading indicator
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Create product if doesn't exist
+      // Check if product exists
       const { data: existingProduct } = await supabase
         .from('food_database')
         .select('id')
@@ -83,16 +86,28 @@ export default function QuickEntryScreen({ navigation }) {
             protein: food.protein,
             carbs: food.carbs,
             fat: food.fat,
+            image_url: food.image_url || null,
             source: 'local_suggestion',
           })
           .select('id')
           .single();
-        
+
         productId = newProduct.id;
       }
 
+      // ✅ THIS WAS MISSING — actually log meal
+      await supabase
+        .from('meals')
+        .insert({
+          user_id: user.id,
+          product_id: productId,
+          serving_grams: 100,
+          serving_unit: 'g',
+        });
+
+      // refresh context meals
       await refreshMeals();
-      
+
       Alert.alert(
         t('stats.quickEntry.loggedTitle'),
         t('stats.quickEntry.loggedMessage', {
@@ -105,13 +120,15 @@ export default function QuickEntryScreen({ navigation }) {
           }
         ]
       );
-      
+
     } catch (error) {
       console.error('Error quick logging:', error);
       Alert.alert(
         t('common.error'),
         t('stats.quickEntry.failedLog')
       );
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -229,54 +246,61 @@ export default function QuickEntryScreen({ navigation }) {
           }}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Quick Suggestions Dropdown */}
-          {quickSuggestions.length > 0 && (
-            <View style={[styles.suggestionsCard, { backgroundColor: theme.cardBackground }]}>
-              <TouchableOpacity 
-                style={styles.suggestionsHeader}
-                onPress={() => setShowSuggestions(!showSuggestions)}
-              >
-                <View>
-                  <Text style={[styles.suggestionsTitle, { color: theme.text }]}>
-                    {t('stats.quickEntry.quickAdd')}
-                  </Text>
-                  <Text style={[styles.suggestionsSubtitle, { color: theme.textSecondary }]}>
-                    {userCountry
-                      ? t('stats.quickEntry.popularIn', { country: LOCAL_FOODS[userCountry]?.name })
-                      : t('stats.quickEntry.commonFoods')}
-                  </Text>
-                </View>
-                <Text style={[styles.dropdownArrow, { color: theme.text }]}>
-                  {showSuggestions ? '▲' : '▼'}
-                </Text>
-              </TouchableOpacity>
+          <View style={[styles.suggestionsCard, { backgroundColor: theme.cardBackground }]}>
 
-              {showSuggestions && (
-                <View style={styles.suggestionsList}>
-                  {quickSuggestions.map((food, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={[styles.suggestionItem, { borderBottomColor: theme.border }]}
-                      onPress={() => handleQuickLog(food)}
-                    >
-                      <Text style={styles.suggestionEmoji}>{food.emoji}</Text>
-                      <View style={styles.suggestionInfo}>
-                        <Text style={[styles.suggestionName, { color: theme.text }]}>
-                          {food.name}
-                        </Text>
-                        <Text style={[styles.suggestionCals, { color: theme.textSecondary }]}>
-                          {food.calories} kcal • {food.protein}g protein
-                        </Text>
-                      </View>
-                      <Text style={[styles.addButton, { color: theme.primary }]}>
-                        {t('stats.quickEntry.add')}
+            <TouchableOpacity 
+              style={styles.suggestionsHeader}
+              onPress={() => setShowSuggestions(!showSuggestions)}
+            >
+              <View>
+                <Text style={[styles.suggestionsTitle, { color: theme.text }]}>
+                  {t('stats.quickEntry.quickAdd')}
+                </Text>
+                <Text style={[styles.suggestionsSubtitle, { color: theme.textSecondary }]}>
+                  {userCountry
+                    ? t('stats.quickEntry.popularIn', { country: LOCAL_FOODS[userCountry]?.name })
+                    : t('stats.quickEntry.commonFoods')}
+                </Text>
+              </View>
+              <Text style={[styles.dropdownArrow, { color: theme.text }]}>
+                {showSuggestions ? '▲' : '▼'}
+              </Text>
+            </TouchableOpacity>
+
+            {quickSuggestions.length === 0 ? (
+
+              <View style={{ height: 120, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator color={theme.primary} />
+              </View>
+
+            ) : showSuggestions && (
+
+              <View style={styles.suggestionsList}>
+                {quickSuggestions.map((food, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={[styles.suggestionItem, { borderBottomColor: theme.border }]}
+                    onPress={() => handleQuickLog(food)}
+                  >
+                    <Text style={styles.suggestionEmoji}>{food.emoji}</Text>
+                    <View style={styles.suggestionInfo}>
+                      <Text style={[styles.suggestionName, { color: theme.text }]}>
+                        {food.name}
                       </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-            </View>
-          )}
+                      <Text style={[styles.suggestionCals, { color: theme.textSecondary }]}>
+                        {food.calories} kcal • {food.protein}g protein
+                      </Text>
+                    </View>
+                    <Text style={[styles.addButton, { color: theme.primary }]}>
+                      {t('stats.quickEntry.add')}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+            )}
+
+          </View>
 
           {/* Manual Entry Form */}
           <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>

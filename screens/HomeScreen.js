@@ -1,7 +1,7 @@
 import StepsCard from '../components/StepsCard';
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import * as Location from 'expo-location';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, RefreshControl, Alert, Modal, Platform, Animated } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, RefreshControl, Alert, Modal, Platform, Animated, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSwipeNavigation } from '../utils/useSwipeNavigation';
@@ -81,6 +81,7 @@ function CircularProgress({ percentage, size = 100, strokeWidth = 8, color = '#4
 // Add quick log function
 const handleQuickLog = async (food) => {
   try {
+    console.log("FOOD OBJECT:", food);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -117,7 +118,7 @@ const handleQuickLog = async (food) => {
       user_id: user.id,
       product_id: productId,
       serving_grams: 100,
-      image_url: imageUrl, 
+      image_url: food.image_url,
     });
 
     await refreshMeals();
@@ -296,6 +297,7 @@ export default function HomeScreen({ navigation }) {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [monthlyData, setMonthlyData] = useState([]);
   const [waterIntake, setWaterIntake] = useState(0);
+  const [updatingWater, setUpdatingWater] = useState(false);
   const [meals, setMeals] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -313,7 +315,6 @@ export default function HomeScreen({ navigation }) {
   const [checkingTutorial, setCheckingTutorial] = useState(true);
   const [quickSuggestions, setQuickSuggestions] = useState([]);
   const [userCountry, setUserCountry] = useState(null);
-  const [updatingWater, setUpdatingWater] = useState(false);
 
   // Tutorial refs
   const profileButtonRef = useRef(null);
@@ -433,18 +434,21 @@ export default function HomeScreen({ navigation }) {
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      const dateStr = selectedDate.toLocaleDateString('en-CA');
 
-      const { error } = await supabase
-        .from('water_logs')
-        .insert({
-          user_id: user.id,
-          created_at: new Date().toISOString(),
-        });
+      const newAmount = waterIntake + 1;
+
+      const { error } = await supabase.from('water_logs').upsert({
+        user_id: user.id,
+        date: dateStr,
+        cups: newAmount,
+      }, {
+        onConflict: 'user_id,date'
+      });
 
       if (error) throw error;
 
-      // 🔥 UPDATE UI IMMEDIATELY
-      setWaterIntake(prev => prev + 1);
+      setWaterIntake(newAmount);
 
     } catch (e) {
 
@@ -467,32 +471,24 @@ export default function HomeScreen({ navigation }) {
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      const dateStr = selectedDate.toLocaleDateString('en-CA');
 
-      // 🔥 get latest water log
-      const { data, error } = await supabase
-        .from('water_logs')
-        .select('id')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1);
+      const newAmount = waterIntake - 1;
 
-      if (error) throw error;
+      const { error } = await supabase.from('water_logs').upsert({
+        user_id: user.id,
+        date: dateStr,
+        cups: newAmount,
+      }, {
+        onConflict: 'user_id,date'
+      });
 
-      if (!data || data.length === 0) {
-        setUpdatingWater(false);
+      if (error) {
+        console.error('Error updating water:', error);
         return;
       }
 
-      // 🔥 delete last glass
-      const { error: deleteError } = await supabase
-        .from('water_logs')
-        .delete()
-        .eq('id', data[0].id);
-
-      if (deleteError) throw deleteError;
-
-      // 🔥 UPDATE UI IMMEDIATELY
-      setWaterIntake(prev => Math.max(prev - 1, 0));
+      setWaterIntake(newAmount);
 
     } catch (e) {
 
@@ -1374,20 +1370,21 @@ export default function HomeScreen({ navigation }) {
                       <ActivityIndicator size="small" color={theme.primary} />
                     )}
                     <View style={styles.waterButtons}>
-                      <TouchableOpacity 
-                        style={[styles.waterButton, { backgroundColor: theme.border }]}
+                      <TouchableOpacity
+                        style={[styles.waterButton, { backgroundColor: theme.border }, updatingWater && { opacity: 0.5 }]}
                         onPress={handleSubtractWater}
-                        disabled={waterIntake <= 0}
+                        disabled={waterIntake <= 0 || updatingWater}
                       >
                         {updatingWater
                           ? <ActivityIndicator color={theme.text} />
                           : <Text style={[styles.waterButtonText, { color: theme.text }]}>−</Text>
                         }
                       </TouchableOpacity>
-                      
-                      <TouchableOpacity 
-                        style={[styles.waterButton, { backgroundColor: theme.primary }]}
+
+                      <TouchableOpacity
+                        style={[styles.waterButton, { backgroundColor: theme.primary }, updatingWater && { opacity: 0.5 }]}
                         onPress={handleAddWater}
+                        disabled={updatingWater}
                       >
                         {updatingWater
                           ? <ActivityIndicator color="#fff" />
