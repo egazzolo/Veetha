@@ -136,7 +136,8 @@ export function UserProvider({ children }) {
         .from('meals')
         .select(`
           *,
-          product:food_database (
+          product:food_database(
+            id,
             name,
             calories,
             protein,

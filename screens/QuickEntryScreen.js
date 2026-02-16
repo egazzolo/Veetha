@@ -8,15 +8,6 @@ import { useTheme } from '../utils/ThemeContext';
 import { useLanguage } from '../utils/LanguageContext';
 import { getSuggestionsForMealTime, LOCAL_FOODS, DEFAULT_FOODS } from '../utils/localFoods';
 
-const FOOD_IMAGES = {
-  'Causa rellena': require('../assets/foods/causa_rellena.jpg'),
-  'Pan con mantequilla': require('../assets/foods/pan_con_mantequilla.jpg'),
-  'Pan con palta': require('../assets/foods/pan_con_palta.jpg'),
-  'Papa a la huancaína': require('../assets/foods/sapa_a_la_huancahina.jpg'),
-  'Papa rellena': require('../assets/foods/papa_rellena.jpg'),
-  'Tamales': require('../assets/foods/tamales.jpg'),
-};
-
 export default function QuickEntryScreen({ navigation }) {
   const { refreshMeals } = useUser();
   const { theme } = useTheme();
@@ -32,6 +23,7 @@ export default function QuickEntryScreen({ navigation }) {
   const [quickSuggestions, setQuickSuggestions] = useState([]);
   const [userCountry, setUserCountry] = useState(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(true);
 
   // Load suggestions on mount
   useEffect(() => {
@@ -39,6 +31,7 @@ export default function QuickEntryScreen({ navigation }) {
   }, []);
 
   const loadQuickSuggestions = async () => {
+    setLoadingSuggestions(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       
@@ -54,6 +47,7 @@ export default function QuickEntryScreen({ navigation }) {
         
         const { suggestions, mealType, country } = getSuggestionsForMealTime(countryCode);
         setQuickSuggestions(suggestions);
+        setLoadingSuggestions(false);
         
         console.log(`🌍 Showing ${mealType} suggestions for ${country}`);
       } else {
@@ -61,9 +55,17 @@ export default function QuickEntryScreen({ navigation }) {
         const hour = new Date().getHours();
         const mealType = hour < 11 ? 'breakfast' : hour < 16 ? 'lunch' : 'dinner';
         setQuickSuggestions(DEFAULT_FOODS[mealType] || []);
+        setLoadingSuggestions(false);
+
       }
     } catch (error) {
-      console.error('Error loading suggestions:', error);
+      console.log('📍 Location unavailable — using default suggestions');
+
+      const hour = new Date().getHours();
+      const mealType = hour < 11 ? 'breakfast' : hour < 16 ? 'lunch' : 'dinner';
+
+      setQuickSuggestions(DEFAULT_FOODS[mealType] || []);
+      setLoadingSuggestions(false);
     }
   };
 
@@ -85,6 +87,14 @@ export default function QuickEntryScreen({ navigation }) {
       let productId;
 
       if (existingProduct) {
+        // UPDATE IMAGE IF MISSING
+        await supabase
+          .from('food_database')
+          .update({
+            image_url: food.image_url || null
+          })
+          .eq('id', existingProduct.id)
+          .is('image_url', null);
         productId = existingProduct.id;
       } else {
         const { data: newProduct } = await supabase
@@ -120,7 +130,7 @@ export default function QuickEntryScreen({ navigation }) {
       Alert.alert(
         t('stats.quickEntry.loggedTitle'),
         t('stats.quickEntry.loggedMessage', {
-          meal: `${food.emoji} ${food.name}`
+          meal: food.name
         }),
         [
           {
@@ -271,18 +281,16 @@ export default function QuickEntryScreen({ navigation }) {
                     : t('stats.quickEntry.commonFoods')}
                 </Text>
               </View>
-              <Text style={[styles.dropdownArrow, { color: theme.text }]}>
-                {showSuggestions ? '▲' : '▼'}
-              </Text>
+              {loadingSuggestions ? (
+                <ActivityIndicator color={theme.primary} />
+              ) : (
+                <Text style={[styles.dropdownArrow, { color: theme.text }]}>
+                  {showSuggestions ? '▲' : '▼'}
+                </Text>
+              )}
             </TouchableOpacity>
 
-            {quickSuggestions.length === 0 ? (
-
-              <View style={{ height: 120, justifyContent: 'center', alignItems: 'center' }}>
-                <ActivityIndicator color={theme.primary} />
-              </View>
-
-            ) : showSuggestions && (
+            {showSuggestions && quickSuggestions.length > 0 && (
 
               <View style={styles.suggestionsList}>
                 {quickSuggestions.map((food, index) => (
@@ -291,19 +299,24 @@ export default function QuickEntryScreen({ navigation }) {
                     style={[styles.suggestionItem, { borderBottomColor: theme.border }]}
                     onPress={() => handleQuickLog(food)}
                   >
-                    {FOOD_IMAGES[food.name] ? (
-                      <Image source={FOOD_IMAGES[food.name]} style={styles.suggestionImage} />
+                    {food.image_url ? (
+                      <Image
+                        source={{ uri: food.image_url }}
+                        style={styles.suggestionImage}
+                      />
                     ) : (
                       <Text style={styles.suggestionEmoji}>{food.emoji}</Text>
                     )}
+
                     <View style={styles.suggestionInfo}>
                       <Text style={[styles.suggestionName, { color: theme.text }]}>
                         {food.name}
                       </Text>
                       <Text style={[styles.suggestionCals, { color: theme.textSecondary }]}>
-                        {food.calories} kcal • {food.protein}g protein
+                        {food.calories} {t('common.kcal')} • {food.protein}g {t('stats.quickEntry.protein')}
                       </Text>
                     </View>
+
                     <Text style={[styles.addButton, { color: theme.primary }]}>
                       {t('stats.quickEntry.add')}
                     </Text>

@@ -4,23 +4,23 @@ export const LOCAL_FOODS = {
   'PE': { // Peru
     name: 'Peru',
     breakfast: [
-      { name: 'Pan con mantequilla', emoji: '🍞', calories: 250, protein: 6, carbs: 35, fat: 10, image_url: require('../assets/foods/pan_con_mantequilla.jpg') },
-      { name: 'Pan con palta', emoji: '🥑', calories: 320, protein: 8, carbs: 38, fat: 16, image_url: require('../assets/foods/pan_con_palta.jpg') },
-      { name: 'Tamales', emoji: '🫔', calories: 280, protein: 10, carbs: 40, fat: 9, image_url: require('../assets/foods/tamales.jpg') },
+      { name: 'Pan con mantequilla', calories: 250, protein: 6, carbs: 35, fat: 10, image_url: "https://bfgreozkoftncayzyzhz.supabase.co/storage/v1/object/public/foods/pan_con_mantequilla.jpg" },
+      { name: 'Pan con palta', calories: 320, protein: 8, carbs: 38, fat: 16, image_url: "https://bfgreozkoftncayzyzhz.supabase.co/storage/v1/object/public/foods/pan_con_palta.jpg" },
+      { name: 'Tamales', calories: 280, protein: 10, carbs: 40, fat: 9, image_url: "https://bfgreozkoftncayzyzhz.supabase.co/storage/v1/object/public/foods/tamales.jpg" },
       { name: 'Chicharrón', emoji: '🥓', calories: 450, protein: 25, carbs: 5, fat: 38 },
-      { name: 'Café con leche', emoji: '☕', calories: 80, protein: 4, carbs: 10, fat: 3 },
-      { name: 'Jugo de naranja', emoji: '🍊', calories: 110, protein: 2, carbs: 26, fat: 0 },
+      { name: 'Café con leche', calories: 80, protein: 4, carbs: 10, fat: 3, image_url: "https://bfgreozkoftncayzyzhz.supabase.co/storage/v1/object/public/foods/cafe_con_leche.jpg" },
+      { name: 'Jugo de naranja', calories: 110, protein: 2, carbs: 26, fat: 0, image_url: "https://bfgreozkoftncayzyzhz.supabase.co/storage/v1/object/public/foods/jugo_de_naranja.jpg" },
     ],
     lunch: [
-      { name: 'Arroz con pollo', emoji: '🍗', calories: 450, protein: 30, carbs: 55, fat: 12 },
-      { name: 'Lomo saltado', emoji: '🥩', calories: 520, protein: 35, carbs: 45, fat: 22 },
-      { name: 'Ceviche', emoji: '🐟', calories: 280, protein: 32, carbs: 15, fat: 8 },
-      { name: 'Ají de gallina', emoji: '🌶️', calories: 480, protein: 28, carbs: 40, fat: 20 },
+      { name: 'Arroz con pollo', emoji: '🍗', calories: 450, protein: 30, carbs: 55, fat: 12, image_url: "https://bfgreozkoftncayzyzhz.supabase.co/storage/v1/object/public/foods/arroz_con_pollo.jpg" },
+      { name: 'Lomo saltado', emoji: '🥩', calories: 520, protein: 35, carbs: 45, fat: 22, image_url: "https://bfgreozkoftncayzyzhz.supabase.co/storage/v1/object/public/foods/lomo_saltado.jpg" },
+      { name: 'Ceviche', emoji: '🐟', calories: 280, protein: 32, carbs: 15, fat: 8, image_url: "https://bfgreozkoftncayzyzhz.supabase.co/storage/v1/object/public/foods/ceviche.jpg" },
+      { name: 'Ají de gallina', emoji: '🌶️', calories: 480, protein: 28, carbs: 40, fat: 20, image_url: "https://bfgreozkoftncayzyzhz.supabase.co/storage/v1/object/public/foods/aji_de_gallina.jpg" },
     ],
     dinner: [
-      { name: 'Causa rellena', emoji: '🥔', calories: 350, protein: 15, carbs: 45, fat: 12, image_url: require('../assets/foods/causa_rellena.jpg') },
-      { name: 'Papa a la huancaína', emoji: '🧀', calories: 320, protein: 12, carbs: 35, fat: 16, image_url: require('../assets/foods/papa_a_la_huancahina.jpg') },
-      { name: 'Sopa de pollo', emoji: '🍲', calories: 220, protein: 18, carbs: 25, fat: 6 },
+      { name: 'Causa rellena', calories: 350, protein: 15, carbs: 45, fat: 12, image_url: "https://bfgreozkoftncayzyzhz.supabase.co/storage/v1/object/public/foods/causa_rellena.jpg" },
+      { name: 'Papa a la huancaína', calories: 320, protein: 12, carbs: 35, fat: 16, image_url: "https://bfgreozkoftncayzyzhz.supabase.co/storage/v1/object/public/foods/papa_a_la_huancahina.jpg" },
+      { name: 'Sopa de pollo', calories: 220, protein: 18, carbs: 25, fat: 6, image_url: "https://bfgreozkoftncayzyzhz.supabase.co/storage/v1/object/public/foods/sopa_de_pollo.jpg" },
     ]
   },
   
