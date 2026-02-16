@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import * as FileSystem from 'expo-file-system';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Image, Modal, Animated, Alert, Button, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Svg, Circle } from 'react-native-svg';
@@ -169,6 +170,7 @@ export default function ResultScreen({ route, navigation }) {
   const { food } = route.params;
   const { t } = useLanguage();
   const { refreshMeals } = useUser();
+  const { user, isGuest } = useUser();
   const [servingGrams, setServingGrams] = useState(food.serving_quantity || 100);
   const [inputValue, setInputValue] = useState(String(food.serving_quantity || 100));
   const [showDetails, setShowDetails] = useState(false);
@@ -278,9 +280,8 @@ export default function ResultScreen({ route, navigation }) {
 
   // Check for allergens and dietary restrictions
   const checkAllergens = async () => {
+    if (isGuest || !user) return;
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
 
       const { data: profile, error } = await supabase
         .from('profiles')
@@ -411,11 +412,6 @@ export default function ResultScreen({ route, navigation }) {
   const handleLogMeal = async () => {
     try {
       setSavingMeal(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        Alert.alert(t('common.error'), t('results.notAuthenticated'));
-        return;
-      }
 
       console.log('📝 Starting meal log process...');
       console.log('Food data:', { name: food.product_name, nutriments: food.nutriments });
@@ -483,107 +479,72 @@ export default function ResultScreen({ route, navigation }) {
       }
 
       // STEP 2: Check if food exists in food_database (by name or barcode)
-      console.log('🔍 Checking if food exists in database...');
-      
-      let productId;
-      
-      if (food.barcode) {
-        // Check by barcode first
+      let productId = null;
+
+      if (!isGuest) {
+
+        console.log('🔍 Checking if food exists in database...');
+
         const { data: existingProduct } = await supabase
           .from('food_database')
-          .select('id, image_url')
-          .eq('barcode', food.barcode)
-          .maybeSingle();
-
-        if (existingProduct) {
-          productId = existingProduct.id;
-          console.log('✅ Found existing product by barcode:', productId);
-
-          // Update image_url if the existing product doesn't have one
-          if (!existingProduct.image_url && imageUrl) {
-            await supabase.from('food_database')
-              .update({ image_url: imageUrl })
-              .eq('id', productId);
-            console.log('🖼️ Updated existing product with image URL');
-          }
-        }
-      }
-
-      if (!productId) {
-        // Check by name
-        const { data: existingProduct } = await supabase
-          .from('food_database')
-          .select('id, image_url')
+          .select('id')
           .eq('name', food.product_name || food.name)
           .maybeSingle();
 
         if (existingProduct) {
           productId = existingProduct.id;
-          console.log('✅ Found existing product by name:', productId);
+        } else {
 
-          // Update image_url if the existing product doesn't have one
-          if (!existingProduct.image_url && imageUrl) {
-            await supabase.from('food_database')
-              .update({ image_url: imageUrl })
-              .eq('id', productId);
-            console.log('🖼️ Updated existing product with image URL');
-          }
+          console.log('➕ Creating new product in food_database...');
+
+          const { data: newProduct, error: productError } = await supabase
+            .from('food_database')
+            .insert({
+              name: food.product_name || food.name || 'Unknown food',
+              calories: food.calories || 0,
+              protein: food.protein || 0,
+              carbs: food.carbs || 0,
+              fat: food.fat || 0,
+              image_url: imageUrl,
+            })
+            .select('id')
+            .single();
+
+          if (productError) throw productError;
+
+          productId = newProduct.id;
         }
-      }
 
-      // STEP 3: Create new product if doesn't exist
-      if (!productId) {
-        console.log('➕ Creating new product in food_database...');
-        
-        // Extract per-100g nutrition from nutriments object
-        const n = food.nutriments || {};
-        const { data: newProduct, error: productError } = await supabase
-          .from('food_database')
+        const { error: mealError } = await supabase
+          .from('meals')
           .insert({
-            name: food.product_name || food.name || 'Unknown food',
-            barcode: food.barcode || null,
-            calories: n['energy-kcal_100g'] || food.calories || 0,
-            protein: n.proteins_100g || food.protein || 0,
-            carbs: n.carbohydrates_100g || food.carbs || 0,
-            fat: n.fat_100g || food.fat || 0,
-            fiber: n.fiber_100g || food.fiber || 0,
-            sugar: n.sugars_100g || food.sugar || 0,
-            sodium: n.sodium_100g || food.sodium || 0,
-            serving_unit: food.serving_unit || detectServingUnit(food.product_name, servingGrams),
-            source: food.source || (food.detected_by_ai ? 'photo_recognition' : 'manual'),
-            detected_by_ai: food.detected_by_ai || false,
-            ai_confidence: food.ai_confidence || null,
+            user_id: user.id,
+            product_id: productId,
+            serving_grams: servingGrams,
             image_url: imageUrl,
-          })
-          .select('id')
-          .single();
-        
-        if (productError) {
-          console.error('❌ Error creating product:', productError);
-          throw productError;
-        }
-        
-        productId = newProduct.id;
-        console.log('✅ Created new product:', productId);
-      }
+            logged_at: new Date().toISOString(),
+          });
 
-      // STEP 4: Insert meal with product_id and image_url
-      console.log('💾 Inserting meal into meals table...');
-      console.log('   - product_id:', productId);
-      console.log('   - serving_grams:', servingGrams);
-      console.log('   - image_url:', imageUrl);
-      
-      const { error: mealError } = await supabase
-        .from('meals')
-        .insert({
-          user_id: user.id,
-          product_id: productId,
+      } else {
+
+        const existingMeals =
+          JSON.parse(await AsyncStorage.getItem('guest_meals') || '[]');
+
+        existingMeals.unshift({
+          id: Date.now(),
+          product_name: food.product_name || food.name || 'Unknown food',
+          calories: food.calories || 0,
+          protein: food.protein || 0,
+          carbs: food.carbs || 0,
+          fat: food.fat || 0,
           serving_grams: servingGrams,
-          barcode: food.barcode || null,
-          meal_type: null,
-          image_url: imageUrl, // ✅ Store image URL in meals table too
+          image_url: imageUrl,
           logged_at: new Date().toISOString(),
         });
+
+        await AsyncStorage.setItem('guest_meals', JSON.stringify(existingMeals));
+
+      } 
       
       if (mealError) {
         console.error('❌ Error inserting meal:', mealError);
@@ -593,7 +554,7 @@ export default function ResultScreen({ route, navigation }) {
       console.log('✅ Meal logged successfully!');
       
       // Track API usage if it was photo recognition
-      if (food.detected_by_ai) {
+      if (!isGuest && user && food.detected_by_ai) {
         await supabase.from('api_tracking').insert({
           user_id: user.id,
           service: 'clarifai',

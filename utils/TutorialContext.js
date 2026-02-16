@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './supabase';
 
 const TutorialContext = createContext();
@@ -26,18 +27,15 @@ export const TutorialProvider = ({ children }) => {
 
   const checkTutorialStatus = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log('📚 Checking tutorial for user:', user?.id);
-      if (!user) return;
 
-      const { data } = await supabase
-        .from('profiles')
-        .select('home_tutorial_completed, tutorial_completed')
-        .eq('id', user.id)
-        .single();
+      // ✅ DEVICE-LEVEL tutorial check (works for guest + logged users)
 
-      console.log('📚 Tutorial completed from DB:', data);
-      setTutorialCompleted(data?.tutorial_completed || false);
+      const localFlag = await AsyncStorage.getItem('tutorial_completed_home');
+
+      console.log('📚 Local tutorial flag:', localFlag);
+
+      setTutorialCompleted(localFlag === 'true');
+
     } catch (error) {
       console.error('Error checking tutorial:', error);
     }
@@ -109,7 +107,6 @@ export const TutorialProvider = ({ children }) => {
   const completeTutorial = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
 
       let updateField = {};
       
@@ -138,7 +135,11 @@ export const TutorialProvider = ({ children }) => {
         console.log('✅ Database updated successfully:', updateField);  // ← Confirm success
       }
 
-      if (currentScreen === 'Profile') {
+      if (currentScreen === 'Home') {
+
+        // ✅ mark tutorial completed locally
+        await AsyncStorage.setItem('tutorial_completed_home', 'true');
+
         setTutorialCompleted(true);
       }
 

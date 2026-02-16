@@ -40,6 +40,15 @@ export default function LandingScreen({ navigation }) {
           <Text style={styles.secondaryButtonText}>{t('landing.signup')}</Text>
         </TouchableOpacity>
 
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={() => navigation.replace('Home', { guestMode: true })}
+        >
+          <Text style={styles.secondaryButtonText}>
+            Continue as Guest
+          </Text>
+        </TouchableOpacity>
+
         {/* Google Sign-In (we'll implement this later) */}
         {/* 
         <TouchableOpacity

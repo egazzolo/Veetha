@@ -325,7 +325,7 @@ export default function HomeScreen({ navigation }) {
   const scrollViewRef = useRef(null);
 
   // Swipe navigation
-  const swipeGesture = useSwipeNavigation(navigation, 'Home', tutorialCompleted);
+  // const swipeGesture = useSwipeNavigation(navigation, 'Home', tutorialCompleted);
 
   const [calendarMonth, setCalendarMonth] = useState({ 
     year: new Date().getFullYear(), 
@@ -1166,7 +1166,7 @@ export default function HomeScreen({ navigation }) {
   return (
     <FrameWarning theme={theme}>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <GestureDetector gesture={swipeGesture}>
+        {/*<GestureDetector gesture={swipeGesture}>*/}
           <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
             <AppTutorial 
                 screen="Home" 
@@ -1208,7 +1208,6 @@ export default function HomeScreen({ navigation }) {
                 ref={scrollViewRef} 
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
-                scrollEnabled={tutorialCompleted}
                 refreshControl={
                   <RefreshControl
                     refreshing={refreshing}
@@ -1250,7 +1249,7 @@ export default function HomeScreen({ navigation }) {
                     <TouchableOpacity 
                       style={styles.dateLabel} 
                       onPress={() => tutorialCompleted && setShowCalendar(true)}
-                      disabled={!tutorialCompleted}
+                      disabled={false}
                     >
                       <Text style={[styles.dateLabelText, { color: theme.text }]}>{getDateLabel()}</Text>
                     </TouchableOpacity>
@@ -1496,7 +1495,7 @@ export default function HomeScreen({ navigation }) {
               />
             </AnimatedThemeWrapper>
           </SafeAreaView>
-        </GestureDetector>
+        {/*</GestureDetector>*/}
       </GestureHandlerRootView>
     </FrameWarning>
   );

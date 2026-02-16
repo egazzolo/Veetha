@@ -102,7 +102,7 @@ function AppNavigator() {
           setInitialRoute('OnboardingStep1');
         }
       } else {
-        console.log('❌ No active session - showing Landing');
+        console.log('❌ No active session - showing Landing (guest option available)');
         setInitialRoute('Landing');
       }
     } catch (error) {
@@ -199,7 +199,7 @@ function AppNavigator() {
           <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={{ title: 'Privacy Policy', headerShown: true, headerStyle: { backgroundColor: '#4CAF50' }, headerTintColor: '#fff', headerTitleStyle: { fontWeight: 'bold' }, }} />
           <Stack.Screen name="ReportViewer" component={ReportViewerScreen}/>
         </Stack.Navigator>
-        <GlobalTutorialOverlay />
+        {/* <GlobalTutorialOverlay /> */}
       </NavigationContainer>
     </View>
   );

@@ -11,6 +11,7 @@ export function UserProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [cacheLoaded, setCacheLoaded] = useState(false);
   const [freshDataLoaded, setFreshDataLoaded] = useState(false);
+  const [isGuest, setIsGuest] = useState(false);
 
   useEffect(() => {
     initializeUserData();
@@ -20,6 +21,7 @@ export function UserProvider({ children }) {
       console.log('🔐 Auth state changed:', event);
       
       if (event === 'SIGNED_IN') {
+        setIsGuest(false);
         console.log('✅ User signed in, reloading data');
         loadUserData();
       } else if (event === 'SIGNED_OUT') {
@@ -36,12 +38,25 @@ export function UserProvider({ children }) {
   // Initialize: Load cache FIRST, then fetch fresh data
   const initializeUserData = async () => {
     try {
-      // Step 1: Load cached data immediately
-      await loadCachedData();
-      
-      // Step 2: Fetch fresh data in background
-      await loadUserData();
-      
+
+      const { data } = await supabase.auth.getUser();
+      const authUser = data?.user;
+
+      if (!authUser) {
+
+        // GUEST → load local cache
+        setIsGuest(true);
+        await loadCachedData();
+        await loadUserData();
+
+      } else {
+
+        // AUTHENTICATED → NEVER load local cache
+        setIsGuest(false);
+        await loadUserData();
+
+      }
+
     } catch (error) {
       console.error('Error initializing user data:', error);
       setLoading(false);
@@ -81,8 +96,14 @@ export function UserProvider({ children }) {
 
       setUser(authUser);
 
+      // ✅ GUEST MODE SUPPORT
       if (!authUser) {
-        console.log('❌ UserContext: No user found');
+        console.log('👤 Guest mode activated');
+
+        setIsGuest(true);      // NEW
+        setProfile(null);      // important cleanup
+        setMeals([]);          // prevent stale cache UI
+
         setLoading(false);
         return;
       }
@@ -191,7 +212,8 @@ export function UserProvider({ children }) {
     <UserContext.Provider value={{ 
       user,
       profile, 
-      meals, 
+      meals,
+      isGuest,
       loading: loading && !cacheLoaded, // Only show loading if no cache
       freshDataLoaded,
       refreshMeals,
