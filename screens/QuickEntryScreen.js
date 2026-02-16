@@ -202,14 +202,14 @@ export default function QuickEntryScreen({ navigation }) {
       if (productError) throw productError;
 
       // Log meal with product_id
-      const { error: mealError } = await supabase.from('meals').insert({
+      const { error } = await supabase.from('meals').insert({
         user_id: user.id,
         product_id: newProduct.id,
         serving_grams: parseFloat(servingGrams) || 100,
         serving_unit: 'g',
       });
 
-      if (mealError) throw mealError;
+      if (error) throw error;
 
       await refreshMeals();
 

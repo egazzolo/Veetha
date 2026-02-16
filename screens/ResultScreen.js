@@ -9,6 +9,7 @@ import { useUser } from '../utils/UserContext';
 import { useTheme } from '../utils/ThemeContext';
 import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
 import AllergenWarningModal from '../components/AllergenWarningModal';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../utils/LanguageContext';
 import { logMealLogged } from '../utils/analytics';
 import { searchFood } from '../utils/foodDatabase';
@@ -515,7 +516,7 @@ export default function ResultScreen({ route, navigation }) {
           productId = newProduct.id;
         }
 
-        const { error: mealError } = await supabase
+        const { error } = await supabase
           .from('meals')
           .insert({
             user_id: user.id,
@@ -524,6 +525,8 @@ export default function ResultScreen({ route, navigation }) {
             image_url: imageUrl,
             logged_at: new Date().toISOString(),
           });
+
+        if (error) throw error;
 
       } else {
 
@@ -544,28 +547,9 @@ export default function ResultScreen({ route, navigation }) {
 
         await AsyncStorage.setItem('guest_meals', JSON.stringify(existingMeals));
 
-      } 
-      
-      if (mealError) {
-        console.error('❌ Error inserting meal:', mealError);
-        throw mealError;
       }
-      
+
       console.log('✅ Meal logged successfully!');
-      
-      // Track API usage if it was photo recognition
-      if (!isGuest && user && food.detected_by_ai) {
-        await supabase.from('api_tracking').insert({
-          user_id: user.id,
-          service: 'clarifai',
-          type: 'food_recognition',
-          success: true,
-          metadata: {
-            food_name: food.product_name,
-            confidence: food.ai_confidence,
-          },
-        });
-      }
 
       // Refresh meals list before navigating
       await refreshMeals();
