@@ -9,7 +9,6 @@ import { useUser } from '../utils/UserContext';
 import { useTheme } from '../utils/ThemeContext';
 import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
 import AllergenWarningModal from '../components/AllergenWarningModal';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../utils/LanguageContext';
 import { logMealLogged } from '../utils/analytics';
 import { searchFood } from '../utils/foodDatabase';

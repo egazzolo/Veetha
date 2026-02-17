@@ -216,7 +216,6 @@ export function UserProvider({ children }) {
       isGuest,
       loading: loading && !cacheLoaded, // Only show loading if no cache
       freshDataLoaded,
-      isGuest,
       refreshMeals,
       refreshProfile,
     }}>

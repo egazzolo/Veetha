@@ -284,7 +284,7 @@ function NutrientModal({ visible, nutrient, onClose, theme, currentIntake, daily
 export default function HomeScreen({ navigation }) {
   const { theme, isDark } = useTheme();
   const { t } = useLanguage();
-  const { user, profile, loading: userLoading, refreshProfile } = useUser();
+  const { user, profile, loading: userLoading, refreshProfile, isGuest } = useUser();
   console.log("👤 USER FROM CONTEXT:", user);
   const { layout } = useLayout();
   const { startTutorial, tutorialCompleted } = useTutorial();
@@ -315,6 +315,24 @@ export default function HomeScreen({ navigation }) {
   const [checkingTutorial, setCheckingTutorial] = useState(true);
   const [quickSuggestions, setQuickSuggestions] = useState([]);
   const [userCountry, setUserCountry] = useState(null);
+
+  // Safe numeric helper
+  const num = (v) => {
+    const n = typeof v === 'number' ? v : parseFloat(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  const normalizeProduct = (p) => ({
+    name: p?.name ?? '',
+    image_url: p?.image_url ?? null,
+    calories: num(p?.calories),
+    protein: num(p?.protein),
+    carbs: num(p?.carbs),
+    fat: num(p?.fat),
+    fiber: num(p?.fiber),
+    sugar: num(p?.sugar),
+    sodium: num(p?.sodium),
+  });
 
   // Tutorial refs
   const profileButtonRef = useRef(null);
@@ -523,22 +541,22 @@ export default function HomeScreen({ navigation }) {
   // Calculate totals from meals (with safety check)
   const consumed = (meals || []).reduce((sum, meal) => {
     if (!meal.product) return sum;
-    return sum + ((meal.product.calories * meal.serving_grams) / 100);
+    return sum + (num(meal.product.calories) * num(meal.serving_grams)) / 100;
   }, 0);
 
   const consumedProtein = (meals || []).reduce((sum, meal) => {
     if (!meal.product) return sum;
-    return sum + ((meal.product.protein * meal.serving_grams) / 100);
+    return sum + (num(meal.product.protein) * num(meal.serving_grams)) / 100;
   }, 0);
 
   const consumedCarbs = (meals || []).reduce((sum, meal) => {
     if (!meal.product) return sum;
-    return sum + ((meal.product.carbs * meal.serving_grams) / 100);
+    return sum + (num(meal.product.carbs) * num(meal.serving_grams)) / 100;
   }, 0);
 
   const consumedFat = (meals || []).reduce((sum, meal) => {
     if (!meal.product) return sum;
-    return sum + ((meal.product.fat * meal.serving_grams) / 100);
+    return sum + (num(meal.product.fat) * num(meal.serving_grams)) / 100;
   }, 0);
 
   // Get daily goals from profile
@@ -644,8 +662,37 @@ export default function HomeScreen({ navigation }) {
   const loadMealsForDate = async (date) => {
     try {
       setLoading(true);
+
+      // Guest mode — load from AsyncStorage
+      if (isGuest) {
+        const raw = await AsyncStorage.getItem('guest_meals');
+        const guestMeals = JSON.parse(raw || '[]');
+        const dateStr = date.toLocaleDateString('en-CA');
+        const filtered = guestMeals.filter(m => m.logged_at?.startsWith(dateStr));
+
+        const formattedMeals = filtered.map(meal => ({
+          ...meal,
+          serving_grams: meal.serving_grams || 100,
+          product: normalizeProduct({
+            name: meal.product_name,
+            image_url: meal.image_url,
+            calories: meal.calories ?? meal.product?.calories,
+            protein: meal.protein ?? meal.product?.protein,
+            carbs: meal.carbs ?? meal.product?.carbs,
+            fat: meal.fat ?? meal.product?.fat,
+            fiber: meal.fiber ?? meal.product?.fiber,
+            sugar: meal.sugar ?? meal.product?.sugar,
+            sodium: meal.sodium ?? meal.product?.sodium,
+          }),
+        }));
+
+        setMeals(formattedMeals);
+        console.log(`📅 Guest: Loaded ${formattedMeals.length} meals for ${dateStr}`);
+        return;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) return;
 
       // Format date to YYYY-MM-DD
@@ -658,7 +705,7 @@ export default function HomeScreen({ navigation }) {
       startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(date);
       endOfDay.setHours(23, 59, 59, 999);
-      
+
       const { data, error } = await supabase
         .from('meals')
         .select(`
@@ -683,7 +730,11 @@ export default function HomeScreen({ navigation }) {
 
       if (error) throw error;
 
-      setMeals(data || []);
+      const normalizedMeals = (data || []).map(m => ({
+        ...m,
+        product: normalizeProduct(m.product),
+      }));
+      setMeals(normalizedMeals);
       console.log(`📅 Loaded ${data?.length || 0} meals for ${dateStr}`);
     } catch (error) {
       console.error('Error loading meals:', error);
