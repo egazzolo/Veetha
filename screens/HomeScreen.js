@@ -284,7 +284,7 @@ function NutrientModal({ visible, nutrient, onClose, theme, currentIntake, daily
 export default function HomeScreen({ navigation }) {
   const { theme, isDark } = useTheme();
   const { t } = useLanguage();
-  const { user, profile, loading: userLoading, refreshProfile } = useUser();
+  const { user, isGuest, profile, loading: userLoading, refreshProfile } = useUser();
   console.log("👤 USER FROM CONTEXT:", user);
   const { layout } = useLayout();
   const { startTutorial, tutorialCompleted } = useTutorial();
@@ -527,8 +527,9 @@ export default function HomeScreen({ navigation }) {
   }, 0);
 
   const consumedProtein = (meals || []).reduce((sum, meal) => {
-    if (!meal.product) return sum;
-    return sum + ((meal.product.protein * meal.serving_grams) / 100);
+    const p = num(meal.product?.protein);
+    const g = num(meal.serving_grams);
+    return sum + (p * g) / 100;
   }, 0);
 
   const consumedCarbs = (meals || []).reduce((sum, meal) => {
@@ -640,10 +641,66 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
+  const num = (v) => {
+    const n = typeof v === 'number' ? v : parseFloat(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  const normalizeProduct = (p) => ({
+    name: p?.name ?? '',
+    image_url: p?.image_url ?? null,
+    serving_unit: p?.serving_unit ?? null,
+
+    calories: num(p?.calories),
+    protein: num(p?.protein),
+    carbs: num(p?.carbs),
+    fat: num(p?.fat),
+
+    fiber: num(p?.fiber),
+    sugar: num(p?.sugar),
+    sodium: num(p?.sodium),
+  });
+
   // Load meals for selected date
   const loadMealsForDate = async (date) => {
     try {
       setLoading(true);
+
+      // ===== GUEST MODE LOAD =====
+      if (isGuest) {
+
+        console.log('👤 Loading guest meals from AsyncStorage');
+
+        const guestMeals =
+          JSON.parse(await AsyncStorage.getItem('guest_meals') || '[]');
+
+        // Convert guest meals into Supabase-like structure
+        const formattedMeals = guestMeals.map(meal => {
+          const product = normalizeProduct({
+            name: meal.product_name,
+            image_url: meal.image_url,
+
+            // IMPORTANT: read from BOTH possible locations (flat OR nested)
+            calories: meal.calories ?? meal.product?.calories,
+            protein: meal.protein ?? meal.product?.protein,
+            carbs: meal.carbs ?? meal.product?.carbs,
+            fat: meal.fat ?? meal.product?.fat,
+            fiber: meal.fiber ?? meal.product?.fiber,
+            sugar: meal.sugar ?? meal.product?.sugar,
+            sodium: meal.sodium ?? meal.product?.sodium,
+          });
+
+          return {
+            ...meal,
+            product,
+          };
+        });
+
+        setMeals(formattedMeals);
+        setLoading(false);
+        return;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) return;
@@ -683,7 +740,13 @@ export default function HomeScreen({ navigation }) {
 
       if (error) throw error;
 
-      setMeals(data || []);
+      const normalizedMeals = (data || []).map(m => ({
+        ...m,
+        product: normalizeProduct(m.product),
+      }));
+
+      setMeals(normalizedMeals);
+
       console.log(`📅 Loaded ${data?.length || 0} meals for ${dateStr}`);
     } catch (error) {
       console.error('Error loading meals:', error);
@@ -1055,6 +1118,28 @@ export default function HomeScreen({ navigation }) {
           style: 'destructive',
           onPress: async () => {
             try {
+
+              // ===== GUEST DELETE =====
+              if (!user) {
+
+                const existingMeals =
+                  JSON.parse(await AsyncStorage.getItem('guest_meals') || '[]');
+
+                const updatedMeals =
+                  existingMeals.filter(m => m.id !== meal.id);
+
+                await AsyncStorage.setItem(
+                  'guest_meals',
+                  JSON.stringify(updatedMeals)
+                );
+
+                setMeals(prev => prev.filter(m => m.id !== meal.id));
+
+                Alert.alert(t('home.success'), t('home.mealDeleted'));
+                return;
+              }
+
+              // ===== SUPABASE DELETE =====
               const { error } = await supabase
                 .from('meals')
                 .delete()
