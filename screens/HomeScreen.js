@@ -411,17 +411,33 @@ export default function HomeScreen({ navigation }) {
 
   // Load water intake
   const loadWaterIntake = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    const dateStr = selectedDate.toLocaleDateString('en-CA');
-    
-    const { data } = await supabase
-      .from('water_logs')
-      .select('cups')
-      .eq('user_id', user.id)
-      .eq('date', dateStr)
-      .single();
-    
-    setWaterIntake(data?.cups || 0);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('💧 loadWaterIntake: no user, skipping');
+        setWaterIntake(0);
+        return;
+      }
+      const dateStr = selectedDate.toLocaleDateString('en-CA');
+      console.log('💧 loadWaterIntake: fetching for', dateStr, 'user', user.id);
+
+      const { data, error } = await supabase
+        .from('water_logs')
+        .select('cups')
+        .eq('user_id', user.id)
+        .eq('date', dateStr)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('💧 loadWaterIntake error:', error);
+      }
+
+      console.log('💧 loadWaterIntake result:', data);
+      setWaterIntake(data?.cups || 0);
+    } catch (e) {
+      console.error('💧 loadWaterIntake exception:', e);
+      setWaterIntake(0);
+    }
   };
 
   const handleAddWater = async () => {
@@ -433,10 +449,14 @@ export default function HomeScreen({ navigation }) {
       setUpdatingWater(true);
 
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.log('💧 handleAddWater: no user, skipping');
+        return;
+      }
       const dateStr = selectedDate.toLocaleDateString('en-CA');
 
       const newAmount = waterIntake + 1;
+      console.log('💧 handleAddWater: upsert', { user_id: user.id, date: dateStr, cups: newAmount });
 
       const { error } = await supabase.from('water_logs').upsert({
         user_id: user.id,
@@ -446,13 +466,17 @@ export default function HomeScreen({ navigation }) {
         onConflict: 'user_id,date'
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('💧 handleAddWater error:', error);
+        throw error;
+      }
 
+      console.log('💧 handleAddWater success:', newAmount);
       setWaterIntake(newAmount);
 
     } catch (e) {
 
-      console.error(e);
+      console.error('💧 handleAddWater exception:', e);
 
     } finally {
 
@@ -470,10 +494,14 @@ export default function HomeScreen({ navigation }) {
       setUpdatingWater(true);
 
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.log('💧 handleSubtractWater: no user, skipping');
+        return;
+      }
       const dateStr = selectedDate.toLocaleDateString('en-CA');
 
       const newAmount = waterIntake - 1;
+      console.log('💧 handleSubtractWater: upsert', { user_id: user.id, date: dateStr, cups: newAmount });
 
       const { error } = await supabase.from('water_logs').upsert({
         user_id: user.id,
@@ -484,15 +512,16 @@ export default function HomeScreen({ navigation }) {
       });
 
       if (error) {
-        console.error('Error updating water:', error);
+        console.error('💧 handleSubtractWater error:', error);
         return;
       }
 
+      console.log('💧 handleSubtractWater success:', newAmount);
       setWaterIntake(newAmount);
 
     } catch (e) {
 
-      console.error(e);
+      console.error('💧 handleSubtractWater exception:', e);
 
     } finally {
 
@@ -523,7 +552,9 @@ export default function HomeScreen({ navigation }) {
   // Calculate totals from meals (with safety check)
   const consumed = (meals || []).reduce((sum, meal) => {
     if (!meal.product) return sum;
-    return sum + ((meal.product.calories * meal.serving_grams) / 100);
+    const c = num(meal.product.calories);
+    const g = num(meal.serving_grams);
+    return sum + (c * g) / 100;
   }, 0);
 
   const consumedProtein = (meals || []).reduce((sum, meal) => {
@@ -534,12 +565,16 @@ export default function HomeScreen({ navigation }) {
 
   const consumedCarbs = (meals || []).reduce((sum, meal) => {
     if (!meal.product) return sum;
-    return sum + ((meal.product.carbs * meal.serving_grams) / 100);
+    const c = num(meal.product.carbs);
+    const g = num(meal.serving_grams);
+    return sum + (c * g) / 100;
   }, 0);
 
   const consumedFat = (meals || []).reduce((sum, meal) => {
     if (!meal.product) return sum;
-    return sum + ((meal.product.fat * meal.serving_grams) / 100);
+    const f = num(meal.product.fat);
+    const g = num(meal.serving_grams);
+    return sum + (f * g) / 100;
   }, 0);
 
   // Get daily goals from profile
@@ -836,7 +871,7 @@ export default function HomeScreen({ navigation }) {
     loadStepCalories();
     calculateStreak();
     fetchMonthlyData(calendarMonth.year, calendarMonth.month);
-  }, [selectedDate, calendarMonth]);
+  }, [selectedDate, calendarMonth, isGuest]);
 
   // Check greeting only when needed (login or 5 hours later)
   useEffect(() => {
@@ -976,7 +1011,7 @@ export default function HomeScreen({ navigation }) {
       };
       
       checkArrows();
-    }, [selectedDate])
+    }, [selectedDate, isGuest])
   );
 
   // Date navigation functions
