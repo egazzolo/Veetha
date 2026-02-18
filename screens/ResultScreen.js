@@ -412,6 +412,41 @@ export default function ResultScreen({ route, navigation }) {
   const handleLogMeal = async () => {
     try {
       setSavingMeal(true);
+      console.log('🔥 HANDLE LOG MEAL STARTED', { isGuest, user });
+
+      /* ===== GUEST MODE EARLY EXIT ===== */
+      if (isGuest) {
+
+        console.log('👤 GUEST SAVE START');
+
+        const existingMeals =
+          JSON.parse(await AsyncStorage.getItem('guest_meals') || '[]');
+
+        existingMeals.unshift({
+          id: Date.now(),
+          serving_grams: servingGrams,
+          product: {
+            name: food.product_name || food.name || 'Unknown food',
+            calories: food.calories || 0,
+            protein: food.protein || 0,
+            carbs: food.carbs || 0,
+            fat: food.fat || 0,
+            image_url: imageUrl,
+          },
+          logged_at: new Date().toISOString(),
+        });
+
+        await AsyncStorage.setItem(
+          'guest_meals',
+          JSON.stringify(existingMeals)
+        );
+
+        console.log('✅ GUEST MEAL SAVED');
+
+        setSavingMeal(false);
+        navigation.goBack();
+        return;
+      }
 
       console.log('📝 Starting meal log process...');
       console.log('Food data:', { name: food.product_name, nutriments: food.nutriments });
@@ -521,30 +556,14 @@ export default function ResultScreen({ route, navigation }) {
             user_id: user.id,
             product_id: productId,
             serving_grams: servingGrams,
+            barcode: food.barcode || null,
+            meal_type: null,
             image_url: imageUrl,
             logged_at: new Date().toISOString(),
           });
 
         if (error) throw error;
-
-      } else {
-
-        const existingMeals =
-          JSON.parse(await AsyncStorage.getItem('guest_meals') || '[]');
-
-        existingMeals.unshift({
-          id: Date.now(),
-          product_name: food.product_name || food.name || 'Unknown food',
-          calories: food.calories || 0,
-          protein: food.protein || 0,
-          carbs: food.carbs || 0,
-          fat: food.fat || 0,
-          serving_grams: servingGrams,
-          image_url: imageUrl,
-          logged_at: new Date().toISOString(),
-        });
-
-        await AsyncStorage.setItem('guest_meals', JSON.stringify(existingMeals));
+        console.log('✅ SUPABASE MEAL INSERT SUCCESS');
 
       }
 

@@ -61,7 +61,7 @@ export default function ScannerScreen({ navigation }) {
     const apiName = USE_GOOGLE_VISION ? 'google_vision' : 'clarifai';
     const monthlyLimit = USE_GOOGLE_VISION ? 950 : 900; // Google: 950, Clarifai: 900
 
-    const { data: monthlyPhotos, error } = await supabase
+    /*const { data: monthlyPhotos, error } = await supabase
       .from('api_tracking')
       .select('id')
       .eq('user_id', user.id)
@@ -117,7 +117,7 @@ export default function ScannerScreen({ navigation }) {
         [{ text: t('common.ok') }]
       );
       return false;
-    }
+    }*/
 
     // Warn at 850 uses (50 left)
     if (photosUsedThisMonth >= 850) {
@@ -316,12 +316,6 @@ export default function ScannerScreen({ navigation }) {
         }
         p.image_url = imageUrl;
 
-        // Log API call
-        await logApiCall('openfoodfacts', 'barcode_scan', true, null, {
-          barcode: barcode,
-          product_name: p.product_name
-        });
-
         console.log("✅ Navigating to Result...");
         navigation.navigate("Result", { 
           food: p,
@@ -358,30 +352,6 @@ export default function ScannerScreen({ navigation }) {
     }
   };
 
-  // Log API call to Supabase
-  const logApiCall = async (service, callType, success, errorMessage = null, metadata = {}) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      const { error } = await supabase.from('api_tracking').insert({  // ← FIXED TABLE NAME
-        user_id: user?.id || null,
-        service: service,  // ← Changed from api_service
-        type: callType,    // ← Changed from call_type
-        success: success,
-        error_message: errorMessage,
-        metadata: metadata
-      });
-      
-      if (error) {
-        console.error('❌ Failed to log API call:', error);
-      } else {
-        console.log(`📊 Logged API call: ${service} - ${callType} - ${success ? 'SUCCESS' : 'FAILED'}`);
-      }
-    } catch (error) {
-      console.error('❌ Exception logging API call:', error);
-    }
-  };
-
   // Analyze food photo with AI (Clarifai or Google Vision)
   const analyzeFoodPhoto = async (photoUri) => {
     try {
@@ -404,10 +374,6 @@ export default function ScannerScreen({ navigation }) {
       // ✅ CONFIDENCE THRESHOLD CHECK
       if (confidence < 60) {
         const apiName = USE_GOOGLE_VISION ? 'google_vision' : 'clarifai';
-        await logApiCall(apiName, 'food_recognition', false, 'Low confidence', {
-          detected_food: foodName,
-          confidence: confidence
-        });
 
         Alert.alert(
           t('scanner.lowConfidence'),
@@ -454,11 +420,6 @@ export default function ScannerScreen({ navigation }) {
   const proceedWithFood = async (foodName, confidence, photoUri) => {
     try {
       const apiName = USE_GOOGLE_VISION ? 'google_vision' : 'clarifai';
-      await logApiCall(apiName, 'food_recognition', true, null, {
-        detected_food: foodName,
-        confidence: confidence,
-        total_concepts: 1,
-      });
 
       console.log('🔍 Searching for nutrition data...');
 

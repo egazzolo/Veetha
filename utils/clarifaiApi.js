@@ -29,11 +29,18 @@ const REQUESTS_PER_ACCOUNT = 950;
 // Get current PAT based on usage
 const getCurrentPAT = async () => {
   try {
+    // Guard: skip api_tracking query for guests (RLS would block it)
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) {
+      console.log('👤 Guest mode — using default PAT #1');
+      return CLARIFAI_PATS[0];
+    }
+
     // Count requests this month for PAT 1
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
-    
+
     const { data, error } = await supabase
       .from('api_tracking')
       .select('id', { count: 'exact' })

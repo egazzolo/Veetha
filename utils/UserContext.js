@@ -209,9 +209,9 @@ export function UserProvider({ children }) {
   };
 
   return (
-    <UserContext.Provider value={{ 
+    <UserContext.Provider value={{
       user,
-      profile, 
+      profile,
       meals,
       isGuest,
       loading: loading && !cacheLoaded, // Only show loading if no cache
