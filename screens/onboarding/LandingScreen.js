@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
 import { useLanguage } from '../../utils/LanguageContext';
+import { supabase } from '../../utils/supabase';
 
 export default function LandingScreen({ navigation }) {
   const { t } = useLanguage();
