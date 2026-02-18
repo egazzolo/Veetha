@@ -42,7 +42,22 @@ export default function LandingScreen({ navigation }) {
 
         <TouchableOpacity
           style={styles.secondaryButton}
-          onPress={() => navigation.replace('Home', { guestMode: true })}
+          onPress={async () => {
+            try {
+              const { data, error } = await supabase.auth.signInAnonymously();
+
+              if (error) {
+                console.error('Anonymous sign-in error:', error);
+                return;
+              }
+
+              console.log('✅ Anonymous user created:', data?.user?.id);
+
+              navigation.replace('Home');
+            } catch (e) {
+              console.error('Anonymous sign-in failed:', e);
+            }
+          }}
         >
           <Text style={styles.secondaryButtonText}>
             Continue as Guest
