@@ -1001,6 +1001,12 @@ export default {
     waterGoalHelper: 'Recommended: 8 cups (2 liters) per day',
     cups: 'Cups',
     liters: 'Liters',
+    light: 'Lightly active',
+    lightDesc: 'Light exercise or activity 1–3 days per week',
+    moderate: 'Moderately active',
+    moderateDesc: 'Moderate exercise or activity 3–5 days per week',
+    very_active: 'Very active',
+    very_activeDesc: 'Hard exercise or activity 6–7 days per week',
   },
 
   dietaryRestrictions: {

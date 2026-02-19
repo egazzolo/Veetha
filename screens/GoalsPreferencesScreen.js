@@ -324,10 +324,15 @@ export default function GoalsPreferencesScreen({ navigation }) {
               >
                 <View style={styles.activityOptionContent}>
                   <Text style={[styles.activityLabel, { color: theme.text }]}>
-                    {t(`goalsPreferences.${level.value}`)}
+                    {level.value === 'sedentary' ? t('goalsPreferences.sedentary')
+                      : level.value === 'light' ? t('goalsPreferences.light')
+                      : level.value === 'moderate' ? t('goalsPreferences.moderate')
+                      : level.value === 'active' ? t('goalsPreferences.active')
+                      : level.value === 'very_active' ? t('goalsPreferences.very_active')
                   </Text>
+
                   <Text style={[styles.activityDescription, { color: theme.textSecondary }]}>
-                    {t(`goalsPreferences.${level.value}Desc`)}
+                    {t('goalsPreferences.recalculate')}
                   </Text>
                 </View>
                 {activityLevel === level.value && (

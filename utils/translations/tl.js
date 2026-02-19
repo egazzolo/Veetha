@@ -1001,6 +1001,12 @@ export default {
     waterGoalHelper: 'Inirerekomenda: 8 tasa (2 litro) bawat araw',
     cups: 'Tasa',
     liters: 'Litro',
+    light: 'Magaan na aktibidad',
+    lightDesc: 'Magaan na ehersisyo o aktibidad 1–3 araw bawat linggo',
+    moderate: 'Katamtamang aktibidad',
+    moderateDesc: 'Katamtamang ehersisyo o aktibidad 3–5 araw bawat linggo',
+    very_active: 'Napakaaktibo',
+    very_activeDesc: 'Matinding ehersisyo o aktibidad 6–7 araw bawat linggo',
   },
 
   dietaryRestrictions: {

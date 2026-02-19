@@ -79,64 +79,61 @@ export default function OnboardingComplete({ navigation }) {
       const savedEmail = await AsyncStorage.getItem('pendingUserEmail');
       const savedPassword = await AsyncStorage.getItem('pendingUserPassword');
 
+      const { data: { user } } = await supabase.auth.getUser();
+
       if (!savedEmail || !savedPassword) {
-        console.log('❌ No saved credentials found');
-        Alert.alert(
-          t('onboarding.error'),
-          'Session expired. Please log in again.',
-          [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
-        );
-        return;
-      }
-
-      console.log('📧 Attempting to sign in with:', savedEmail);
-
-      // Try to sign in - this will only work if email is verified
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: savedEmail,
-        password: savedPassword,
-      });
-
-      if (error) {
-        console.log('❌ Sign in failed:', error.message);
-        
-        // Email not verified yet
-        if (error.message.includes('Email not confirmed') || 
-            error.message.includes('not verified')) {
-          console.log('⚠️ Email not verified yet');
-          
+        // If anonymous user already has a valid session, continue
+        if (user) {
+          console.log('✅ Anonymous user detected — continuing without email login');
+        } else {
+          console.log('❌ No saved credentials and no active session');
           Alert.alert(
-            '📧 Email Verification Required',
-            `Please check your email (${savedEmail}) and click the verification link before continuing.\n\nOnce verified, tap "I've Verified" below.`,
-            [
-              {
-                text: 'Resend Email',
-                style: 'cancel',
-                onPress: () => handleResendConfirmation(savedEmail)
-              },
-              {
-                text: "I've Verified",
-                onPress: () => recheckVerification(savedEmail, savedPassword)
-              }
-            ]
+            t('onboarding.error'),
+            'Session expired. Please log in again.',
+            [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
           );
           return;
         }
-        
-        // Some other error
-        Alert.alert(t('onboarding.error'), error.message);
+      }
+
+      // Try to sign in - this will only work if email is verified
+      let authUser = null;
+
+      // If we have email credentials, use password login
+      if (savedEmail && savedPassword) {
+        const response = await supabase.auth.signInWithPassword({
+          email: savedEmail,
+          password: savedPassword,
+        });
+
+        if (response.error) {
+          console.error('❌ Email login failed:', response.error);
+          Alert.alert('Error', response.error.message);
+          return;
+        }
+
+        authUser = response.data?.user;
+      } else {
+        // Anonymous user already signed in
+        const { data: { user } } = await supabase.auth.getUser();
+        authUser = user;
+      }
+
+      if (!authUser) {
+        console.error('❌ No authenticated user found');
+        Alert.alert('Error', 'Authentication failed.');
         return;
       }
 
       // Success! Email was verified
-      if (data.session && data.user) {
-        console.log('✅ Email verified! User signed in:', data.user.email);
+      if (authUser) {
+        console.log('✅ Email verified! User signed in:', authUser.email);
         
         // Check if profile was auto-created by trigger
         const { data: existingProfile } = await supabase
           .from('profiles')
           .select('id')
-          .eq('id', data.user.id)
+          .eq('id', authUser.id)
           .maybeSingle();
         
         if (existingProfile) {
@@ -147,7 +144,7 @@ export default function OnboardingComplete({ navigation }) {
           
           // Update the existing profile with onboarding data
           const profileData = {
-            full_name: data.user.email.split('@')[0],
+            full_name: authUser.email ? authUser.email.split('@')[0] : null,
             gender: onboardingData.gender,
             age: parseInt(onboardingData.age),
             height_ft: onboardingData.unit === 'imperial' ? parseInt(onboardingData.heightFeet) : null,
@@ -172,14 +169,14 @@ export default function OnboardingComplete({ navigation }) {
           const { error: updateError } = await supabase
             .from('profiles')
             .update(profileData)
-            .eq('id', data.user.id);
+            .eq('id', authUser.id);
           
           if (updateError) throw updateError;
           
           console.log('✅ Profile updated with onboarding data');
         } else {
           console.log('📝 No profile exists, creating new one...');
-          await saveProfileAndNavigate(data.user);
+          await saveProfileAndNavigate(authUser);
           return;
         }
         
@@ -216,13 +213,13 @@ export default function OnboardingComplete({ navigation }) {
     try {
       console.log('🔄 Rechecking verification status...');
 
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const response = await supabase.auth.signInWithPassword({
         email: email,
         password: password,
       });
 
-      if (error) {
-        if (error.message.includes('Email not confirmed')) {
+      if (response.error) {
+        if (response.error.message.includes('Email not confirmed')) {
           console.log('❌ Still not verified');
           Alert.alert(
             'Not Verified Yet',
@@ -230,15 +227,15 @@ export default function OnboardingComplete({ navigation }) {
             [{ text: 'OK' }]
           );
         } else {
-          Alert.alert('Error', error.message);
+          Alert.alert('Error', response.error.message);
         }
         return;
       }
 
       // Success! They verified it
-      if (data.session && data.user) {
+      if (response.data.session && response.data.user) {
         console.log('✅ Email verified! Proceeding...');
-        await saveProfileAndNavigate(data.user);
+        await saveProfileAndNavigate(authUser);
       }
 
     } catch (error) {

@@ -1000,7 +1000,13 @@ export default {
     dailyWaterGoal: 'Meta Diaria de Agua',
     waterGoalHelper: 'Recomendado: 8 vasos (2 litros) por día',
     cups: 'Vasos',
-  liters: 'Litros',
+    liters: 'Litros',
+    light: 'Actividad ligera',
+    lightDesc: 'Ejercicio ligero o actividad 1–3 días por semana',
+    moderate: 'Actividad moderada',
+    moderateDesc: 'Ejercicio moderado o actividad 3–5 días por semana',
+    very_active: 'Muy activo',
+    very_activeDesc: 'Ejercicio intenso o actividad 6–7 días por semana',
   },
 
   dietaryRestrictions: {

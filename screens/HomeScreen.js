@@ -756,7 +756,7 @@ export default function HomeScreen({ navigation }) {
         .from('meals')
         .select(`
           *,
-          product:food_database (
+          product:food_database!meals_product_fk (
             name,
             calories,
             protein,
@@ -1234,7 +1234,7 @@ export default function HomeScreen({ navigation }) {
         .from('meals')
         .select(`
           *,
-          product:food_database (*)
+          product:food_database!meals_product_fk (*)
         `)
         .eq('user_id', user.id)
         .gte('logged_at', yesterday.toISOString())
@@ -1325,10 +1325,26 @@ export default function HomeScreen({ navigation }) {
               )}
             <AnimatedThemeWrapper>
               {/* ScrollView with content */}
+              {checkingTutorial && (
+                <View style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: isDark ? '#121212' : '#fff',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  zIndex: 999,
+                }}>
+                  <ActivityIndicator size="large" color="#4CAF50" />
+                </View>
+              )}
               <ScrollView
                 ref={scrollViewRef} 
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
+                scrollEnabled={!checkingTutorial}
                 refreshControl={
                   <RefreshControl
                     refreshing={refreshing}

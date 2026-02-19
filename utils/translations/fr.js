@@ -1001,6 +1001,12 @@ export default {
     waterGoalHelper: 'Recommandé : 8 tasses (2 litres) par jour',
     cups: 'Tasses',
     liters: 'Litres',
+    light: 'Légèrement actif',
+    lightDesc: 'Exercice léger ou activité 1–3 jours par semaine',
+    moderate: 'Modérément actif',
+    moderateDesc: 'Exercice modéré ou activité 3–5 jours par semaine',
+    very_active: 'Très actif',
+    very_activeDesc: 'Exercice intense ou activité 6–7 jours par semaine',
   },
 
   dietaryRestrictions: {
