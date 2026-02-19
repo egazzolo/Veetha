@@ -775,6 +775,7 @@ export default function HomeScreen({ navigation }) {
         .order('logged_at', { ascending: false });
 
       if (error) throw error;
+      console.log('HOME MEALS RESPONSE:', meals);
 
       const normalizedMeals = (data || []).map(m => ({
         ...m,

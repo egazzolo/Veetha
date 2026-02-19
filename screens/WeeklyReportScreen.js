@@ -131,10 +131,10 @@ export default function WeeklyReportScreen({ navigation }) {
           };
         }
         
-        mealsByDate[dateStr].calories += meal.food_database?.calories || 0;
-        mealsByDate[dateStr].protein += meal.food_database?.protein || 0;
-        mealsByDate[dateStr].carbs += meal.food_database?.carbs || 0;
-        mealsByDate[dateStr].fat += meal.food_database?.fat || 0;
+        mealsByDate[dateStr].calories += meal.product?.calories || 0;
+        mealsByDate[dateStr].protein += meal.product?.protein || 0;
+        mealsByDate[dateStr].carbs += meal.product?.carbs || 0;
+        mealsByDate[dateStr].fat += meal.product?.fat || 0;
       });
 
       // Group water by date

@@ -548,7 +548,10 @@ export default function ResultScreen({ route, navigation }) {
           if (productError) throw productError;
 
           productId = newProduct.id;
+          console.log('PRODUCT ID BEING INSERTED:', productId);
         }
+
+        console.log('INSERTING MEAL WITH PRODUCT ID:', productId);
 
         const { error } = await supabase
           .from('meals')

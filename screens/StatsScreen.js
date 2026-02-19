@@ -131,10 +131,10 @@ export default function StatsScreen({ navigation }) {
         const dateStr = date.toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
         const dayMeals = mealsByDate[dateStr] || [];
 
-        const totalCalories = dayMeals.reduce((sum, m) => sum + (m.food_database?.calories || 0), 0);
-        const totalProtein = dayMeals.reduce((sum, m) => sum + (m.food_database?.protein || 0), 0);
-        const totalCarbs = dayMeals.reduce((sum, m) => sum + (m.food_database?.carbs || 0), 0);
-        const totalFat = dayMeals.reduce((sum, m) => sum + (m.food_database?.fat || 0), 0);
+        const totalCalories = dayMeals.reduce((sum, m) => sum + (m.product?.calories || 0), 0);
+        const totalProtein = dayMeals.reduce((sum, m) => sum + (m.product?.protein || 0), 0);
+        const totalCarbs = dayMeals.reduce((sum, m) => sum + (m.product?.carbs || 0), 0);
+        const totalFat = dayMeals.reduce((sum, m) => sum + (m.product?.fat || 0), 0);
 
         weekData.push({
           day: date.toLocaleDateString('en-US', { weekday: 'short' }),
@@ -208,7 +208,7 @@ export default function StatsScreen({ navigation }) {
         const dateStr = date.toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
         const dayMeals = mealsByDate[dateStr] || [];
 
-        const totalCalories = dayMeals.reduce((sum, m) => sum + (m.food_database?.calories || 0), 0);
+        const totalCalories = dayMeals.reduce((sum, m) => sum + (m.product?.calories || 0), 0);
 
         monthData.push({
           date: dateStr,

@@ -139,10 +139,10 @@ export default function ExportReportScreen({ navigation }) {
         if (!mealsByDate[date]) {
           mealsByDate[date] = { calories: 0, protein: 0, carbs: 0, fat: 0 };
         }
-        mealsByDate[date].calories += meal.food_database?.calories || 0;
-        mealsByDate[date].protein += meal.food_database?.protein || 0;
-        mealsByDate[date].carbs += meal.food_database?.carbs || 0;
-        mealsByDate[date].fat += meal.food_database?.fat || 0;
+        mealsByDate[date].calories += meal.product?.calories || 0;
+        mealsByDate[date].protein += meal.product?.protein || 0;
+        mealsByDate[date].carbs += meal.product?.carbs || 0;
+        mealsByDate[date].fat += meal.product?.fat || 0;
       });
 
       // Build daily data

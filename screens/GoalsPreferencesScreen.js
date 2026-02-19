@@ -329,6 +329,8 @@ export default function GoalsPreferencesScreen({ navigation }) {
                       : level.value === 'moderate' ? t('goalsPreferences.moderate')
                       : level.value === 'active' ? t('goalsPreferences.active')
                       : level.value === 'very_active' ? t('goalsPreferences.very_active')
+                      :''
+                    }
                   </Text>
 
                   <Text style={[styles.activityDescription, { color: theme.textSecondary }]}>
