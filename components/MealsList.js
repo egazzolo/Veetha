@@ -119,7 +119,14 @@ export default function MealsList({
                 fiber: actualFiber,
                 serving_unit: product.serving_unit,
               })}
-              onLongPress={() => handleMealLongPress(meal)}
+              onLongPress={() => handleMealLongPress({
+              ...meal,
+              product_name: meal.product?.name ?? meal.product_name,
+              calories: meal.product?.calories ?? meal.calories,
+              protein: meal.product?.protein ?? meal.protein,
+              carbs: meal.product?.carbs ?? meal.carbs,
+              fat: meal.product?.fat ?? meal.fat,
+            })}
               activeOpacity={0.7}
             >
               {/* Image Section */}

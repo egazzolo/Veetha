@@ -10,12 +10,11 @@ export default function EditMealScreen({ route, navigation }) {
   const { theme } = useTheme();
   const { t } = useLanguage();
   
-  const [productName, setProductName] = useState(meal.product_name);
-  const [servingGrams, setServingGrams] = useState(String(meal.serving_grams || 100));
-  const [calories, setCalories] = useState(String(meal.calories));
-  const [protein, setProtein] = useState(String(meal.protein));
-  const [carbs, setCarbs] = useState(String(meal.carbs));
-  const [fat, setFat] = useState(String(meal.fat));
+  const [productName, setProductName] = useState(meal.product_name || '');
+  const [calories, setCalories] = useState(String(meal.calories ?? ''));
+  const [protein, setProtein] = useState(String(meal.protein ?? ''));
+  const [carbs, setCarbs] = useState(String(meal.carbs ?? ''));
+  const [fat, setFat] = useState(String(meal.fat ?? ''));
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
@@ -28,16 +27,15 @@ export default function EditMealScreen({ route, navigation }) {
 
     try {
       const { error } = await supabase
-        .from('meals')
+        .from('food_database')
         .update({
-          product_name: productName.trim(),
-          serving_grams: parseFloat(servingGrams) || 100,
+          name: productName.trim(),
           calories: parseFloat(calories) || 0,
           protein: parseFloat(protein) || 0,
           carbs: parseFloat(carbs) || 0,
           fat: parseFloat(fat) || 0,
         })
-        .eq('id', meal.id);
+        .eq('id', meal.product_id);
 
       if (error) throw error;
 
