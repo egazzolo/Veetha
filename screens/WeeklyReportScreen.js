@@ -65,7 +65,7 @@ export default function WeeklyReportScreen({ navigation }) {
         .from('meals')
         .select(`
           logged_at,
-          food_database:product_id (
+          product:food_database!meals_product_fk (
             calories,
             protein,
             carbs,

@@ -118,7 +118,7 @@ export default function ExportReportScreen({ navigation }) {
         .from('meals')
         .select(`
           logged_at,
-          food_database (
+          product:food_database!meals_product_fk (
             calories,
             protein,
             carbs,
