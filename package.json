@@ -25,7 +25,6 @@
     "expo-blur": "~15.0.7",
     "expo-camera": "~17.0.9",
     "expo-crypto": "~15.0.8",
-    "expo-dev-client": "~6.0.20",
     "expo-file-system": "~19.0.21",
     "expo-image-picker": "~17.0.8",
     "expo-intent-launcher": "~13.0.8",
@@ -39,7 +38,6 @@
     "expo-sharing": "~14.0.8",
     "expo-speech": "~14.0.7",
     "expo-status-bar": "~3.0.8",
-    "expo-updates": "~29.0.12",
     "expo-web-browser": "~15.0.9",
     "firebase": "^12.7.0",
     "react": "19.1.0",
@@ -60,6 +58,8 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.0",
+    "@react-native-community/cli": "^20.1.1",
+    "@react-native/metro-config": "^0.84.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },

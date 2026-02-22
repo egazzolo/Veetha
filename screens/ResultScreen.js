@@ -536,10 +536,13 @@ export default function ResultScreen({ route, navigation }) {
             .from('food_database')
             .insert({
               name: food.product_name || food.name || 'Unknown food',
-              calories: food.calories || 0,
-              protein: food.protein || 0,
-              carbs: food.carbs || 0,
-              fat: food.fat || 0,
+              calories: food.nutriments?.['energy-kcal_100g'] || food.nutriments?.['energy-kcal'] || food.calories || 0,
+              protein: food.nutriments?.proteins_100g || food.nutriments?.proteins || food.protein || 0,
+              carbs: food.nutriments?.carbohydrates_100g || food.nutriments?.carbohydrates || food.carbs || 0,
+              fat: food.nutriments?.fat_100g || food.nutriments?.fat || food.fat || 0,
+              fiber: food.nutriments?.fiber_100g || food.nutriments?.fiber || 0,
+              sugar: food.nutriments?.sugars_100g || food.nutriments?.sugar || 0,
+              sodium: food.nutriments?.sodium_100g || food.nutriments?.sodium || 0,
               image_url: imageUrl,
             })
             .select('id')

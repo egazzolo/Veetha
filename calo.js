@@ -76,32 +76,40 @@ function AppNavigator() {
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error) {
-        console.error('❌ Error checking auth:', error);
+        console.log('Auth error:', error);
         setInitialRoute('Landing');
         setLoading(false);
         return;
       }
       
       if (session?.user) {
-        console.log('✅ User is logged in:', session.user.email);
-        
+
+        // ✅ Validate session with server
+        const { data: { user: validUser }, error: userError } =
+          await supabase.auth.getUser();
+
+        if (userError || !validUser) {
+          console.log('⚠️ Invalid cached session — forcing logout');
+          await supabase.auth.signOut();
+          setInitialRoute('Landing');
+          setLoading(false);
+          return;
+        }
+
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('daily_calorie_goal')
-          .eq('id', session.user.id)
+          .eq('id', validUser.id)
           .maybeSingle();
 
         if (profileError && profileError.code !== 'PGRST116') {
-          console.error('❌ Error fetching profile:', profileError);
           setInitialRoute('Landing');
         } else if (profile?.daily_calorie_goal) {
-          console.log('✅ Onboarding complete, going to Home');
           setInitialRoute('Home');
         } else {
-          console.log('⚠️ Session exists but onboarding incomplete');
           setInitialRoute('OnboardingStep1');
         }
-      } else {
+      }else {
         console.log('❌ No active session - showing Landing (guest option available)');
         setInitialRoute('Landing');
       }

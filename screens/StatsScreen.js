@@ -450,6 +450,7 @@ export default function StatsScreen({ navigation }) {
                       <>
                         <View style={styles.chart}>
                           {weeklyData.map((day, index) => {
+                            const isToday = day.date === new Date().toLocaleDateString('en-CA');
                             const barHeight = (day.calories / maxCalories) * 150;
                             const isOverGoal = day.calories > dailyGoal;
                             const hasData = day.calories > 0;
@@ -477,7 +478,10 @@ export default function StatsScreen({ navigation }) {
                                     <View style={[styles.emptyBar, { backgroundColor: theme.border }]} />
                                   )}
                                 </View>
-                                <Text style={[styles.barLabel, { color: theme.textSecondary }]}>
+                                <Text style={[
+                                  styles.barLabel,
+                                  { color: isToday ? theme.primary : theme.textSecondary }
+                                ]}>
                                   {day.day}
                                 </Text>
                               </View>

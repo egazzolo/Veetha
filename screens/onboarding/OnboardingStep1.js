@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useOnboarding } from '../../utils/OnboardingContext';
 import { useLanguage } from '../../utils/LanguageContext';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
 
 //*** GENDER AND DOB SCREEN ***
 export default function OnboardingStep1({ navigation }) {
@@ -75,6 +76,9 @@ export default function OnboardingStep1({ navigation }) {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.content}>
+        <View style={styles.languageSwitcherContainer}>
+          <LanguageSwitcher />
+        </View>
         {/* Progress Indicator */}
         <View style={styles.progressContainer}>
           <View style={styles.progressBar}>
@@ -275,5 +279,11 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  languageSwitcherContainer: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 10,
   },
 });
