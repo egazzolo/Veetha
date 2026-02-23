@@ -213,6 +213,7 @@ export default {
   },
 
   tutorial: {
+    preparing: 'Preparing tutorial...',
     tapToScan: 'Tap to scan food!',
     tapToExit: 'Tap to exit camera',
     tapToProfile: 'Tap to open Profile',

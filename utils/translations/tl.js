@@ -213,6 +213,7 @@ export default {
   },
 
   tutorial: {
+    preparing: 'Inihahanda ang tutorial...',
     tapToScan: 'I-tap para mag-scan!',
     tapToExit: 'I-tap para lumabas',
     tapToProfile: 'I-tap para sa Profile',

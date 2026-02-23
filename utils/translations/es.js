@@ -213,6 +213,7 @@ export default {
   },
 
   tutorial: {
+    preparing: 'Preparando tutorial...',
     tapToScan: '¡Toca para escanear!',
     tapToExit: 'Toca para salir',
     tapToProfile: 'Toca para abrir Perfil',

@@ -966,6 +966,22 @@ export default function HomeScreen({ navigation }) {
       }
     }, [tutorialCompleted, layout, profile, loading, userLoading, freshDataLoaded]);
 
+    // Failsafe: unfreeze after 6s to avoid trapping user
+    useEffect(() => {
+      if (!checkingTutorial) return;
+
+      console.log('🔒 Tutorial freeze ON');
+      const failsafeId = setTimeout(() => {
+        console.warn('⚠️ Tutorial freeze failsafe triggered after 6s — unfreezing');
+        setCheckingTutorial(false);
+      }, 6000);
+
+      return () => {
+        clearTimeout(failsafeId);
+        console.log('🔓 Tutorial freeze OFF');
+      };
+    }, [checkingTutorial]);
+
   // Refresh meals when screen focuses
   useFocusEffect(
     React.useCallback(() => {
@@ -1327,18 +1343,24 @@ export default function HomeScreen({ navigation }) {
             <AnimatedThemeWrapper>
               {/* ScrollView with content */}
               {checkingTutorial && (
-                <View style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  backgroundColor: isDark ? '#121212' : '#fff',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  zIndex: 999,
-                }}>
+                <View
+                  pointerEvents="auto"
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: isDark ? '#121212' : '#fff',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: 999,
+                  }}
+                >
                   <ActivityIndicator size="large" color="#4CAF50" />
+                  <Text style={{ color: isDark ? '#aaa' : '#666', marginTop: 12, fontSize: 14 }}>
+                    {t('tutorial.preparing')}
+                  </Text>
                 </View>
               )}
               <ScrollView
