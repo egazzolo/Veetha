@@ -1349,27 +1349,6 @@ export default function HomeScreen({ navigation }) {
               )}
             <AnimatedThemeWrapper>
               {/* ScrollView with content */}
-              {checkingTutorial && (
-                <View
-                  pointerEvents="auto"
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundColor: isDark ? '#121212' : '#fff',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    zIndex: 999,
-                  }}
-                >
-                  <ActivityIndicator size="large" color="#4CAF50" />
-                  <Text style={{ color: isDark ? '#aaa' : '#666', marginTop: 12, fontSize: 14 }}>
-                    {t('tutorial.preparing')}
-                  </Text>
-                </View>
-              )}
               <ScrollView
                 ref={scrollViewRef} 
                 style={styles.scrollView}
@@ -1661,6 +1640,30 @@ export default function HomeScreen({ navigation }) {
                 t={t}
               />
             </AnimatedThemeWrapper>
+
+            {/* Tutorial freeze overlay — MUST be last child to cover everything */}
+            {checkingTutorial && (
+              <View
+                pointerEvents="auto"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: isDark ? '#121212' : '#fff',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  zIndex: 9999,
+                  elevation: 9999,
+                }}
+              >
+                <ActivityIndicator size="large" color="#4CAF50" />
+                <Text style={{ color: isDark ? '#aaa' : '#666', marginTop: 12, fontSize: 14 }}>
+                  {t('tutorial.preparing')}
+                </Text>
+              </View>
+            )}
           </SafeAreaView>
         {/*</GestureDetector>*/}
       </GestureHandlerRootView>
