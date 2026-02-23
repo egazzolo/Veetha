@@ -194,6 +194,10 @@ export default function OnboardingComplete({ navigation }) {
         
         // Navigate to Home
         console.log('🏠 Navigating to Home...');
+
+        // ✅ START tutorial freeze immediately
+        await AsyncStorage.setItem('tutorial_loading', 'true');
+
         navigation.reset({
           index: 0,
           routes: [{ name: 'Home' }],

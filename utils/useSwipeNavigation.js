@@ -17,17 +17,23 @@ export const useSwipeNavigation = (navigation, currentScreen, enabled = true) =>
     .activeOffsetX([-20, 20]) // Only activate on horizontal movement (±20px)
     .failOffsetY([-10, 10]) // Fail (allow ScrollView) on vertical movement (±10px)
     .onEnd((e) => {
-      const threshold = 100; // Minimum swipe distance
-      const velocityThreshold = 500; // Minimum swipe speed
+      const threshold = 100;
+      const velocityThreshold = 500;
 
-      // Right swipe (go to previous/left screen)
-      if ((e.translationX > threshold || e.velocityX > velocityThreshold) && currentIndex > 0) {
-        const previousScreen = screenOrder[currentIndex - 1];
+      const isRightSwipe = (e.translationX > threshold || e.velocityX > velocityThreshold);
+      const isLeftSwipe  = (e.translationX < -threshold || e.velocityX < -velocityThreshold);
+
+      // Right swipe = go to previous screen (wrap to last)
+      if (isRightSwipe) {
+        const previousIndex = (currentIndex - 1 + screenOrder.length) % screenOrder.length;
+        const previousScreen = screenOrder[previousIndex];
         navigation.navigate(previousScreen, { animationDirection: 'left' });
       }
-      // Left swipe (go to next/right screen)
-      else if ((e.translationX < -threshold || e.velocityX < -velocityThreshold) && currentIndex < screenOrder.length - 1) {
-        const nextScreen = screenOrder[currentIndex + 1];
+
+      // Left swipe = go to next screen (wrap to first)
+      else if (isLeftSwipe) {
+        const nextIndex = (currentIndex + 1) % screenOrder.length;
+        const nextScreen = screenOrder[nextIndex];
         navigation.navigate(nextScreen, { animationDirection: 'right' });
       }
     });

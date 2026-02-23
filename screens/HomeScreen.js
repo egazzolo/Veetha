@@ -344,7 +344,7 @@ export default function HomeScreen({ navigation }) {
   const scrollViewRef = useRef(null);
 
   // Swipe navigation
-  // const swipeGesture = useSwipeNavigation(navigation, 'Home', tutorialCompleted);
+  const swipeGesture = useSwipeNavigation(navigation, 'Home', tutorialCompleted);
 
   const [calendarMonth, setCalendarMonth] = useState({ 
     year: new Date().getFullYear(), 
@@ -550,6 +550,23 @@ export default function HomeScreen({ navigation }) {
 
     }
   };
+
+  useEffect(() => {
+
+    const checkTutorialLoading = async () => {
+
+      const loadingFlag = await AsyncStorage.getItem('tutorial_loading');
+
+      if (loadingFlag === 'true') {
+        console.log('🧊 Tutorial freeze active');
+        setCheckingTutorial(true);
+      }
+
+    };
+
+    checkTutorialLoading();
+
+  }, []);
 
   useEffect(() => {
     logScreen('Home');
@@ -941,11 +958,20 @@ export default function HomeScreen({ navigation }) {
           
           if (refsReady) {
             console.log('✅ All refs ready! Starting tutorial...');
-            setCheckingTutorial(false); // UNFREEZE before tutorial starts
-            setTimeout(() => {
+
+            setTimeout(async () => {
+
+              // ✅ remove loading freeze flag
+              await AsyncStorage.removeItem('tutorial_loading');
+
               tutorialStartedRef.current = true;
+
+              // keep screen frozen until tutorial overlay takes control
               startTutorial('Home');
-            }, 500); // Small delay to ensure unfreeze happens first
+
+              setCheckingTutorial(false);
+
+            }, 500);
           } else {
             console.log('⏳ Refs not ready yet, checking again in 500ms...');
             timeoutId = setTimeout(checkRefsReady, 500);
@@ -1311,7 +1337,7 @@ export default function HomeScreen({ navigation }) {
   return (
     <FrameWarning theme={theme}>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        {/*<GestureDetector gesture={swipeGesture}>*/}
+        <GestureDetector gesture={swipeGesture}>
           <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
             <AppTutorial 
                 screen="Home" 
@@ -1665,7 +1691,7 @@ export default function HomeScreen({ navigation }) {
               </View>
             )}
           </SafeAreaView>
-        {/*</GestureDetector>*/}
+        </GestureDetector>
       </GestureHandlerRootView>
     </FrameWarning>
   );
