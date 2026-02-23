@@ -961,8 +961,15 @@ export default function HomeScreen({ navigation }) {
           }
         };
       } else {
-        // If none of the above conditions are met, unfreeze anyway
-        setCheckingTutorial(false);
+        // Profile not loaded yet — stay frozen until it arrives
+        // Failsafe timeout (6s) will unfreeze if profile never arrives
+        if (!profile) {
+          console.log('⏳ Tutorial freeze: profile not loaded yet, waiting...');
+        } else {
+          // Profile loaded but conditions not met — safe to unfreeze
+          console.log('ℹ️ Tutorial conditions not met, unfreezing');
+          setCheckingTutorial(false);
+        }
       }
     }, [tutorialCompleted, layout, profile, loading, userLoading, freshDataLoaded]);
 
