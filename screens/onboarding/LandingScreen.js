@@ -54,7 +54,7 @@ export default function LandingScreen({ navigation }) {
 
               console.log('✅ Anonymous user created:', data?.user?.id);
 
-              navigation.replace('Home');
+              navigation.replace('OnboardingStep1');
             } catch (e) {
               console.error('Anonymous sign-in failed:', e);
             }
