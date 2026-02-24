@@ -67,7 +67,7 @@ export default function MonthlyCalendar({
         </TouchableOpacity>
         
         <Text style={[styles.monthHeader, { color: theme.text }]}>
-          {new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          {new Date(year, month).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
         </Text>
         
         <TouchableOpacity 

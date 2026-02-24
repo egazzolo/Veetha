@@ -133,7 +133,7 @@ export default function OnboardingStep7({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#EAE0C8',
   },
   scrollContent: {
     flexGrow: 1,

@@ -15,7 +15,7 @@ export default function OnboardingStep1({ navigation }) {
   const [dateOfBirth, setDateOfBirth] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [error, setError] = useState('');
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     // Request camera permission when screen loads
@@ -130,7 +130,9 @@ export default function OnboardingStep1({ navigation }) {
             onPress={() => setShowDatePicker(true)}
           >
             <Text style={[styles.dateButtonText, !dateOfBirth && styles.placeholderText]}>
-              {dateOfBirth ? dateOfBirth.toLocaleDateString() : t('onboarding.selectDOB')}
+              {dateOfBirth
+                ? dateOfBirth.toLocaleDateString(language)
+                : t('onboarding.selectDOB')}
             </Text>
           </TouchableOpacity>
           
@@ -171,7 +173,7 @@ export default function OnboardingStep1({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#EAE0C8',
   },
   content: {
     flex: 1,

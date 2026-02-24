@@ -117,7 +117,7 @@ export default function LandingScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#EAE0C8',
   },
   content: {
     flex: 1,

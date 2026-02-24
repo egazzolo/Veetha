@@ -222,7 +222,7 @@ export default function OnboardingStep2({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#EAE0C8',
   },
   content: {
     flex: 1,

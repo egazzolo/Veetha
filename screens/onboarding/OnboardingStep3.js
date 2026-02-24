@@ -163,7 +163,7 @@ console.log('✅ Step 3 saved:', { goal, targetWeight });
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#EAE0C8',
   },
   content: {
     flex: 1,
