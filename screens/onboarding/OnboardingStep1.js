@@ -17,6 +17,8 @@ export default function OnboardingStep1({ navigation }) {
   const [error, setError] = useState('');
   const { t, language } = useLanguage();
 
+  const LOCALE_MAP = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', tl: 'fil-PH' };
+
   useEffect(() => {
     // Request camera permission when screen loads
     if (!permission?.granted) {
@@ -130,9 +132,7 @@ export default function OnboardingStep1({ navigation }) {
             onPress={() => setShowDatePicker(true)}
           >
             <Text style={[styles.dateButtonText, !dateOfBirth && styles.placeholderText]}>
-              {dateOfBirth
-                ? dateOfBirth.toLocaleDateString(language)
-                : t('onboarding.selectDOB')}
+              {dateOfBirth ? dateOfBirth.toLocaleDateString(LOCALE_MAP[language] || 'en-US') : t('onboarding.selectDOB')}
             </Text>
           </TouchableOpacity>
           
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 10,
     borderWidth: 2,
-    borderColor: '#ddd',
+    borderColor: '#6B5B45',
     borderRadius: 10,
     alignItems: 'center',
   },
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
   },
   dateButton: {
     borderWidth: 2,
-    borderColor: '#ddd',
+    borderColor: '#6B5B45',
     borderRadius: 10,
     padding: 15,
   },
