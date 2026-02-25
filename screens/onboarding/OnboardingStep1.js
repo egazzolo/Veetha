@@ -141,9 +141,9 @@ export default function OnboardingStep1({ navigation }) {
               value={dateOfBirth || new Date(1990, 0, 1)}
               mode="date"
               display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              locale={LOCALE_MAP[language] || 'en-US'}
               maximumDate={new Date()}
               minimumDate={new Date(1900, 0, 1)}
-              locale={LOCALE_MAP[language] || 'en-US'}
               onChange={(event, selectedDate) => {
                 if (Platform.OS !== 'ios') setShowDatePicker(false);
                 if (selectedDate) setDateOfBirth(selectedDate);
