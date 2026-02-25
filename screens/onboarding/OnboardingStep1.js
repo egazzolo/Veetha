@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useCameraPermissions } from 'expo-camera';
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useOnboarding } from '../../utils/OnboardingContext';
@@ -140,14 +140,13 @@ export default function OnboardingStep1({ navigation }) {
             <DateTimePicker
               value={dateOfBirth || new Date(1990, 0, 1)}
               mode="date"
-              display="default"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
               maximumDate={new Date()}
               minimumDate={new Date(1900, 0, 1)}
+              locale={LOCALE_MAP[language] || 'en-US'}
               onChange={(event, selectedDate) => {
-                setShowDatePicker(false);
-                if (selectedDate) {
-                  setDateOfBirth(selectedDate);
-                }
+                if (Platform.OS !== 'ios') setShowDatePicker(false);
+                if (selectedDate) setDateOfBirth(selectedDate);
               }}
             />
           )}
