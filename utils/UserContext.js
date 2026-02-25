@@ -204,8 +204,12 @@ export function UserProvider({ children }) {
   const clearUserData = async () => {
     setProfile(null);
     setMeals([]);
+    setUser(null);
+    setFreshDataLoaded(false);
+    setCacheLoaded(false);
     await AsyncStorage.removeItem('cached_profile');
     await AsyncStorage.removeItem('cached_meals');
+    await AsyncStorage.removeItem('tutorial_loading');
   };
 
   return (

@@ -284,7 +284,8 @@ function NutrientModal({ visible, nutrient, onClose, theme, currentIntake, daily
 
 export default function HomeScreen({ navigation }) {
   const { theme, isDark } = useTheme();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const LOCALE_MAP = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', tl: 'fil-PH' };
   const { user, isGuest, profile, loading: userLoading, refreshProfile } = useUser();
   console.log("👤 USER FROM CONTEXT:", user);
   const { layout } = useLayout();
@@ -1139,10 +1140,10 @@ export default function HomeScreen({ navigation }) {
     if (diffDays === 1) return t('home.tomorrow');
     
     // Format as "Mon, Jan 15"
-    return selected.toLocaleDateString('en-US', { 
-      weekday: 'short', 
-      month: 'short', 
-      day: 'numeric' 
+    return selected.toLocaleDateString(LOCALE_MAP[language] || 'en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric'
     });
   };
 
@@ -1618,6 +1619,7 @@ export default function HomeScreen({ navigation }) {
                           monthlyData={monthlyData}
                           theme={theme}
                           t={t}
+                          language={language}
                           selectedDate={`${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`}
                           currentMonth={calendarMonth}
                           onMonthChange={(newMonth) => {
