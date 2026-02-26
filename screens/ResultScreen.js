@@ -10,6 +10,8 @@ import { useTheme } from '../utils/ThemeContext';
 import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
 import AllergenWarningModal from '../components/AllergenWarningModal';
 import { useLanguage } from '../utils/LanguageContext';
+import { useUserMode } from '../utils/UserModeContext';
+import { blockIfGuest } from '../utils/guestBlock';
 import { logMealLogged } from '../utils/analytics';
 import { searchFood } from '../utils/foodDatabase';
 
@@ -171,6 +173,7 @@ export default function ResultScreen({ route, navigation }) {
   const { t } = useLanguage();
   const { refreshMeals } = useUser();
   const { user, isGuest } = useUser();
+  const { isGuest: isGuestMode } = useUserMode();
   const [servingGrams, setServingGrams] = useState(food.serving_quantity || 100);
   const [inputValue, setInputValue] = useState(String(food.serving_quantity || 100));
   const [showDetails, setShowDetails] = useState(false);
@@ -410,6 +413,7 @@ export default function ResultScreen({ route, navigation }) {
   }, []);
 
   const handleLogMeal = async () => {
+    if (blockIfGuest(isGuestMode, navigation, () => {})) return;
     try {
       setSavingMeal(true);
       console.log('🔥 HANDLE LOG MEAL STARTED', { isGuest, user });

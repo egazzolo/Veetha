@@ -5,6 +5,8 @@ import { useTheme } from '../utils/ThemeContext';
 import { supabase } from '../utils/supabase';
 import { useUser } from '../utils/UserContext';
 import { useLanguage } from '../utils/LanguageContext';
+import { useUserMode } from '../utils/UserModeContext';
+import { blockIfGuest } from '../utils/guestBlock';
 
 const ALLERGIES = [
   { id: 'peanuts', emoji: '🥜' },
@@ -40,7 +42,10 @@ export default function DietaryRestrictionsScreen({ navigation }) {
   const { theme } = useTheme();
   const { t } = useLanguage();
   const { profile, refreshProfile } = useUser();
-  
+  const { isGuest: isGuestMode } = useUserMode();
+
+  const guestCheck = (action) => blockIfGuest(isGuestMode, navigation, action);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   
@@ -82,6 +87,7 @@ export default function DietaryRestrictionsScreen({ navigation }) {
   };
 
   const toggleAllergy = (allergyId) => {
+    if (blockIfGuest(isGuestMode, navigation, () => {})) return;
     if (selectedAllergies.includes(allergyId)) {
       setSelectedAllergies(selectedAllergies.filter(id => id !== allergyId));
     } else {
@@ -90,6 +96,7 @@ export default function DietaryRestrictionsScreen({ navigation }) {
   };
 
   const togglePreference = (prefId) => {
+    if (blockIfGuest(isGuestMode, navigation, () => {})) return;
     if (selectedPreferences.includes(prefId)) {
       setSelectedPreferences(selectedPreferences.filter(id => id !== prefId));
     } else {
@@ -98,6 +105,7 @@ export default function DietaryRestrictionsScreen({ navigation }) {
   };
 
   const handleSave = async () => {
+    if (blockIfGuest(isGuestMode, navigation, () => {})) return;
     setSaving(true);
 
     try {
@@ -228,7 +236,7 @@ export default function DietaryRestrictionsScreen({ navigation }) {
                     borderWidth: dietType === diet.value ? 2 : 1,
                   }
                 ]}
-                onPress={() => setDietType(diet.value)}
+                onPress={() => guestCheck(() => setDietType(diet.value))}
               >
                 <View style={styles.dietOptionContent}>
                   <Text style={[styles.dietLabel, { color: theme.text }]}>

@@ -13,6 +13,7 @@ import { useLanguage } from '../utils/LanguageContext';
 import { useGreeting } from '../utils/GreetingContext';
 import { useUser, UserContext } from '../utils/UserContext';
 import { useUserMode } from '../utils/UserModeContext';
+import { blockIfGuest } from '../utils/guestBlock';
 import { useLayout } from '../utils/LayoutContext';
 import { supabase } from '../utils/supabase';
 import { logScreen, logEvent } from '../utils/analytics';
@@ -1124,11 +1125,12 @@ export default function HomeScreen({ navigation }) {
   };
 
   const goToStartOfWeek = () => {
+    if (blockIfGuest(isGuestMode, navigation, () => {})) return;
     const date = new Date(selectedDate);
     const day = date.getDay();
     const diff = day === 0 ? -6 : 1 - day; // Monday as first day
     date.setDate(date.getDate() + diff);
-    
+
     // Check if before minimum date
     if (date >= MIN_DATE) {
       setSelectedDate(date);
@@ -1138,9 +1140,10 @@ export default function HomeScreen({ navigation }) {
   };
 
   const goToStartOfMonth = () => {
+    if (blockIfGuest(isGuestMode, navigation, () => {})) return;
     const date = new Date(selectedDate);
     date.setDate(1);
-    
+
     // Check if before minimum date
     if (date >= MIN_DATE) {
       setSelectedDate(date);
@@ -1288,6 +1291,7 @@ export default function HomeScreen({ navigation }) {
   };
 
   const copyYesterdaysMeals = async () => {
+    if (isGuestMode) { showGuestAlert(); return; }
     try {
       setCopyingMeals(true);
 
@@ -1615,6 +1619,7 @@ export default function HomeScreen({ navigation }) {
                   toggledMeals={toggledMeals}
                   navigation={navigation}
                   mealsListRef={mealsListRef}
+                  isGuestMode={isGuestMode}
                 />
               </ScrollView>
 
@@ -1658,6 +1663,7 @@ export default function HomeScreen({ navigation }) {
                             fetchMonthlyData(newMonth.year, newMonth.month);
                           }}
                           onDateSelect={(dateStr) => {
+                            if (isGuestMode) { showGuestAlert(); return; }
                             const [year, month, day] = dateStr.split('-').map(Number);
                             const newDate = new Date(year, month - 1, day);
                             newDate.setHours(0, 0, 0, 0);

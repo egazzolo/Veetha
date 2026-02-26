@@ -5,6 +5,8 @@ import { useTheme } from '../utils/ThemeContext';
 import { supabase } from '../utils/supabase';
 import { useUser } from '../utils/UserContext';
 import { useLanguage } from '../utils/LanguageContext';
+import { useUserMode } from '../utils/UserModeContext';
+import { blockIfGuest } from '../utils/guestBlock';
 import { logScreen, logEvent } from '../utils/analytics';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
@@ -13,7 +15,10 @@ export default function EditProfileScreen({ navigation }) {
   const { language, t, setLanguage } = useLanguage();
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const { profile, refreshProfile } = useUser();
-  
+  const { isGuest: isGuestMode } = useUserMode();
+
+  const guestCheck = (action) => blockIfGuest(isGuestMode, navigation, action);
+
   const [displayName, setDisplayName] = useState('');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -107,6 +112,7 @@ export default function EditProfileScreen({ navigation }) {
   };
 
   const handleSave = async () => {
+    if (blockIfGuest(isGuestMode, navigation, () => {})) return;
     // Validation
     if (!fullName.trim()) {
       Alert.alert(t('editProfile.missingInfo'), t('editProfile.enterFullName'));
@@ -401,7 +407,7 @@ export default function EditProfileScreen({ navigation }) {
                   placeholder={unitSystem === 'metric' ? '70' : '154'}
                   placeholderTextColor={theme.textTertiary}
                   value={weight}
-                  onChangeText={setWeight}
+                  onChangeText={(v) => guestCheck(() => setWeight(v))}
                   keyboardType="decimal-pad"
                 />
               </View>
@@ -415,7 +421,7 @@ export default function EditProfileScreen({ navigation }) {
                     placeholder="170"
                     placeholderTextColor={theme.textTertiary}
                     value={heightCm}
-                    onChangeText={setHeightCm}
+                    onChangeText={(v) => guestCheck(() => setHeightCm(v))}
                     keyboardType="decimal-pad"
                   />
                 </View>
@@ -428,7 +434,7 @@ export default function EditProfileScreen({ navigation }) {
                       placeholder="5"
                       placeholderTextColor={theme.textTertiary}
                       value={heightFeet}
-                      onChangeText={setHeightFeet}
+                      onChangeText={(v) => guestCheck(() => setHeightFeet(v))}
                       keyboardType="number-pad"
                     />
                     <Text style={[styles.heightLabel, { color: theme.text }]}>ft</Text>
@@ -438,7 +444,7 @@ export default function EditProfileScreen({ navigation }) {
                       placeholder="8"
                       placeholderTextColor={theme.textTertiary}
                       value={heightInches}
-                      onChangeText={setHeightInches}
+                      onChangeText={(v) => guestCheck(() => setHeightInches(v))}
                       keyboardType="number-pad"
                     />
                     <Text style={[styles.heightLabel, { color: theme.text }]}>in</Text>

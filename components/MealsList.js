@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, Pressable } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, Pressable, Alert } from 'react-native';
 
 export default function MealsList({
   theme,
@@ -15,6 +15,7 @@ export default function MealsList({
   toggledMeals,
   navigation,
   mealsListRef,
+  isGuestMode,
 }) {
   const [selectedMeal, setSelectedMeal] = useState(null);
 
@@ -66,7 +67,16 @@ export default function MealsList({
                     
                     <TouchableOpacity
                     style={[styles.quickEntryButton, { backgroundColor: '#2196F3' }]}
-                    onPress={() => navigation.navigate('QuickEntry')}
+                    onPress={() => {
+                      if (isGuestMode) {
+                        Alert.alert('Create an Account', 'Sign up to log meals, water, exercise, and more.', [
+                          { text: 'Cancel', style: 'cancel' },
+                          { text: 'Sign Up', onPress: () => navigation.navigate('SignUp') },
+                        ]);
+                        return;
+                      }
+                      navigation.navigate('QuickEntry');
+                    }}
                     >
                     <Text style={styles.quickEntryButtonText}>
                        {t('home.quickEntry')}
