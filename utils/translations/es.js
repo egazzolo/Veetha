@@ -22,6 +22,7 @@ export default {
     tagline2: 'trabaja en ti.',
     login: 'INICIAR SESIÓN',
     signup: 'REGISTRARSE',
+    continue: 'CONTINUAR',
     continueWithGoogle: '🔵 Continuar con Google',
   },
   // Login Screen

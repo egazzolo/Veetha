@@ -88,17 +88,17 @@ export default function LandingScreen({ navigation }) {
                 console.log('🔑 RECOVERY CODE:', rawCode);
               }
 
-              // Set guest mode
+              // Set guest mode — go straight to Home, skip onboarding
               await setUserMode('guest');
 
-              navigation.replace('OnboardingStep1');
+              navigation.replace('Home');
             } catch (e) {
               console.error('Anonymous sign-in failed:', e);
             }
           }}
         >
           <Text style={styles.secondaryButtonText}>
-            Continue as Guest
+            {t('landing.continue')}
           </Text>
         </TouchableOpacity>
 

@@ -76,9 +76,28 @@ function AppNavigator() {
     try {
       console.log('🔍 Checking auth state on app start...');
 
-      // Restore userMode from AsyncStorage
+      // 1) Restore userMode FIRST — this is the single source of truth
       const storedMode = await AsyncStorage.getItem('veetha_user_mode');
+      console.log('📱 Stored userMode:', storedMode);
 
+      // 2) Guest mode → always Home, never onboarding
+      if (storedMode === 'guest') {
+        // Validate the anonymous session still exists
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          console.log('✅ Guest session valid → Home');
+          setInitialRoute('Home');
+        } else {
+          // Session expired — re-create anonymous session silently
+          console.log('⚠️ Guest session expired → Landing');
+          await setUserMode(null);
+          setInitialRoute('Landing');
+        }
+        setLoading(false);
+        return;
+      }
+
+      // 3) Authenticated or unknown mode — check session + profile
       const { data: { session }, error } = await supabase.auth.getSession();
 
       if (error) {
@@ -89,8 +108,7 @@ function AppNavigator() {
       }
 
       if (session?.user) {
-
-        // ✅ Validate session with server
+        // Validate session with server
         const { data: { user: validUser }, error: userError } =
           await supabase.auth.getUser();
 
@@ -112,16 +130,14 @@ function AppNavigator() {
         if (profileError && profileError.code !== 'PGRST116') {
           setInitialRoute('Landing');
         } else if (profile?.daily_calorie_goal) {
-          setInitialRoute('Home');
-        } else if (storedMode === 'guest' || storedMode === 'authenticated') {
-          // Has a stored mode but no calorie goal — go Home anyway
-          console.log('📱 Stored userMode found, skipping to Home');
+          // Profile complete → Home
           setInitialRoute('Home');
         } else {
+          // Authenticated but no profile yet → onboarding
           setInitialRoute('OnboardingStep1');
         }
       } else {
-        console.log('❌ No active session - showing Landing (guest option available)');
+        console.log('❌ No active session - showing Landing');
         setInitialRoute('Landing');
       }
     } catch (error) {

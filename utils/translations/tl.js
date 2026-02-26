@@ -22,6 +22,7 @@ export default {
     tagline2: 'magtrabaho sa sarili mo.',
     login: 'MAG-LOG IN',
     signup: 'MAG-SIGN UP',
+    continue: 'MAGPATULOY',
     continueWithGoogle: '🔵 Magpatuloy gamit ang Google',
   },
   // Login Screen

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useCameraPermissions } from 'expo-camera';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useOnboarding } from '../../utils/OnboardingContext';
 import { useLanguage } from '../../utils/LanguageContext';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
@@ -144,9 +145,14 @@ export default function OnboardingStep1({ navigation }) {
   const LOCALE_MAP = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', tl: 'fil-PH' };
 
   useEffect(() => {
-    if (!permission?.granted) {
-      requestPermission();
-    }
+    const requestCameraIfNeeded = async () => {
+      const alreadyRequested = await AsyncStorage.getItem('camera_permission_requested');
+      if (!permission?.granted && !alreadyRequested) {
+        await requestPermission();
+        await AsyncStorage.setItem('camera_permission_requested', 'true');
+      }
+    };
+    requestCameraIfNeeded();
   }, []);
 
   const calculateAge = (dateOfBirth) => {

@@ -22,6 +22,7 @@ export default {
     tagline2: 'work on you.',
     login: 'LOG IN',
     signup: 'SIGN UP',
+    continue: 'CONTINUE',
     continueWithGoogle: '🔵 Continue with Google',
   },
   // Login Screen

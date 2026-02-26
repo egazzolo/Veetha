@@ -31,6 +31,7 @@ import CalorieWarningBanner from '../components/CalorieWarningBanner';
 import FrameWarning from '../components/FrameWarning';
 import TutorialArrow from '../components/TutorialArrow';
 import MonthlyCalendar from '../components/MonthlyCalendar';
+import { useCameraPermissions } from 'expo-camera';
 import ExerciseButton from '../components/ExerciseButton';
 import WaterPitcher from '../components/WaterPitcher';
 
@@ -289,6 +290,7 @@ export default function HomeScreen({ navigation }) {
   const LOCALE_MAP = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', tl: 'fil-PH' };
   const { user, isGuest, profile, loading: userLoading, refreshProfile } = useUser();
   const { isGuest: isGuestMode } = useUserMode();
+  const [, requestCameraPermission] = useCameraPermissions();
   console.log("👤 USER FROM CONTEXT:", user);
   const { layout } = useLayout();
   const { startTutorial, tutorialCompleted } = useTutorial();
@@ -461,6 +463,19 @@ export default function HomeScreen({ navigation }) {
       setWaterIntake(0);
     }
   };
+
+  // Request camera permission once for guest users on Home mount
+  useEffect(() => {
+    if (!isGuestMode) return;
+    const requestOnce = async () => {
+      const alreadyRequested = await AsyncStorage.getItem('camera_permission_requested');
+      if (!alreadyRequested) {
+        await requestCameraPermission();
+        await AsyncStorage.setItem('camera_permission_requested', 'true');
+      }
+    };
+    requestOnce();
+  }, [isGuestMode]);
 
   const showGuestAlert = () => {
     Alert.alert(
