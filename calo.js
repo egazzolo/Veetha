@@ -5,6 +5,7 @@ import { View, ActivityIndicator, Platform, StatusBar } from 'react-native';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from './utils/ThemeContext';
 import { LayoutProvider } from './utils/LayoutContext';
 import { TutorialProvider } from './utils/TutorialContext';
@@ -107,7 +108,14 @@ function AppNavigator() {
         } else if (profile?.daily_calorie_goal) {
           setInitialRoute('Home');
         } else {
-          setInitialRoute('OnboardingStep1');
+          // No calorie goal — check if device was previously onboarded
+          const boundUserId = await AsyncStorage.getItem('veetha_bound_user_id');
+          if (boundUserId) {
+            console.log('📱 Device previously onboarded, skipping to Home');
+            setInitialRoute('Home');
+          } else {
+            setInitialRoute('OnboardingStep1');
+          }
         }
       }else {
         console.log('❌ No active session - showing Landing (guest option available)');

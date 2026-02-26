@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
 import { useLanguage } from '../../utils/LanguageContext';
 import { supabase } from '../../utils/supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LandingScreen({ navigation }) {
   const { t } = useLanguage();
@@ -85,7 +86,29 @@ export default function LandingScreen({ navigation }) {
                 console.log('🔑 RECOVERY CODE:', rawCode);
               }
 
-              navigation.replace('OnboardingStep1');
+              // Check if device was previously onboarded
+              const boundUserId = await AsyncStorage.getItem('veetha_bound_user_id');
+              if (boundUserId) {
+                // Returning device — restore profile for new guest user
+                const cachedProfile = await AsyncStorage.getItem('cached_profile');
+                if (cachedProfile) {
+                  const oldProfile = JSON.parse(cachedProfile);
+                  const { id: _oldId, email: _oldEmail, created_at: _ca, updated_at: _ua, ...profileFields } = oldProfile;
+                  await supabase.from('profiles').upsert({
+                    ...profileFields,
+                    id: data.user.id,
+                    email: null,
+                    tutorial_completed: true,
+                    home_tutorial_completed: true,
+                    scanner_tutorial_completed: true,
+                    profile_tutorial_completed: true,
+                  });
+                }
+                await AsyncStorage.setItem('veetha_bound_user_id', data.user.id);
+                navigation.replace('Home');
+              } else {
+                navigation.replace('OnboardingStep1');
+              }
             } catch (e) {
               console.error('Anonymous sign-in failed:', e);
             }

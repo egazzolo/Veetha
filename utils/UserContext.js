@@ -207,7 +207,10 @@ export function UserProvider({ children }) {
     setUser(null);
     setFreshDataLoaded(false);
     setCacheLoaded(false);
-    await AsyncStorage.removeItem('cached_profile');
+    // Keep cached_profile — needed to restore profile for returning guest users
+    // Keep veetha_bound_user_id — device binding persists across logout
+    // Keep app_language — language preference persists across logout
+    // Keep tutorial_completed_home — tutorial completion persists across logout
     await AsyncStorage.removeItem('cached_meals');
     await AsyncStorage.removeItem('tutorial_loading');
   };
