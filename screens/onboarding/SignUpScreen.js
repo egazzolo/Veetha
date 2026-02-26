@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../utils/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../../utils/LanguageContext';
+import { useUserMode } from '../../utils/UserModeContext';
 
 export default function SignUpScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -17,6 +18,7 @@ export default function SignUpScreen({ navigation }) {
   const [emailExists, setEmailExists] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const { t } = useLanguage();
+  const { setUserMode } = useUserMode();
 
   // Real-time email validation
   const checkEmailExists = async (emailToCheck) => {
@@ -167,6 +169,9 @@ export default function SignUpScreen({ navigation }) {
         
         console.log('✅ New user created successfully!');
         console.log('📧 Confirmation email sent to:', email);
+
+        // Set authenticated mode
+        await setUserMode('authenticated');
 
         // Save credentials temporarily for later verification
         await AsyncStorage.setItem('pendingUserEmail', email.trim().toLowerCase());

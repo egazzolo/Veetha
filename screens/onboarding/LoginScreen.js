@@ -7,6 +7,7 @@ import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { useGreeting } from '../../utils/GreetingContext';
 import { useLanguage } from '../../utils/LanguageContext';
+import { useUserMode } from '../../utils/UserModeContext';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -16,6 +17,7 @@ export default function LoginScreen({ navigation }) {
   const [error, setError] = useState('');
   const { triggerGreeting } = useGreeting();
   const { t } = useLanguage();
+  const { setUserMode } = useUserMode();
 
   const handleLogin = async () => {
     // Clear previous errors
@@ -63,6 +65,9 @@ export default function LoginScreen({ navigation }) {
                         profileData?.full_name || 
                         data.user.email?.split('@')[0] || 
                         'User';
+
+        // Set authenticated mode
+        await setUserMode('authenticated');
 
         // Trigger greeting BEFORE navigation
         await triggerGreeting(userName, t);

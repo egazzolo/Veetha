@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, Ale
 import { useLanguage } from '../utils/LanguageContext';
 import { supabase } from '../utils/supabase';
 
-export default function ExerciseButton({ theme, navigation }) {
+export default function ExerciseButton({ theme, navigation, isGuestMode, onGuestPress }) {
   const { t } = useLanguage();
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [weight, setWeight] = useState(null);
@@ -37,6 +37,7 @@ export default function ExerciseButton({ theme, navigation }) {
   };
 
   const handleExercisePress = async () => {
+    if (isGuestMode) { onGuestPress?.(); return; }
     setLoading(true);
     await fetchWeight();
     setLoading(false);

@@ -192,9 +192,6 @@ export default function OnboardingComplete({ navigation }) {
         // Clear onboarding data
         clearOnboardingData();
 
-        // Persist device binding
-        await AsyncStorage.setItem('veetha_bound_user_id', authUser.id);
-
         // Navigate to Home
         console.log('🏠 Navigating to Home...');
 
@@ -319,9 +316,6 @@ export default function OnboardingComplete({ navigation }) {
       }
 
       console.log('✅ Profile saved successfully!');
-
-      // Persist device binding
-      await AsyncStorage.setItem('veetha_bound_user_id', user.id);
 
       // Refresh UserContext to load the new profile
       console.log('🔄 Refreshing UserContext...');

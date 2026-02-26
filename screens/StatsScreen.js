@@ -8,6 +8,7 @@ import { useLanguage } from '../utils/LanguageContext';
 import { supabase } from '../utils/supabase';
 import { useFocusEffect } from '@react-navigation/native';
 import { logScreen, logEvent, logMealLogged } from '../utils/analytics';
+import { useUserMode } from '../utils/UserModeContext';
 import AnimatedThemeWrapper from '../components/AnimatedThemeWrapper';
 import BottomNav from '../components/BottomNav';
 import ExerciseHistoryScreen from './ExerciseHistoryScreen';
@@ -17,6 +18,7 @@ const { width } = Dimensions.get('window');
 export default function StatsScreen({ navigation }) {
   const { theme, isDark } = useTheme();
   const { t } = useLanguage();
+  const { isGuest: isGuestMode } = useUserMode();
   const [weeklyData, setWeeklyData] = useState([]);
   const [monthlyData, setMonthlyData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -440,6 +442,19 @@ export default function StatsScreen({ navigation }) {
 
               {activeTab === 'week' && (
                 <>
+                  {isGuestMode && (
+                    <View style={[styles.guestBanner, { backgroundColor: theme.cardBackground, borderColor: theme.primary }]}>
+                      <Text style={[styles.guestBannerText, { color: theme.text }]}>
+                        Your weekly progress will appear here once you create an account.
+                      </Text>
+                      <TouchableOpacity
+                        style={[styles.guestBannerBtn, { backgroundColor: theme.primary }]}
+                        onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Landing' }] })}
+                      >
+                        <Text style={styles.guestBannerBtnText}>Sign Up / Log In</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
                   {/* Weekly Bar Chart */}
                   <View style={[styles.chartCard, { backgroundColor: theme.cardBackground }]}>
                     <Text style={[styles.cardTitle, { color: theme.text }]}>{t('stats.weeklyCals')}</Text>
@@ -554,6 +569,19 @@ export default function StatsScreen({ navigation }) {
 
               {activeTab === 'month' && (
                 <>
+                  {isGuestMode && (
+                    <View style={[styles.guestBanner, { backgroundColor: theme.cardBackground, borderColor: theme.primary }]}>
+                      <Text style={[styles.guestBannerText, { color: theme.text }]}>
+                        Your monthly progress will appear here once you create an account.
+                      </Text>
+                      <TouchableOpacity
+                        style={[styles.guestBannerBtn, { backgroundColor: theme.primary }]}
+                        onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Landing' }] })}
+                      >
+                        <Text style={styles.guestBannerBtnText}>Sign Up / Log In</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
                   {/* Monthly Calendar */}
                   <View style={[styles.chartCard, { backgroundColor: theme.cardBackground }]}>
                     <Text style={[styles.cardTitle, { color: theme.text }]}>{t('stats.monthlyActivity')}</Text>
@@ -708,18 +736,34 @@ export default function StatsScreen({ navigation }) {
               )}
 
               {activeTab === 'exercise' && (
-                <ExerciseHistoryScreen 
-                  route={{ params: { theme, isPremium } }} 
-                  nestedInScrollView={true}
-                />
+                <>
+                  {isGuestMode && (
+                    <View style={[styles.guestBanner, { backgroundColor: theme.cardBackground, borderColor: theme.primary }]}>
+                      <Text style={[styles.guestBannerText, { color: theme.text }]}>
+                        Your exercise history will appear here once you create an account.
+                      </Text>
+                      <TouchableOpacity
+                        style={[styles.guestBannerBtn, { backgroundColor: theme.primary }]}
+                        onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Landing' }] })}
+                      >
+                        <Text style={styles.guestBannerBtnText}>Sign Up / Log In</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                  <ExerciseHistoryScreen
+                    route={{ params: { theme, isPremium } }}
+                    nestedInScrollView={true}
+                  />
+                </>
               )}
 
-              {/* REPORTS SECTION */}
+              {/* REPORTS SECTION — hidden for guests */}
+              {!isGuestMode && (
               <View style={styles.section}>
                 <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>
                   {t('stats.reports')}
                 </Text>
-                
+
                 <TouchableOpacity
                   style={[styles.settingItem, { backgroundColor: theme.cardBackground }]}
                   onPress={() => navigation.navigate('ExportReport')}
@@ -733,6 +777,7 @@ export default function StatsScreen({ navigation }) {
                   <Text style={styles.settingArrow}>›</Text>
                 </TouchableOpacity>
               </View>
+              )}
 
               {/* Bottom Padding */}
               <View style={{ height: 100 }} />
@@ -1007,5 +1052,29 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 15,
+  },
+  guestBanner: {
+    marginHorizontal: 20,
+    marginBottom: 15,
+    padding: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  guestBannerText: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 15,
+  },
+  guestBannerBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+  },
+  guestBannerBtnText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

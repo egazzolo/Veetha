@@ -14,6 +14,7 @@ import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-ha
 import { useSwipeNavigation } from '../utils/useSwipeNavigation';
 import { searchFood } from '../utils/foodDatabase';
 import { useUser, UserContext } from '../utils/UserContext';
+import { useUserMode } from '../utils/UserModeContext';
 import { analyzePhoto as analyzeClarifai, imageUriToBase64 as clarifaiToBase64 } from '../utils/clarifaiApi';
 import { analyzePhoto as analyzeGoogle, imageUriToBase64 as googleToBase64 } from '../utils/visionApi';
 
@@ -27,6 +28,7 @@ export default function ScannerScreen({ navigation }) {
   const { t } = useLanguage();
   const { tutorialCompleted, startTutorial } = useTutorial();
   const { refreshProfile } = useUser();
+  const { isGuest: isGuestMode } = useUserMode();
   const [showArrowToBack, setShowArrowToBack] = useState(false);
   const [backButtonCoords, setBackButtonCoords] = useState(null); 
   const cameraRef = useRef(null);
@@ -481,6 +483,17 @@ export default function ScannerScreen({ navigation }) {
 
   // Take photo using the camera
   const takePhoto = async () => {
+    if (isGuestMode) {
+      Alert.alert(
+        'Create an Account',
+        'Sign up to scan food and log meals.',
+        [
+          { text: 'Not Now', style: 'cancel' },
+          { text: 'Sign Up', onPress: () => navigation.reset({ index: 0, routes: [{ name: 'Landing' }] }) },
+        ]
+      );
+      return;
+    }
     if (!cameraRef.current || loading) return;
 
     try {
@@ -566,6 +579,17 @@ export default function ScannerScreen({ navigation }) {
 
   // Handle barcode scan
   const handleBarcodeScanned = ({ data }) => {
+    if (isGuestMode) {
+      Alert.alert(
+        'Create an Account',
+        'Sign up to scan barcodes and log meals.',
+        [
+          { text: 'Not Now', style: 'cancel' },
+          { text: 'Sign Up', onPress: () => navigation.reset({ index: 0, routes: [{ name: 'Landing' }] }) },
+        ]
+      );
+      return;
+    }
     if (scanned || mode !== 'barcode') return;
     
     setScanned(true);

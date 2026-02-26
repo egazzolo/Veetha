@@ -9,6 +9,7 @@ import { useSwipeNavigation } from '../utils/useSwipeNavigation';
 import { useTheme } from '../utils/ThemeContext';
 import { useLanguage } from '../utils/LanguageContext';
 import { useUser } from '../utils/UserContext';
+import { useUserMode } from '../utils/UserModeContext';
 import { RefreshControl } from 'react-native';
 import { logScreen, logEvent, logMealLogged } from '../utils/analytics';
 import AnimatedThemeWrapper from '../components/AnimatedThemeWrapper';
@@ -25,6 +26,7 @@ export default function ProfileScreen({ navigation }) {
   const [recoveryCode, setRecoveryCode] = useState(null);
   const [checkingTutorial, setCheckingTutorial] = useState(true);
   const { profile, loading, refreshProfile, refreshMeals } = useUser();
+  const { isGuest, setUserMode } = useUserMode();
   const { startTutorial } = useTutorial();
 
   // Swipe navigation
@@ -145,7 +147,10 @@ export default function ProfileScreen({ navigation }) {
               
               // Clear greeting timestamp so next login shows greeting
               await AsyncStorage.removeItem('last_app_open');
-              
+
+              // Clear userMode
+              await setUserMode(null);
+
               // Sign out from Supabase
               await supabase.auth.signOut();
               
@@ -529,27 +534,54 @@ export default function ProfileScreen({ navigation }) {
                 </View>
               </View>
 
-              {/* Logout Button */}
-              <TouchableOpacity style={[styles.logoutButton, { backgroundColor: theme.cardBackground }]} onPress={handleLogout}>
-                <Text style={styles.logoutText}>{t('profile.logOut')}</Text>
-              </TouchableOpacity>
+              {/* Logout Button — hidden for guests */}
+              {!isGuest && (
+                <TouchableOpacity style={[styles.logoutButton, { backgroundColor: theme.cardBackground }]} onPress={handleLogout}>
+                  <Text style={styles.logoutText}>{t('profile.logOut')}</Text>
+                </TouchableOpacity>
+              )}
 
-              <TouchableOpacity
-                style={[styles.deleteButton, { backgroundColor: theme.error || '#ff3b30' }]}
-                onPress={handleDeleteAccount}
-              >
-                <Text style={styles.deleteButtonText}>🗑️ Delete Account</Text>
-              </TouchableOpacity>
+              {/* Delete Account — hidden for guests */}
+              {!isGuest && (
+                <TouchableOpacity
+                  style={[styles.deleteButton, { backgroundColor: theme.error || '#ff3b30' }]}
+                  onPress={handleDeleteAccount}
+                >
+                  <Text style={styles.deleteButtonText}>🗑️ Delete Account</Text>
+                </TouchableOpacity>
+              )}
 
-              <View style={{ marginTop: 20 }}>
-                <Text style={{ fontWeight: 'bold' }}>
-                  Recovery Code:
-                </Text>
+              {!isGuest && (
+                <View style={{ marginTop: 20 }}>
+                  <Text style={{ fontWeight: 'bold' }}>
+                    Recovery Code:
+                  </Text>
 
-                <Text>
-                  {recoveryCode ? 'Recovery enabled' : 'Not created'}
-                </Text>
-              </View>
+                  <Text>
+                    {recoveryCode ? 'Recovery enabled' : 'Not created'}
+                  </Text>
+                </View>
+              )}
+
+              {/* Guest upgrade banner */}
+              {isGuest && (
+                <View style={[styles.guestBanner, { backgroundColor: theme.cardBackground }]}>
+                  <Text style={[styles.guestBannerText, { color: theme.text }]}>
+                    Create an account to unlock all features, save your data, and sync across devices.
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.guestBannerButton}
+                    onPress={() => {
+                      navigation.reset({
+                        index: 0,
+                        routes: [{ name: 'Landing' }],
+                      });
+                    }}
+                  >
+                    <Text style={styles.guestBannerButtonText}>Sign Up / Log In</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
 
               {/* Bottom Padding */}
               <View style={{ height: 100 }} />
@@ -767,6 +799,32 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   deleteButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  guestBanner: {
+    marginHorizontal: 20,
+    marginTop: 20,
+    padding: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#4CAF50',
+  },
+  guestBannerText: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 15,
+  },
+  guestBannerButton: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+  },
+  guestBannerButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',

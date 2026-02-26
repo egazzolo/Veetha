@@ -12,6 +12,7 @@ import { useTheme } from '../utils/ThemeContext';
 import { useLanguage } from '../utils/LanguageContext';
 import { useGreeting } from '../utils/GreetingContext';
 import { useUser, UserContext } from '../utils/UserContext';
+import { useUserMode } from '../utils/UserModeContext';
 import { useLayout } from '../utils/LayoutContext';
 import { supabase } from '../utils/supabase';
 import { logScreen, logEvent } from '../utils/analytics';
@@ -287,6 +288,7 @@ export default function HomeScreen({ navigation }) {
   const { t, language } = useLanguage();
   const LOCALE_MAP = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', tl: 'fil-PH' };
   const { user, isGuest, profile, loading: userLoading, refreshProfile } = useUser();
+  const { isGuest: isGuestMode } = useUserMode();
   console.log("👤 USER FROM CONTEXT:", user);
   const { layout } = useLayout();
   const { startTutorial, tutorialCompleted } = useTutorial();
@@ -460,7 +462,19 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
+  const showGuestAlert = () => {
+    Alert.alert(
+      'Create an Account',
+      'Sign up to log meals, water, exercise, and more.',
+      [
+        { text: 'Not Now', style: 'cancel' },
+        { text: 'Sign Up', onPress: () => navigation.reset({ index: 0, routes: [{ name: 'Landing' }] }) },
+      ]
+    );
+  };
+
   const handleAddWater = async () => {
+    if (isGuestMode) { showGuestAlert(); return; }
 
     if (updatingWater) return;
 
@@ -508,6 +522,7 @@ export default function HomeScreen({ navigation }) {
   };
 
   const handleSubtractWater = async () => {
+    if (isGuestMode) { showGuestAlert(); return; }
 
     if (updatingWater) return;
 
@@ -1156,6 +1171,7 @@ export default function HomeScreen({ navigation }) {
   };
 
   const handleMealLongPress = (meal) => {
+    if (isGuestMode) { showGuestAlert(); return; }
     Alert.alert(
       meal.product_name,
       t('home.whatToDo'),
@@ -1527,7 +1543,7 @@ export default function HomeScreen({ navigation }) {
                 {/* Exercise & Water Cards - SIDE BY SIDE */}
                 <View style={styles.activityCardsRow}>
                   {/* Exercise Card - LEFT SIDE */}
-                  <ExerciseButton theme={theme} navigation={navigation} />
+                  <ExerciseButton theme={theme} navigation={navigation} isGuestMode={isGuestMode} onGuestPress={showGuestAlert} />
 
                   {/* Water Intake with Animated Pitcher */}
                   <View style={[styles.activityCard, { backgroundColor: theme.cardBackground }]}>

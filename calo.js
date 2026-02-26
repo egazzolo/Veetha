@@ -56,6 +56,7 @@ import { ThemeProvider } from './utils/ThemeContext';
 import { LanguageProvider } from './utils/LanguageContext';
 import { GreetingProvider } from './utils/GreetingContext';
 import { UserProvider } from './utils/UserContext';
+import { UserModeProvider, useUserMode } from './utils/UserModeContext';
 import { supabase } from './utils/supabase';
 
 const Stack = createNativeStackNavigator();
@@ -63,6 +64,7 @@ const Stack = createNativeStackNavigator();
 // Inner component that has access to theme
 function AppNavigator() {
   const { isDark } = useTheme();
+  const { userMode, setUserMode } = useUserMode();
   const [initialRoute, setInitialRoute] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -73,16 +75,19 @@ function AppNavigator() {
   const checkAuthState = async () => {
     try {
       console.log('🔍 Checking auth state on app start...');
-      
+
+      // Restore userMode from AsyncStorage
+      const storedMode = await AsyncStorage.getItem('veetha_user_mode');
+
       const { data: { session }, error } = await supabase.auth.getSession();
-      
+
       if (error) {
         console.log('Auth error:', error);
         setInitialRoute('Landing');
         setLoading(false);
         return;
       }
-      
+
       if (session?.user) {
 
         // ✅ Validate session with server
@@ -92,6 +97,7 @@ function AppNavigator() {
         if (userError || !validUser) {
           console.log('⚠️ Invalid cached session — forcing logout');
           await supabase.auth.signOut();
+          await setUserMode(null);
           setInitialRoute('Landing');
           setLoading(false);
           return;
@@ -107,17 +113,14 @@ function AppNavigator() {
           setInitialRoute('Landing');
         } else if (profile?.daily_calorie_goal) {
           setInitialRoute('Home');
+        } else if (storedMode === 'guest' || storedMode === 'authenticated') {
+          // Has a stored mode but no calorie goal — go Home anyway
+          console.log('📱 Stored userMode found, skipping to Home');
+          setInitialRoute('Home');
         } else {
-          // No calorie goal — check if device was previously onboarded
-          const boundUserId = await AsyncStorage.getItem('veetha_bound_user_id');
-          if (boundUserId) {
-            console.log('📱 Device previously onboarded, skipping to Home');
-            setInitialRoute('Home');
-          } else {
-            setInitialRoute('OnboardingStep1');
-          }
+          setInitialRoute('OnboardingStep1');
         }
-      }else {
+      } else {
         console.log('❌ No active session - showing Landing (guest option available)');
         setInitialRoute('Landing');
       }
@@ -236,11 +239,13 @@ export default function App() {
           <GreetingProvider>
             <ThemeProvider>
               <LayoutProvider>
-                <UserProvider>
-                  <OnboardingProvider>
-                    <AppNavigator />
-                  </OnboardingProvider>
-                </UserProvider>
+                <UserModeProvider>
+                  <UserProvider>
+                    <OnboardingProvider>
+                      <AppNavigator />
+                    </OnboardingProvider>
+                  </UserProvider>
+                </UserModeProvider>
               </LayoutProvider>
             </ThemeProvider>
           </GreetingProvider>
