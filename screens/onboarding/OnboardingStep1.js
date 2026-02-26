@@ -1,11 +1,136 @@
 import React, { useState, useEffect } from 'react';
 import { useCameraPermissions } from 'expo-camera';
-import { StyleSheet, Text, View, TouchableOpacity, Platform } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { useOnboarding } from '../../utils/OnboardingContext';
 import { useLanguage } from '../../utils/LanguageContext';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
+
+function DOBPicker({ value, onChange, t, language }) {
+  const LOCALE_MAP = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', tl: 'fil-PH' };
+  const locale = LOCALE_MAP[language] || 'en-US';
+  const today = new Date();
+  const initial = value || new Date(1990, 0, 1);
+
+  const [viewYear, setViewYear] = useState(initial.getFullYear());
+  const [viewMonth, setViewMonth] = useState(initial.getMonth());
+  const [mode, setMode] = useState('day'); // 'day' | 'year'
+
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  let firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay();
+  firstDayOfWeek = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+
+  const cells = [];
+  for (let i = 0; i < firstDayOfWeek; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  const goPrevMonth = () => {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
+    else setViewMonth(m => m - 1);
+  };
+
+  const goNextMonth = () => {
+    const isCurrentMonth = viewYear === today.getFullYear() && viewMonth === today.getMonth();
+    if (isCurrentMonth) return;
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
+    else setViewMonth(m => m + 1);
+  };
+
+  const selectDay = (day) => {
+    const selected = new Date(viewYear, viewMonth, day);
+    if (selected > today) return;
+    onChange(selected);
+  };
+
+  const selectedDay = value
+    ? (value.getFullYear() === viewYear && value.getMonth() === viewMonth ? value.getDate() : null)
+    : null;
+
+  const currentYear = today.getFullYear();
+  const years = [];
+  for (let y = currentYear; y >= 1930; y--) years.push(y);
+
+  if (mode === 'year') {
+    return (
+      <View style={styles.dobContainer}>
+        <Text style={styles.yearPickerTitle}>Select Year</Text>
+        <ScrollView style={{ maxHeight: 260 }} showsVerticalScrollIndicator={false}>
+          <View style={styles.yearGrid}>
+            {years.map(y => (
+              <TouchableOpacity
+                key={y}
+                style={[styles.yearCell, y === viewYear && styles.yearCellSelected]}
+                onPress={() => { setViewYear(y); setMode('day'); }}
+              >
+                <Text style={[styles.yearText, y === viewYear && styles.yearTextSelected]}>
+                  {y}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.dobContainer}>
+      <View style={styles.dobHeader}>
+        <TouchableOpacity onPress={goPrevMonth} style={styles.navBtn}>
+          <Text style={styles.navText}>‹</Text>
+        </TouchableOpacity>
+
+        <View style={{ flexDirection: 'row', gap: 6 }}>
+          <Text style={styles.monthLabel}>
+            {new Date(viewYear, viewMonth).toLocaleDateString(locale, { month: 'long' })}
+          </Text>
+          <TouchableOpacity onPress={() => setMode('year')}>
+            <Text style={[styles.monthLabel, { textDecorationLine: 'underline', color: '#4CAF50' }]}>
+              {viewYear}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity onPress={goNextMonth} style={styles.navBtn}>
+          <Text style={styles.navText}>›</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.weekRow}>
+        {t('stats.weekdays').map((d, i) => (
+          <Text key={i} style={styles.weekDay}>{d}</Text>
+        ))}
+      </View>
+
+      <View style={styles.dayGrid}>
+        {cells.map((day, i) => {
+          if (!day) return <View key={`e-${i}`} style={styles.dayCell} />;
+          const isFuture = new Date(viewYear, viewMonth, day) > today;
+          const isSelected = day === selectedDay;
+          return (
+            <TouchableOpacity
+              key={day}
+              style={styles.dayCell}
+              onPress={() => !isFuture && selectDay(day)}
+              disabled={isFuture}
+              activeOpacity={0.7}
+            >
+              <View style={[
+                styles.dayCellInner,
+                isSelected && { backgroundColor: '#4CAF50' },
+                isFuture && { opacity: 0.3 },
+              ]}>
+                <Text style={[styles.dayText, isSelected && { color: '#fff', fontWeight: 'bold' }]}>
+                  {day}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
 
 //*** GENDER AND DOB SCREEN ***
 export default function OnboardingStep1({ navigation }) {
@@ -13,14 +138,12 @@ export default function OnboardingStep1({ navigation }) {
   const { updateOnboardingData } = useOnboarding();
   const [gender, setGender] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [error, setError] = useState('');
   const { t, language } = useLanguage();
 
   const LOCALE_MAP = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', tl: 'fil-PH' };
 
   useEffect(() => {
-    // Request camera permission when screen loads
     if (!permission?.granted) {
       requestPermission();
     }
@@ -28,13 +151,10 @@ export default function OnboardingStep1({ navigation }) {
 
   const calculateAge = (dateOfBirth) => {
     if (!dateOfBirth) return null;
-    
     const today = new Date();
     const birthDate = new Date(dateOfBirth);
-    
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       age--;
     }
@@ -44,34 +164,25 @@ export default function OnboardingStep1({ navigation }) {
 
   const handleContinue = () => {
     setError('');
-
-    // Validation
     if (!gender) {
       setError(t('onboarding.selectGender'));
       return;
     }
-
     if (!dateOfBirth) {
       setError(t('onboarding.selectDOBError'));
       return;
     }
-
     const age = calculateAge(dateOfBirth);
     if (age < 13 || age > 120) {
       setError(t('onboarding.ageRange'));
       return;
     }
-
-    console.log('Gender:', gender, 'DOB:', dateOfBirth, 'Age:', age);
-
     updateOnboardingData({
-      gender: gender,
+      gender,
       dateOfBirth: dateOfBirth.toISOString(), // Save as ISO string
-      age: age, // Calculated age
+      age,
     });
-
     console.log('✅ Step 1 saved:', { gender, dateOfBirth, age });
-
     navigation.navigate('OnboardingStep1b');
   };
 
@@ -81,7 +192,7 @@ export default function OnboardingStep1({ navigation }) {
         <View style={styles.languageSwitcherContainer}>
           <LanguageSwitcher />
         </View>
-        {/* Progress Indicator */}
+
         <View style={styles.progressContainer}>
           <View style={styles.progressBar}>
             <View style={[styles.progressFill, { width: '12.5%' }]} />
@@ -120,36 +231,22 @@ export default function OnboardingStep1({ navigation }) {
                 {t('onboarding.female')}
               </Text>
             </TouchableOpacity>
-
           </View>
         </View>
 
-        {/* Date of Birth */}
         <View style={styles.section}>
           <Text style={styles.label}>{t('onboarding.dateOfBirth')}</Text>
-          <TouchableOpacity 
-            style={styles.dateButton}
-            onPress={() => setShowDatePicker(true)}
-          >
-            <Text style={[styles.dateButtonText, !dateOfBirth && styles.placeholderText]}>
-              {dateOfBirth ? dateOfBirth.toLocaleDateString(LOCALE_MAP[language] || 'en-US') : t('onboarding.selectDOB')}
+          {dateOfBirth && (
+            <Text style={{ color: '#4CAF50', marginBottom: 8, fontWeight: '600' }}>
+              {dateOfBirth.toLocaleDateString(LOCALE_MAP[language] || 'en-US')}
             </Text>
-          </TouchableOpacity>
-          
-          {showDatePicker && (
-            <DateTimePicker
-              value={dateOfBirth || new Date(1990, 0, 1)}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              locale={LOCALE_MAP[language] || 'en-US'}
-              maximumDate={new Date()}
-              minimumDate={new Date(1900, 0, 1)}
-              onChange={(event, selectedDate) => {
-                if (Platform.OS !== 'ios') setShowDatePicker(false);
-                if (selectedDate) setDateOfBirth(selectedDate);
-              }}
-            />
           )}
+          <DOBPicker
+            value={dateOfBirth}
+            onChange={(date) => setDateOfBirth(date)}
+            t={t}
+            language={language}
+          />
         </View>
 
         {/* Spacer */}
@@ -250,19 +347,6 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
     fontWeight: '600',
   },
-  dateButton: {
-    borderWidth: 2,
-    borderColor: '#6B5B45',
-    borderRadius: 10,
-    padding: 15,
-  },
-  dateButtonText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  placeholderText: {
-    color: '#999',
-  },
   navigationButtons: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -286,5 +370,96 @@ const styles = StyleSheet.create({
     top: 10,
     right: 10,
     zIndex: 10,
+  },
+  dobContainer: { 
+    borderWidth: 2, 
+    borderColor: '#6B5B45', 
+    borderRadius: 10, 
+    padding: 12, 
+  },
+  dobHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 12 
+  },
+  navBtn: { 
+    padding: 8 
+  },
+  navText: { 
+    fontSize: 22, 
+    fontWeight: 'bold', 
+    color: '#333' 
+  },
+  monthLabel: { 
+    fontSize: 15, 
+    fontWeight: '600', 
+    color: '#333' 
+  },
+  weekRow: { 
+    flexDirection: 'row', 
+    marginBottom: 6 
+  },
+  weekDay: { 
+    flexBasis: '14.2857%', 
+    textAlign: 'center', 
+    fontSize: 11, 
+    color: '#999', 
+    fontWeight: '600' 
+  },
+  dayGrid: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap' 
+  },
+  dayCell: { 
+    flexBasis: '14.2857%', 
+    aspectRatio: 1, 
+    padding: 2 
+  },
+  dayCellInner: { 
+    flex: 1, 
+    borderRadius: 6, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    backgroundColor: '#f0ece4' 
+  },
+  dayText: { 
+    fontSize: 12, 
+    color: '#333' 
+  },
+  yearPickerTitle: { 
+    fontSize: 15, 
+    fontWeight: '600', 
+    color: '#333', 
+    textAlign: 'center', 
+    marginBottom: 12 
+  },
+  yearGrid: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    width: '100%',
+    gap: 8, 
+    paddingBottom: 8 
+  },
+  yearCell: { 
+    width: '28%', 
+    paddingVertical: 10, 
+    borderRadius: 8, 
+    alignItems: 'center', 
+    backgroundColor: '#f0ece4' 
+  },
+  yearCellSelected: { 
+    backgroundColor: '#4CAF50' 
+  },
+  yearText: { 
+    fontSize: 14, 
+    color: '#333' 
+  },
+  yearTextSelected: { 
+    color: '#fff', 
+    fontWeight: 'bold' 
   },
 });

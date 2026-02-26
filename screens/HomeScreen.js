@@ -122,7 +122,7 @@ const handleQuickLog = async (food) => {
       logged_at: new Date().toISOString(),
     });
 
-    await refreshMeals();
+    await loadMealsForDate(selectedDate);
     
     Alert.alert('Logged! ✅', `${food.emoji} ${food.name} added`);
     
