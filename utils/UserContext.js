@@ -22,6 +22,9 @@ export function UserProvider({ children }) {
       
       if (event === 'SIGNED_IN') {
         setIsGuest(false);
+        // Clear stale cache so a re-created account never sees old data
+        AsyncStorage.multiRemove(['cached_meals', 'cached_profile']);
+        setMeals([]);
         console.log('✅ User signed in, reloading data');
         loadUserData();
       } else if (event === 'SIGNED_OUT') {
@@ -210,8 +213,7 @@ export function UserProvider({ children }) {
     // Keep app_language — language preference persists across logout
     // Keep tutorial_completed_home — tutorial completion persists across logout
     // Keep veetha_user_mode — userMode persists across logout
-    await AsyncStorage.removeItem('cached_meals');
-    await AsyncStorage.removeItem('tutorial_loading');
+    await AsyncStorage.multiRemove(['cached_meals', 'cached_profile', 'tutorial_loading']);
   };
 
   return (
