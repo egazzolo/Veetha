@@ -427,7 +427,12 @@ export default {
       sodium: 'Sodium',
       sugar: 'Sucre',
       fiber: 'Fibres'
-    }
+    },
+    guestBanner: {
+      message: "Vous naviguez en tant qu'invit\u00e9. Vous pouvez scanner des codes-barres et voir les infos nutritionnelles, mais c'est tout. Inscrivez-vous pour profiter de toutes les fonctionnalit\u00e9s\u00a0!",
+      signUp: "S'inscrire",
+      dismiss: '\u2715',
+    },
   },
 
   // Exercise Feature

@@ -427,7 +427,12 @@ export default {
       sodium: 'Sodium',
       sugar: 'Asukal',
       fiber: 'Hibla'
-    }
+    },
+    guestBanner: {
+      message: 'Nagba-browse ka bilang bisita. Maaari kang mag-scan ng barcode at tingnan ang nutritional info, pero hanggang doon lang. Mag-sign up para sa buong karanasan!',
+      signUp: 'Mag-sign Up',
+      dismiss: '\u2715',
+    },
   },
 
   // Exercise Feature

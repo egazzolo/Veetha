@@ -427,7 +427,12 @@ export default {
       sodium: 'Sodio',
       sugar: 'Azúcar',
       fiber: 'Fibra'
-        }
+        },
+    guestBanner: {
+      message: 'Estás navegando como invitado. Puedes escanear códigos de barras y ver información nutricional, pero eso es todo. ¡Regístrate para la experiencia completa!',
+      signUp: 'Registrarse',
+      dismiss: '\u2715',
+    },
   },
 
   // Exercise Feature

@@ -31,10 +31,11 @@ export const TutorialProvider = ({ children }) => {
       // ✅ DEVICE-LEVEL tutorial check (works for guest + logged users)
 
       const localFlag = await AsyncStorage.getItem('tutorial_completed_home');
+      const everShown = await AsyncStorage.getItem('tutorial_ever_shown');
 
-      console.log('📚 Local tutorial flag:', localFlag);
+      console.log('📚 Local tutorial flag:', localFlag, '| Ever shown:', everShown);
 
-      setTutorialCompleted(localFlag === 'true');
+      setTutorialCompleted(localFlag === 'true' || everShown === 'true');
 
     } catch (error) {
       console.error('Error checking tutorial:', error);
@@ -42,6 +43,14 @@ export const TutorialProvider = ({ children }) => {
   };
 
   const startTutorial = async (screen) => {
+    // Guests never see the tutorial
+    const userMode = await AsyncStorage.getItem('veetha_user_mode');
+    if (userMode === 'guest') return;
+
+    // Once shown on this device, never again
+    const alreadyShown = await AsyncStorage.getItem('tutorial_ever_shown');
+    if (alreadyShown === 'true') return;
+
     // For Scanner, check scanner_tutorial_completed
     if (screen === 'Scanner') {
       try {
@@ -134,6 +143,9 @@ export const TutorialProvider = ({ children }) => {
       } else {
         console.log('✅ Database updated successfully:', updateField);  // ← Confirm success
       }
+
+      // Mark tutorial as ever shown on this device (once per install)
+      await AsyncStorage.setItem('tutorial_ever_shown', 'true');
 
       if (currentScreen === 'Home') {
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, ActivityIndicator, Pressable } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../utils/ThemeContext';
 import { supabase } from '../utils/supabase';
@@ -220,7 +220,10 @@ export default function EditProfileScreen({ navigation }) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
-      <Pressable style={{ flex: 1 }} onPress={() => setShowLanguageDropdown(false)}>
+      <View style={{ flex: 1 }} onStartShouldSetResponder={() => {
+        if (showLanguageDropdown) setShowLanguageDropdown(false);
+        return false;
+      }}>
 
           <KeyboardAwareScrollView
             style={styles.scrollView}
@@ -483,7 +486,7 @@ export default function EditProfileScreen({ navigation }) {
             </View>
           </KeyboardAwareScrollView>
 
-      </Pressable>
+      </View>
     </SafeAreaView>
   );
 }

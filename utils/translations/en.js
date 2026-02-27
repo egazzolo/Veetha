@@ -427,7 +427,12 @@ export default {
       sodium: 'Sodium',
       sugar: 'Sugar',
       fiber: 'Fiber'
-    }
+    },
+    guestBanner: {
+      message: "You're browsing as a Guest. You can scan barcodes and view nutritional info, but that's it. Sign up for the full experience!",
+      signUp: 'Sign Up',
+      dismiss: '\u2715',
+    },
   },
 
   // Exercise Feature

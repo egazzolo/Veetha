@@ -322,6 +322,7 @@ export default function HomeScreen({ navigation }) {
   const [checkingTutorial, setCheckingTutorial] = useState(true);
   const [quickSuggestions, setQuickSuggestions] = useState([]);
   const [userCountry, setUserCountry] = useState(null);
+  const [guestBannerDismissed, setGuestBannerDismissed] = useState(false);
 
   // Safe numeric helper
   const num = (v) => {
@@ -1432,6 +1433,33 @@ export default function HomeScreen({ navigation }) {
                   onComplete={hideGreeting}
                 />
 
+                {/* Guest Banner */}
+                {isGuestMode && !guestBannerDismissed && (
+                  <View style={styles.guestBanner}>
+                    <View style={styles.guestBannerContent}>
+                      <Text style={styles.guestBannerText}>
+                        {t('home.guestBanner.message')}
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.guestBannerSignUp}
+                        onPress={() => navigation.navigate('SignUp')}
+                      >
+                        <Text style={styles.guestBannerSignUpText}>
+                          {t('home.guestBanner.signUp')}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.guestBannerDismiss}
+                      onPress={() => setGuestBannerDismissed(true)}
+                    >
+                      <Text style={styles.guestBannerDismissText}>
+                        {t('home.guestBanner.dismiss')}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
                 {/* Streak Badge - Always visible */}
                 <View style={styles.streakBadgeWrapper}>
                   <View style={[styles.streakBadge, { backgroundColor: '#FF6B35' }]}>
@@ -1739,6 +1767,46 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  guestBanner: {
+    flexDirection: 'row',
+    backgroundColor: '#FFF3CD',
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 4,
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'flex-start',
+  },
+  guestBannerContent: {
+    flex: 1,
+    marginRight: 8,
+  },
+  guestBannerText: {
+    fontSize: 13,
+    color: '#664D03',
+    lineHeight: 19,
+    marginBottom: 10,
+  },
+  guestBannerSignUp: {
+    backgroundColor: '#FF9800',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+    alignSelf: 'flex-start',
+  },
+  guestBannerSignUpText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  guestBannerDismiss: {
+    padding: 4,
+  },
+  guestBannerDismissText: {
+    fontSize: 18,
+    color: '#664D03',
+    fontWeight: 'bold',
   },
   scrollView: {
     flex: 1,
