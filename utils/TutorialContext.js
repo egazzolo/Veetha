@@ -144,8 +144,10 @@ export const TutorialProvider = ({ children }) => {
         console.log('✅ Database updated successfully:', updateField);  // ← Confirm success
       }
 
-      // Mark tutorial as ever shown on this device (once per install)
-      await AsyncStorage.setItem('tutorial_ever_shown', 'true');
+      // Only set the device-level kill switch after the LAST tutorial (Profile)
+      if (currentScreen === 'Profile') {
+        await AsyncStorage.setItem('tutorial_ever_shown', 'true');
+      }
 
       if (currentScreen === 'Home') {
 
