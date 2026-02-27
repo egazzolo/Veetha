@@ -18,14 +18,14 @@ const ACTIVITY_LEVELS = [
 export default function GoalsPreferencesScreen({ navigation }) {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  const { profile, refreshProfile, isGuest } = useUser();
+  const { profile, refreshProfile, isGuest: isGuestMode } = useUser();
 
-  const showGuestPrompt = () => Alert.alert(
+  const showGuestAlert = () => Alert.alert(
     'Create an Account',
     'Sign up to log meals, water, exercise, and more.',
     [{ text: 'Cancel', style: 'cancel' }, { text: 'Sign Up', onPress: () => navigation.navigate('SignUp') }]
   );
-  const guardGuest = (action) => { if (isGuest) { showGuestPrompt(); return; } action(); };
+  const guardGuest = (action) => { if (isGuestMode) { showGuestAlert(); return; } action(); };
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -103,7 +103,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
   };
 
   const handleRecalculate = async () => {
-    if (isGuest) { showGuestPrompt(); return; }
+    if (isGuestMode) { showGuestAlert(); return; }
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -174,7 +174,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
   };
 
   const handleSave = async () => {
-    if (isGuest) { showGuestPrompt(); return; }
+    if (isGuestMode) { showGuestAlert(); return; }
     // Validation
     const calories = parseFloat(dailyCalorieGoal);
     const protein = parseFloat(proteinGoal);

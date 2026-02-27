@@ -1641,7 +1641,7 @@ export default function HomeScreen({ navigation }) {
                   isToday={isToday}
                   getDateLabel={getDateLabel}
                   copyYesterdaysMeals={copyYesterdaysMeals}
-                  copyingMeals={copyingMeals}
+                  copyingMeals={copyingMeals}showGuestAlert
                   handleMealToggle={handleMealToggle}
                   handleMealLongPress={handleMealLongPress}
                   toggledMeals={toggledMeals}
