@@ -444,6 +444,7 @@ export default function ProfileScreen({ navigation }) {
                   </View>
                   <Text style={styles.settingArrow}>›</Text>
                 </TouchableOpacity>
+                {!isGuest && (
                 <TouchableOpacity
                   ref={displaySettingsButtonRef}
                   onLayout={(event) => {
@@ -452,8 +453,8 @@ export default function ProfileScreen({ navigation }) {
                       if (displaySettingsButtonRef?.current?.measureInWindow) {
                         displaySettingsButtonRef.current.measureInWindow((wx, wy, w, h) => {
                           if (displaySettingsButtonRef.current) {
-                            displaySettingsButtonRef.current.tutorialCoords = { 
-                              top: wy, left: wx, width: w, height: h, borderRadius: 16 
+                            displaySettingsButtonRef.current.tutorialCoords = {
+                              top: wy, left: wx, width: w, height: h, borderRadius: 16
                             };
                           }
                         });
@@ -474,6 +475,7 @@ export default function ProfileScreen({ navigation }) {
                   </View>
                   <Text style={[styles.menuArrow, { color: theme.textTertiary }]}>›</Text>
               </TouchableOpacity>
+                )}
               </View>
 
               {/* Resources Section */}
