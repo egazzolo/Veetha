@@ -50,7 +50,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
   }, []);
 
   useEffect(() => {
-    if (isGuest) {
+    if (isGuestMode) {
       Alert.alert(
         'Create an Account',
         'Sign up to log meals, water, exercise, and more.',
@@ -60,14 +60,17 @@ export default function GoalsPreferencesScreen({ navigation }) {
         ]
       );
     }
-  }, [isGuest]);
+  }, [isGuestMode]);
 
   const loadGoals = async () => {
-    if (isGuest) { setLoading(false); return; }
+    if (isGuestMode) {
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
         navigation.navigate('Login');
         return;
@@ -316,7 +319,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
               placeholderTextColor={theme.textTertiary}
               keyboardType="numeric"
               value={dailyCalorieGoal}
-              onChangeText={(v) => guestCheck(() => setDailyCalorieGoal(v))}
+              onChangeText={(v) => guardGuest(() => setDailyCalorieGoal(v))}
               maxLength={5}
             />
             <Text style={[styles.helperText, { color: theme.textTertiary }]}>
@@ -343,7 +346,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
                     borderWidth: activityLevel === level.value ? 2 : 1,
                   }
                 ]}
-                onPress={() => guestCheck(() => setActivityLevel(level.value))}
+                onPress={() => guardGuest(() => setActivityLevel(level.value))}
               >
                 <View style={styles.activityOptionContent}>
                   <Text style={[styles.activityLabel, { color: theme.text }]}>
@@ -397,7 +400,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
                 placeholderTextColor={theme.textTertiary}
                 keyboardType="numeric"
                 value={proteinGoal}
-                onChangeText={(v) => guestCheck(() => setProteinGoal(v))}
+                onChangeText={(v) => guardGuest(() => setProteinGoal(v))}
                 maxLength={4}
               />
               <Text style={[styles.macroUnit, { color: theme.textSecondary }]}>g</Text>
@@ -414,7 +417,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
                 placeholderTextColor={theme.textTertiary}
                 keyboardType="numeric"
                 value={carbsGoal}
-                onChangeText={(v) => guestCheck(() => setCarbsGoal(v))}
+                onChangeText={(v) => guardGuest(() => setCarbsGoal(v))}
                 maxLength={4}
               />
               <Text style={[styles.macroUnit, { color: theme.textSecondary }]}>g</Text>
@@ -431,7 +434,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
                 placeholderTextColor={theme.textTertiary}
                 keyboardType="numeric"
                 value={fatGoal}
-                onChangeText={(v) => guestCheck(() => setFatGoal(v))}
+                onChangeText={(v) => guardGuest(() => setFatGoal(v))}
                 maxLength={4}
               />
               <Text style={[styles.macroUnit, { color: theme.textSecondary }]}>g</Text>
@@ -453,7 +456,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
                 placeholderTextColor={theme.textTertiary}
                 keyboardType="numeric"
                 value={targetWeight}
-                onChangeText={(v) => guestCheck(() => setTargetWeight(v))}
+                onChangeText={(v) => guardGuest(() => setTargetWeight(v))}
                 maxLength={5}
               />
               <Text style={[styles.weightUnit, { color: theme.textSecondary }]}>
@@ -478,7 +481,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
                   styles.unitToggle,
                   { backgroundColor: waterUnit === 'cups' ? theme.primary : theme.background }
                 ]}
-                onPress={() => guestCheck(() => setWaterUnit('cups'))}
+                onPress={() => guardGuest(() => setWaterUnit('cups'))}
               >
                 <Text style={{ color: waterUnit === 'cups' ? '#fff' : theme.text }}>
                   {t('goalsPreferences.cups')}
@@ -490,7 +493,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
                   styles.unitToggle,
                   { backgroundColor: waterUnit === 'liters' ? theme.primary : theme.background }
                 ]}
-                onPress={() => guestCheck(() => setWaterUnit('liters'))}
+                onPress={() => guardGuest(() => setWaterUnit('liters'))}
               >
                 <Text style={{ color: waterUnit === 'liters' ? '#fff' : theme.text }}>
                   {t('goalsPreferences.liters')}
@@ -505,7 +508,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
                 placeholderTextColor={theme.textTertiary}
                 keyboardType="numeric"
                 value={waterGoal}
-                onChangeText={(v) => guestCheck(() => setWaterGoal(v))}
+                onChangeText={(v) => guardGuest(() => setWaterGoal(v))}
                 maxLength={3}
               />
               <Text style={[styles.weightUnit, { color: theme.textSecondary }]}>
