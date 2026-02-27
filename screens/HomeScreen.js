@@ -600,6 +600,8 @@ export default function HomeScreen({ navigation }) {
       if (loadingFlag === 'true') {
         console.log('🧊 Tutorial freeze active');
         setCheckingTutorial(true);
+      } else {
+        setCheckingTutorial(false);
       }
     };
     checkTutorialLoading();
