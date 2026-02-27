@@ -133,6 +133,12 @@ export default function SignUpScreen({ navigation }) {
       });
 
       if (error) {
+        // Check for rate limit
+        if (error.message.toLowerCase().includes('rate limit')) {
+          setError(t('signup.rateLimitError'));
+          setLoading(false);
+          return;
+        }
         // Check if email already exists
         if (error.message.includes('already') || error.message.includes('exist')) {
           Alert.alert( t('signup.emailInUse'));
@@ -191,9 +197,16 @@ export default function SignUpScreen({ navigation }) {
 
     } catch (err) {
       console.error('❌ Sign up error:', err);
-      
+
+      // Handle email rate limit error
+      if (err.message.toLowerCase().includes('rate limit') ||
+          err.message.toLowerCase().includes('email rate limit')) {
+        setError(t('signup.rateLimitError'));
+        return;
+      }
+
       // Handle duplicate email errors
-      if (err.message.includes('already registered') || 
+      if (err.message.includes('already registered') ||
           err.message.includes('User already registered') ||
           err.message.includes('email address is already in use') ||
           err.code === 'user_already_exists') {

@@ -68,6 +68,7 @@ export default {
     passwordsMatch: 'Passwords do not match',
     emailInUse: 'Email is already registered. Please sign in instead.',
     signupFailed: 'Sign up failed. Please try again.',
+    rateLimitError: 'Too many attempts. Please wait a few minutes and try again.',
     // Signup steps
     success: 'Success!',
     accountCreated: 'Account created! Please check your email to verify your account!',

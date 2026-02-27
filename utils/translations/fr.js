@@ -68,6 +68,7 @@ export default {
     passwordsMatch: 'Les mots de passe ne correspondent pas',
     emailInUse: 'L\'e-mail est déjà enregistré',
     signupFailed: 'Échec de l\'inscription. Veuillez réessayer.',
+    rateLimitError: 'Trop de tentatives. Veuillez patienter quelques minutes et réessayer.',
     // Signup steps
     success: 'Succès!',
     accountCreated: 'Compte créé! Veuillez vérifier votre e-mail pour vérifier votre compte.',

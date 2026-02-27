@@ -68,6 +68,7 @@ export default {
     passwordsMatch: 'Hindi nagtutugma ang mga password',
     emailInUse: 'Ang email ay nakarehis tro na',
     signupFailed: 'Nabigo ang pag-sign up. Subukan ulit.',
+    rateLimitError: 'Masyadong maraming pagtatangka. Maghintay ng ilang minuto at subukan ulit.',
     // Signup steps
     success: 'Tagumpay!',
     accountCreated: 'Nalikha na ang account! Pakisuri ang iyong email para i-verify ang iyong account.',
