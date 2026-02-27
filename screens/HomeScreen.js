@@ -585,20 +585,24 @@ export default function HomeScreen({ navigation }) {
   };
 
   useEffect(() => {
-
     const checkTutorialLoading = async () => {
-
       const loadingFlag = await AsyncStorage.getItem('tutorial_loading');
+      const everShown = await AsyncStorage.getItem('tutorial_ever_shown');
+      const completedHome = await AsyncStorage.getItem('tutorial_completed_home');
+
+      // If tutorial already done, clean up the stale flag and don't freeze
+      if (everShown === 'true' || completedHome === 'true') {
+        await AsyncStorage.removeItem('tutorial_loading');
+        setCheckingTutorial(false);
+        return;
+      }
 
       if (loadingFlag === 'true') {
         console.log('🧊 Tutorial freeze active');
         setCheckingTutorial(true);
       }
-
     };
-
     checkTutorialLoading();
-
   }, []);
 
   useEffect(() => {

@@ -5,6 +5,8 @@ import { useTheme } from '../utils/ThemeContext';
 import { supabase } from '../utils/supabase';
 import { useUser } from '../utils/UserContext';
 import { useLanguage } from '../utils/LanguageContext';
+import { useUserMode } from '../utils/UserModeContext';
+import { blockIfGuest } from '../utils/guestBlock';
 
 const ALLERGIES = [
   { id: 'peanuts', emoji: '🥜' },
@@ -39,12 +41,11 @@ const PREFERENCES = [
 export default function DietaryRestrictionsScreen({ navigation }) {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  const { profile, refreshProfile, isGuest } = useUser();
-  const showGuestPrompt = () => Alert.alert(
-    'Create an Account',
-    'Sign up to log meals, water, exercise, and more.',
-    [{ text: 'Cancel', style: 'cancel' }, { text: 'Sign Up', onPress: () => navigation.navigate('SignUp') }]
-  );
+  const { profile, refreshProfile } = useUser();
+  const { isGuest: isGuestMode } = useUserMode();
+
+  const guestCheck = (action) => blockIfGuest(isGuestMode, navigation, action);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   
@@ -56,21 +57,7 @@ export default function DietaryRestrictionsScreen({ navigation }) {
     loadRestrictions();
   }, []);
 
-  useEffect(() => {
-    if (isGuest) {
-      Alert.alert(
-        'Create an Account',
-        'Sign up to log meals, water, exercise, and more.',
-        [
-          { text: 'Cancel', style: 'cancel', onPress: () => navigation.goBack() },
-          { text: 'Sign Up', onPress: () => navigation.navigate('SignUp') },
-        ]
-      );
-    }
-  }, [isGuest]);
-
   const loadRestrictions = async () => {
-    if (isGuest) { setLoading(false); return; }
     try {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
@@ -100,7 +87,7 @@ export default function DietaryRestrictionsScreen({ navigation }) {
   };
 
   const toggleAllergy = (allergyId) => {
-    if (isGuest) { showGuestPrompt(); return; }
+    if (blockIfGuest(isGuestMode, navigation, () => {})) return;
     if (selectedAllergies.includes(allergyId)) {
       setSelectedAllergies(selectedAllergies.filter(id => id !== allergyId));
     } else {
@@ -109,7 +96,7 @@ export default function DietaryRestrictionsScreen({ navigation }) {
   };
 
   const togglePreference = (prefId) => {
-    if (isGuest) { showGuestPrompt(); return; }
+    if (blockIfGuest(isGuestMode, navigation, () => {})) return;
     if (selectedPreferences.includes(prefId)) {
       setSelectedPreferences(selectedPreferences.filter(id => id !== prefId));
     } else {
@@ -118,7 +105,7 @@ export default function DietaryRestrictionsScreen({ navigation }) {
   };
 
   const handleSave = async () => {
-    if (isGuest) { showGuestPrompt(); return; }
+    if (blockIfGuest(isGuestMode, navigation, () => {})) return;
     setSaving(true);
 
     try {
@@ -249,7 +236,7 @@ export default function DietaryRestrictionsScreen({ navigation }) {
                     borderWidth: dietType === diet.value ? 2 : 1,
                   }
                 ]}
-                onPress={() => { if (isGuest) { showGuestPrompt(); return; } setDietType(diet.value); }}
+                onPress={() => guestCheck(() => setDietType(diet.value))}
               >
                 <View style={styles.dietOptionContent}>
                   <Text style={[styles.dietLabel, { color: theme.text }]}>
