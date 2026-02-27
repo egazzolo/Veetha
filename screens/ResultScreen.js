@@ -605,9 +605,15 @@ export default function ResultScreen({ route, navigation }) {
       .activeOffsetX([-10, 10])  // Only activate for horizontal movement
       .failOffsetY([-10, 10])    // Fail (allow ScrollView) for vertical movement
       .onUpdate((e) => {
+      // Block rightward movement for guests
+      if (isGuestMode && e.translationX > 0) {
+        detailedTranslateX.setValue(0);
+        detailedRotateZ.setValue(0);
+        return;
+      }
       detailedTranslateX.setValue(e.translationX);
       detailedRotateZ.setValue(e.translationX / 30);
-      
+
       if (e.translationX > 50) {
         setDetailedSwipeDirection('right');
         detailedSwipeOpacity.setValue(Math.min(e.translationX / 100, 1));
@@ -620,6 +626,15 @@ export default function ResultScreen({ route, navigation }) {
       }
     })
     .onEnd((e) => {
+      if (isGuestMode && e.translationX > 0) {
+        // Guest tried to swipe right — show prompt, snap back
+        blockIfGuest(isGuestMode, navigation, () => {});
+        detailedTranslateX.setValue(0);
+        detailedRotateZ.setValue(0);
+        setDetailedSwipeDirection(null);
+        detailedSwipeOpacity.setValue(0);
+        return;
+      }
       if (e.translationX > 100) {
         // Right swipe - Save
         Animated.parallel([
@@ -687,9 +702,15 @@ export default function ResultScreen({ route, navigation }) {
         .activeOffsetX([-10, 10])
         .failOffsetY([-10, 10])
         .onUpdate((e) => {
+        // Block rightward movement for guests
+        if (isGuestMode && e.translationX > 0) {
+          translateX.setValue(0);
+          rotateZ.setValue(0);
+          return;
+        }
         translateX.setValue(e.translationX);
         rotateZ.setValue(e.translationX / 20); // Rotate based on swipe
-        
+
         // Show swipe indicators
         if (e.translationX > 50) {
           setSwipeDirection('right');
@@ -703,6 +724,15 @@ export default function ResultScreen({ route, navigation }) {
         }
       })
       .onEnd((e) => {
+        if (isGuestMode && e.translationX > 0) {
+          // Guest tried to swipe right — show prompt, snap back
+          blockIfGuest(isGuestMode, navigation, () => {});
+          translateX.setValue(0);
+          rotateZ.setValue(0);
+          setSwipeDirection(null);
+          swipeOpacity.setValue(0);
+          return;
+        }
         if (e.translationX > 100) {
           // Right swipe - Save with animation
           Animated.parallel([

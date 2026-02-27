@@ -26,7 +26,7 @@ export default function ScannerScreen({ navigation }) {
   const { theme } = useTheme();
   const { t } = useLanguage();
   const { tutorialCompleted, startTutorial } = useTutorial();
-  const { refreshProfile } = useUser();
+  const { refreshProfile, isGuest } = useUser();
   const [showArrowToBack, setShowArrowToBack] = useState(false);
   const [backButtonCoords, setBackButtonCoords] = useState(null); 
   const cameraRef = useRef(null);
@@ -479,9 +479,22 @@ export default function ScannerScreen({ navigation }) {
     }
   };
 
+  const showGuestPrompt = () => {
+    Alert.alert(
+      'Create an Account',
+      'Sign up to log meals, water, exercise, and more.',
+      [
+        { text: 'Sign Up', onPress: () => navigation.navigate('SignUp') },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
   // Take photo using the camera
   const takePhoto = async () => {
     if (!cameraRef.current || loading) return;
+
+    if (isGuest) { showGuestPrompt(); return; }
 
     try {
       // ⏱️ RATE LIMIT CHECK (3 seconds between photos)
