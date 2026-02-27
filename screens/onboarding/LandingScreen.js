@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import * as Crypto from 'expo-crypto';
-import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
 import { useLanguage } from '../../utils/LanguageContext';
@@ -11,6 +11,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export default function LandingScreen({ navigation }) {
   const { t } = useLanguage();
   const { setUserMode } = useUserMode();
+  const [guestLoading, setGuestLoading] = useState(false);
+
+  if (guestLoading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <View style={styles.content}>
+          <ActivityIndicator size="large" color="#4CAF50" />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -49,6 +60,7 @@ export default function LandingScreen({ navigation }) {
           style={styles.secondaryButton}
           onPress={async () => {
             try {
+              setGuestLoading(true);
               const { data, error } = await supabase.auth.signInAnonymously();
 
               if (error) {
@@ -94,6 +106,7 @@ export default function LandingScreen({ navigation }) {
               navigation.replace('Home');
             } catch (e) {
               console.error('Anonymous sign-in failed:', e);
+              setGuestLoading(false);
             }
           }}
         >
