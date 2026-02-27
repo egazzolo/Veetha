@@ -14,6 +14,7 @@ import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-ha
 import { useSwipeNavigation } from '../utils/useSwipeNavigation';
 import { searchFood } from '../utils/foodDatabase';
 import { useUser, UserContext } from '../utils/UserContext';
+import { useUserMode } from '../utils/UserModeContext';
 import { analyzePhoto as analyzeClarifai, imageUriToBase64 as clarifaiToBase64 } from '../utils/clarifaiApi';
 import { analyzePhoto as analyzeGoogle, imageUriToBase64 as googleToBase64 } from '../utils/visionApi';
 
@@ -26,7 +27,8 @@ export default function ScannerScreen({ navigation }) {
   const { theme } = useTheme();
   const { t } = useLanguage();
   const { tutorialCompleted, startTutorial } = useTutorial();
-  const { refreshProfile, isGuest } = useUser();
+  const { refreshProfile } = useUser();
+  const { isGuest } = useUserMode();
   const [showArrowToBack, setShowArrowToBack] = useState(false);
   const [backButtonCoords, setBackButtonCoords] = useState(null); 
   const cameraRef = useRef(null);
