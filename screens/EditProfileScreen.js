@@ -112,7 +112,14 @@ export default function EditProfileScreen({ navigation }) {
   };
 
   const handleSave = async () => {
-    if (blockIfGuest(isGuestMode, navigation, () => {})) return;
+    // Guest: only save language to AsyncStorage, skip everything else
+    if (isGuestMode) {
+      if (tempLanguage !== language) {
+        await setLanguage(tempLanguage);
+      }
+      setShowSuccessAfterSave(true);
+      return;
+    }
     // Validation
     if (!fullName.trim()) {
       Alert.alert(t('editProfile.missingInfo'), t('editProfile.enterFullName'));
@@ -243,7 +250,7 @@ export default function EditProfileScreen({ navigation }) {
                   placeholder={t('editProfile.displayNamePlaceholder')}
                   placeholderTextColor={theme.textTertiary}
                   value={displayName}
-                  onChangeText={setDisplayName}
+                  onChangeText={(v) => guestCheck(() => setDisplayName(v))}
                   maxLength={30}
                 />
               </View>
@@ -256,7 +263,7 @@ export default function EditProfileScreen({ navigation }) {
                   placeholder={t('editProfile.fullNamePlaceholder')}
                   placeholderTextColor={theme.textTertiary}
                   value={fullName}
-                  onChangeText={setFullName}
+                  onChangeText={(v) => guestCheck(() => setFullName(v))}
                   maxLength={50}
                 />
               </View>
@@ -373,22 +380,22 @@ export default function EditProfileScreen({ navigation }) {
                         backgroundColor: unitSystem === 'metric' ? theme.primary : theme.cardBackground 
                       }
                     ]}
-                    onPress={() => setUnitSystem('metric')}
+                    onPress={() => guestCheck(() => setUnitSystem('metric'))}
                   >
                     <Text style={[styles.unitButtonText, { color: unitSystem === 'metric' ? '#fff' : theme.text }]}>
                       Metric
                     </Text>
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity
                     style={[
                       styles.unitButton,
-                      { 
-                        borderColor: theme.border, 
-                        backgroundColor: unitSystem === 'imperial' ? theme.primary : theme.cardBackground 
+                      {
+                        borderColor: theme.border,
+                        backgroundColor: unitSystem === 'imperial' ? theme.primary : theme.cardBackground
                       }
                     ]}
-                    onPress={() => setUnitSystem('imperial')}
+                    onPress={() => guestCheck(() => setUnitSystem('imperial'))}
                   >
                     <Text style={[styles.unitButtonText, { color: unitSystem === 'imperial' ? '#fff' : theme.text }]}>
                       Imperial
