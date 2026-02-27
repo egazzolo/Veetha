@@ -5,7 +5,6 @@ import { useTheme } from '../utils/ThemeContext';
 import { useLanguage } from '../utils/LanguageContext';
 import { supabase } from '../utils/supabase';
 import { useUser } from '../utils/UserContext';
-import { blockIfGuest } from '../utils/guestBlock';
 import { logScreen, logEvent } from '../utils/analytics';
 
 const ACTIVITY_LEVELS = [
@@ -21,7 +20,12 @@ export default function GoalsPreferencesScreen({ navigation }) {
   const { t } = useLanguage();
   const { profile, refreshProfile, isGuest } = useUser();
 
-  const guestCheck = (action) => blockIfGuest(isGuest, navigation, action);
+  const showGuestPrompt = () => Alert.alert(
+    'Create an Account',
+    'Sign up to log meals, water, exercise, and more.',
+    [{ text: 'Cancel', style: 'cancel' }, { text: 'Sign Up', onPress: () => navigation.navigate('SignUp') }]
+  );
+  const guardGuest = (action) => { if (isGuest) { showGuestPrompt(); return; } action(); };
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -45,7 +49,21 @@ export default function GoalsPreferencesScreen({ navigation }) {
     loadGoals();
   }, []);
 
+  useEffect(() => {
+    if (isGuest) {
+      Alert.alert(
+        'Create an Account',
+        'Sign up to log meals, water, exercise, and more.',
+        [
+          { text: 'Cancel', style: 'cancel', onPress: () => navigation.goBack() },
+          { text: 'Sign Up', onPress: () => navigation.navigate('SignUp') },
+        ]
+      );
+    }
+  }, [isGuest]);
+
   const loadGoals = async () => {
+    if (isGuest) { setLoading(false); return; }
     try {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
@@ -85,7 +103,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
   };
 
   const handleRecalculate = async () => {
-    if (blockIfGuest(isGuest, navigation, () => {})) return;
+    if (isGuest) { showGuestPrompt(); return; }
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -156,7 +174,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
   };
 
   const handleSave = async () => {
-    if (blockIfGuest(isGuest, navigation, () => {})) return;
+    if (isGuest) { showGuestPrompt(); return; }
     // Validation
     const calories = parseFloat(dailyCalorieGoal);
     const protein = parseFloat(proteinGoal);
