@@ -51,8 +51,7 @@ export default function ScannerScreen({ navigation }) {
   // Swipe navigation (only when camera is idle, not during scan)
   const swipeGesture = useSwipeNavigation(navigation, 'Scanner', mode === 'barcode' && !scanned);
   // 🎨 ANIMATION: Photo tips fade out after 3 seconds
-  const photoTipsOpacity = useRef(new Animated.Value(1)).current;
-  const [showPhotoTips, setShowPhotoTips] = useState(true);
+  const photoTipsOpacity = useRef(new Animated.Value(0)).current;
 
   // Check number of Clarifai calls per month
   const checkMonthlyPhotoLimit = async (user) => {
@@ -159,12 +158,14 @@ export default function ScannerScreen({ navigation }) {
   
   // Check if tips should show and fade them out
   useEffect(() => {
+    let timer;
+
     const checkAndShowTips = async () => {
       if (mode === 'photo') {
         try {
           const { data: { user } } = await supabase.auth.getUser();
           if (!user) {
-            setShowPhotoTips(false);
+            photoTipsOpacity.setValue(0);
             return;
           }
 
@@ -179,7 +180,6 @@ export default function ScannerScreen({ navigation }) {
 
           if (tipsCount < 5) {
             // Show tips and increment counter
-            setShowPhotoTips(true);
             photoTipsOpacity.setValue(1);
 
             // Increment counter in database
@@ -190,33 +190,34 @@ export default function ScannerScreen({ navigation }) {
 
             console.log(`📸 Photo tips shown: ${tipsCount + 1}/5`);
 
-            // Fade out after 3 seconds
-            const timer = setTimeout(() => {
+            // Fade out after 3 seconds (no state update to avoid re-render)
+            timer = setTimeout(() => {
               Animated.timing(photoTipsOpacity, {
                 toValue: 0,
                 duration: 500,
                 useNativeDriver: true,
-              }).start(() => setShowPhotoTips(false));
+              }).start();
             }, 3000);
-
-            return () => clearTimeout(timer);
           } else {
             // Don't show tips anymore
             console.log('📸 Photo tips limit reached (5/5)');
-            setShowPhotoTips(false);
+            photoTipsOpacity.setValue(0);
           }
         } catch (error) {
           console.error('Error checking photo tips:', error);
-          setShowPhotoTips(false);
+          photoTipsOpacity.setValue(0);
         }
       } else if (mode === 'barcode') {
         // Reset when switching to barcode
-        setShowPhotoTips(false);
         photoTipsOpacity.setValue(0);
       }
     };
 
     checkAndShowTips();
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [mode]);
 
   // Start tutorial on first visit to Scanner
@@ -664,16 +665,17 @@ export default function ScannerScreen({ navigation }) {
               // Photo Mode
               <View style={styles.overlay}>
                 <View style={styles.photoFrame} />
-                {showPhotoTips && (
-                  <Animated.View style={[styles.photoTipsContainer, { opacity: photoTipsOpacity }]}>
-                    <Text style={styles.photoInstruction}>{t('scanner.photoInstruction')}</Text>
-                    <View style={styles.photoTips}>
-                      <Text style={styles.photoTip}>✓ {t('scanner.photoTip1')}</Text>
-                      <Text style={styles.photoTip}>✓ {t('scanner.photoTip2')}</Text>
-                      <Text style={styles.photoTip}>✓ {t('scanner.photoTip3')}</Text>
-                    </View>
-                  </Animated.View>
-                )}
+                <Animated.View
+                  style={[styles.photoTipsContainer, { opacity: photoTipsOpacity }]}
+                  pointerEvents="none"
+                >
+                  <Text style={styles.photoInstruction}>{t('scanner.photoInstruction')}</Text>
+                  <View style={styles.photoTips}>
+                    <Text style={styles.photoTip}>✓ {t('scanner.photoTip1')}</Text>
+                    <Text style={styles.photoTip}>✓ {t('scanner.photoTip2')}</Text>
+                    <Text style={styles.photoTip}>✓ {t('scanner.photoTip3')}</Text>
+                  </View>
+                </Animated.View>
               </View>
             )}
 
