@@ -661,7 +661,7 @@ export default function ScannerScreen({ navigation }) {
                 onPress={toggleMode}
               >
                 <Text style={styles.modeToggleText}>
-                  {mode === 'barcode' ? '📊' : '📷'}
+                  {mode === 'barcode' ? '📷' : '📊'}
                 </Text>
               </TouchableOpacity>
             </View>
