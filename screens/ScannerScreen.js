@@ -52,6 +52,8 @@ export default function ScannerScreen({ navigation }) {
   const swipeGesture = useSwipeNavigation(navigation, 'Scanner', mode === 'barcode' && !scanned);
   // 🎨 ANIMATION: Photo tips fade out after 3 seconds
   const photoTipsOpacity = useRef(new Animated.Value(0)).current;
+  // 🎨 ANIMATION: Instruction text fades out after 5 seconds
+  const instructionOpacity = useRef(new Animated.Value(1)).current;
 
   // Check number of Clarifai calls per month
   const checkMonthlyPhotoLimit = async (user) => {
@@ -218,6 +220,21 @@ export default function ScannerScreen({ navigation }) {
     return () => {
       if (timer) clearTimeout(timer);
     };
+  }, [mode]);
+
+  // Fade instruction text after 5 seconds (both modes)
+  useEffect(() => {
+    instructionOpacity.setValue(1);
+
+    const timer = setTimeout(() => {
+      Animated.timing(instructionOpacity, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }).start();
+    }, 5000);
+
+    return () => clearTimeout(timer);
   }, [mode]);
 
   // Start tutorial on first visit to Scanner
@@ -659,17 +676,21 @@ export default function ScannerScreen({ navigation }) {
                   <View style={[styles.corner, styles.bottomLeft]} />
                   <View style={[styles.corner, styles.bottomRight]} />
                 </View>
-                <Text style={styles.instruction}>{t('scanner.barcodeInstruction')}</Text>
+                <Animated.View style={{ opacity: instructionOpacity }} pointerEvents="none">
+                  <Text style={styles.instruction}>{t('scanner.barcodeInstruction')}</Text>
+                </Animated.View>
               </View>
             ) : (
               // Photo Mode
               <View style={styles.overlay}>
                 <View style={styles.photoFrame} />
+                <Animated.View style={{ opacity: instructionOpacity }} pointerEvents="none">
+                  <Text style={styles.instruction}>{t('scanner.photoInstruction')}</Text>
+                </Animated.View>
                 <Animated.View
                   style={[styles.photoTipsContainer, { opacity: photoTipsOpacity }]}
                   pointerEvents="none"
                 >
-                  <Text style={styles.photoInstruction}>{t('scanner.photoInstruction')}</Text>
                   <View style={styles.photoTips}>
                     <Text style={styles.photoTip}>✓ {t('scanner.photoTip1')}</Text>
                     <Text style={styles.photoTip}>✓ {t('scanner.photoTip2')}</Text>

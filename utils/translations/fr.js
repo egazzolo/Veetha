@@ -616,7 +616,7 @@ export default {
     noInternet: 'Pas de connexion internet. Vérifiez votre réseau.',
     serverError: 'Erreur serveur',
     scanFood: 'Prendre une photo',
-    photoInstruction: 'Centrez l\'aliment dans le cadre',
+    photoInstruction: 'Placez le produit dans le cadre',
     photoTip1: 'Bon éclairage',
     photoTip2: 'Fond uni',
     photoTip3: '⚠️ UN SEUL ARTICLE - Plusieurs articles échoueront',

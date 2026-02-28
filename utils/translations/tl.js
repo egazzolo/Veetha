@@ -616,7 +616,7 @@ export default {
     noInternet: 'Walang koneksyon sa internet. Pakisuri ang iyong network.',
     serverError: 'Server error',
     scanFood: 'Kumuha ng Larawan',
-    photoInstruction: 'I-center ang pagkain sa frame',
+    photoInstruction: 'Ilagay ang produkto sa loob ng frame',
     photoTip1: 'Magandang liwanag',
     photoTip2: 'Plain na background',
     photoTip3: '⚠️ ISANG ITEM LAMANG - Maraming item ay mabibigo',

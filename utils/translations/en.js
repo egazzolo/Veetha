@@ -616,7 +616,7 @@ export default {
     noInternet: 'No internet connection. Please check your network.',
     serverError: 'Server error',
     scanFood: 'Take Photo',
-    photoInstruction: 'Center food item in frame',
+    photoInstruction: 'Place product within frame',
     photoTip1: 'Good lighting',
     photoTip2: 'Plain background',
     photoTip3: '⚠️ ONE ITEM ONLY - Multiple items will fail',
