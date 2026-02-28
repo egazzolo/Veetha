@@ -651,20 +651,23 @@ export default function ScannerScreen({ navigation }) {
                 {mode === 'barcode' ? t('scanner.scanBarcode') : t('scanner.scanFood')}
               </Text>
 
-              {/* Mode Toggle Button */}
-              <TouchableOpacity
-                ref={modeToggleRef}
-                style={[
-                  styles.modeToggle,
-                  { backgroundColor: mode === 'barcode' ? '#4CAF50' : '#2196F3' }
-                ]}
-                onPress={toggleMode}
-              >
-                <Text style={styles.modeToggleText}>
-                  {mode === 'barcode' ? '📷' : '📊'}
-                </Text>
-              </TouchableOpacity>
+              {/* Spacer to balance header layout */}
+              <View style={{ width: 44 }} />
             </View>
+
+            {/* Mode Toggle Button - absolutely positioned top right */}
+            <TouchableOpacity
+              ref={modeToggleRef}
+              style={[
+                styles.modeToggle,
+                { backgroundColor: mode === 'barcode' ? '#4CAF50' : '#2196F3' }
+              ]}
+              onPress={toggleMode}
+            >
+              <Text style={styles.modeToggleText}>
+                {mode === 'barcode' ? '📷' : '📊'}
+              </Text>
+            </TouchableOpacity>
 
             {/* Scanning Overlay */}
             {mode === 'barcode' ? (
@@ -883,11 +886,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   modeToggle: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
     width: 44,
     height: 44,
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 100,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
