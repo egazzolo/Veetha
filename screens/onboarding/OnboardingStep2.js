@@ -13,6 +13,9 @@ export default function OnboardingStep2({ navigation }) {
   const [heightCm, setHeightCm] = useState('');
   const [weight, setWeight] = useState('');
   const [error, setError] = useState('');
+  const heightInchesRef = React.useRef(null);
+  const heightCmWeightRef = React.useRef(null);
+  const weightRef = React.useRef(null);
   const { t } = useLanguage(); 
 
   const handleContinue = () => {
@@ -136,41 +139,49 @@ export default function OnboardingStep2({ navigation }) {
               {unit === 'imperial' ? (
                 <View style={styles.heightRow}>
                   <View style={styles.heightInput}>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="5"
-                      placeholderTextColor="#999" 
-                      value={heightFeet}
-                      onChangeText={setHeightFeet}
-                      keyboardType="number-pad"
-                      maxLength={1}
-                    />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="5"
+                    placeholderTextColor="#999"
+                    value={heightFeet}
+                    onChangeText={setHeightFeet}
+                    keyboardType="number-pad"
+                    maxLength={1}
+                    returnKeyType="next"
+                    onSubmitEditing={() => heightInchesRef.current?.focus()}
+                  />
                     <Text style={styles.unitLabel}>ft</Text>
                   </View>
                   <View style={styles.heightInput}>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="7"
-                      placeholderTextColor="#999" 
-                      value={heightInches}
-                      onChangeText={setHeightInches}
-                      keyboardType="number-pad"
-                      maxLength={2}
-                    />
+                  <TextInput
+                    ref={heightInchesRef}
+                    style={styles.input}
+                    placeholder="7"
+                    placeholderTextColor="#999"
+                    value={heightInches}
+                    onChangeText={setHeightInches}
+                    keyboardType="number-pad"
+                    maxLength={2}
+                    returnKeyType="next"
+                    onSubmitEditing={() => weightRef.current?.focus()}
+                  />
                     <Text style={styles.unitLabel}>in</Text>
                   </View>
                 </View>
               ) : (
                 <View style={styles.singleInput}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="170"
-                    placeholderTextColor="#999" 
-                    value={heightCm}
-                    onChangeText={setHeightCm}
-                    keyboardType="number-pad"
-                    maxLength={3}
-                  />
+                <TextInput
+                  ref={heightCmWeightRef}
+                  style={styles.input}
+                  placeholder="170"
+                  placeholderTextColor="#999"
+                  value={heightCm}
+                  onChangeText={setHeightCm}
+                  keyboardType="number-pad"
+                  maxLength={3}
+                  returnKeyType="next"
+                  onSubmitEditing={() => weightRef.current?.focus()}
+                />
                   <Text style={styles.unitLabel}>cm</Text>
                 </View>
               )}
@@ -180,14 +191,17 @@ export default function OnboardingStep2({ navigation }) {
             <View style={styles.section}>
               <Text style={styles.label}>{t('onboarding.weight')}</Text>
               <View style={styles.singleInput}>
-                <TextInput
-                  style={styles.input}
-                  placeholder={unit === 'imperial' ? '165' : '75'}
-                  placeholderTextColor="#999" 
-                  value={weight}
-                  onChangeText={setWeight}
-                  keyboardType="decimal-pad"
-                />
+              <TextInput
+                ref={weightRef}
+                style={styles.input}
+                placeholder={unit === 'imperial' ? '165' : '75'}
+                placeholderTextColor="#999"
+                value={weight}
+                onChangeText={setWeight}
+                keyboardType="decimal-pad"
+                returnKeyType="done"
+                onSubmitEditing={handleContinue}
+              />
                 <Text style={styles.unitLabel}>{unit === 'imperial' ? 'lbs' : 'kg'}</Text>
               </View>
             </View>

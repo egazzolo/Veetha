@@ -142,6 +142,10 @@ export default {
     extremelyActive: 'Extremadamente Activo',
     extremelyActiveDesc: 'Trabajo físico + ejercicio diario',
     selectActivityLevel: 'Por favor selecciona tu nivel de actividad',
+    statLabel: 'más peso perdido',
+    quote: '"Las personas que registran su alimentación pierden el doble de peso que las que no lo hacen."',
+    source: 'Estudio Kaiser Permanente 2008 — American Journal of Preventive Medicine. 1,700 participantes. Quienes llevaron un diario alimenticio perdieron el doble de peso.',
+    message: 'Ya estás haciendo lo más importante.',
     
     // Step 5 - Dietary Restrictions
     step5Title: '¿Alguna necesidad dietética?',

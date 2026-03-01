@@ -34,12 +34,14 @@ export default function MealsList({
         const { x, y, width, height } = event.nativeEvent.layout;
         if (mealsListRef.current && mealsListRef.current.measureInWindow) {
           mealsListRef.current.measureInWindow((wx, wy, w, h) => {
-            mealsListRef.current.tutorialCoords = {
-              top: wy,
-              left: wx,
-              width: w,
-              height: h,
-              borderRadius: 16
+            if (mealsListRef.current) {
+              mealsListRef.current.tutorialCoords = {
+                top: wy,
+                left: wx,
+                width: w,
+                height: h,
+                borderRadius: 16
+              };
             };
           });
         }

@@ -142,6 +142,10 @@ export default {
     extremelyActive: 'Extremely Active',
     extremelyActiveDesc: 'Physical job + daily exercise',
     selectActivityLevel: 'Please select your activity level',
+    statLabel: 'more weight lost',
+    quote: '"People who track their food lose 2x more weight than those who don\'t."',
+    source: '2008 Kaiser Permanente study — American Journal of Preventive Medicine. 1,700 participants. Those who kept daily food diaries lost twice as much weight.',
+    message: 'You\'re already doing the most important thing.',
     
     // Step 5 - Dietary Restrictions
     step5Title: 'Any dietary needs?',

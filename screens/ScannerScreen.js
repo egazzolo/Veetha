@@ -629,6 +629,7 @@ export default function ScannerScreen({ navigation }) {
         <View style={styles.container}>
           {/* Camera View */}
           <CameraView
+            key={mode}
             ref={cameraRef}
             style={styles.camera}
             facing="back"
@@ -655,6 +656,40 @@ export default function ScannerScreen({ navigation }) {
               <View style={{ width: 44 }} />
             </View>
 
+            {/* Scanning Overlay */}
+            <View key={mode} style={{ flex: 1 }}>
+              {mode === 'barcode' ? (
+                <View style={styles.overlay}>
+                  <View style={styles.focusFrame}>
+                    <View style={[styles.corner, styles.topLeft]} />
+                    <View style={[styles.corner, styles.topRight]} />
+                    <View style={[styles.corner, styles.bottomLeft]} />
+                    <View style={[styles.corner, styles.bottomRight]} />
+                  </View>
+                  <Animated.View style={{ opacity: instructionOpacity }} pointerEvents="none">
+                    <Text style={styles.instruction}>{t('scanner.barcodeInstruction')}</Text>
+                  </Animated.View>
+                </View>
+              ) : (
+                <View style={styles.overlay}>
+                  <View style={styles.photoFrame} />
+                  <Animated.View style={{ opacity: instructionOpacity }} pointerEvents="none">
+                    <Text style={styles.instruction}>{t('scanner.photoInstruction')}</Text>
+                  </Animated.View>
+                  <Animated.View
+                    style={[styles.photoTipsContainer, { opacity: photoTipsOpacity }]}
+                    pointerEvents="none"
+                  >
+                    <View style={styles.photoTips}>
+                      <Text style={styles.photoTip}>✓ {t('scanner.photoTip1')}</Text>
+                      <Text style={styles.photoTip}>✓ {t('scanner.photoTip2')}</Text>
+                      <Text style={styles.photoTip}>✓ {t('scanner.photoTip3')}</Text>
+                    </View>
+                  </Animated.View>
+                </View>
+              )}
+            </View>
+
             {/* Mode Toggle Button - absolutely positioned top right */}
             <TouchableOpacity
               ref={modeToggleRef}
@@ -668,40 +703,6 @@ export default function ScannerScreen({ navigation }) {
                 {mode === 'barcode' ? '📷' : '📊'}
               </Text>
             </TouchableOpacity>
-
-            {/* Scanning Overlay */}
-            {mode === 'barcode' ? (
-              // Barcode Mode
-              <View style={styles.overlay}>
-                <View style={styles.focusFrame}>
-                  <View style={[styles.corner, styles.topLeft]} />
-                  <View style={[styles.corner, styles.topRight]} />
-                  <View style={[styles.corner, styles.bottomLeft]} />
-                  <View style={[styles.corner, styles.bottomRight]} />
-                </View>
-                <Animated.View style={{ opacity: instructionOpacity }} pointerEvents="none">
-                  <Text style={styles.instruction}>{t('scanner.barcodeInstruction')}</Text>
-                </Animated.View>
-              </View>
-            ) : (
-              // Photo Mode
-              <View style={styles.overlay}>
-                <View style={styles.photoFrame} />
-                <Animated.View style={{ opacity: instructionOpacity }} pointerEvents="none">
-                  <Text style={styles.instruction}>{t('scanner.photoInstruction')}</Text>
-                </Animated.View>
-                <Animated.View
-                  style={[styles.photoTipsContainer, { opacity: photoTipsOpacity }]}
-                  pointerEvents="none"
-                >
-                  <View style={styles.photoTips}>
-                    <Text style={styles.photoTip}>✓ {t('scanner.photoTip1')}</Text>
-                    <Text style={styles.photoTip}>✓ {t('scanner.photoTip2')}</Text>
-                    <Text style={styles.photoTip}>✓ {t('scanner.photoTip3')}</Text>
-                  </View>
-                </Animated.View>
-              </View>
-            )}
 
             {/* Bottom Buttons */}
             <View style={styles.bottomControls}>

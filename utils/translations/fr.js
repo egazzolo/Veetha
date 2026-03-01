@@ -142,6 +142,10 @@ export default {
     extremelyActive: 'Extrêmement actif',
     extremelyActiveDesc: 'Travail physique + exercice quotidien',
     selectActivityLevel: 'Veuillez sélectionner votre niveau d\'activité',
+    statLabel: 'plus de poids perdu',
+    quote: '"Les personnes qui suivent leur alimentation perdent 2x plus de poids que celles qui ne le font pas."',
+    source: 'Étude Kaiser Permanente 2008 — American Journal of Preventive Medicine. 1 700 participants. Ceux qui tenaient un journal alimentaire ont perdu deux fois plus de poids.',
+    message: 'Vous faites déjà la chose la plus importante.',
     
     // Step 5 - Dietary Restrictions
     step5Title: 'Des besoins alimentaires?',

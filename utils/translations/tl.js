@@ -142,6 +142,10 @@ export default {
     extremelyActive: 'Sobrang Aktibo',
     extremelyActiveDesc: 'Physical na trabaho + araw-arawang exercise',
     selectActivityLevel: 'Pakiusap na piliin ang iyong activity level',
+    statLabel: 'mas maraming timbang ang nawala',
+    quote: '"Ang mga taong nagtatala ng kanilang pagkain ay nagbabawas ng 2x mas maraming timbang kaysa sa mga hindi."',
+    source: 'Pag-aaral ng Kaiser Permanente 2008 — American Journal of Preventive Medicine. 1,700 kalahok. Ang mga nagpanatili ng talaarawan ng pagkain ay nagbawas ng doble ng timbang.',
+    message: 'Ginagawa mo na ang pinakamahalagang bagay.',
     
     // Step 5 - Dietary Restrictions
     step5Title: 'May mga pangangailangan sa pagkain?',

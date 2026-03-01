@@ -16,6 +16,7 @@ export default function EditMealScreen({ route, navigation }) {
   const [carbs, setCarbs] = useState(String(meal.carbs ?? ''));
   const [fat, setFat] = useState(String(meal.fat ?? ''));
   const [saving, setSaving] = useState(false);
+  const [servingGrams, setServingGrams] = useState(String(meal.serving_grams ?? ''));
 
   const handleSave = async () => {
     if (!productName.trim() || !calories) {

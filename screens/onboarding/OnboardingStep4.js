@@ -63,7 +63,7 @@ export default function OnboardingStep4({ navigation }) {
     console.log('✅ Step 4 saved:', { activityLevel });
 
     // Navigate to next step
-    navigation.navigate('OnboardingStep5');
+    navigation.navigate('OnboardingStep4b');
   };
 
   return (

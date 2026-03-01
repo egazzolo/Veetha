@@ -19,6 +19,7 @@ import OnboardingStep1b from './screens/onboarding/OnboardingStep1b';
 import OnboardingStep2 from './screens/onboarding/OnboardingStep2';
 import OnboardingStep3 from './screens/onboarding/OnboardingStep3';
 import OnboardingStep4 from './screens/onboarding/OnboardingStep4';
+import OnboardingStep4b from './screens/onboarding/OnboardingStep4b';
 import OnboardingStep5 from './screens/onboarding/OnboardingStep5';
 import OnboardingStep6 from './screens/onboarding/OnboardingStep6';
 import OnboardingStep7 from './screens/onboarding/OnboardingStep7';
@@ -202,6 +203,7 @@ function AppNavigator() {
           <Stack.Screen name="OnboardingStep2" component={OnboardingStep2} />
           <Stack.Screen name="OnboardingStep3" component={OnboardingStep3} />
           <Stack.Screen name="OnboardingStep4" component={OnboardingStep4} />
+          <Stack.Screen name="OnboardingStep4b" component={OnboardingStep4b} />
           <Stack.Screen name="OnboardingStep5" component={OnboardingStep5} />
           <Stack.Screen name="OnboardingStep6" component={OnboardingStep6} />
           <Stack.Screen name="OnboardingStep7" component={OnboardingStep7} />
