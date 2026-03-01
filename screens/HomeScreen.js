@@ -1490,7 +1490,7 @@ export default function HomeScreen({ navigation }) {
 
                     <TouchableOpacity 
                       style={styles.dateLabel} 
-                      onPress={() => tutorialCompleted && setShowCalendar(true)}
+                      onPress={() => setShowCalendar(true)}
                       disabled={false}
                     >
                       <Text style={[styles.dateLabelText, { color: theme.text }]}>{getDateLabel()}</Text>
