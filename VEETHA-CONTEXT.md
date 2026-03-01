@@ -14,7 +14,7 @@
 
 **Core Features:**
 1. Barcode scanning (OpenFoodFacts API - unlimited)
-2. AI photo recognition (Clarifai - 900/month free)
+2. AI photo recognition (Google Cloud Vision - 950/month)
 3. Manual food entry
 4. Daily calorie/macro tracking
 5. Exercise logging with calorie burn
@@ -46,7 +46,7 @@
 
 ### **APIs:**
 - OpenFoodFacts (barcode scanning - unlimited)
-- Clarifai Food Recognition (AI photo - 900/month free)
+- Google Cloud Vision (AI photo recognition - 950/month)
 - USDA FoodData Central (nutrition lookup - unlimited)
 
 ### **Key Libraries:**
@@ -131,7 +131,7 @@ veetha/
     ├── useSwipeNavigation.js      # Swipe gesture navigation
     ├── analytics.js               # Event logging
     ├── foodDatabase.js            # USDA + local food search
-    ├── clarifaiApi.js             # AI photo recognition
+    ├── visionApi.js               # AI photo recognition (Google Cloud Vision)
     └── translations/
         ├── en.js                  # English (default)
         ├── es.js                  # Spanish
@@ -274,12 +274,12 @@ CREATE INDEX idx_meals_product ON meals(product_id);
 ---
 
 #### **4. api_tracking**
-Logs all external API calls (Clarifai, OpenFoodFacts, USDA).
+Logs all external API calls (Google Vision, OpenFoodFacts, USDA).
 ```sql
 CREATE TABLE api_tracking (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES auth.users(id),  -- Nullable for anonymous
-  service TEXT NOT NULL,  -- 'clarifai', 'openfoodfacts', 'usda'
+  service TEXT NOT NULL,  -- 'google_vision', 'openfoodfacts', 'usda'
   type TEXT NOT NULL,  -- 'food_recognition', 'barcode_scan', 'nutrition_lookup'
   success BOOL NOT NULL,
   error_message TEXT,
@@ -512,7 +512,7 @@ useEffect(() => {
 
 | Service | Free Tier | App Limit | Check |
 |---------|-----------|-----------|-------|
-| Clarifai | 1,000/mo | 900/mo | Monthly |
+| Google Cloud Vision | 1,000/mo | 950/mo | Monthly |
 | OpenFoodFacts | Unlimited | None | None |
 | USDA | Unlimited | None | None |
 
@@ -575,7 +575,7 @@ useEffect(() => {
 1. Home → Tap scanner → Toggle to photo mode
 2. Photo tips show (first 5 times)
 3. Check monthly limit (900/mo)
-4. Capture food photo → Clarifai API
+4. Capture food photo → Google Cloud Vision API
 5. If confidence < 60% → "Low confidence, retake?"
 6. If >= 60% → Search nutrition (USDA/local)
 7. ResultScreen with photo, macro badges
@@ -744,7 +744,7 @@ date.toLocaleDateString(LOCALE_MAP[language] || 'en-US');
 5. Configure Expo App Store metadata
 6. Add app privacy policy
 7. Test email verification flow end-to-end
-8. Verify Clarifai API key is production key
+8. Verify Google Cloud Vision API key is production key
 9. Set up crash reporting (Sentry)
 10. Test on real devices
 11. Verify all translations are complete
@@ -788,7 +788,7 @@ date.toLocaleDateString(LOCALE_MAP[language] || 'en-US');
 ## BUG TRACKER
 
 ### **High Priority:**
-1. Clarifai limit exhausted (triple counting) → **FIX IN PROGRESS** (delete api_calls/api_calls_monthly tables)
+1. ~~Clarifai limit exhausted (triple counting)~~ → **RESOLVED** (switched to Google Cloud Vision)
 2. Stale `tutorial_loading` flag → **IDENTIFIED** — Lines 926, 942, 997, 1009 in HomeScreen.js call `setCheckingTutorial(false)` without `AsyncStorage.removeItem('tutorial_loading')`
 
 ### **Medium Priority:**
