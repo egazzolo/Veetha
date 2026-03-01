@@ -619,7 +619,6 @@ export default function ScannerScreen({ navigation }) {
         <View style={styles.container}>
           {/* Camera View */}
           <CameraView
-            key={mode}
             ref={cameraRef}
             style={styles.camera}
             facing="back"

@@ -28,6 +28,13 @@ export const TutorialProvider = ({ children }) => {
   const checkTutorialStatus = async () => {
     try {
 
+      // ✅ Guests skip the tutorial entirely, so treat as completed
+      const userMode = await AsyncStorage.getItem('veetha_user_mode');
+      if (userMode === 'guest') {
+        setTutorialCompleted(true);
+        return;
+      }
+
       // ✅ DEVICE-LEVEL tutorial check (works for guest + logged users)
 
       const localFlag = await AsyncStorage.getItem('tutorial_completed_home');
