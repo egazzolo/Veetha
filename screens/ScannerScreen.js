@@ -15,13 +15,9 @@ import { useSwipeNavigation } from '../utils/useSwipeNavigation';
 import { searchFood } from '../utils/foodDatabase';
 import { useUser, UserContext } from '../utils/UserContext';
 import { useUserMode } from '../utils/UserModeContext';
-import { analyzePhoto as analyzeClarifai, imageUriToBase64 as clarifaiToBase64 } from '../utils/clarifaiApi';
-import { analyzePhoto as analyzeGoogle, imageUriToBase64 as googleToBase64 } from '../utils/visionApi';
+import { analyzePhoto, imageUriToBase64 } from '../utils/visionApi';
 
 const DAILY_PHOTO_LIMIT = 30;
-
-// 🔄 API TOGGLE - Switch between Clarifai and Google Vision
-const USE_GOOGLE_VISION = false; // ← Change to true when $4.99 runs out
 
 export default function ScannerScreen({ navigation }) {
   const { theme } = useTheme();
@@ -55,14 +51,14 @@ export default function ScannerScreen({ navigation }) {
   // 🎨 ANIMATION: Instruction text fades out after 5 seconds
   const instructionOpacity = useRef(new Animated.Value(1)).current;
 
-  // Check number of Clarifai calls per month
+  // Check number of Google Vision calls per month
   const checkMonthlyPhotoLimit = async (user) => {
     const now = new Date();
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     firstDayOfMonth.setHours(0, 0, 0, 0);
-    
-    const apiName = USE_GOOGLE_VISION ? 'google_vision' : 'clarifai';
-    const monthlyLimit = USE_GOOGLE_VISION ? 950 : 900; // Google: 950, Clarifai: 900
+
+    const apiName = 'google_vision';
+    const monthlyLimit = 950;
 
     /*const { data: monthlyPhotos, error } = await supabase
       .from('api_tracking')
@@ -372,18 +368,16 @@ export default function ScannerScreen({ navigation }) {
     }
   };
 
-  // Analyze food photo with AI (Clarifai or Google Vision)
+  // Analyze food photo with Google Vision
   const analyzeFoodPhoto = async (photoUri) => {
     try {
       setLoading(true);
-      console.log(`📸 Analyzing food photo with ${USE_GOOGLE_VISION ? 'Google Vision' : 'Clarifai'}...`);
+      console.log('📸 Analyzing food photo with Google Vision...');
 
       // Convert image to base64
-      const imageToBase64 = USE_GOOGLE_VISION ? googleToBase64 : clarifaiToBase64;
-      const base64 = await imageToBase64(photoUri);
-      
-      // Analyze with selected API
-      const analyzePhoto = USE_GOOGLE_VISION ? analyzeGoogle : analyzeClarifai;
+      const base64 = await imageUriToBase64(photoUri);
+
+      // Analyze with Google Vision
       const result = await analyzePhoto(base64);
       
       const foodName = result.foodName;
@@ -393,8 +387,6 @@ export default function ScannerScreen({ navigation }) {
 
       // ✅ CONFIDENCE THRESHOLD CHECK
       if (confidence < 60) {
-        const apiName = USE_GOOGLE_VISION ? 'google_vision' : 'clarifai';
-
         Alert.alert(
           t('scanner.lowConfidence'),
           t('scanner.lowConfidenceMessage').replace('{food}', foodName).replace('{confidence}', confidence),
@@ -439,8 +431,6 @@ export default function ScannerScreen({ navigation }) {
   // Proceed with food after confidence check
   const proceedWithFood = async (foodName, confidence, photoUri) => {
     try {
-      const apiName = USE_GOOGLE_VISION ? 'google_vision' : 'clarifai';
-
       console.log('🔍 Searching for nutrition data...');
 
       // ✅ SEARCH FOR NUTRITION DATA (local DB + USDA)
@@ -532,7 +522,7 @@ export default function ScannerScreen({ navigation }) {
           .from('api_tracking')
           .select('id')
           .eq('user_id', user.id)
-          .eq('service', 'clarifai')
+          .eq('service', 'google_vision')
           .eq('type', 'food_recognition')
           .gte('created_at', today + 'T00:00:00')
           .lte('created_at', today + 'T23:59:59');
