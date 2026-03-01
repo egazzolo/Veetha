@@ -5,7 +5,7 @@
 
 import { supabase } from './supabase';
 
-const GOOGLE_VISION_API_KEY = '' // TODO: move to Supabase Edge Function before enabling
+const GOOGLE_VISION_API_KEY = 'AIzaSyCCW9sihgyJGcQdqENbX2viFRKIqBFDP2U'
 
 const GOOGLE_VISION_URL = `https://vision.googleapis.com/v1/images:annotate?key=${GOOGLE_VISION_API_KEY}`;
 
