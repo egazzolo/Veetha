@@ -306,44 +306,6 @@ export default function SignUpScreen({ navigation }) {
     }
   };
 
-  const handleFacebookSignUp = async () => {
-    setLoading(true);
-    setError('');
-
-    try {
-      const redirectTo = AuthSession.makeRedirectUri({ scheme: 'veetha' });
-
-      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider: 'facebook',
-        options: {
-          redirectTo,
-          skipBrowserRedirect: true,
-        },
-      });
-
-      if (oauthError) throw oauthError;
-
-      if (data?.url) {
-        const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-
-        if (result.type === 'success') {
-          const { data: sessionData, error: sessionError } = await createSessionFromUrl(result.url);
-          if (sessionError) throw sessionError;
-
-          if (sessionData?.session?.user) {
-            await setUserMode('authenticated');
-            await handlePostSignUp(sessionData.session.user);
-          }
-        }
-      }
-    } catch (err) {
-      console.error('Facebook sign-up error:', err);
-      setError(err.message || t('signup.signupFailed'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Determine if button should be disabled
   const isButtonDisabled = loading || emailExists || checkingEmail || !agreeToTerms;
 
@@ -510,20 +472,6 @@ export default function SignUpScreen({ navigation }) {
                   <Path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
                 </Svg>
                 <Text style={styles.googleButtonText}>{t('login.continueWithGoogle')}</Text>
-              </View>
-            </TouchableOpacity>
-
-            {/* Facebook Button */}
-            <TouchableOpacity
-              style={styles.facebookButton}
-              onPress={handleFacebookSignUp}
-              disabled={loading}
-            >
-              <View style={styles.socialButtonInner}>
-                <View style={styles.facebookIconContainer}>
-                  <Text style={styles.facebookIconText}>f</Text>
-                </View>
-                <Text style={styles.facebookButtonText}>{t('login.continueWithFacebook')}</Text>
               </View>
             </TouchableOpacity>
 
@@ -724,37 +672,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 12,
   },
-  facebookButton: {
-    backgroundColor: '#1877F2',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 4,
-    marginBottom: 12,
-  },
-  facebookButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 12,
-  },
   socialButtonInner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  facebookIconContainer: {
-    width: 20,
-    height: 20,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  facebookIconText: {
-    color: '#1877F2',
-    fontSize: 14,
-    fontWeight: 'bold',
-    lineHeight: 20,
   },
   footer: {
     flexDirection: 'row',

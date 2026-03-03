@@ -62,12 +62,12 @@ export default function LoginScreen({ navigation }) {
           .from('profiles')
           .select('display_name, full_name, daily_calorie_goal')
           .eq('id', data.user.id)
-          .single();
+          .maybeSingle();
 
         const userName = profileData?.display_name ||
-                        profileData?.full_name ||
-                        data.user.email?.split('@')[0] ||
-                        'User';
+                profileData?.full_name ||
+                data.user.email?.split('@')[0] ||
+                'User';
 
         // Set authenticated mode
         await setUserMode('authenticated');
@@ -77,6 +77,12 @@ export default function LoginScreen({ navigation }) {
 
         // Clear greeting timestamp so it shows on login
         await AsyncStorage.removeItem('last_app_open');
+
+        if (profileData?.daily_calorie_goal) {
+          navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+        } else {
+          navigation.reset({ index: 0, routes: [{ name: 'OnboardingStep1' }] });
+        }
 
         // Navigate based on onboarding status
         if (profileData?.daily_calorie_goal) {
@@ -138,6 +144,7 @@ export default function LoginScreen({ navigation }) {
 
     try {
       const redirectTo = AuthSession.makeRedirectUri({ scheme: 'veetha' });
+      console.log('📌 Redirect URI to add to Supabase:', redirectTo);
 
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -150,58 +157,33 @@ export default function LoginScreen({ navigation }) {
       if (oauthError) throw oauthError;
 
       if (data?.url) {
+
         const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+        console.log('🌐 Full result:', JSON.stringify(result));
 
         if (result.type === 'success') {
+          console.log('✅ Browser returned success');
+          console.log('🔗 URL:', result.url);
+          
           const { data: sessionData, error: sessionError } = await createSessionFromUrl(result.url);
+          console.log('📊 Session data:', JSON.stringify(sessionData));
+          console.log('❌ Session error:', sessionError);
+          
           if (sessionError) throw sessionError;
 
           if (sessionData?.session?.user) {
+            console.log('👤 User found, navigating...');
             await setUserMode('authenticated');
             await handlePostLogin(sessionData.session.user);
+          } else {
+            console.log('❌ No user in session data');
           }
+        } else {
+          console.log('❌ Browser result type:', result.type);
         }
       }
     } catch (err) {
       console.error('Google login error:', err);
-      setError(err.message || t('login.loginFailed'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleFacebookLogin = async () => {
-    setLoading(true);
-    setError('');
-
-    try {
-      const redirectTo = AuthSession.makeRedirectUri({ scheme: 'veetha' });
-
-      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider: 'facebook',
-        options: {
-          redirectTo,
-          skipBrowserRedirect: true,
-        },
-      });
-
-      if (oauthError) throw oauthError;
-
-      if (data?.url) {
-        const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-
-        if (result.type === 'success') {
-          const { data: sessionData, error: sessionError } = await createSessionFromUrl(result.url);
-          if (sessionError) throw sessionError;
-
-          if (sessionData?.session?.user) {
-            await setUserMode('authenticated');
-            await handlePostLogin(sessionData.session.user);
-          }
-        }
-      }
-    } catch (err) {
-      console.error('Facebook login error:', err);
       setError(err.message || t('login.loginFailed'));
     } finally {
       setLoading(false);
@@ -308,20 +290,6 @@ export default function LoginScreen({ navigation }) {
                   <Path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
                 </Svg>
                 <Text style={styles.googleButtonText}>{t('login.continueWithGoogle')}</Text>
-              </View>
-            </TouchableOpacity>
-
-            {/* Facebook Button */}
-            <TouchableOpacity
-              style={styles.facebookButton}
-              onPress={handleFacebookLogin}
-              disabled={loading}
-            >
-              <View style={styles.socialButtonInner}>
-                <View style={styles.facebookIconContainer}>
-                  <Text style={styles.facebookIconText}>f</Text>
-                </View>
-                <Text style={styles.facebookButtonText}>{t('login.continueWithFacebook')}</Text>
               </View>
             </TouchableOpacity>
 
@@ -462,37 +430,10 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     fontFamily: Platform.OS === 'ios' ? 'Helvetica Neue' : 'Roboto',
   },
-  facebookButton: {
-    backgroundColor: '#1877F2',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 4,
-    marginBottom: 12,
-  },
-  facebookButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 12,
-  },
   socialButtonInner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  facebookIconContainer: {
-    width: 20,
-    height: 20,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  facebookIconText: {
-    color: '#1877F2',
-    fontSize: 14,
-    fontWeight: 'bold',
-    lineHeight: 20,
   },
   footer: {
     flexDirection: 'row',
