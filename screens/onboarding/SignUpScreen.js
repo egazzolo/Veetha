@@ -125,13 +125,12 @@ export default function SignUpScreen({ navigation }) {
 
     setLoading(true);
 
-    // Capture guest session before it's replaced
-    const { data: { session: guestSession } } = await supabase.auth.getSession();
-    const guestUserId = guestSession?.user?.is_anonymous ? guestSession.user.id : null;
-    const guestToken = guestSession?.access_token || null;
-    console.log('👤 Guest user to delete after signup:', guestUserId);
-
     try {
+      // Capture guest session before it's replaced
+      const { data: { session: guestSession } } = await supabase.auth.getSession();
+      const guestUserId = guestSession?.user?.is_anonymous ? guestSession.user.id : null;
+      const guestToken = guestSession?.access_token || null;
+      console.log('👤 Guest user to delete after signup:', guestUserId);
       console.log('🚀 Creating account for:', email.trim().toLowerCase());
 
       // Create the user account
@@ -274,7 +273,7 @@ export default function SignUpScreen({ navigation }) {
     setError('');
 
     try {
-      const redirectTo = AuthSession.makeRedirectUri();
+      const redirectTo = AuthSession.makeRedirectUri({ scheme: 'veetha' });
 
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -312,7 +311,7 @@ export default function SignUpScreen({ navigation }) {
     setError('');
 
     try {
-      const redirectTo = AuthSession.makeRedirectUri();
+      const redirectTo = AuthSession.makeRedirectUri({ scheme: 'veetha' });
 
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'facebook',

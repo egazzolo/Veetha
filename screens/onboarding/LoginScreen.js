@@ -137,7 +137,7 @@ export default function LoginScreen({ navigation }) {
     setError('');
 
     try {
-      const redirectTo = AuthSession.makeRedirectUri();
+      const redirectTo = AuthSession.makeRedirectUri({ scheme: 'veetha' });
 
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -175,7 +175,7 @@ export default function LoginScreen({ navigation }) {
     setError('');
 
     try {
-      const redirectTo = AuthSession.makeRedirectUri();
+      const redirectTo = AuthSession.makeRedirectUri({ scheme: 'veetha' });
 
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'facebook',
