@@ -26,6 +26,22 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: false,
   },
 });
+// Extract access_token & refresh_token from an OAuth redirect URL and set the session
+export async function createSessionFromUrl(url) {
+  const fragmentIndex = url.indexOf('#');
+  if (fragmentIndex === -1) return { data: null, error: new Error('No fragment in URL') };
+
+  const params = new URLSearchParams(url.substring(fragmentIndex + 1));
+  const access_token = params.get('access_token');
+  const refresh_token = params.get('refresh_token');
+
+  if (!access_token || !refresh_token) {
+    return { data: null, error: new Error('Missing tokens in URL') };
+  }
+
+  return await supabase.auth.setSession({ access_token, refresh_token });
+}
+
 // ✅ HARD RESET for corrupted Supabase auth session
 export async function resetSupabaseAuthStorage() {
   try {

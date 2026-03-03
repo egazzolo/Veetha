@@ -1,12 +1,13 @@
 //import * as Updates from 'expo-updates';
-import React, { useState, useEffect } from 'react';
-import * as Linking from 'expo-linking';
+import React, { useState, useEffect, useRef } from 'react';
 //import Purchases from 'react-native-purchases';
 import { View, ActivityIndicator, Platform, StatusBar } from 'react-native';
-import { NavigationContainer, DefaultTheme, DarkTheme, createNavigationContainerRef } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
 import { useTheme } from './utils/ThemeContext';
 import { LayoutProvider } from './utils/LayoutContext';
 import { TutorialProvider } from './utils/TutorialContext';
@@ -59,7 +60,9 @@ import { LanguageProvider } from './utils/LanguageContext';
 import { GreetingProvider } from './utils/GreetingContext';
 import { UserProvider } from './utils/UserContext';
 import { UserModeProvider, useUserMode } from './utils/UserModeContext';
-import { supabase } from './utils/supabase';
+import { supabase, createSessionFromUrl } from './utils/supabase';
+
+WebBrowser.maybeCompleteAuthSession();
 
 const Stack = createNativeStackNavigator();
 
@@ -69,80 +72,56 @@ function AppNavigator() {
   const { userMode, setUserMode } = useUserMode();
   const [initialRoute, setInitialRoute] = useState(null);
   const [loading, setLoading] = useState(true);
-  const navigationRef = React.useRef(null);
+  const navigationRef = useRef(null);
+  const isInitialLoad = useRef(true);
 
   useEffect(() => {
     checkAuthState();
   }, []);
 
+  // Listen for OAuth callbacks while the app is already running
   useEffect(() => {
-    // Handle deep link when app is already open
     const subscription = Linking.addEventListener('url', async ({ url }) => {
-      console.log('🔗 Deep link received in calo.js:', url);
-      if (url && url.includes('veetha://')) {
-        try {
-          const { data, error } = await supabase.auth.exchangeCodeForSession(url);
-          if (error) {
-            // Try getting session directly
-            const { data: sessionData } = await supabase.auth.getSession();
-            if (sessionData?.session?.user) {
-              await setUserMode('authenticated');
-            }
-          } else if (data?.session?.user) {
-            await setUserMode('authenticated');
-          }
-        } catch (e) {
-          console.error('Deep link session error:', e);
-        }
+      if (url && (url.includes('access_token') || url.includes('refresh_token'))) {
+        console.log('🔗 Deep link received while app is running:', url);
+        await createSessionFromUrl(url);
       }
     });
-
-    // Handle deep link when app is launched from closed state
-    Linking.getInitialURL().then(async (url) => {
-      console.log('🔗 Initial URL:', url);
-      if (url && url.includes('veetha://')) {
-        try {
-          const { data, error } = await supabase.auth.exchangeCodeForSession(url);
-          if (data?.session?.user) {
-            await setUserMode('authenticated');
-          }
-        } catch (e) {
-          console.error('Initial URL session error:', e);
-        }
-      }
-    });
-
     return () => subscription.remove();
   }, []);
 
-  const checkAuthState = async () => {
+  // React to auth state changes (e.g. after OAuth session is set)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session && !isInitialLoad.current) {
+          console.log('🔐 Auth state changed: SIGNED_IN (OAuth callback)');
+          await setUserMode('authenticated');
 
-    // Listen for auth changes (handles OAuth callbacks)
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔐 Auth state changed:', event);
-      if (event === 'SIGNED_IN' && session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('daily_calorie_goal')
-          .eq('id', session.user.id)
-          .maybeSingle();
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('daily_calorie_goal')
+            .eq('id', session.user.id)
+            .maybeSingle();
 
-        await setUserMode('authenticated');
-
-        if (navigationRef.current?.isReady()) {
-          if (profile?.daily_calorie_goal) {
-            navigationRef.current.reset({ index: 0, routes: [{ name: 'Home' }] });
-          } else {
-            navigationRef.current.reset({ index: 0, routes: [{ name: 'OnboardingStep1' }] });
-          }
-        } else {
-          setInitialRoute(profile?.daily_calorie_goal ? 'Home' : 'OnboardingStep1');
-          setLoading(false);
+          const target = profile?.daily_calorie_goal ? 'Home' : 'OnboardingStep1';
+          navigationRef.current?.reset({ index: 0, routes: [{ name: target }] });
         }
       }
-    });
+    );
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const checkAuthState = async () => {
     try {
       console.log('🔍 Checking auth state on app start...');
+
+      // 0) Handle OAuth deep link if app was cold-started via redirect URL
+      const initialUrl = await Linking.getInitialURL();
+      if (initialUrl && (initialUrl.includes('access_token') || initialUrl.includes('refresh_token'))) {
+        console.log('🔗 OAuth deep link detected on cold start:', initialUrl);
+        await createSessionFromUrl(initialUrl);
+      }
 
       // 1) Restore userMode FIRST — this is the single source of truth
       const storedMode = await AsyncStorage.getItem('veetha_user_mode');
@@ -212,6 +191,7 @@ function AppNavigator() {
       console.error('❌ Error in auth check:', error);
       setInitialRoute('Landing');
     } finally {
+      isInitialLoad.current = false;
       setLoading(false);
     }
   };
@@ -261,7 +241,7 @@ function AppNavigator() {
             contentStyle: { backgroundColor: isDark ? '#121212' : '#fff' },
           })}
         >
-          {/* Onboarding Screens */}  
+          {/* Onboarding Screens */}
           <Stack.Screen name="Landing" component={LandingScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="SignUp" component={SignUpScreen} />
@@ -312,7 +292,7 @@ function AppNavigator() {
 export default function App() {
     //useEffect(() => {
     //  // Initialize RevenueCat
-    //  Purchases.configure({ 
+    //  Purchases.configure({
     //    apiKey: 'your_revenuecat_public_key_here'  // Get from RevenueCat dashboard
     //  });
     //}, []);

@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { supabase } from '../../utils/supabase';
+import { supabase, createSessionFromUrl } from '../../utils/supabase';
 import { Svg, Path } from 'react-native-svg';
-import { makeRedirectUri } from 'expo-auth-session';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
 import { useGreeting } from '../../utils/GreetingContext';
 import { useLanguage } from '../../utils/LanguageContext';
 import { useUserMode } from '../../utils/UserModeContext';
@@ -44,7 +42,7 @@ export default function LoginScreen({ navigation }) {
     try {
       console.log('🔐 Attempting login...');
       console.log('📧 Email:', email);
-      
+
       // Sign in with Supabase
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
@@ -66,9 +64,9 @@ export default function LoginScreen({ navigation }) {
           .eq('id', data.user.id)
           .single();
 
-        const userName = profileData?.display_name || 
-                        profileData?.full_name || 
-                        data.user.email?.split('@')[0] || 
+        const userName = profileData?.display_name ||
+                        profileData?.full_name ||
+                        data.user.email?.split('@')[0] ||
                         'User';
 
         // Set authenticated mode
@@ -79,7 +77,7 @@ export default function LoginScreen({ navigation }) {
 
         // Clear greeting timestamp so it shows on login
         await AsyncStorage.removeItem('last_app_open');
-        
+
         // Navigate based on onboarding status
         if (profileData?.daily_calorie_goal) {
           // Onboarding complete - go to Home
@@ -112,114 +110,6 @@ export default function LoginScreen({ navigation }) {
     }
   }
 
-  const handleGoogleLogin = async () => {
-    try {
-      setLoading(true);
-
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: 'veetha://auth/callback',
-          skipBrowserRedirect: true,
-        },
-      });
-
-      if (error) throw error;
-
-      // Listen for auth state change
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (event, session) => {
-          console.log('🔐 Auth event:', event);
-          if (event === 'SIGNED_IN' && session?.user) {
-            subscription.unsubscribe();
-            WebBrowser.dismissBrowser();
-            await setUserMode('authenticated');
-            await handlePostLogin(session.user);
-          }
-        }
-      );
-
-      await WebBrowser.openBrowserAsync(data.url);
-
-      // Cleanup after 60 seconds
-      setTimeout(() => {
-        subscription.unsubscribe();
-        setLoading(false);
-      }, 60000);
-
-    } catch (err) {
-      console.error('Google login error:', err);
-      setError('Google login failed. Please try again.');
-      setLoading(false);
-    }
-  };
-
-  const handleFacebookLogin = async () => {
-    try {
-      setLoading(true);
-      const redirectUrl = makeRedirectUri({ scheme: 'veetha' });
-
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'facebook',
-        options: {
-          redirectTo: redirectUrl,
-          skipBrowserRedirect: true,
-        },
-      });
-
-      if (error) throw error;
-
-      const result = await WebBrowser.openAuthSessionAsync(
-        data.url,
-        redirectUrl
-      );
-
-      if (result.type === 'success') {
-        const url = result.url;
-        console.log('🔗 OAuth callback URL:', url);
-
-        // Try hash fragment first, then query params
-        const hashPart = url.split('#')[1];
-        const queryPart = url.split('?')[1];
-        const paramString = hashPart || queryPart || '';
-        const params = new URLSearchParams(paramString);
-
-        const accessToken = params.get('access_token');
-        const refreshToken = params.get('refresh_token');
-
-        console.log('🔑 Access token found:', !!accessToken);
-
-        if (accessToken) {
-          const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-
-          if (sessionError) throw sessionError;
-
-          await setUserMode('authenticated');
-          await handlePostLogin(sessionData.user);
-        } else {
-          // Let Supabase handle the session from the URL directly
-          const { data: sessionData, error: sessionError } = 
-            await supabase.auth.getSession();
-          
-          if (sessionError) throw sessionError;
-          
-          if (sessionData?.session?.user) {
-            await setUserMode('authenticated');
-            await handlePostLogin(sessionData.session.user);
-          }
-        }
-      }
-    } catch (err) {
-      console.error('Facebook login error:', err);
-      setError('Facebook login failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handlePostLogin = async (user) => {
     const { data: profileData } = await supabase
       .from('profiles')
@@ -242,14 +132,90 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const redirectTo = AuthSession.makeRedirectUri();
+
+      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+          skipBrowserRedirect: true,
+        },
+      });
+
+      if (oauthError) throw oauthError;
+
+      if (data?.url) {
+        const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+
+        if (result.type === 'success') {
+          const { data: sessionData, error: sessionError } = await createSessionFromUrl(result.url);
+          if (sessionError) throw sessionError;
+
+          if (sessionData?.session?.user) {
+            await setUserMode('authenticated');
+            await handlePostLogin(sessionData.session.user);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Google login error:', err);
+      setError(err.message || t('login.loginFailed'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFacebookLogin = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const redirectTo = AuthSession.makeRedirectUri();
+
+      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: 'facebook',
+        options: {
+          redirectTo,
+          skipBrowserRedirect: true,
+        },
+      });
+
+      if (oauthError) throw oauthError;
+
+      if (data?.url) {
+        const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+
+        if (result.type === 'success') {
+          const { data: sessionData, error: sessionError } = await createSessionFromUrl(result.url);
+          if (sessionError) throw sessionError;
+
+          if (sessionData?.session?.user) {
+            await setUserMode('authenticated');
+            await handlePostLogin(sessionData.session.user);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Facebook login error:', err);
+      setError(err.message || t('login.loginFailed'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
@@ -480,36 +446,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     color: '#999',
   },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 30,
-  },
-  footerText: {
-    color: '#666',
-  },
-  footerLink: {
-    color: '#4CAF50',
-    fontWeight: '600',
-  },
-  socialButton: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    paddingVertical: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  facebookButton: {
-    backgroundColor: '#1877F2',
-    borderColor: '#1877F2',
-  },
-  socialButtonText: {
-    color: '#333',
-    fontSize: 16,
-    fontWeight: '600',
-  },
   googleButton: {
     backgroundColor: '#fff',
     borderWidth: 1,
@@ -557,5 +493,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     lineHeight: 20,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 30,
+  },
+  footerText: {
+    color: '#666',
+  },
+  footerLink: {
+    color: '#4CAF50',
+    fontWeight: '600',
   },
 });
