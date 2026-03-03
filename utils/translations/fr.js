@@ -43,6 +43,8 @@ export default {
     invalidCredentials: 'E-mail ou mot de passe invalide',
     verifyEmail: 'Veuillez vérifier votre e-mail avant de vous connecter',
     loginFailed: 'Échec de la connexion. Veuillez réessayer.',
+    continueWithGoogle: 'Continuer avec Google',
+    continueWithFacebook: 'Continuer avec Facebook',
   },
 
   // SignUp Screen
@@ -933,6 +935,9 @@ export default {
     accountDeleted: 'Compte Supprimé',
     accountDeletedMessage: 'Votre compte a été supprimé définitivement.',
     deleteError: 'Échec de la suppression du compte',
+    profilePhoto: 'Photo de Profil',
+    takePhoto: 'Prendre une Photo',
+    chooseFromLibrary: 'Choisir depuis la Galerie',
   },
 
   // Edit Profile Screen

@@ -43,6 +43,8 @@ export default {
     invalidCredentials: 'Correo o contraseña inválidos',
     verifyEmail: 'Por favor verifica tu correo antes de iniciar sesión',
     loginFailed: 'Error al iniciar sesión. Por favor intenta de nuevo.',
+    continueWithGoogle: 'Continuar con Google',
+    continueWithFacebook: 'Continuar con Facebook',
   },
 
   // SignUp Screen
@@ -933,6 +935,9 @@ export default {
     accountDeleted: 'Cuenta Eliminada',
     accountDeletedMessage: 'Tu cuenta ha sido eliminada permanentemente.',
     deleteError: 'Error al eliminar cuenta',
+    profilePhoto: 'Foto de Perfil',
+    takePhoto: 'Tomar Foto',
+    chooseFromLibrary: 'Elegir de la Galería',
   },
 
   // Edit Profile Screen

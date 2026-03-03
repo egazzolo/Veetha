@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Switch, Alert, Li
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../utils/supabase';
+import { Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSwipeNavigation } from '../utils/useSwipeNavigation';
@@ -17,6 +18,7 @@ import Constants from 'expo-constants';
 import BottomNav from '../components/BottomNav';
 import { useTutorial } from '../utils/TutorialContext';
 import AppTutorial from '../components/AppTutorial';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function ProfileScreen({ navigation }) {
 
@@ -25,6 +27,7 @@ export default function ProfileScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [recoveryCode, setRecoveryCode] = useState(null);
   const [checkingTutorial, setCheckingTutorial] = useState(true);
+  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || null);
   const { profile, loading, refreshProfile, refreshMeals } = useUser();
   const { isGuest, setUserMode } = useUserMode();
   const { startTutorial } = useTutorial();
@@ -51,6 +54,12 @@ export default function ProfileScreen({ navigation }) {
     await refreshMeals();
     setRefreshing(false);
   };
+
+  useEffect(() => {
+    if (profile?.avatar_url) {
+      setAvatarUrl(profile.avatar_url);
+    }
+  }, [profile]);
 
   useEffect(() => {
     loadRecoveryCode();
@@ -265,6 +274,118 @@ export default function ProfileScreen({ navigation }) {
 
   console.log('📱 ProfileScreen: Rendering with userStats =', userStats);
 
+  const handlePickAvatar = async () => {
+    if (isGuest) {
+      Alert.alert('Create an Account', 'Sign up to set a profile photo.');
+      return;
+    }
+
+    Alert.alert(
+      t('profile.profilePhoto') || 'Profile Photo',
+      '',
+      [
+        {
+          text: t('profile.takePhoto') || 'Take Photo',
+          onPress: handleTakePhoto,
+        },
+        {
+          text: t('profile.chooseFromLibrary') || 'Choose from Library',
+          onPress: handleChooseFromLibrary,
+        },
+        {
+          text: t('common.cancel') || 'Cancel',
+          style: 'cancel',
+        },
+      ]
+    );
+  };
+
+  const handleTakePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(t('common.error'), 'Camera permission is required.');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (!result.canceled) await uploadAvatar(result.assets[0].uri);
+  };
+
+  const handleChooseFromLibrary = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(t('common.error'), 'Permission to access photos is required.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    }); 
+
+    if (!result.canceled) await uploadAvatar(result.assets[0].uri);
+  };
+
+  const uploadAvatar = async (uri) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const ext = uri.split('.').pop().toLowerCase();
+      const fileName = `avatar-${user.id}.${ext}`;
+      const contentType = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+
+      const formData = new FormData();
+      formData.append('file', {
+        uri,
+        name: fileName,
+        type: contentType,
+      });
+
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const response = await fetch(
+        `https://bfgreozkoftncayzyzhz.supabase.co/storage/v1/object/avatars/${fileName}`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            'x-upsert': 'true',
+          },
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText);
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id);
+
+      setAvatarUrl(`${publicUrl}?t=${Date.now()}`);
+      console.log('✅ Avatar updated:', publicUrl);
+
+    } catch (error) {
+      console.error('❌ Error uploading avatar:', error);
+      Alert.alert(t('common.error'), 'Failed to upload photo.');
+    }
+  };
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <GestureDetector gesture={swipeGesture}>
@@ -284,11 +405,24 @@ export default function ProfileScreen({ navigation }) {
             >
               {/* Header */}
               <View style={[styles.header, { backgroundColor: theme.cardBackground }]}>
-                <View style={styles.avatarContainer}>
-                  <Text style={styles.avatarText}>
-                    {userName.charAt(0).toUpperCase()}
-                  </Text>
-                </View>
+                <TouchableOpacity onPress={handlePickAvatar} style={styles.avatarWrapper}>
+                  <View style={styles.avatarContainer}>
+                    {avatarUrl ? (
+                      <Image
+                        source={{ uri: avatarUrl }}
+                        style={styles.avatarImage}
+                        onError={() => setAvatarUrl(null)}
+                      />
+                    ) : (
+                      <>
+                        <Text style={styles.avatarText}>
+                          {userName.charAt(0).toUpperCase()}
+                        </Text>
+                        <Text style={styles.avatarCameraIcon}>📷</Text>
+                      </>
+                    )}
+                  </View>
+                </TouchableOpacity>
                 <Text style={[styles.userName, { color: theme.text }]}>{userName}</Text>
                 <Text style={[styles.userEmail, { color: theme.textSecondary }]}>{userEmail}</Text>
                 <TouchableOpacity 
@@ -830,5 +964,18 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  avatarCameraIcon: {
+    fontSize: 16,
+    position: 'absolute',
+    bottom: 8,
+  },
+  avatarImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    position: 'absolute',
+    top: 0,
+    left: 0,
   },
 });

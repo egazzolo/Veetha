@@ -43,6 +43,8 @@ export default {
     invalidCredentials: 'Invalid na email o password',
     verifyEmail: 'Pakiusap na i-verify ang iyong email bago mag-log in',
     loginFailed: 'Nabigo ang pag-login. Subukan ulit.',
+    continueWithGoogle: 'Magpatuloy sa Google',
+    continueWithFacebook: 'Magpatuloy sa Facebook',
   },
 
   // SignUp Screen
@@ -933,6 +935,9 @@ export default {
     accountDeleted: 'Natanggal ang Account',
     accountDeletedMessage: 'Ang iyong account ay permanenteng natanggal na.',
     deleteError: 'Hindi natanggal ang account',
+    profilePhoto: 'Larawan sa Profile',
+    takePhoto: 'Kumuha ng Larawan',
+    chooseFromLibrary: 'Pumili mula sa Galería',
   },
 
   // Edit Profile Screen

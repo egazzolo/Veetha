@@ -1,8 +1,9 @@
 //import * as Updates from 'expo-updates';
 import React, { useState, useEffect } from 'react';
+import * as Linking from 'expo-linking';
 //import Purchases from 'react-native-purchases';
 import { View, ActivityIndicator, Platform, StatusBar } from 'react-native';
-import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -68,12 +69,78 @@ function AppNavigator() {
   const { userMode, setUserMode } = useUserMode();
   const [initialRoute, setInitialRoute] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigationRef = React.useRef(null);
 
   useEffect(() => {
     checkAuthState();
   }, []);
 
+  useEffect(() => {
+    // Handle deep link when app is already open
+    const subscription = Linking.addEventListener('url', async ({ url }) => {
+      console.log('🔗 Deep link received in calo.js:', url);
+      if (url && url.includes('veetha://')) {
+        try {
+          const { data, error } = await supabase.auth.exchangeCodeForSession(url);
+          if (error) {
+            // Try getting session directly
+            const { data: sessionData } = await supabase.auth.getSession();
+            if (sessionData?.session?.user) {
+              await setUserMode('authenticated');
+            }
+          } else if (data?.session?.user) {
+            await setUserMode('authenticated');
+          }
+        } catch (e) {
+          console.error('Deep link session error:', e);
+        }
+      }
+    });
+
+    // Handle deep link when app is launched from closed state
+    Linking.getInitialURL().then(async (url) => {
+      console.log('🔗 Initial URL:', url);
+      if (url && url.includes('veetha://')) {
+        try {
+          const { data, error } = await supabase.auth.exchangeCodeForSession(url);
+          if (data?.session?.user) {
+            await setUserMode('authenticated');
+          }
+        } catch (e) {
+          console.error('Initial URL session error:', e);
+        }
+      }
+    });
+
+    return () => subscription.remove();
+  }, []);
+
   const checkAuthState = async () => {
+
+    // Listen for auth changes (handles OAuth callbacks)
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔐 Auth state changed:', event);
+      if (event === 'SIGNED_IN' && session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('daily_calorie_goal')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        await setUserMode('authenticated');
+
+        if (navigationRef.current?.isReady()) {
+          if (profile?.daily_calorie_goal) {
+            navigationRef.current.reset({ index: 0, routes: [{ name: 'Home' }] });
+          } else {
+            navigationRef.current.reset({ index: 0, routes: [{ name: 'OnboardingStep1' }] });
+          }
+        } else {
+          setInitialRoute(profile?.daily_calorie_goal ? 'Home' : 'OnboardingStep1');
+          setLoading(false);
+        }
+      }
+    });
     try {
       console.log('🔍 Checking auth state on app start...');
 
@@ -185,7 +252,7 @@ function AppNavigator() {
 
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? '#121212' : '#fff' }}>
-      <NavigationContainer theme={navTheme}>
+      <NavigationContainer ref={navigationRef} theme={navTheme}>
         <Stack.Navigator
           initialRouteName={initialRoute}
           screenOptions={({ route }) => ({

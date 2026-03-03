@@ -384,8 +384,11 @@ export default function HomeScreen({ navigation }) {
         setQuickSuggestions(DEFAULT_FOODS[mealType]);
       }
     } catch (error) {
-      console.error('Error loading suggestions:', error);
-    }
+          // Location unavailable — fall back to default suggestions silently
+          const hour = new Date().getHours();
+          const mealType = hour < 11 ? 'breakfast' : hour < 16 ? 'lunch' : 'dinner';
+          setQuickSuggestions(DEFAULT_FOODS[mealType]);
+        }
   };
 
   const loadExerciseCalories = async () => {

@@ -5,6 +5,11 @@ import { supabase } from '../../utils/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../../utils/LanguageContext';
 import { useUserMode } from '../../utils/UserModeContext';
+import { makeRedirectUri } from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
+import { Svg, Path } from 'react-native-svg';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function SignUpScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -120,6 +125,12 @@ export default function SignUpScreen({ navigation }) {
 
     setLoading(true);
 
+    // Capture guest session before it's replaced
+    const { data: { session: guestSession } } = await supabase.auth.getSession();
+    const guestUserId = guestSession?.user?.is_anonymous ? guestSession.user.id : null;
+    const guestToken = guestSession?.access_token || null;
+    console.log('👤 Guest user to delete after signup:', guestUserId);
+
     try {
       console.log('🚀 Creating account for:', email.trim().toLowerCase());
 
@@ -179,6 +190,19 @@ export default function SignUpScreen({ navigation }) {
         // Set authenticated mode
         await setUserMode('authenticated');
 
+        // Delete the anonymous guest user
+        if (guestUserId && guestToken) {
+          try {
+            await supabase.functions.invoke('delete-user', {
+              headers: { Authorization: `Bearer ${guestToken}` }
+            });
+            console.log('🗑️ Guest user deleted:', guestUserId);
+          } catch (deleteError) {
+            // Non-fatal — guest cleanup failed but signup succeeded
+            console.warn('⚠️ Could not delete guest user:', deleteError);
+          }
+        }
+
         // Save credentials temporarily for later verification
         await AsyncStorage.setItem('pendingUserEmail', email.trim().toLowerCase());
         await AsyncStorage.setItem('pendingUserPassword', password);
@@ -233,6 +257,102 @@ export default function SignUpScreen({ navigation }) {
 
   // Determine if button should be disabled
   const isButtonDisabled = loading || emailExists || checkingEmail || !agreeToTerms;
+
+  const handleGoogleLogin = async () => {
+    try {
+      setLoading(true);
+      const redirectUrl = makeRedirectUri({ scheme: 'veetha' });
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: true,
+        },
+      });
+
+      if (error) throw error;
+
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+
+      if (result.type === 'success') {
+        const url = result.url;
+        const params = new URLSearchParams(url.split('#')[1]);
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+
+        if (accessToken) {
+          const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          if (sessionError) throw sessionError;
+          await setUserMode('authenticated');
+          await handlePostSignUp(sessionData.user);
+        }
+      }
+    } catch (err) {
+      console.error('Google signup error:', err);
+      setError('Google signup failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFacebookLogin = async () => {
+    try {
+      setLoading(true);
+      const redirectUrl = makeRedirectUri({ scheme: 'veetha' });
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'facebook',
+        options: {
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: true,
+        },
+      });
+
+      if (error) throw error;
+
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+
+      if (result.type === 'success') {
+        const url = result.url;
+        const params = new URLSearchParams(url.split('#')[1]);
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+
+        if (accessToken) {
+          const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          if (sessionError) throw sessionError;
+          await setUserMode('authenticated');
+          await handlePostSignUp(sessionData.user);
+        }
+      }
+    } catch (err) {
+      console.error('Facebook signup error:', err);
+      setError('Facebook signup failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePostSignUp = async (user) => {
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('daily_calorie_goal')
+      .eq('id', user.id)
+      .single();
+
+    if (profileData?.daily_calorie_goal) {
+      navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+    } else {
+      navigation.reset({ index: 0, routes: [{ name: 'OnboardingStep1' }] });
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -383,13 +503,35 @@ export default function SignUpScreen({ navigation }) {
               <View style={styles.dividerLine} />
             </View>
 
-            {/* Google Sign-In */}
+            {/* Google Button */}
             <TouchableOpacity
               style={styles.googleButton}
-              onPress={() => console.log('Google Sign-Up')}
+              onPress={handleGoogleLogin}
               disabled={loading}
             >
-              <Text style={styles.googleButtonText}>{t('signup.signupWithGoogle')}</Text>
+              <View style={styles.socialButtonInner}>
+                <Svg width={20} height={20} viewBox="0 0 48 48">
+                  <Path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                  <Path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                  <Path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                  <Path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                </Svg>
+                <Text style={styles.googleButtonText}>{t('login.continueWithGoogle')}</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Facebook Button */}
+            <TouchableOpacity
+              style={styles.facebookButton}
+              onPress={handleFacebookLogin}
+              disabled={loading}
+            >
+              <View style={styles.socialButtonInner}>
+                <View style={styles.facebookIconContainer}>
+                  <Text style={styles.facebookIconText}>f</Text>
+                </View>
+                <Text style={styles.facebookButtonText}>{t('login.continueWithFacebook')}</Text>
+              </View>
             </TouchableOpacity>
 
             {/* Login Link */}
@@ -598,5 +740,52 @@ const styles = StyleSheet.create({
   footerLink: {
     color: '#4CAF50',
     fontWeight: '600',
+  },
+  googleButton: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#dadce0',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 4,
+    marginBottom: 12,
+  },
+  googleButtonText: {
+    color: '#3c4043',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 12,
+  },
+  facebookButton: {
+    backgroundColor: '#1877F2',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 4,
+    marginBottom: 12,
+  },
+  facebookButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 12,
+  },
+  socialButtonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  facebookIconContainer: {
+    width: 20,
+    height: 20,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  facebookIconText: {
+    color: '#1877F2',
+    fontSize: 14,
+    fontWeight: 'bold',
+    lineHeight: 20,
   },
 });
