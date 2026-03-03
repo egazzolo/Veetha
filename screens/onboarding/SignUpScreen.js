@@ -273,7 +273,8 @@ export default function SignUpScreen({ navigation }) {
     setError('');
 
     try {
-      const redirectTo = AuthSession.makeRedirectUri({ scheme: 'veetha' });
+      const redirectTo = AuthSession.makeRedirectUri({ scheme: 'veetha', path: 'auth/callback' });
+      console.log('🔗 Google SignUp redirect URL:', redirectTo);
 
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -284,19 +285,29 @@ export default function SignUpScreen({ navigation }) {
       });
 
       if (oauthError) throw oauthError;
+      if (!data?.url) throw new Error('No OAuth URL returned');
 
-      if (data?.url) {
-        const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+      console.log('🌐 Browser result:', result.type);
 
-        if (result.type === 'success') {
-          const { data: sessionData, error: sessionError } = await createSessionFromUrl(result.url);
-          if (sessionError) throw sessionError;
+      if (result.type === 'success' && result.url) {
+        const { data: sessionData, error: sessionError } = await createSessionFromUrl(result.url);
+        if (sessionError) throw sessionError;
 
-          if (sessionData?.session?.user) {
-            await setUserMode('authenticated');
-            await handlePostSignUp(sessionData.session.user);
-          }
+        if (sessionData?.session?.user) {
+          await setUserMode('authenticated');
+          await handlePostSignUp(sessionData.session.user);
+          return;
         }
+      }
+
+      // Browser was dismissed — check if OAuth completed via deep link handler
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user && !session.user.is_anonymous) {
+        console.log('✅ Session found after browser dismiss');
+        await setUserMode('authenticated');
+        await handlePostSignUp(session.user);
+        return;
       }
     } catch (err) {
       console.error('Google sign-up error:', err);

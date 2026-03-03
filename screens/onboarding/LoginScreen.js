@@ -78,27 +78,13 @@ export default function LoginScreen({ navigation }) {
         // Clear greeting timestamp so it shows on login
         await AsyncStorage.removeItem('last_app_open');
 
-        if (profileData?.daily_calorie_goal) {
-          navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
-        } else {
-          navigation.reset({ index: 0, routes: [{ name: 'OnboardingStep1' }] });
-        }
-
         // Navigate based on onboarding status
         if (profileData?.daily_calorie_goal) {
-          // Onboarding complete - go to Home
           console.log('✅ Onboarding complete - navigating to Home');
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Home' }],
-          });
+          navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
         } else {
-          // Onboarding incomplete - force to OnboardingStep1
           console.log('⚠️ Onboarding incomplete - navigating to OnboardingStep1');
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'OnboardingStep1' }],
-          });
+          navigation.reset({ index: 0, routes: [{ name: 'OnboardingStep1' }] });
         }
       }
 
@@ -143,8 +129,8 @@ export default function LoginScreen({ navigation }) {
     setError('');
 
     try {
-      const redirectTo = AuthSession.makeRedirectUri({ scheme: 'veetha' });
-      console.log('📌 Redirect URI to add to Supabase:', redirectTo);
+      const redirectTo = AuthSession.makeRedirectUri({ scheme: 'veetha', path: 'auth/callback' });
+      console.log('🔗 Google Login redirect URL:', redirectTo);
 
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -155,32 +141,29 @@ export default function LoginScreen({ navigation }) {
       });
 
       if (oauthError) throw oauthError;
+      if (!data?.url) throw new Error('No OAuth URL returned');
 
-      if (data?.url) {
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+      console.log('🌐 Browser result:', result.type);
 
-        const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-        console.log('🌐 Full result:', JSON.stringify(result));
+      if (result.type === 'success' && result.url) {
+        const { data: sessionData, error: sessionError } = await createSessionFromUrl(result.url);
+        if (sessionError) throw sessionError;
 
-        if (result.type === 'success') {
-          console.log('✅ Browser returned success');
-          console.log('🔗 URL:', result.url);
-          
-          const { data: sessionData, error: sessionError } = await createSessionFromUrl(result.url);
-          console.log('📊 Session data:', JSON.stringify(sessionData));
-          console.log('❌ Session error:', sessionError);
-          
-          if (sessionError) throw sessionError;
-
-          if (sessionData?.session?.user) {
-            console.log('👤 User found, navigating...');
-            await setUserMode('authenticated');
-            await handlePostLogin(sessionData.session.user);
-          } else {
-            console.log('❌ No user in session data');
-          }
-        } else {
-          console.log('❌ Browser result type:', result.type);
+        if (sessionData?.session?.user) {
+          await setUserMode('authenticated');
+          await handlePostLogin(sessionData.session.user);
+          return;
         }
+      }
+
+      // Browser was dismissed — check if OAuth completed via deep link handler
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user && !session.user.is_anonymous) {
+        console.log('✅ Session found after browser dismiss');
+        await setUserMode('authenticated');
+        await handlePostLogin(session.user);
+        return;
       }
     } catch (err) {
       console.error('Google login error:', err);
