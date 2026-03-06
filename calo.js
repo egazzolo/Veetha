@@ -82,9 +82,16 @@ function AppNavigator() {
   // Listen for OAuth callbacks while the app is already running
   useEffect(() => {
     const subscription = Linking.addEventListener('url', async ({ url }) => {
+      console.log('🔗 Deep link received while app is running:', url);
       if (url && (url.includes('access_token') || url.includes('refresh_token'))) {
-        console.log('🔗 Deep link received while app is running:', url);
-        await createSessionFromUrl(url);
+        // Only handle if no active session yet
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          console.log('🔗 No session yet, creating from URL...');
+          await createSessionFromUrl(url);
+        } else {
+          console.log('🔗 Session already exists, skipping deep link handling');
+        }
       }
     });
     return () => subscription.remove();
@@ -94,18 +101,32 @@ function AppNavigator() {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (event === 'SIGNED_IN' && session && !isInitialLoad.current) {
-          console.log('🔐 Auth state changed: SIGNED_IN (OAuth callback)');
+        console.log('🔐 Auth state changed:', event);
+
+        if (event === 'SIGNED_IN' && session) {
+          const provider = session.user?.app_metadata?.provider;
+          console.log('🔐 SIGNED_IN detected, provider:', provider);
+
+          // Only handle OAuth logins here
+          if (provider === 'email') {
+            console.log('📧 Email login - skipping OAuth handler');
+            return;
+          }
+
           await setUserMode('authenticated');
+          console.log('🧭 OAuth login - navigating to OnboardingStep1');
 
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('daily_calorie_goal')
-            .eq('id', session.user.id)
-            .maybeSingle();
-
-          const target = profile?.daily_calorie_goal ? 'Home' : 'OnboardingStep1';
-          navigationRef.current?.reset({ index: 0, routes: [{ name: target }] });
+          const tryNavigate = () => {
+            if (navigationRef.current?.isReady()) {
+              navigationRef.current.reset({ 
+                index: 0, 
+                routes: [{ name: 'OnboardingStep1' }] 
+              });
+            } else {
+              setTimeout(tryNavigate, 100);
+            }
+          };
+          tryNavigate();
         }
       }
     );

@@ -690,17 +690,14 @@ export default {
     gotIt: 'Got it!',
     uploading: 'Uploading',
     pleaseWait: 'Please wait',
-    
     // Serving size
     servingSize: 'Serving Size (grams):',
     maximumAllowed: 'Maximum allowed: 2000 g',
     adjustPortion: 'Adjust to your portion size',
-    
     // Calories
     caloriesInfo: 'Calories ⓘ',
     kcal: 'kcal',
     ofDailyGoal: '% of daily goal',
-    
     // Details
     showDetails: 'Show Details',
     hideDetails: 'Hide Details',
@@ -708,20 +705,17 @@ export default {
     fiber: 'Fiber',
     sodium: 'Sodium',
     valuesShownPer: 'Values shown per {grams}g serving',
-    
     // Buttons
     logMeal: 'Log This Meal',
     scanAgain: 'Scan Again',
     saving: 'Saving...',
     submitProduct: 'Submit This Product',
     enterManually: 'Enter Manually',
-
     // Alerts
     enterFoodName: 'Enter a food name',
     notFound: 'Not found',
     notAuthenticated: 'User not authenticated. Please log in.',
     mealLogged: 'Meal logged! ✅',
-    
     // Photo view
     photoView: 'Photo View',
     detailedView: 'Detailed View',
@@ -729,11 +723,17 @@ export default {
     swipeRightSave: 'Swipe right to save',
     delete: 'DELETE',
     save: 'SAVE',
-    
     // Macros (short labels)
     protein: 'Prot.',
     carbs: 'Carbs',
     fat: 'Fat',
+    allergenWarning: {
+      title: "DIETARY ALERT",
+      subtitle: "This product contains ingredients you've marked:",
+      disclaimer: "ℹ️ This warning is based on your dietary restrictions. Always check product labels for accuracy.",
+      goBack: "← Go Back",
+      logAnyway: "Log Anyway",
+    },
   },
 
   // Stats Screen

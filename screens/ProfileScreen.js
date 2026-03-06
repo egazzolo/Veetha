@@ -70,6 +70,13 @@ export default function ProfileScreen({ navigation }) {
   useEffect(() => {
     const checkProfileTutorial = async () => {
       try {
+        // Check local cache first
+        const cached = await AsyncStorage.getItem('profile_tutorial_completed');
+        if (cached === 'true') {
+          setCheckingTutorial(false);
+          return;
+        }
+
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           setCheckingTutorial(false);
@@ -82,29 +89,26 @@ export default function ProfileScreen({ navigation }) {
           .eq('id', user.id)
           .single();
 
-        // If tutorial already completed, unfreeze immediately
         if (profileData?.profile_tutorial_completed) {
-          console.log('✅ Profile tutorial already completed - unfreezing');
+          // Cache it so we never query again
+          await AsyncStorage.setItem('profile_tutorial_completed', 'true');
           setCheckingTutorial(false);
           return;
         }
 
-        // Tutorial needs to start - unfreeze and start
-        console.log('🎓 Starting Profile tutorial');
-        setCheckingTutorial(false); // Unfreeze before tutorial
-        
+        setCheckingTutorial(false);
+
         setTimeout(() => {
           if (statsGridRef.current && editButtonRef.current) {
             startTutorial('Profile');
           } else {
-            console.log('⏳ Refs not ready, trying again...');
             setTimeout(() => startTutorial('Profile'), 2000);
           }
         }, 500);
-        
+
       } catch (error) {
         console.error('Error checking profile tutorial:', error);
-        setCheckingTutorial(false); // Unfreeze on error
+        setCheckingTutorial(false);
       }
     };
 

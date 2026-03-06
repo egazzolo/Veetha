@@ -293,9 +293,16 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     borderRadius: 8,
-    alignItems: 'center'
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    backgroundColor: '#f5f5f5',
   },
-  presetText: { fontSize: 16, fontWeight: '500' },
+  presetText: { 
+    fontSize: 16, 
+    fontWeight: '500', 
+    color: '#333' 
+  },
   customInput: {
     borderWidth: 1,
     borderRadius: 8,

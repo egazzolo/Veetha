@@ -103,11 +103,14 @@ export default function LoginScreen({ navigation }) {
   }
 
   const handlePostLogin = async (user) => {
+    // Wait for profile trigger to complete
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
     const { data: profileData } = await supabase
       .from('profiles')
       .select('display_name, full_name, daily_calorie_goal')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
     const userName = profileData?.display_name ||
       profileData?.full_name ||

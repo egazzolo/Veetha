@@ -8,13 +8,32 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 const SecureStoreAdapter = {
   getItem: async (key) => {
-    return await SecureStore.getItemAsync(key);
+    try {
+      const asyncValue = await AsyncStorage.getItem(key);
+      if (asyncValue) return asyncValue;
+      return await SecureStore.getItemAsync(key);
+    } catch {
+      return await AsyncStorage.getItem(key);
+    }
   },
   setItem: async (key, value) => {
-    await SecureStore.setItemAsync(key, value);
+    try {
+      if (value && value.length > 2000) {
+        await AsyncStorage.setItem(key, value);
+      } else {
+        await SecureStore.setItemAsync(key, value);
+      }
+    } catch {
+      await AsyncStorage.setItem(key, value);
+    }
   },
   removeItem: async (key) => {
-    await SecureStore.deleteItemAsync(key);
+    try {
+      await SecureStore.deleteItemAsync(key);
+    } catch {}
+    try {
+      await AsyncStorage.removeItem(key);
+    } catch {}
   },
 };
 

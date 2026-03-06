@@ -690,17 +690,14 @@ export default {
     gotIt: 'Nakuha ko na!',
     uploading: '',
     pleaseWait: '',
-    
     // Serving size
     servingSize: 'Serving Size (gramo):',
     maximumAllowed: 'Maximum na pinapayagan: 2000 g',
     adjustPortion: 'I-adjust sa iyong portion size',
-    
     // Calories
     caloriesInfo: 'Calories ⓘ',
     kcal: 'kcal',
     ofDailyGoal: '% ng arawang layunin',
-    
     // Details
     showDetails: 'Ipakita ang Mga Detalye',
     hideDetails: 'Itago ang Mga Detalye',
@@ -708,20 +705,17 @@ export default {
     fiber: 'Fiber',
     sodium: 'Sodium',
     valuesShownPer: 'Mga values na ipinakita kada {grams}g serving',
-    
     // Buttons
     logMeal: 'I-log ang Pagkaing Ito',
     scanAgain: 'Mag-scan Ulit',
     saving: 'Nag-se-save...',
     submitProduct: 'I-submit ang Produktong Ito',
     enterManually: 'I-enter Nang Manu-mano',
-
     // Alerts - Mga Alerto
     enterFoodName: 'Maglagay ng pangalan ng pagkain',
     notFound: 'Hindi natagpuan',
     notAuthenticated: 'Hindi naka-authenticate ang user. Mag-log in muna.',
     mealLogged: 'Na-log na ang pagkain! ✅',
-    
     // Photo view
     photoView: 'Photo View',
     detailedView: 'Detailed View',
@@ -729,11 +723,17 @@ export default {
     swipeRightSave: 'Mag-swipe pakanan para i-save',
     delete: 'TANGGALIN',
     save: 'I-SAVE',
-    
     // Macros (short labels)
     protein: 'Prot.',
     carbs: 'Carbs',
     fat: 'Fats',
+    allergenWarning: {
+      title: "BABALA SA DIYETA",
+      subtitle: "Ang produktong ito ay naglalaman ng mga sangkap na iyong minarkahan:",
+      disclaimer: "ℹ️ Ang babalang ito ay batay sa iyong mga paghihigpit sa diyeta. Palaging suriin ang mga label ng produkto.",
+      goBack: "← Bumalik",
+      logAnyway: "I-log pa rin",
+    },
   },
 
   // Stats Screen

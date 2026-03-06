@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StyleSheet, Text, View, TouchableOpacity, Alert, Modal, TextInput, ActivityIndicator, Animated } from 'react-native';
 import { CameraView } from 'expo-camera';
 import { useTheme } from '../utils/ThemeContext';
@@ -43,6 +44,7 @@ export default function ScannerScreen({ navigation }) {
   const [mode, setMode] = useState('barcode');
   const [checkingTutorial, setCheckingTutorial] = useState(true);
   const [loggingMeal, setLoggingMeal] = useState(false);
+  const [cameraReady, setCameraReady] = useState(true);
   
   // Swipe navigation (only when camera is idle, not during scan)
   const swipeGesture = useSwipeNavigation(navigation, 'Scanner', mode === 'barcode' && !scanned);
@@ -237,6 +239,12 @@ export default function ScannerScreen({ navigation }) {
   useEffect(() => {
     const checkScannerTutorial = async () => {
       try {
+        const cached = await AsyncStorage.getItem('scanner_tutorial_completed');
+        if (cached === 'true') {
+          setCheckingTutorial(false);
+          return;
+        }
+
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           setCheckingTutorial(false);
@@ -249,21 +257,18 @@ export default function ScannerScreen({ navigation }) {
           .eq('id', user.id)
           .single();
 
-        // If tutorial already completed, unfreeze immediately
         if (profile?.scanner_tutorial_completed) {
-          console.log('✅ Scanner tutorial already completed - unfreezing');
+          await AsyncStorage.setItem('scanner_tutorial_completed', 'true');
           setCheckingTutorial(false);
           return;
         }
 
-        // Tutorial needs to start - unfreeze and start
-        console.log('🎓 Starting Scanner tutorial');
-        setCheckingTutorial(false); // Unfreeze before tutorial
+        setCheckingTutorial(false);
         setTimeout(() => startTutorial('Scanner'), 500);
-        
+
       } catch (error) {
         console.error('Error checking scanner tutorial:', error);
-        setCheckingTutorial(false); // Unfreeze on error
+        setCheckingTutorial(false);
       }
     };
 
@@ -608,8 +613,10 @@ export default function ScannerScreen({ navigation }) {
 
   // Toggle between barcode and photo mode
   const toggleMode = () => {
+    setCameraReady(false);
     setMode(prev => prev === 'barcode' ? 'photo' : 'barcode');
     setScanned(false);
+    setTimeout(() => setCameraReady(true), 3000);
   };
 
   return (
@@ -619,9 +626,14 @@ export default function ScannerScreen({ navigation }) {
         <View style={styles.container}>
           {/* Camera View */}
           <CameraView
+            key={mode}
             ref={cameraRef}
             style={styles.camera}
             facing="back"
+            onCameraReady={() => {
+              console.log('📷 Camera ready');
+              setCameraReady(true);
+            }}
             barcodeScannerSettings={mode === 'barcode' ? {
               barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'code39'],
             } : undefined}
@@ -646,7 +658,13 @@ export default function ScannerScreen({ navigation }) {
             </View>
 
             {/* Scanning Overlay */}
+            {!cameraReady ? (
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="#fff" />
+              </View>
+            ) : (
             <View key={mode} style={{ flex: 1 }}>
+
               {mode === 'barcode' ? (
                 <View style={styles.overlay}>
                   <View style={styles.focusFrame}>
@@ -678,6 +696,7 @@ export default function ScannerScreen({ navigation }) {
                 </View>
               )}
             </View>
+            )}
 
             {/* Mode Toggle Button - absolutely positioned top right */}
             <TouchableOpacity

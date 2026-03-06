@@ -1,7 +1,10 @@
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import { useLanguage } from '../utils/LanguageContext';
 
 export default function AllergenWarningModal({ visible, warnings, onCancel, onProceed, theme }) {
+  const { t } = useLanguage();
+
   if (!warnings || warnings.length === 0) return null;
 
   return (
@@ -15,12 +18,12 @@ export default function AllergenWarningModal({ visible, warnings, onCancel, onPr
         <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
           <View style={styles.header}>
             <Text style={styles.warningIcon}>⚠️</Text>
-            <Text style={[styles.title, { color: theme.text }]}>DIETARY ALERT</Text>
+            <Text style={[styles.title, { color: theme.text }]}>{t('results.allergenWarning.title')}</Text>
           </View>
 
           <ScrollView style={styles.warningsContainer} showsVerticalScrollIndicator={false}>
             <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-              This product contains ingredients you've marked:
+              {t('results.allergenWarning.subtitle')}
             </Text>
 
             {warnings.map((warning, index) => (
@@ -38,7 +41,7 @@ export default function AllergenWarningModal({ visible, warnings, onCancel, onPr
             ))}
 
             <Text style={[styles.disclaimer, { color: theme.textTertiary }]}>
-              ℹ️ This warning is based on your dietary restrictions. Always check product labels for accuracy.
+              {t('results.allergenWarning.disclaimer')}
             </Text>
           </ScrollView>
 
@@ -47,14 +50,14 @@ export default function AllergenWarningModal({ visible, warnings, onCancel, onPr
               style={[styles.button, styles.cancelButton, { borderColor: theme.border }]}
               onPress={onCancel}
             >
-              <Text style={[styles.buttonText, { color: theme.text }]}>← Go Back</Text>
+              <Text style={[styles.buttonText, { color: theme.text }]}>{t('results.allergenWarning.goBack')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
               style={[styles.button, styles.proceedButton]}
               onPress={onProceed}
             >
-              <Text style={styles.proceedButtonText}>Log Anyway</Text>
+              <Text style={styles.proceedButtonText}>{t('results.allergenWarning.logAnyway')}</Text>
             </TouchableOpacity>
           </View>
         </View>
