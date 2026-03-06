@@ -616,7 +616,7 @@ export default function ScannerScreen({ navigation }) {
     setCameraReady(false);
     setMode(prev => prev === 'barcode' ? 'photo' : 'barcode');
     setScanned(false);
-    setTimeout(() => setCameraReady(true), 3000);
+    setLoading(false);
   };
 
   return (

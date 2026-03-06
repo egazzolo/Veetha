@@ -74,6 +74,7 @@ function AppNavigator() {
   const [loading, setLoading] = useState(true);
   const navigationRef = useRef(null);
   const isInitialLoad = useRef(true);
+  const oauthNavigating = useRef(false);
 
   useEffect(() => {
     checkAuthState();
@@ -104,6 +105,8 @@ function AppNavigator() {
         console.log('🔐 Auth state changed:', event);
 
         if (event === 'SIGNED_IN' && session) {
+          if (oauthNavigating.current) return;
+
           const provider = session.user?.app_metadata?.provider;
           console.log('🔐 SIGNED_IN detected, provider:', provider);
 
@@ -113,6 +116,7 @@ function AppNavigator() {
             return;
           }
 
+          oauthNavigating.current = true;
           await setUserMode('authenticated');
           console.log('🧭 OAuth login - navigating to OnboardingStep1');
 

@@ -482,6 +482,26 @@ export default function HomeScreen({ navigation }) {
     requestOnce();
   }, [isGuestMode]);
 
+  // Request camera and location permissions for email/password users who skipped onboarding
+  useEffect(() => {
+    if (isGuestMode) return;
+    const requestPermissions = async () => {
+      try {
+        const { status: cameraStatus } = await requestCameraPermission();
+        if (cameraStatus !== 'granted') {
+          console.log('📷 Camera permission not granted');
+        }
+        const { status: locationStatus } = await Location.getForegroundPermissionsAsync();
+        if (locationStatus !== 'granted') {
+          await Location.requestForegroundPermissionsAsync();
+        }
+      } catch (error) {
+        console.error('Error requesting permissions:', error);
+      }
+    };
+    requestPermissions();
+  }, [isGuestMode]);
+
   const showGuestAlert = () => {
     Alert.alert(
       'Create an Account',
