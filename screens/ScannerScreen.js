@@ -732,7 +732,7 @@ export default function ScannerScreen({ navigation }) {
             </View>
 
             {/* Loading Overlay */}
-            {loading && (
+            {loading && mode === 'photo' && (
               <View style={styles.loadingOverlay}>
                 <View style={styles.loadingCard}>
                   <ActivityIndicator size="large" color="#4CAF50" />
