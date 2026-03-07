@@ -44,7 +44,6 @@ export default function ScannerScreen({ navigation }) {
   const [mode, setMode] = useState('barcode');
   const [checkingTutorial, setCheckingTutorial] = useState(true);
   const [loggingMeal, setLoggingMeal] = useState(false);
-  const [cameraReady, setCameraReady] = useState(true);
   
   // Swipe navigation (only when camera is idle, not during scan)
   const swipeGesture = useSwipeNavigation(navigation, 'Scanner', mode === 'barcode' && !scanned);
@@ -344,16 +343,25 @@ export default function ScannerScreen({ navigation }) {
         });
       } else {
         console.log("❌ Product not found in database");
+        setLoading(false);
         Alert.alert(
           t('scanner.productNotFound'),
           t('scanner.notInDatabase'),
           [
-            { text: t('scanner.cancel'), onPress: () => setScanned(false), style: 'cancel' },
+            { text: t('scanner.cancel'), onPress: () => {
+              setTimeout(() => {
+                setScanned(false);
+                setLoading(false);
+              }, 100);
+            }, style: 'cancel' },
             {
               text: t('scanner.submitProduct'),
               onPress: () => {
-                setScanned(false);
-                navigation.navigate('SubmitProduct', { barcode });
+                setTimeout(() => {
+                  setScanned(false);
+                  setLoading(false);
+                  navigation.navigate('SubmitProduct', { barcode });
+                }, 100);
               },
             },
           ]
@@ -361,6 +369,7 @@ export default function ScannerScreen({ navigation }) {
       }
     } catch (error) {
       console.error('❌ Error fetching food info:', error);
+      setLoading(false);
       Alert.alert(
         t('scanner.error'),
         t('scanner.errorMessage'),
@@ -613,7 +622,6 @@ export default function ScannerScreen({ navigation }) {
 
   // Toggle between barcode and photo mode
   const toggleMode = () => {
-    setCameraReady(false);
     setMode(prev => prev === 'barcode' ? 'photo' : 'barcode');
     setScanned(false);
     setLoading(false);
@@ -630,13 +638,9 @@ export default function ScannerScreen({ navigation }) {
             ref={cameraRef}
             style={styles.camera}
             facing="back"
-            onCameraReady={() => {
-              console.log('📷 Camera ready');
-              setCameraReady(true);
-            }}
-            barcodeScannerSettings={mode === 'barcode' ? {
+            barcodeScannerSettings={{
               barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'code39'],
-            } : undefined}
+            }}
             onBarcodeScanned={mode === 'barcode' ? handleBarcodeScanned : undefined}
           >
             {/* Header */}
@@ -658,11 +662,6 @@ export default function ScannerScreen({ navigation }) {
             </View>
 
             {/* Scanning Overlay */}
-            {!cameraReady ? (
-              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <ActivityIndicator size="large" color="#fff" />
-              </View>
-            ) : (
             <View key={mode} style={{ flex: 1 }}>
 
               {mode === 'barcode' ? (
@@ -696,7 +695,6 @@ export default function ScannerScreen({ navigation }) {
                 </View>
               )}
             </View>
-            )}
 
             {/* Mode Toggle Button - absolutely positioned top right */}
             <TouchableOpacity
@@ -738,9 +736,7 @@ export default function ScannerScreen({ navigation }) {
               <View style={styles.loadingOverlay}>
                 <View style={styles.loadingCard}>
                   <ActivityIndicator size="large" color="#4CAF50" />
-                  <Text style={styles.loadingText}>
-                    {mode === 'barcode' ? t('scanner.loadingNutrition') : t('scanner.analyzingPhoto')}
-                  </Text>
+                  <Text style={styles.loadingText}>{t('scanner.analyzingPhoto')}</Text>
                 </View>
               </View>
             )}

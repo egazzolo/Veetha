@@ -1,5 +1,7 @@
 import StepsCard from '../components/StepsCard';
 import React, { useState, useEffect, useRef, useContext } from 'react';
+import * as ImagePicker from 'expo-image-picker';
+import * as Notifications from 'expo-notifications';
 import * as Location from 'expo-location';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, RefreshControl, Alert, Modal, Platform, Animated, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,6 +21,7 @@ import { supabase } from '../utils/supabase';
 import { logScreen, logEvent } from '../utils/analytics';
 import { getSuggestionsForMealTime, LOCAL_FOODS } from '../utils/localFoods';
 import { Pedometer } from 'expo-sensors';
+import { Camera } from 'expo-camera';
 import AppTutorial from '../components/AppTutorial';
 import AnimatedThemeWrapper from '../components/AnimatedThemeWrapper';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -484,23 +487,29 @@ export default function HomeScreen({ navigation }) {
 
   // Request camera and location permissions for email/password users who skipped onboarding
   useEffect(() => {
-    if (isGuestMode) return;
     const requestPermissions = async () => {
       try {
-        const { status: cameraStatus } = await requestCameraPermission();
+        const { status: cameraStatus } = await Camera.requestCameraPermissionsAsync();
         if (cameraStatus !== 'granted') {
-          console.log('📷 Camera permission not granted');
+          console.log('📷 Camera permission denied');
         }
-        const { status: locationStatus } = await Location.getForegroundPermissionsAsync();
+
+        const { status: locationStatus } = await Location.requestForegroundPermissionsAsync();
         if (locationStatus !== 'granted') {
-          await Location.requestForegroundPermissionsAsync();
+          console.log('📍 Location permission denied');
         }
-      } catch (error) {
-        console.error('Error requesting permissions:', error);
+
+        const { status: notificationStatus } = await Notifications.requestPermissionsAsync();
+        if (notificationStatus !== 'granted') {
+          console.log('🔔 Notification permission denied');
+        }
+      } catch (err) {
+        console.error('Permission request error:', err);
       }
     };
+
     requestPermissions();
-  }, [isGuestMode]);
+  }, []);
 
   const showGuestAlert = () => {
     Alert.alert(
