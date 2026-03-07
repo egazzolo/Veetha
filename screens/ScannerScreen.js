@@ -638,6 +638,7 @@ export default function ScannerScreen({ navigation }) {
             ref={cameraRef}
             style={styles.camera}
             facing="back"
+            onCameraReady={() => console.log('📷 Camera ready - mode:', mode)}
             barcodeScannerSettings={{
               barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'code39'],
             }}
@@ -841,27 +842,6 @@ const styles = StyleSheet.create({
   camera: {
     flex: 1,
   },
-  // permissionContainer: {
-  //   flex: 1,
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  //   padding: 20,
-  // },
-  // permissionText: {
-  //   fontSize: 18,
-  //   textAlign: 'center',
-  //   marginBottom: 20,
-  // },
-  // permissionButton: {
-  //   paddingHorizontal: 30,
-  //   paddingVertical: 15,
-  //   borderRadius: 10,
-  // },
-  // permissionButtonText: {
-  //   color: '#fff',
-  //   fontSize: 16,
-  //   fontWeight: 'bold',
-  // },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
