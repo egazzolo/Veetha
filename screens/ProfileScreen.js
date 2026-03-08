@@ -510,14 +510,6 @@ export default function ProfileScreen({ navigation }) {
                   />
                 </View>
 
-                <TouchableOpacity style={[styles.settingItem, { backgroundColor: theme.cardBackground }]}>
-                  <View style={styles.settingLeft}>
-                    <Text style={styles.settingIcon}>🔔</Text>
-                    <Text style={[styles.settingLabel, { color: theme.text }]}>{t('profile.notifications')}</Text>
-                  </View>
-                  <Text style={styles.settingArrow}>›</Text>
-                </TouchableOpacity>
-
                 <TouchableOpacity 
                   ref={goalsButtonRef}
                   onLayout={(event) => {
