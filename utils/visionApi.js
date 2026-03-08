@@ -71,51 +71,91 @@ export async function analyzePhoto(imageBase64) {
       throw new Error('No food detected in image');
     }
 
-    // Combine and rank results
+    // Log raw results for debugging
+    console.log('🔍 Raw label annotations (top 5):', labels.slice(0, 5).map(l =>
+      `${l.description} (${Math.round(l.score * 100)}%)`
+    ));
+    console.log('🔍 Raw web entities (top 5):', webEntities.slice(0, 5).map(e =>
+      `${e.description || '(no description)'} (score: ${e.score ?? 'none'})`
+    ));
+
+    // Filter out web entities with no score or low confidence (< 0.7)
+    const filteredWebEntities = webEntities.filter(e =>
+      e.description && e.score != null && e.score >= 0.7
+    );
+
+    // Build detections — labels first so they take priority at equal confidence
     const allDetections = [
-      ...webEntities.map(e => ({
-        name: e.description,
-        confidence: Math.round((e.score || 0.5) * 100),
-        source: 'web'
-      })),
       ...labels.map(l => ({
         name: l.description,
         confidence: Math.round(l.score * 100),
         source: 'label'
+      })),
+      ...filteredWebEntities.map(e => ({
+        name: e.description,
+        confidence: Math.round(e.score * 100),
+        source: 'web'
       }))
     ];
 
-    // Filter food-related terms
+    // Food-related keywords for filtering
     const foodKeywords = [
       'food', 'dish', 'meal', 'cuisine', 'recipe', 'ingredient',
       'vegetable', 'fruit', 'meat', 'seafood', 'dessert', 'snack',
-      'breakfast', 'lunch', 'dinner', 'drink', 'beverage'
+      'breakfast', 'lunch', 'dinner', 'drink', 'beverage',
+      'produce', 'dairy', 'grain', 'bread', 'pasta', 'rice',
+      'soup', 'salad', 'sauce', 'cheese', 'egg', 'nut', 'bean',
+      'herb', 'spice', 'baked', 'roast', 'fried', 'grilled'
+    ];
+
+    // Non-food terms that should be excluded even if they pass the filter
+    const excludeKeywords = [
+      'tableware', 'plate', 'bowl', 'cutlery', 'kitchen',
+      'photography', 'recipe', 'cooking', 'restaurant',
+      'garnish', 'table', 'serveware', 'dishware'
     ];
 
     const foodDetections = allDetections.filter(d => {
       const nameLower = d.name.toLowerCase();
-      return (
-        foodKeywords.some(keyword => nameLower.includes(keyword)) ||
-        d.source === 'web' // Web entities are usually more specific
-      );
+
+      // Exclude generic non-food terms
+      if (excludeKeywords.some(kw => nameLower.includes(kw))) {
+        return false;
+      }
+
+      // For labels: keep if food-related keyword matches OR if confidence is high
+      // (Vision API labels for food images are usually food items)
+      if (d.source === 'label') {
+        return foodKeywords.some(kw => nameLower.includes(kw)) || d.confidence >= 80;
+      }
+
+      // For web entities: only keep if they match a food keyword
+      return foodKeywords.some(kw => nameLower.includes(kw));
     });
 
-    // Sort by confidence
-    foodDetections.sort((a, b) => b.confidence - a.confidence);
+    // Sort by confidence, with labels winning ties over web entities
+    foodDetections.sort((a, b) => {
+      if (b.confidence !== a.confidence) return b.confidence - a.confidence;
+      return a.source === 'label' ? -1 : 1;
+    });
 
-    if (foodDetections.length === 0) {
+    // Apply minimum confidence threshold of 50%
+    const MIN_CONFIDENCE = 50;
+    const confidentDetections = foodDetections.filter(d => d.confidence >= MIN_CONFIDENCE);
+
+    if (confidentDetections.length === 0) {
       throw new Error('No food detected in image');
     }
 
-    const topDetection = foodDetections[0];
+    const topDetection = confidentDetections[0];
 
     console.log(`✅ Google Vision detected: ${topDetection.name} (${topDetection.confidence}% confidence)`);
-    console.log(`📊 Top 3 results:`, foodDetections.slice(0, 3).map(d => `${d.name} (${d.confidence}%)`));
+    console.log(`📊 Top 3 results:`, confidentDetections.slice(0, 3).map(d => `${d.name} (${d.confidence}%, ${d.source})`));
 
     return {
       foodName: topDetection.name,
       confidence: topDetection.confidence,
-      allConcepts: foodDetections.slice(0, 5).map(d => ({
+      allConcepts: confidentDetections.slice(0, 5).map(d => ({
         name: d.name,
         confidence: d.confidence
       }))
