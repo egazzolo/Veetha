@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useCameraPermissions } from 'expo-camera';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useOnboarding } from '../../utils/OnboardingContext';
@@ -13,6 +13,11 @@ function DOBPicker({ value, onChange, t, language }) {
   const locale = LOCALE_MAP[language] || 'en-US';
   const today = new Date();
   const initial = value || new Date(1990, 0, 1);
+
+  const { width } = Dimensions.get('window');
+  const calendarWidth = width * 0.9;
+  const scaleFactor = Math.min(width / 390, 1);
+  const calFontSize = (size) => Math.max(Math.round(size * scaleFactor), 8);
 
   const [viewYear, setViewYear] = useState(initial.getFullYear());
   const [viewMonth, setViewMonth] = useState(initial.getMonth());
@@ -54,17 +59,17 @@ function DOBPicker({ value, onChange, t, language }) {
 
   if (mode === 'year') {
     return (
-      <View style={styles.dobContainer}>
-        <Text style={styles.yearPickerTitle}>Select Year</Text>
+      <View style={[styles.dobContainer, { width: calendarWidth, alignSelf: 'center', padding: calendarWidth * 0.03 }]}>
+        <Text style={[styles.yearPickerTitle, { fontSize: calFontSize(14) }]}>Select Year</Text>
         <ScrollView style={{ maxHeight: 260 }} showsVerticalScrollIndicator={false}>
           <View style={styles.yearGrid}>
             {years.map(y => (
               <TouchableOpacity
                 key={y}
-                style={[styles.yearCell, y === viewYear && styles.yearCellSelected]}
+                style={[styles.yearCell, { width: calendarWidth * 0.27, paddingVertical: calendarWidth * 0.025 }, y === viewYear && styles.yearCellSelected]}
                 onPress={() => { setViewYear(y); setMode('day'); }}
               >
-                <Text style={[styles.yearText, y === viewYear && styles.yearTextSelected]}>
+                <Text style={[styles.yearText, { fontSize: calFontSize(13) }, y === viewYear && styles.yearTextSelected]}>
                   {y}
                 </Text>
               </TouchableOpacity>
@@ -75,44 +80,46 @@ function DOBPicker({ value, onChange, t, language }) {
     );
   }
 
+  const dayCellSize = calendarWidth * 0.127;
+
   return (
-    <View style={styles.dobContainer}>
+    <View style={[styles.dobContainer, { width: calendarWidth, alignSelf: 'center', padding: calendarWidth * 0.03 }]}>
       <View style={styles.dobHeader}>
         <TouchableOpacity onPress={goPrevMonth} style={styles.navBtn}>
-          <Text style={styles.navText}>‹</Text>
+          <Text style={[styles.navText, { fontSize: calFontSize(20) }]}>‹</Text>
         </TouchableOpacity>
 
         <View style={{ flexDirection: 'row', gap: 6 }}>
-          <Text style={styles.monthLabel}>
+          <Text style={[styles.monthLabel, { fontSize: calFontSize(14) }]}>
             {new Date(viewYear, viewMonth).toLocaleDateString(locale, { month: 'long' })}
           </Text>
           <TouchableOpacity onPress={() => setMode('year')}>
-            <Text style={[styles.monthLabel, { textDecorationLine: 'underline', color: '#4CAF50' }]}>
+            <Text style={[styles.monthLabel, { fontSize: calFontSize(14), textDecorationLine: 'underline', color: '#4CAF50' }]}>
               {viewYear}
             </Text>
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity onPress={goNextMonth} style={styles.navBtn}>
-          <Text style={styles.navText}>›</Text>
+          <Text style={[styles.navText, { fontSize: calFontSize(20) }]}>›</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.weekRow}>
         {t('stats.weekdays').map((d, i) => (
-          <Text key={i} style={styles.weekDay}>{d}</Text>
+          <Text key={i} style={[styles.weekDay, { fontSize: calFontSize(10) }]}>{d}</Text>
         ))}
       </View>
 
       <View style={styles.dayGrid}>
         {cells.map((day, i) => {
-          if (!day) return <View key={`e-${i}`} style={styles.dayCell} />;
+          if (!day) return <View key={`e-${i}`} style={[styles.dayCell, { width: dayCellSize, height: dayCellSize }]} />;
           const isFuture = new Date(viewYear, viewMonth, day) > today;
           const isSelected = day === selectedDay;
           return (
             <TouchableOpacity
               key={day}
-              style={styles.dayCell}
+              style={[styles.dayCell, { width: dayCellSize, height: dayCellSize }]}
               onPress={() => !isFuture && selectDay(day)}
               disabled={isFuture}
               activeOpacity={0.7}
@@ -122,7 +129,7 @@ function DOBPicker({ value, onChange, t, language }) {
                 isSelected && { backgroundColor: '#4CAF50' },
                 isFuture && { opacity: 0.3 },
               ]}>
-                <Text style={[styles.dayText, isSelected && { color: '#fff', fontWeight: 'bold' }]}>
+                <Text style={[styles.dayText, { fontSize: calFontSize(11) }, isSelected && { color: '#fff', fontWeight: 'bold' }]}>
                   {day}
                 </Text>
               </View>
@@ -386,7 +393,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#6B5B45',
     borderRadius: 10,
-    padding: scale(10),
   },
   dobHeader: {
     flexDirection: 'row',
@@ -398,12 +404,10 @@ const styles = StyleSheet.create({
     padding: 8
   },
   navText: {
-    fontSize: scale(20),
     fontWeight: 'bold',
     color: '#333'
   },
   monthLabel: {
-    fontSize: scale(14),
     fontWeight: '600',
     color: '#333'
   },
@@ -414,7 +418,6 @@ const styles = StyleSheet.create({
   weekDay: {
     flexBasis: '14.2857%',
     textAlign: 'center',
-    fontSize: scale(10),
     color: '#999',
     fontWeight: '600'
   },
@@ -423,9 +426,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap'
   },
   dayCell: {
-    flexBasis: '14.2857%',
-    aspectRatio: 1,
-    padding: 2
+    padding: 1,
   },
   dayCellInner: {
     flex: 1,
@@ -435,11 +436,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0ece4'
   },
   dayText: {
-    fontSize: scale(11),
     color: '#333'
   },
   yearPickerTitle: {
-    fontSize: scale(14),
     fontWeight: '600',
     color: '#333',
     textAlign: 'center',
@@ -456,8 +455,6 @@ const styles = StyleSheet.create({
     paddingBottom: 8
   },
   yearCell: {
-    width: '28%',
-    paddingVertical: 10,
     borderRadius: 8,
     alignItems: 'center',
     backgroundColor: '#f0ece4'
@@ -466,7 +463,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50'
   },
   yearText: {
-    fontSize: scale(13),
     color: '#333'
   },
   yearTextSelected: {
