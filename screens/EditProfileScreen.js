@@ -17,7 +17,7 @@ export default function EditProfileScreen({ navigation }) {
   const { profile, refreshProfile } = useUser();
   const { isGuest: isGuestMode } = useUserMode();
 
-  const guestCheck = (action) => blockIfGuest(isGuestMode, navigation, action);
+  const guestCheck = (action) => blockIfGuest(isGuestMode, navigation, action, t);
 
   const [displayName, setDisplayName] = useState('');
   const [fullName, setFullName] = useState('');

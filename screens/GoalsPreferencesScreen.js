@@ -23,7 +23,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
   const { profile, refreshProfile } = useUser();
   const { isGuest: isGuestMode } = useUserMode();
 
-  const guestCheck = (action) => blockIfGuest(isGuestMode, navigation, action);
+  const guestCheck = (action) => blockIfGuest(isGuestMode, navigation, action, t);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -157,7 +157,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
   };
 
   const handleSave = async () => {
-    if (blockIfGuest(isGuestMode, navigation, () => {})) return;
+    if (blockIfGuest(isGuestMode, navigation, () => {}, t)) return;
     // Validation
     const calories = parseFloat(dailyCalorieGoal);
     const protein = parseFloat(proteinGoal);

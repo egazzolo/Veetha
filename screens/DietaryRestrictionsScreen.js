@@ -44,7 +44,7 @@ export default function DietaryRestrictionsScreen({ navigation }) {
   const { profile, refreshProfile } = useUser();
   const { isGuest: isGuestMode } = useUserMode();
 
-  const guestCheck = (action) => blockIfGuest(isGuestMode, navigation, action);
+  const guestCheck = (action) => blockIfGuest(isGuestMode, navigation, action, t);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -87,7 +87,7 @@ export default function DietaryRestrictionsScreen({ navigation }) {
   };
 
   const toggleAllergy = (allergyId) => {
-    if (blockIfGuest(isGuestMode, navigation, () => {})) return;
+    if (blockIfGuest(isGuestMode, navigation, () => {}, t)) return;
     if (selectedAllergies.includes(allergyId)) {
       setSelectedAllergies(selectedAllergies.filter(id => id !== allergyId));
     } else {
@@ -96,7 +96,7 @@ export default function DietaryRestrictionsScreen({ navigation }) {
   };
 
   const togglePreference = (prefId) => {
-    if (blockIfGuest(isGuestMode, navigation, () => {})) return;
+    if (blockIfGuest(isGuestMode, navigation, () => {}, t)) return;
     if (selectedPreferences.includes(prefId)) {
       setSelectedPreferences(selectedPreferences.filter(id => id !== prefId));
     } else {
@@ -105,7 +105,7 @@ export default function DietaryRestrictionsScreen({ navigation }) {
   };
 
   const handleSave = async () => {
-    if (blockIfGuest(isGuestMode, navigation, () => {})) return;
+    if (blockIfGuest(isGuestMode, navigation, () => {}, t)) return;
     setSaving(true);
 
     try {

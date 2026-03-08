@@ -514,11 +514,11 @@ export default function HomeScreen({ navigation }) {
 
   const showGuestAlert = () => {
     Alert.alert(
-      'Create an Account',
-      'Sign up to log meals, water, exercise, and more.',
+      t('guest.createAccount'),
+      t('guest.signUpToLog'),
       [
-        { text: 'Not Now', style: 'cancel' },
-        { text: 'Sign Up', onPress: () => navigation.reset({ index: 0, routes: [{ name: 'Landing' }] }) },
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('guest.signUp'), onPress: () => navigation.reset({ index: 0, routes: [{ name: 'Landing' }] }) },
       ]
     );
   };
@@ -1166,7 +1166,7 @@ export default function HomeScreen({ navigation }) {
   };
 
   const goToStartOfWeek = () => {
-    if (blockIfGuest(isGuestMode, navigation, () => {})) return;
+    if (blockIfGuest(isGuestMode, navigation, () => {}, t)) return;
     const date = new Date(selectedDate);
     const day = date.getDay();
     const diff = day === 0 ? -6 : 1 - day; // Monday as first day
@@ -1181,7 +1181,7 @@ export default function HomeScreen({ navigation }) {
   };
 
   const goToStartOfMonth = () => {
-    if (blockIfGuest(isGuestMode, navigation, () => {})) return;
+    if (blockIfGuest(isGuestMode, navigation, () => {}, t)) return;
     const date = new Date(selectedDate);
     date.setDate(1);
 

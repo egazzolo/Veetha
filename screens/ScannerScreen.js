@@ -506,11 +506,11 @@ export default function ScannerScreen({ navigation }) {
 
   const showGuestPrompt = () => {
     Alert.alert(
-      'Create an Account',
-      'Sign up to log meals, water, exercise, and more.',
+      t('guest.createAccount'),
+      t('guest.signUpToLog'),
       [
-        { text: 'Sign Up', onPress: () => navigation.navigate('SignUp') },
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('guest.signUp'), onPress: () => navigation.navigate('SignUp') },
+        { text: t('common.cancel'), style: 'cancel' },
       ]
     );
   };

@@ -1164,4 +1164,17 @@ export default {
     footerThankYou: 'Thank you for trusting Veetha with your health and nutrition data. Your privacy is important to us.',
     version: 'Version 1.0 • Last Updated: November 21, 2024',
   },
+
+  // Guest upsell prompts
+  guest: {
+    createAccount: 'Create an Account',
+    signUpToLog: 'Sign up to log meals, water, exercise, and more.',
+    signUpProfilePhoto: 'Sign up to set a profile photo.',
+    signUp: 'Sign Up',
+    weeklyProgress: 'Your weekly progress will appear here once you create an account.',
+    monthlyProgress: 'Your monthly progress will appear here once you create an account.',
+    exerciseHistory: 'Your exercise history will appear here once you create an account.',
+    signUpLogIn: 'Sign Up / Log In',
+    profileBanner: 'Create an account to unlock all features, save your data, and sync across devices.',
+  },
 }

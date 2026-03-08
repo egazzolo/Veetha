@@ -271,7 +271,7 @@ export default function ProfileScreen({ navigation }) {
 
   const handlePickAvatar = async () => {
     if (isGuest) {
-      Alert.alert('Create an Account', 'Sign up to set a profile photo.');
+      Alert.alert(t('guest.createAccount'), t('guest.signUpProfilePhoto'));
       return;
     }
 
@@ -686,7 +686,7 @@ export default function ProfileScreen({ navigation }) {
               {isGuest && (
                 <View style={[styles.guestBanner, { backgroundColor: theme.cardBackground }]}>
                   <Text style={[styles.guestBannerText, { color: theme.text }]}>
-                    Create an account to unlock all features, save your data, and sync across devices.
+                    {t('guest.profileBanner')}
                   </Text>
                   <TouchableOpacity
                     style={styles.guestBannerButton}
@@ -697,7 +697,7 @@ export default function ProfileScreen({ navigation }) {
                       });
                     }}
                   >
-                    <Text style={styles.guestBannerButtonText}>Sign Up / Log In</Text>
+                    <Text style={styles.guestBannerButtonText}>{t('guest.signUpLogIn')}</Text>
                   </TouchableOpacity>
                 </View>
               )}

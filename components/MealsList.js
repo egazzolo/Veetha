@@ -71,9 +71,9 @@ export default function MealsList({
                     style={[styles.quickEntryButton, { backgroundColor: '#2196F3' }]}
                     onPress={() => {
                       if (isGuestMode) {
-                        Alert.alert('Create an Account', 'Sign up to log meals, water, exercise, and more.', [
-                          { text: 'Cancel', style: 'cancel' },
-                          { text: 'Sign Up', onPress: () => navigation.navigate('SignUp') },
+                        Alert.alert(t('guest.createAccount'), t('guest.signUpToLog'), [
+                          { text: t('common.cancel'), style: 'cancel' },
+                          { text: t('guest.signUp'), onPress: () => navigation.navigate('SignUp') },
                         ]);
                         return;
                       }

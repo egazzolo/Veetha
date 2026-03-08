@@ -1164,4 +1164,17 @@ export default {
     footerThankYou: 'Salamat sa pagtitiwala sa Veetha ng iyong health at nutrition data. Ang iyong privacy ay mahalaga sa amin.',
     version: 'Bersyon 1.0 • Huling Na-update: Nobyembre 21, 2024',
   },
+
+  // Guest upsell prompts
+  guest: {
+    createAccount: 'Gumawa ng Account',
+    signUpToLog: 'Mag-sign up para mag-log ng mga pagkain, tubig, ehersisyo, at iba pa.',
+    signUpProfilePhoto: 'Mag-sign up para maglagay ng profile photo.',
+    signUp: 'Mag-sign Up',
+    weeklyProgress: 'Ang iyong lingguhang progreso ay lalabas dito kapag gumawa ka ng account.',
+    monthlyProgress: 'Ang iyong buwanang progreso ay lalabas dito kapag gumawa ka ng account.',
+    exerciseHistory: 'Ang iyong kasaysayan ng ehersisyo ay lalabas dito kapag gumawa ka ng account.',
+    signUpLogIn: 'Mag-sign Up / Mag-log In',
+    profileBanner: 'Gumawa ng account para ma-unlock ang lahat ng features, i-save ang iyong data, at mag-sync sa iba\'t ibang device.',
+  },
 }

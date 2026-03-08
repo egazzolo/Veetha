@@ -7,15 +7,15 @@ import { Alert } from 'react-native';
  * @param {function} action - the action to run if not guest
  * @returns {boolean} true if blocked, false if allowed
  */
-export const blockIfGuest = (isGuest, navigation, action) => {
+export const blockIfGuest = (isGuest, navigation, action, t) => {
   if (isGuest) {
     Alert.alert(
-      'Create an Account',
-      'Sign up to log meals, water, exercise, and more.',
+      t ? t('guest.createAccount') : 'Create an Account',
+      t ? t('guest.signUpToLog') : 'Sign up to log meals, water, exercise, and more.',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t ? t('common.cancel') : 'Cancel', style: 'cancel' },
         {
-          text: 'Sign Up',
+          text: t ? t('guest.signUp') : 'Sign Up',
           onPress: () => navigation.navigate('SignUp'),
         },
       ]

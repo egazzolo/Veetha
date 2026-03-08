@@ -413,7 +413,7 @@ export default function ResultScreen({ route, navigation }) {
   }, []);
 
   const handleLogMeal = async () => {
-    if (blockIfGuest(isGuestMode, navigation, () => {})) return;
+    if (blockIfGuest(isGuestMode, navigation, () => {}, t)) return;
     try {
       setSavingMeal(true);
       console.log('🔥 HANDLE LOG MEAL STARTED', { isGuest, user });
@@ -628,7 +628,7 @@ export default function ResultScreen({ route, navigation }) {
     .onEnd((e) => {
       if (isGuestMode && e.translationX > 0) {
         // Guest tried to swipe right — show prompt, snap back
-        blockIfGuest(isGuestMode, navigation, () => {});
+        blockIfGuest(isGuestMode, navigation, () => {}, t);
         detailedTranslateX.setValue(0);
         detailedRotateZ.setValue(0);
         setDetailedSwipeDirection(null);
@@ -726,7 +726,7 @@ export default function ResultScreen({ route, navigation }) {
       .onEnd((e) => {
         if (isGuestMode && e.translationX > 0) {
           // Guest tried to swipe right — show prompt, snap back
-          blockIfGuest(isGuestMode, navigation, () => {});
+          blockIfGuest(isGuestMode, navigation, () => {}, t);
           translateX.setValue(0);
           rotateZ.setValue(0);
           setSwipeDirection(null);

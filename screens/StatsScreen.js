@@ -445,13 +445,13 @@ export default function StatsScreen({ navigation }) {
                   {isGuestMode && (
                     <View style={[styles.guestBanner, { backgroundColor: theme.cardBackground, borderColor: theme.primary }]}>
                       <Text style={[styles.guestBannerText, { color: theme.text }]}>
-                        Your weekly progress will appear here once you create an account.
+                        {t('guest.weeklyProgress')}
                       </Text>
                       <TouchableOpacity
                         style={[styles.guestBannerBtn, { backgroundColor: theme.primary }]}
                         onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Landing' }] })}
                       >
-                        <Text style={styles.guestBannerBtnText}>Sign Up / Log In</Text>
+                        <Text style={styles.guestBannerBtnText}>{t('guest.signUpLogIn')}</Text>
                       </TouchableOpacity>
                     </View>
                   )}
@@ -572,13 +572,13 @@ export default function StatsScreen({ navigation }) {
                   {isGuestMode && (
                     <View style={[styles.guestBanner, { backgroundColor: theme.cardBackground, borderColor: theme.primary }]}>
                       <Text style={[styles.guestBannerText, { color: theme.text }]}>
-                        Your monthly progress will appear here once you create an account.
+                        {t('guest.monthlyProgress')}
                       </Text>
                       <TouchableOpacity
                         style={[styles.guestBannerBtn, { backgroundColor: theme.primary }]}
                         onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Landing' }] })}
                       >
-                        <Text style={styles.guestBannerBtnText}>Sign Up / Log In</Text>
+                        <Text style={styles.guestBannerBtnText}>{t('guest.signUpLogIn')}</Text>
                       </TouchableOpacity>
                     </View>
                   )}
@@ -740,13 +740,13 @@ export default function StatsScreen({ navigation }) {
                   {isGuestMode && (
                     <View style={[styles.guestBanner, { backgroundColor: theme.cardBackground, borderColor: theme.primary }]}>
                       <Text style={[styles.guestBannerText, { color: theme.text }]}>
-                        Your exercise history will appear here once you create an account.
+                        {t('guest.exerciseHistory')}
                       </Text>
                       <TouchableOpacity
                         style={[styles.guestBannerBtn, { backgroundColor: theme.primary }]}
                         onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Landing' }] })}
                       >
-                        <Text style={styles.guestBannerBtnText}>Sign Up / Log In</Text>
+                        <Text style={styles.guestBannerBtnText}>{t('guest.signUpLogIn')}</Text>
                       </TouchableOpacity>
                     </View>
                   )}

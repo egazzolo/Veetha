@@ -1164,4 +1164,17 @@ export default {
     footerThankYou: 'Merci de faire confiance à Veetha avec vos données de santé et de nutrition. Votre vie privée est importante pour nous.',
     version: 'Version 1.0 • Dernière mise à jour: 21 novembre 2024',
   },
+
+  // Guest upsell prompts
+  guest: {
+    createAccount: 'Créer un Compte',
+    signUpToLog: 'Inscrivez-vous pour enregistrer repas, eau, exercice et plus.',
+    signUpProfilePhoto: 'Inscrivez-vous pour définir une photo de profil.',
+    signUp: 'S\'inscrire',
+    weeklyProgress: 'Votre progression hebdomadaire apparaîtra ici une fois votre compte créé.',
+    monthlyProgress: 'Votre progression mensuelle apparaîtra ici une fois votre compte créé.',
+    exerciseHistory: 'Votre historique d\'exercice apparaîtra ici une fois votre compte créé.',
+    signUpLogIn: 'S\'inscrire / Se Connecter',
+    profileBanner: 'Créez un compte pour débloquer toutes les fonctionnalités, sauvegarder vos données et synchroniser entre appareils.',
+  },
 }
