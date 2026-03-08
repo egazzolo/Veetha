@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: '#666',
+    color: '#121111',
     marginBottom: 8,
   },
   input: {

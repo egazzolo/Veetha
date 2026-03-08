@@ -28,8 +28,8 @@ export const LOCAL_FOODS = {
       { name: 'Causa rellena', calories: 350, protein: 15, carbs: 45, fat: 12, image_url: "https://bfgreozkoftncayzyzhz.supabase.co/storage/v1/object/public/foods/causa_rellena.jpg" },
       { name: 'Papa a la huancaína', calories: 320, protein: 12, carbs: 35, fat: 16, image_url: "https://bfgreozkoftncayzyzhz.supabase.co/storage/v1/object/public/foods/papa_a_la_huancahina.jpg" },
       { name: 'Sopa de pollo', calories: 220, protein: 18, carbs: 25, fat: 6, image_url: "https://bfgreozkoftncayzyzhz.supabase.co/storage/v1/object/public/foods/sopa_de_pollo.jpg" },
-      { name: 'Picarones', emoji: '🍩', calories: 290, protein: 3, carbs: 40, fat: 13 },
-      { name: 'Arroz con leche', emoji: '🍚', calories: 130, protein: 3, carbs: 22, fat: 3 },
+      { name: 'Picarones', emoji: '🍩', calories: 290, protein: 3, carbs: 40, fat: 13, image_url: "https://bfgreozkoftncayzyzhz.supabase.co/storage/v1/object/public/foods/picarones.jpg" },
+      { name: 'Arroz con leche', emoji: '🍚', calories: 130, protein: 3, carbs: 22, fat: 3, image_url: "https://bfgreozkoftncayzyzhz.supabase.co/storage/v1/object/public/foods/arroz_con_leche.jpg" },
       { name: 'Suspiro limeño', emoji: '🍮', calories: 300, protein: 4, carbs: 45, fat: 12 },
       { name: 'Anticuchos', emoji: '🍢', calories: 210, protein: 20, carbs: 2, fat: 14 },
     ]
