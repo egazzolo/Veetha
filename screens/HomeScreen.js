@@ -504,6 +504,34 @@ export default function HomeScreen({ navigation }) {
         if (notificationStatus !== 'granted') {
           console.log('🔔 Notification permission denied');
         }
+
+        // Schedule daily meal reminders (once only)
+        if (notificationStatus === 'granted') {
+          const alreadyScheduled = await AsyncStorage.getItem('notifications_scheduled');
+          if (!alreadyScheduled) {
+            const meals = [
+              { hour: 8, minute: 0, titleKey: 'mealReminders.breakfastTitle', bodyKey: 'mealReminders.breakfastBody' },
+              { hour: 13, minute: 0, titleKey: 'mealReminders.lunchTitle', bodyKey: 'mealReminders.lunchBody' },
+              { hour: 19, minute: 0, titleKey: 'mealReminders.dinnerTitle', bodyKey: 'mealReminders.dinnerBody' },
+            ];
+            for (const meal of meals) {
+              await Notifications.scheduleNotificationAsync({
+                content: {
+                  title: t(meal.titleKey),
+                  body: t(meal.bodyKey),
+                },
+                trigger: {
+                  type: 'daily',
+                  hour: meal.hour,
+                  minute: meal.minute,
+                  repeats: true,
+                },
+              });
+            }
+            await AsyncStorage.setItem('notifications_scheduled', 'true');
+            console.log('🔔 Daily meal reminders scheduled');
+          }
+        }
       } catch (err) {
         console.error('Permission request error:', err);
       }

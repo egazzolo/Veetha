@@ -1177,4 +1177,12 @@ export default {
     signUpLogIn: 'S\'inscrire / Se Connecter',
     profileBanner: 'Créez un compte pour débloquer toutes les fonctionnalités, sauvegarder vos données et synchroniser entre appareils.',
   },
+  mealReminders: {
+    breakfastTitle: 'L\'heure du Petit-déjeuner !',
+    breakfastBody: 'Bien commencer la journée — enregistrez votre petit-déjeuner.',
+    lunchTitle: 'L\'heure du Déjeuner !',
+    lunchBody: 'N\'oubliez pas d\'enregistrer votre déjeuner.',
+    dinnerTitle: 'L\'heure du Dîner !',
+    dinnerBody: 'Il est temps de se détendre — enregistrez votre dîner.',
+  },
 }

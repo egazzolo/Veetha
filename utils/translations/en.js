@@ -1177,4 +1177,12 @@ export default {
     signUpLogIn: 'Sign Up / Log In',
     profileBanner: 'Create an account to unlock all features, save your data, and sync across devices.',
   },
+  mealReminders: {
+    breakfastTitle: 'Breakfast Time!',
+    breakfastBody: 'Start your day right — log your breakfast now.',
+    lunchTitle: 'Lunch Time!',
+    lunchBody: 'Don\'t forget to log your lunch.',
+    dinnerTitle: 'Dinner Time!',
+    dinnerBody: 'Time to wind down — log your dinner.',
+  },
 }

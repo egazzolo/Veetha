@@ -1177,4 +1177,12 @@ export default {
     signUpLogIn: 'Mag-sign Up / Mag-log In',
     profileBanner: 'Gumawa ng account para ma-unlock ang lahat ng features, i-save ang iyong data, at mag-sync sa iba\'t ibang device.',
   },
+  mealReminders: {
+    breakfastTitle: 'Oras na ng Almusal!',
+    breakfastBody: 'Simulan ng tama ang araw — i-log ang iyong almusal.',
+    lunchTitle: 'Oras na ng Tanghalian!',
+    lunchBody: 'Huwag kalimutang i-log ang iyong tanghalian.',
+    dinnerTitle: 'Oras na ng Hapunan!',
+    dinnerBody: 'Oras na para magpahinga — i-log ang iyong hapunan.',
+  },
 }

@@ -1177,4 +1177,12 @@ export default {
     signUpLogIn: 'Registrarse / Iniciar Sesión',
     profileBanner: 'Crea una cuenta para desbloquear todas las funciones, guardar tus datos y sincronizar entre dispositivos.',
   },
+  mealReminders: {
+    breakfastTitle: '¡Hora del Desayuno!',
+    breakfastBody: 'Empieza bien el día — registra tu desayuno ahora.',
+    lunchTitle: '¡Hora del Almuerzo!',
+    lunchBody: 'No olvides registrar tu almuerzo.',
+    dinnerTitle: '¡Hora de la Cena!',
+    dinnerBody: 'Es hora de relajarse — registra tu cena.',
+  },
 }
