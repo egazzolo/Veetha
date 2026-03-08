@@ -151,6 +151,7 @@ export default function ScannerScreen({ navigation }) {
       console.log('📷 Scanner focused - resetting state');
       setScanned(false);
       setLoading(false);
+      setMode('barcode');
       lastPhotoTime.current = 0;
     }, [])
   );
@@ -634,7 +635,6 @@ export default function ScannerScreen({ navigation }) {
         <View style={styles.container}>
           {/* Camera View */}
           <CameraView
-            key={mode}
             ref={cameraRef}
             style={styles.camera}
             facing="back"
@@ -698,18 +698,15 @@ export default function ScannerScreen({ navigation }) {
             </View>
 
             {/* Mode Toggle Button - absolutely positioned top right */}
-            <TouchableOpacity
-              ref={modeToggleRef}
-              style={[
-                styles.modeToggle,
-                { backgroundColor: mode === 'barcode' ? '#4CAF50' : '#2196F3' }
-              ]}
-              onPress={toggleMode}
-            >
-              <Text style={styles.modeToggleText}>
-                {mode === 'barcode' ? '📷' : '📊'}
-              </Text>
-            </TouchableOpacity>
+            {mode === 'barcode' && (
+              <TouchableOpacity
+                ref={modeToggleRef}
+                style={[styles.modeToggle, { backgroundColor: '#4CAF50' }]}
+                onPress={toggleMode}
+              >
+                <Text style={styles.modeToggleText}>📷</Text>
+              </TouchableOpacity>
+            )}
 
             {/* Bottom Buttons */}
             <View style={styles.bottomControls}>

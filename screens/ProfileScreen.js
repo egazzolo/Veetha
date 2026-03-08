@@ -25,7 +25,6 @@ export default function ProfileScreen({ navigation }) {
   const { theme, isDark, toggleTheme } = useTheme();
   const { t } = useLanguage();
   const [refreshing, setRefreshing] = useState(false);
-  const [recoveryCode, setRecoveryCode] = useState(null);
   const [checkingTutorial, setCheckingTutorial] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || null);
   const { profile, loading, refreshProfile, refreshMeals } = useUser();
@@ -60,11 +59,6 @@ export default function ProfileScreen({ navigation }) {
       setAvatarUrl(profile.avatar_url);
     }
   }, [profile]);
-
-  useEffect(() => {
-    loadRecoveryCode();
-    logScreen('Profile');
-  }, []);
 
   // Start Profile tutorial on first visit
   useEffect(() => {
@@ -257,23 +251,6 @@ export default function ProfileScreen({ navigation }) {
 
   const handleToggleDarkMode = () => {
     toggleTheme();
-  };
-
-  const loadRecoveryCode = async () => {
-
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) return;
-
-    const { data } = await supabase
-      .from('recovery_codes')
-      .select('code_hash')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (data) {
-      setRecoveryCode('Created'); // we do NOT show hash
-    }
   };
 
   console.log('📱 ProfileScreen: Rendering with userStats =', userStats);
@@ -689,18 +666,6 @@ export default function ProfileScreen({ navigation }) {
                 >
                   <Text style={styles.deleteButtonText}>🗑️ Delete Account</Text>
                 </TouchableOpacity>
-              )}
-
-              {!isGuest && (
-                <View style={{ marginTop: 20 }}>
-                  <Text style={{ fontWeight: 'bold' }}>
-                    Recovery Code:
-                  </Text>
-
-                  <Text>
-                    {recoveryCode ? 'Recovery enabled' : 'Not created'}
-                  </Text>
-                </View>
               )}
 
               {/* Guest upgrade banner */}
