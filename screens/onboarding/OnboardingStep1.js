@@ -66,10 +66,10 @@ function DOBPicker({ value, onChange, t, language }) {
             {years.map(y => (
               <TouchableOpacity
                 key={y}
-                style={[styles.yearCell, { width: calendarWidth * 0.27, paddingVertical: calendarWidth * 0.025 }, y === viewYear && styles.yearCellSelected]}
+                style={[styles.yearCell, { width: calendarWidth * 0.27, paddingVertical: calendarWidth * 0.025, paddingHorizontal: 4 }, y === viewYear && styles.yearCellSelected]}
                 onPress={() => { setViewYear(y); setMode('day'); }}
               >
-                <Text style={[styles.yearText, { fontSize: calFontSize(13) }, y === viewYear && styles.yearTextSelected]}>
+                <Text style={[styles.yearText, { fontSize: calFontSize(13) }, y === viewYear && styles.yearTextSelected]} numberOfLines={1} adjustsFontSizeToFit>
                   {y}
                 </Text>
               </TouchableOpacity>
@@ -90,11 +90,11 @@ function DOBPicker({ value, onChange, t, language }) {
         </TouchableOpacity>
 
         <View style={{ flexDirection: 'row', gap: 6 }}>
-          <Text style={[styles.monthLabel, { fontSize: calFontSize(14) }]}>
+          <Text style={[styles.monthLabel, { fontSize: calFontSize(14) }]} numberOfLines={1} adjustsFontSizeToFit>
             {new Date(viewYear, viewMonth).toLocaleDateString(locale, { month: 'long' })}
           </Text>
           <TouchableOpacity onPress={() => setMode('year')}>
-            <Text style={[styles.monthLabel, { fontSize: calFontSize(14), textDecorationLine: 'underline', color: '#4CAF50' }]}>
+            <Text style={[styles.monthLabel, { fontSize: calFontSize(14), textDecorationLine: 'underline', color: '#4CAF50' }]} numberOfLines={1} adjustsFontSizeToFit>
               {viewYear}
             </Text>
           </TouchableOpacity>
@@ -129,7 +129,7 @@ function DOBPicker({ value, onChange, t, language }) {
                 isSelected && { backgroundColor: '#4CAF50' },
                 isFuture && { opacity: 0.3 },
               ]}>
-                <Text style={[styles.dayText, { fontSize: calFontSize(11) }, isSelected && { color: '#fff', fontWeight: 'bold' }]}>
+                <Text style={[styles.dayText, { fontSize: calFontSize(11) }, isSelected && { color: '#fff', fontWeight: 'bold' }]} numberOfLines={1} adjustsFontSizeToFit>
                   {day}
                 </Text>
               </View>
@@ -236,7 +236,7 @@ export default function OnboardingStep1({ navigation }) {
               style={[styles.optionButton, gender === 'male' && styles.optionButtonSelected]}
               onPress={() => setGender('male')}
             >
-              <Text style={[styles.optionText, gender === 'male' && styles.optionTextSelected]}>
+              <Text style={[styles.optionText, gender === 'male' && styles.optionTextSelected]} numberOfLines={1} adjustsFontSizeToFit>
                 {t('onboarding.male')}
               </Text>
             </TouchableOpacity>
@@ -245,7 +245,7 @@ export default function OnboardingStep1({ navigation }) {
               style={[styles.optionButton, gender === 'female' && styles.optionButtonSelected]}
               onPress={() => setGender('female')}
             >
-              <Text style={[styles.optionText, gender === 'female' && styles.optionTextSelected]}>
+              <Text style={[styles.optionText, gender === 'female' && styles.optionTextSelected]} numberOfLines={1} adjustsFontSizeToFit>
                 {t('onboarding.female')}
               </Text>
             </TouchableOpacity>
