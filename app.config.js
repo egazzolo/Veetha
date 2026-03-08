@@ -44,7 +44,7 @@ module.exports = {
       package: "com.yourname.veetha",
       allowBackup: false,
       adaptiveIcon: {
-        foregroundImage: "./assets/adaptive-icon.png",
+        foregroundImage: "./assets/LogoD.png",
         backgroundColor: "#ffffff"
       },
       permissions: [

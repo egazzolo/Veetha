@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase, createSessionFromUrl } from '../../utils/supabase';
 import { Svg, Path } from 'react-native-svg';
@@ -190,7 +190,9 @@ export default function LoginScreen({ navigation }) {
           <View style={styles.content}>
 
             {/* Logo */}
-            <Text style={styles.logo}>Veetha</Text>
+            <View style={styles.logoContainer}>
+              <Image source={require('../../assets/LogoB.png')} style={styles.logo} />
+            </View>
             <Text style={styles.welcomeText}>{t('login.welcomeBack')}</Text>
 
             {/* Error Message */}
@@ -311,12 +313,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     paddingTop: 40,
   },
+  logoContainer: {
+    marginBottom: 30,
+    alignItems: 'center',
+  },
   logo: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#4CAF50',
-    textAlign: 'center',
-    marginBottom: 10,
+    width: 200,
+    height: 100,
+    resizeMode: 'contain',
   },
   welcomeText: {
     fontSize: 20,

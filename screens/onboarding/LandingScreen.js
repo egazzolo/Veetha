@@ -32,7 +32,7 @@ export default function LandingScreen({ navigation }) {
           <LanguageSwitcher />
         </View>
 
-        {/* Logo placeholder - replace with your actual logo */}
+        {/* Logo */}
         <View style={styles.logoContainer}>
           <Image source={require('../../assets/LogoB.png')} style={styles.logo} />
         </View>
