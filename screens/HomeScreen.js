@@ -304,6 +304,7 @@ export default function HomeScreen({ navigation }) {
   // Date selection state (MOVED HERE - correct location!)
   const [showArrowToProfile, setShowArrowToProfile] = useState(false);
   const [profileCoords, setProfileCoords] = useState(null);
+  const profileArrowShownRef = useRef(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [monthlyData, setMonthlyData] = useState([]);
   const [waterIntake, setWaterIntake] = useState(0);
@@ -1115,10 +1116,11 @@ export default function HomeScreen({ navigation }) {
         
         console.log('✅ Home tutorial done, checking for profile arrow...');
         
-        // Check if we should show Profile arrow
-        if (freshProfile?.scanner_tutorial_completed && !freshProfile?.profile_tutorial_completed) {
-          console.log('✅ CONDITIONS MET - Showing arrow to Profile');
-          
+        // Check if we should show Profile arrow (only once)
+        if (freshProfile?.scanner_tutorial_completed && !freshProfile?.profile_tutorial_completed && !profileArrowShownRef.current) {
+          console.log('✅ CONDITIONS MET - Showing arrow to Profile (once)');
+          profileArrowShownRef.current = true;
+
           // Small delay for layout to settle
           setTimeout(() => {
             measureProfileButton();

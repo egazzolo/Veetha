@@ -98,7 +98,8 @@ export const TutorialProvider = ({ children }) => {
         }
       } catch (error) {
         console.error('Error checking profile tutorial:', error);
-        return;
+        // Don't return — ProfileScreen already verified tutorial should start.
+        // Allow tutorial to proceed even if this redundant check fails.
       }
     }
 

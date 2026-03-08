@@ -62,6 +62,15 @@ export default function ProfileScreen({ navigation }) {
 
   // Start Profile tutorial on first visit
   useEffect(() => {
+    // Guests never see tutorials
+    if (isGuest) {
+      setCheckingTutorial(false);
+      return;
+    }
+
+    let cancelled = false;
+    let timerId;
+
     const checkProfileTutorial = async () => {
       try {
         // Check local cache first
@@ -90,14 +99,14 @@ export default function ProfileScreen({ navigation }) {
           return;
         }
 
+        if (cancelled) return;
+
         setCheckingTutorial(false);
 
-        setTimeout(() => {
-          if (statsGridRef.current && editButtonRef.current) {
-            startTutorial('Profile');
-          } else {
-            setTimeout(() => startTutorial('Profile'), 2000);
-          }
+        // Short delay to let layout settle, then start tutorial
+        timerId = setTimeout(() => {
+          if (cancelled) return;
+          startTutorial('Profile');
         }, 500);
 
       } catch (error) {
@@ -107,7 +116,12 @@ export default function ProfileScreen({ navigation }) {
     };
 
     checkProfileTutorial();
-  }, []);
+
+    return () => {
+      cancelled = true;
+      if (timerId) clearTimeout(timerId);
+    };
+  }, [isGuest]);
 
   const userStats = React.useMemo(() => ({
     age: profile?.age || 0,
