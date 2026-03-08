@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useOnboarding } from '../../utils/OnboardingContext';
 import { useLanguage } from '../../utils/LanguageContext';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
+import { scale } from '../../utils/responsive';
 
 function DOBPicker({ value, onChange, t, language }) {
   const LOCALE_MAP = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', tl: 'fil-PH' };
@@ -164,7 +165,7 @@ export default function OnboardingStep1({ navigation }) {
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       age--;
     }
-    
+
     return age;
   };
 
@@ -194,11 +195,15 @@ export default function OnboardingStep1({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <View style={styles.content}>
-        <View style={styles.languageSwitcherContainer}>
-          <LanguageSwitcher />
-        </View>
+      <View style={styles.languageSwitcherContainer}>
+        <LanguageSwitcher />
+      </View>
 
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.progressContainer}>
           <View style={styles.progressBar}>
             <View style={[styles.progressFill, { width: '12.5%' }]} />
@@ -254,19 +259,16 @@ export default function OnboardingStep1({ navigation }) {
             language={language}
           />
         </View>
+      </ScrollView>
 
-        {/* Spacer */}
-        <View style={{ flex: 1 }} />
-
-        {/* Continue Button */}
-        <View style={styles.navigationButtons}>
-          <TouchableOpacity
-            style={styles.continueButton}
-            onPress={handleContinue}
-          >
-            <Text style={styles.continueButtonText}>{t('onboarding.continue')}</Text>
-          </TouchableOpacity>
-        </View>
+      {/* Continue Button - fixed at bottom */}
+      <View style={styles.navigationButtons}>
+        <TouchableOpacity
+          style={styles.continueButton}
+          onPress={handleContinue}
+        >
+          <Text style={styles.continueButtonText}>{t('onboarding.continue')}</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -277,13 +279,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#EAE0C8',
   },
-  content: {
-    flex: 1,
+  scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 30,
     paddingTop: 20,
+    paddingBottom: 20,
   },
   progressContainer: {
-    marginBottom: 30,
+    marginBottom: scale(25),
   },
   progressBar: {
     height: 4,
@@ -296,16 +299,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
   },
   progressText: {
-    fontSize: 12,
+    fontSize: scale(12),
     color: '#999',
     marginTop: 8,
     textAlign: 'center',
   },
   title: {
-    fontSize: 28,
+    fontSize: scale(26),
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 30,
+    marginBottom: scale(25),
   },
   errorContainer: {
     backgroundColor: '#ffebee',
@@ -316,12 +319,13 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#c62828',
     textAlign: 'center',
+    fontSize: scale(14),
   },
   section: {
-    marginBottom: 30,
+    marginBottom: scale(20),
   },
   label: {
-    fontSize: 16,
+    fontSize: scale(15),
     fontWeight: '600',
     color: '#333',
     marginBottom: 12,
@@ -334,7 +338,7 @@ const styles = StyleSheet.create({
   optionButton: {
     flex: 1,
     minWidth: '30%',
-    paddingVertical: 15,
+    paddingVertical: scale(13),
     paddingHorizontal: 10,
     borderWidth: 2,
     borderColor: '#6B5B45',
@@ -346,7 +350,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#e8f5e9',
   },
   optionText: {
-    fontSize: 14,
+    fontSize: scale(14),
     color: '#666',
   },
   optionTextSelected: {
@@ -357,18 +361,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 15,
-    marginBottom: 20,
+    paddingHorizontal: 30,
+    paddingVertical: 12,
   },
   continueButton: {
     flex: 1,
     backgroundColor: '#4CAF50',
-    paddingVertical: 15,
+    paddingVertical: scale(14),
     borderRadius: 10,
     alignItems: 'center',
   },
   continueButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: scale(16),
     fontWeight: '600',
   },
   languageSwitcherContainer: {
@@ -377,95 +382,95 @@ const styles = StyleSheet.create({
     right: 10,
     zIndex: 10,
   },
-  dobContainer: { 
-    borderWidth: 2, 
-    borderColor: '#6B5B45', 
-    borderRadius: 10, 
-    padding: 12, 
+  dobContainer: {
+    borderWidth: 2,
+    borderColor: '#6B5B45',
+    borderRadius: 10,
+    padding: scale(10),
   },
-  dobHeader: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginBottom: 12 
+  dobHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12
   },
-  navBtn: { 
-    padding: 8 
+  navBtn: {
+    padding: 8
   },
-  navText: { 
-    fontSize: 22, 
-    fontWeight: 'bold', 
-    color: '#333' 
+  navText: {
+    fontSize: scale(20),
+    fontWeight: 'bold',
+    color: '#333'
   },
-  monthLabel: { 
-    fontSize: 15, 
-    fontWeight: '600', 
-    color: '#333' 
+  monthLabel: {
+    fontSize: scale(14),
+    fontWeight: '600',
+    color: '#333'
   },
-  weekRow: { 
-    flexDirection: 'row', 
-    marginBottom: 6 
+  weekRow: {
+    flexDirection: 'row',
+    marginBottom: 6
   },
-  weekDay: { 
-    flexBasis: '14.2857%', 
-    textAlign: 'center', 
-    fontSize: 11, 
-    color: '#999', 
-    fontWeight: '600' 
+  weekDay: {
+    flexBasis: '14.2857%',
+    textAlign: 'center',
+    fontSize: scale(10),
+    color: '#999',
+    fontWeight: '600'
   },
-  dayGrid: { 
-    flexDirection: 'row', 
-    flexWrap: 'wrap' 
+  dayGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap'
   },
-  dayCell: { 
-    flexBasis: '14.2857%', 
-    aspectRatio: 1, 
-    padding: 2 
+  dayCell: {
+    flexBasis: '14.2857%',
+    aspectRatio: 1,
+    padding: 2
   },
-  dayCellInner: { 
-    flex: 1, 
-    borderRadius: 6, 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    backgroundColor: '#f0ece4' 
+  dayCellInner: {
+    flex: 1,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f0ece4'
   },
-  dayText: { 
-    fontSize: 12, 
-    color: '#333' 
+  dayText: {
+    fontSize: scale(11),
+    color: '#333'
   },
-  yearPickerTitle: { 
-    fontSize: 15, 
-    fontWeight: '600', 
-    color: '#333', 
-    textAlign: 'center', 
-    marginBottom: 12 
+  yearPickerTitle: {
+    fontSize: scale(14),
+    fontWeight: '600',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 12
   },
-  yearGrid: { 
-    flexDirection: 'row', 
-    flexWrap: 'wrap', 
+  yearGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'center',
     width: '100%',
-    gap: 8, 
-    paddingBottom: 8 
+    gap: 8,
+    paddingBottom: 8
   },
-  yearCell: { 
-    width: '28%', 
-    paddingVertical: 10, 
-    borderRadius: 8, 
-    alignItems: 'center', 
-    backgroundColor: '#f0ece4' 
+  yearCell: {
+    width: '28%',
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    backgroundColor: '#f0ece4'
   },
-  yearCellSelected: { 
-    backgroundColor: '#4CAF50' 
+  yearCellSelected: {
+    backgroundColor: '#4CAF50'
   },
-  yearText: { 
-    fontSize: 14, 
-    color: '#333' 
+  yearText: {
+    fontSize: scale(13),
+    color: '#333'
   },
-  yearTextSelected: { 
-    color: '#fff', 
-    fontWeight: 'bold' 
+  yearTextSelected: {
+    color: '#fff',
+    fontWeight: 'bold'
   },
 });

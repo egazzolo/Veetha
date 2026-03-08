@@ -6,6 +6,7 @@ import { useOnboarding } from '../../utils/OnboardingContext';
 import { supabase } from '../../utils/supabase';
 import { useLanguage } from '../../utils/LanguageContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { scale } from '../../utils/responsive';
 
 export default function OnboardingComplete({ navigation }) {
   const { onboardingData, clearOnboardingData } = useOnboarding();
@@ -476,7 +477,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   progressContainer: {
-    marginBottom: 40,
+    marginBottom: scale(30),
   },
   progressBar: {
     height: 4,
@@ -489,7 +490,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
   },
   progressText: {
-    fontSize: 14,
+    fontSize: scale(13),
     color: '#4CAF50',
     marginTop: 8,
     textAlign: 'center',
@@ -497,48 +498,48 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: scale(24),
   },
   icon: {
-    fontSize: 80,
+    fontSize: scale(68),
   },
   title: {
-    fontSize: 32,
+    fontSize: scale(28),
     fontWeight: 'bold',
     color: '#333',
     textAlign: 'center',
-    marginBottom: 40,
+    marginBottom: scale(30),
   },
   goalCard: {
     backgroundColor: '#e8f5e9',
     borderRadius: 16,
-    padding: 30,
+    padding: scale(24),
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: scale(24),
     borderWidth: 2,
     borderColor: '#4CAF50',
   },
   goalLabel: {
-    fontSize: 14,
+    fontSize: scale(13),
     color: '#666',
     marginBottom: 8,
   },
   goalValue: {
-    fontSize: 48,
+    fontSize: scale(40),
     fontWeight: 'bold',
     color: '#4CAF50',
     marginBottom: 8,
   },
   goalDescription: {
-    fontSize: 14,
+    fontSize: scale(13),
     color: '#666',
     textAlign: 'center',
   },
   infoText: {
-    fontSize: 16,
+    fontSize: scale(15),
     color: '#666',
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: scale(22),
     marginBottom: 20,
   },
   noteCard: {
@@ -546,23 +547,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff3cd',
     borderLeftWidth: 4,
     borderLeftColor: '#ffc107',
-    padding: 15,
+    padding: scale(13),
     borderRadius: 8,
     marginBottom: 20,
   },
   noteIcon: {
-    fontSize: 24,
+    fontSize: scale(22),
     marginRight: 10,
   },
   noteText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: scale(13),
     color: '#856404',
-    lineHeight: 20,
+    lineHeight: scale(18),
   },
   startButton: {
     backgroundColor: '#4CAF50',
-    paddingVertical: 18,
+    paddingVertical: scale(16),
     borderRadius: 12,
     alignItems: 'center',
     marginBottom: 15,
@@ -577,11 +578,11 @@ const styles = StyleSheet.create({
   },
   startButtonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: scale(17),
     fontWeight: 'bold',
   },
   footerNote: {
-    fontSize: 12,
+    fontSize: scale(11),
     color: '#999',
     textAlign: 'center',
     marginBottom: 10,
@@ -592,7 +593,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   resendText: {
-    fontSize: 14,
+    fontSize: scale(13),
     color: '#4CAF50',
     textDecorationLine: 'underline',
   },

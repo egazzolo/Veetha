@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLanguage } from '../../utils/LanguageContext';
+import { scale } from '../../utils/responsive';
 
 export default function OnboardingStep4b({ navigation }) {
   const { t } = useLanguage();
@@ -62,10 +63,10 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 30,
     paddingTop: 20,
-    paddingBottom: 130,
+    paddingBottom: 100,
   },
   progressContainer: {
-    marginBottom: 30,
+    marginBottom: scale(25),
   },
   progressBar: {
     height: 4,
@@ -78,24 +79,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
   },
   progressText: {
-    fontSize: 12,
+    fontSize: scale(12),
     color: '#999',
     marginTop: 8,
     textAlign: 'center',
   },
   mainEmoji: {
-    fontSize: 72,
+    fontSize: scale(60),
     textAlign: 'center',
-    marginBottom: 30,
+    marginBottom: scale(24),
     marginTop: 10,
   },
   statCard: {
     backgroundColor: '#4CAF50',
     borderRadius: 20,
-    paddingVertical: 30,
+    paddingVertical: scale(24),
     paddingHorizontal: 20,
     alignItems: 'center',
-    marginBottom: 28,
+    marginBottom: scale(24),
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
@@ -103,13 +104,13 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   statNumber: {
-    fontSize: 72,
+    fontSize: scale(60),
     fontWeight: 'bold',
     color: '#fff',
-    lineHeight: 80,
+    lineHeight: scale(68),
   },
   statLabel: {
-    fontSize: 18,
+    fontSize: scale(16),
     color: '#fff',
     fontWeight: '600',
     marginTop: 4,
@@ -121,23 +122,23 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   quoteText: {
-    fontSize: 17,
+    fontSize: scale(15),
     fontStyle: 'italic',
     color: '#333',
-    lineHeight: 26,
+    lineHeight: scale(24),
   },
   sourceText: {
-    fontSize: 13,
+    fontSize: scale(12),
     color: '#888',
-    lineHeight: 20,
-    marginBottom: 28,
+    lineHeight: scale(18),
+    marginBottom: scale(24),
   },
   message: {
-    fontSize: 18,
+    fontSize: scale(16),
     fontWeight: '600',
     color: '#4CAF50',
     textAlign: 'center',
-    lineHeight: 26,
+    lineHeight: scale(24),
   },
   buttonContainer: {
     position: 'absolute',
@@ -147,13 +148,13 @@ const styles = StyleSheet.create({
   },
   continueButton: {
     backgroundColor: '#4CAF50',
-    paddingVertical: 15,
+    paddingVertical: scale(14),
     borderRadius: 10,
     alignItems: 'center',
   },
   continueButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: scale(16),
     fontWeight: '600',
   },
 });

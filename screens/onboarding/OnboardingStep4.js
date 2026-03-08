@@ -4,6 +4,7 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useOnboarding } from '../../utils/OnboardingContext';
 import { useLanguage } from '../../utils/LanguageContext';
+import { scale } from '../../utils/responsive';
 
 export default function OnboardingStep4({ navigation }) {
   const { updateOnboardingData } = useOnboarding();
@@ -68,30 +69,30 @@ export default function OnboardingStep4({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <View style={styles.content}>
-        {/* Progress Indicator */}
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: '50%' }]} />
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.content}>
+          {/* Progress Indicator */}
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: '50%' }]} />
+            </View>
+            <Text style={styles.progressText}>{t('onboarding.step')} 4 {t('onboarding.of')} 8</Text>
           </View>
-          <Text style={styles.progressText}>{t('onboarding.step')} 4 {t('onboarding.of')} 8</Text>
-        </View>
 
-        {/* Title */}
-        <Text style={styles.title}>{t('onboarding.step4Title')}</Text>
+          {/* Title */}
+          <Text style={styles.title}>{t('onboarding.step4Title')}</Text>
 
-        {/* Error Message */}
-        {error ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        ) : null}
+          {/* Error Message */}
+          {error ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : null}
 
-        {/* Activity Options */}
-        <ScrollView 
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-        >
+          {/* Activity Options */}
           {activityOptions.map((option) => (
             <TouchableOpacity
               key={option.id}
@@ -125,11 +126,11 @@ export default function OnboardingStep4({ navigation }) {
               )}
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </View>
+      </ScrollView>
 
-        {/* Continue Button */}
-        {/* Navigation Buttons */}
-        <View style={styles.navigationButtons}>
+      {/* Navigation Buttons - fixed at bottom */}
+      <View style={styles.navigationButtons}>
         <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
@@ -143,7 +144,6 @@ export default function OnboardingStep4({ navigation }) {
         >
             <Text style={styles.continueButtonText}>{t('onboarding.continue')}</Text>
         </TouchableOpacity>
-        </View>
       </View>
     </SafeAreaView>
   );
@@ -154,13 +154,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#EAE0C8',
   },
+  scrollContent: {
+    flexGrow: 1,
+  },
   content: {
     flex: 1,
     paddingHorizontal: 30,
     paddingTop: 20,
+    paddingBottom: 20,
   },
   progressContainer: {
-    marginBottom: 30,
+    marginBottom: scale(25),
   },
   progressBar: {
     height: 4,
@@ -173,16 +177,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
   },
   progressText: {
-    fontSize: 12,
+    fontSize: scale(12),
     color: '#999',
     marginTop: 8,
     textAlign: 'center',
   },
   title: {
-    fontSize: 28,
+    fontSize: scale(26),
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 20,
+    marginBottom: scale(18),
   },
   errorContainer: {
     backgroundColor: '#ffebee',
@@ -193,33 +197,30 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#c62828',
     textAlign: 'center',
-  },
-  scrollView: {
-    flex: 1,
-    marginBottom: 20,
+    fontSize: scale(14),
   },
   activityCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    padding: scale(14),
     borderWidth: 2,
     borderColor: '#6B5B45',
     borderRadius: 12,
-    marginBottom: 12,
+    marginBottom: scale(10),
   },
   activityCardSelected: {
     borderColor: '#4CAF50',
     backgroundColor: '#e8f5e9',
   },
   activityEmoji: {
-    fontSize: 32,
+    fontSize: scale(28),
     marginRight: 12,
   },
   activityTextContainer: {
     flex: 1,
   },
   activityTitle: {
-    fontSize: 16,
+    fontSize: scale(15),
     fontWeight: '600',
     color: '#333',
     marginBottom: 4,
@@ -228,14 +229,14 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
   },
   activityDescription: {
-    fontSize: 13,
+    fontSize: scale(12),
     color: '#999',
   },
   activityDescriptionSelected: {
     color: '#666',
   },
   checkmark: {
-    fontSize: 24,
+    fontSize: scale(22),
     color: '#4CAF50',
     marginLeft: 8,
   },
@@ -243,31 +244,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 15,
-    marginBottom: 20,
-    },
-    backButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+  },
+  backButton: {
+    width: scale(46),
+    height: scale(46),
+    borderRadius: scale(23),
     borderWidth: 2,
     borderColor: '#6B5B45',
     justifyContent: 'center',
     alignItems: 'center',
-    },
-    backArrow: {
-    fontSize: 24,
+  },
+  backArrow: {
+    fontSize: scale(22),
     color: '#666',
-    },
-    continueButton: {
+  },
+  continueButton: {
     flex: 1,
     backgroundColor: '#4CAF50',
-    paddingVertical: 15,
+    paddingVertical: scale(14),
     borderRadius: 10,
     alignItems: 'center',
   },
   continueButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: scale(16),
     fontWeight: '600',
   },
 });

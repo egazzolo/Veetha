@@ -4,6 +4,7 @@ import { StyleSheet, Text, View, TouchableOpacity, TextInput, KeyboardAvoidingVi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useOnboarding } from '../../utils/OnboardingContext';
 import { useLanguage } from '../../utils/LanguageContext';
+import { scale } from '../../utils/responsive';
 
 export default function OnboardingStep3({ navigation }) {
   const { updateOnboardingData, onboardingData } = useOnboarding();
@@ -171,7 +172,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   progressContainer: {
-    marginBottom: 30,
+    marginBottom: scale(25),
   },
   progressBar: {
     height: 4,
@@ -184,16 +185,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
   },
   progressText: {
-    fontSize: 12,
+    fontSize: scale(12),
     color: '#999',
     marginTop: 8,
     textAlign: 'center',
   },
   title: {
-    fontSize: 28,
+    fontSize: scale(26),
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 30,
+    marginBottom: scale(25),
   },
   errorContainer: {
     backgroundColor: '#ffebee',
@@ -204,29 +205,30 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#c62828',
     textAlign: 'center',
+    fontSize: scale(14),
   },
   section: {
-    marginBottom: 30,
+    marginBottom: scale(25),
   },
   goalCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
+    padding: scale(16),
     borderWidth: 2,
     borderColor: '#6B5B45',
     borderRadius: 12,
-    marginBottom: 15,
+    marginBottom: scale(12),
   },
   goalCardSelected: {
     borderColor: '#4CAF50',
     backgroundColor: '#e8f5e9',
   },
   goalEmoji: {
-    fontSize: 32,
+    fontSize: scale(28),
     marginRight: 15,
   },
   goalText: {
-    fontSize: 18,
+    fontSize: scale(16),
     color: '#666',
   },
   goalTextSelected: {
@@ -234,7 +236,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   label: {
-    fontSize: 16,
+    fontSize: scale(15),
     fontWeight: '600',
     color: '#333',
     marginBottom: 12,
@@ -246,19 +248,19 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#6B5B45',
     borderRadius: 10,
-    padding: 15,
-    fontSize: 16,
+    padding: scale(14),
+    fontSize: scale(15),
     paddingRight: 50,
   },
   unitLabel: {
     position: 'absolute',
     right: 15,
-    top: 15,
-    fontSize: 16,
+    top: scale(14),
+    fontSize: scale(15),
     color: '#999',
   },
   hint: {
-    fontSize: 12,
+    fontSize: scale(12),
     color: '#999',
     marginTop: 8,
   },
@@ -271,7 +273,7 @@ const styles = StyleSheet.create({
   },
   unitButton: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: scale(10),
     alignItems: 'center',
     borderRadius: 8,
   },
@@ -279,7 +281,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   unitText: {
-    fontSize: 14,
+    fontSize: scale(14),
     color: '#999',
   },
   unitTextSelected: {
@@ -293,28 +295,28 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   backButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: scale(46),
+    height: scale(46),
+    borderRadius: scale(23),
     borderWidth: 2,
     borderColor: '#6B5B45',
     justifyContent: 'center',
     alignItems: 'center',
   },
   backArrow: {
-    fontSize: 24,
+    fontSize: scale(22),
     color: '#666',
   },
   continueButton: {
     flex: 1,
     backgroundColor: '#4CAF50',
-    paddingVertical: 15,
+    paddingVertical: scale(14),
     borderRadius: 10,
     alignItems: 'center',
   },
   continueButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: scale(16),
     fontWeight: '600',
   },
   scrollContent: {

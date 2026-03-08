@@ -4,6 +4,7 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, KeyboardAvoidingV
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useOnboarding } from '../../utils/OnboardingContext';
 import { useLanguage } from '../../utils/LanguageContext';
+import { scale } from '../../utils/responsive';
 
 export default function OnboardingStep5({ navigation }) {
   const { updateOnboardingData } = useOnboarding();
@@ -156,7 +157,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   progressContainer: {
-    marginBottom: 30,
+    marginBottom: scale(25),
   },
   progressBar: {
     height: 4,
@@ -169,21 +170,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
   },
   progressText: {
-    fontSize: 12,
+    fontSize: scale(12),
     color: '#999',
     marginTop: 8,
     textAlign: 'center',
   },
   title: {
-    fontSize: 28,
+    fontSize: scale(26),
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 10,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: scale(13),
     color: '#999',
-    marginBottom: 30,
+    marginBottom: scale(25),
   },
   optionsContainer: {
     marginBottom: 20,
@@ -191,23 +192,23 @@ const styles = StyleSheet.create({
   optionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    padding: scale(14),
     borderWidth: 2,
     borderColor: '#6B5B45',
     borderRadius: 12,
-    marginBottom: 12,
+    marginBottom: scale(10),
   },
   optionCardSelected: {
     borderColor: '#4CAF50',
     backgroundColor: '#e8f5e9',
   },
   optionEmoji: {
-    fontSize: 28,
+    fontSize: scale(24),
     marginRight: 12,
   },
   optionLabel: {
     flex: 1,
-    fontSize: 16,
+    fontSize: scale(15),
     color: '#333',
   },
   optionLabelSelected: {
@@ -215,16 +216,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   checkmark: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: scale(22),
+    height: scale(22),
+    borderRadius: scale(11),
     backgroundColor: '#4CAF50',
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkmarkText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: scale(14),
     fontWeight: 'bold',
   },
   skipContainer: {
@@ -232,7 +233,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
   },
   skipText: {
-    fontSize: 16,
+    fontSize: scale(15),
     color: '#4CAF50',
     fontWeight: '600',
   },
@@ -243,37 +244,28 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   backButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: scale(46),
+    height: scale(46),
+    borderRadius: scale(23),
     borderWidth: 2,
     borderColor: '#6B5B45',
     justifyContent: 'center',
     alignItems: 'center',
   },
   backArrow: {
-    fontSize: 24,
+    fontSize: scale(22),
     color: '#666',
   },
-  navigationButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 15,
-    marginBottom: 20,
-  },
-    continueButton: {
+  continueButton: {
     flex: 1,
     backgroundColor: '#4CAF50',
-    paddingVertical: 15,
+    paddingVertical: scale(14),
     borderRadius: 10,
     alignItems: 'center',
   },
   continueButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: scale(16),
     fontWeight: '600',
   },
-  scrollContent: {
-    flexGrow: 1,
-  }
 });
