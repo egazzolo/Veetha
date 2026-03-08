@@ -358,6 +358,7 @@ export default function SignUpScreen({ navigation }) {
                     emailExists && styles.inputError,
                   ]}
                   placeholder={t('signup.emailPlaceholder')}
+                  placeholderTextColor="#999"
                   value={email}
                   onChangeText={setEmail}
                   onBlur={() => checkEmailExists(email)}
@@ -381,6 +382,7 @@ export default function SignUpScreen({ navigation }) {
                 <TextInput
                   style={styles.passwordInput}
                   placeholder={t('signup.passwordPlaceholder')}
+                  placeholderTextColor="#999"
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
@@ -405,6 +407,7 @@ export default function SignUpScreen({ navigation }) {
                 <TextInput
                   style={styles.passwordInput}
                   placeholder={t('signup.confirmPasswordPlaceholder')}
+                  placeholderTextColor="#999"
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry={!showConfirmPassword}
