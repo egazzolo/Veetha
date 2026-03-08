@@ -5,7 +5,7 @@ module.exports = {
     scheme: "veetha",
     version: "1.0.1",
     orientation: "portrait",
-    icon: "./assets/icon.png",
+    icon: "./assets/LogoD.png",
     userInterfaceStyle: "light",
     newArchEnabled: false,
     assetBundlePatterns: [

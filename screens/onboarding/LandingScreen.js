@@ -34,7 +34,7 @@ export default function LandingScreen({ navigation }) {
 
         {/* Logo placeholder - replace with your actual logo */}
         <View style={styles.logoContainer}>
-          <Text style={styles.logoText}>Veetha</Text>
+          <Image source={require('../../assets/LogoB.png')} style={styles.logo} />
         </View>
 
         {/* Tagline */}
@@ -151,6 +151,11 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: 'bold',
     color: '#4CAF50',
+  },
+  logo: {
+    width: 200,
+    height: 100,
+    resizeMode: 'contain',
   },
   tagline: {
     fontSize: 20,
