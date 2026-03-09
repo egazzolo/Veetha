@@ -1,14 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Switch, Alert, Linking, ActivityIndicator } from 'react-native';
+import { showToast } from '../components/VeethaToast';
+import VeethaModal from '../components/VeethaModal';
+import GuestUpsellSheet from '../components/GuestUpsellSheet';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../utils/supabase';
+import { Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSwipeNavigation } from '../utils/useSwipeNavigation';
 import { useTheme } from '../utils/ThemeContext';
 import { useLanguage } from '../utils/LanguageContext';
 import { useUser } from '../utils/UserContext';
+import { useUserMode } from '../utils/UserModeContext';
 import { RefreshControl } from 'react-native';
 import { logScreen, logEvent, logMealLogged } from '../utils/analytics';
 import AnimatedThemeWrapper from '../components/AnimatedThemeWrapper';
@@ -16,6 +21,7 @@ import Constants from 'expo-constants';
 import BottomNav from '../components/BottomNav';
 import { useTutorial } from '../utils/TutorialContext';
 import AppTutorial from '../components/AppTutorial';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function ProfileScreen({ navigation }) {
 
@@ -23,8 +29,14 @@ export default function ProfileScreen({ navigation }) {
   const { t } = useLanguage();
   const [refreshing, setRefreshing] = useState(false);
   const [checkingTutorial, setCheckingTutorial] = useState(true);
+  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || null);
   const { profile, loading, refreshProfile, refreshMeals } = useUser();
+  const { isGuest, setUserMode } = useUserMode();
   const { startTutorial } = useTutorial();
+  const [guestSheetVisible, setGuestSheetVisible] = useState(false);
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [deleteModalStep, setDeleteModalStep] = useState(0); // 0=hidden, 1=first confirm, 2=final confirm
+  const [photoPickerVisible, setPhotoPickerVisible] = useState(false);
 
   // Swipe navigation
   const swipeGesture = useSwipeNavigation(navigation, 'Profile');
@@ -50,13 +62,31 @@ export default function ProfileScreen({ navigation }) {
   };
 
   useEffect(() => {
-    logScreen('Profile');
-  }, []);
+    if (profile?.avatar_url) {
+      setAvatarUrl(profile.avatar_url);
+    }
+  }, [profile]);
 
   // Start Profile tutorial on first visit
   useEffect(() => {
+    // Guests never see tutorials
+    if (isGuest) {
+      setCheckingTutorial(false);
+      return;
+    }
+
+    let cancelled = false;
+    let timerId;
+
     const checkProfileTutorial = async () => {
       try {
+        // Check local cache first
+        const cached = await AsyncStorage.getItem('profile_tutorial_completed');
+        if (cached === 'true') {
+          setCheckingTutorial(false);
+          return;
+        }
+
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           setCheckingTutorial(false);
@@ -69,34 +99,36 @@ export default function ProfileScreen({ navigation }) {
           .eq('id', user.id)
           .single();
 
-        // If tutorial already completed, unfreeze immediately
         if (profileData?.profile_tutorial_completed) {
-          console.log('✅ Profile tutorial already completed - unfreezing');
+          // Cache it so we never query again
+          await AsyncStorage.setItem('profile_tutorial_completed', 'true');
           setCheckingTutorial(false);
           return;
         }
 
-        // Tutorial needs to start - unfreeze and start
-        console.log('🎓 Starting Profile tutorial');
-        setCheckingTutorial(false); // Unfreeze before tutorial
-        
-        setTimeout(() => {
-          if (statsGridRef.current && editButtonRef.current) {
-            startTutorial('Profile');
-          } else {
-            console.log('⏳ Refs not ready, trying again...');
-            setTimeout(() => startTutorial('Profile'), 2000);
-          }
+        if (cancelled) return;
+
+        setCheckingTutorial(false);
+
+        // Short delay to let layout settle, then start tutorial
+        timerId = setTimeout(() => {
+          if (cancelled) return;
+          startTutorial('Profile');
         }, 500);
-        
+
       } catch (error) {
         console.error('Error checking profile tutorial:', error);
-        setCheckingTutorial(false); // Unfreeze on error
+        setCheckingTutorial(false);
       }
     };
 
     checkProfileTutorial();
-  }, []);
+
+    return () => {
+      cancelled = true;
+      if (timerId) clearTimeout(timerId);
+    };
+  }, [isGuest]);
 
   const userStats = React.useMemo(() => ({
     age: profile?.age || 0,
@@ -120,122 +152,56 @@ export default function ProfileScreen({ navigation }) {
 
   const handleLearnMore = () => {
     // TODO: Navigate to Learn More section
-    Alert.alert(t('profile.learnMore'), 'Educational content coming soon!');
+    showToast('info', t('profile.learnMore'), 'Educational content coming soon!');
   };
 
   const handleSupport = () => {
     // TODO: Navigate to support/help
-    Alert.alert(t('profile.helpSupport'), t('profile.contactSupport'));
+    showToast('info', t('profile.helpSupport'), t('profile.contactSupport'));
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      t('profile.logOut'),
-      t('profile.logOutConfirm'),
-      [
-        { text: t('profile.cancel'), style: 'cancel' },
-        { 
-          text: t('profile.logOut'),
-          style: 'destructive',
-          onPress: async () => {  // ← Made async
-            try {
-              console.log('🚪 Logging out...');
-              
-              // Clear greeting timestamp so next login shows greeting
-              await AsyncStorage.removeItem('last_app_open');
-              
-              // Sign out from Supabase
-              await supabase.auth.signOut();
-              
-              console.log('✅ Logout successful');
-              
-              // Navigate to landing screen
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'Landing' }],
-              });
-            } catch (error) {
-              console.error('❌ Error logging out:', error);
-              Alert.alert('Error', 'Failed to log out. Please try again.');
-            }
-          }
-        },
-      ]
-    );
+    setLogoutModalVisible(true);
   };
 
-  const handleDeleteAccount = async () => {
-    Alert.alert(
-      t('profile.deleteAccount'),
-      t('profile.deleteWarning'),
-      [
-        {
-          text: t('common.cancel'),
-          style: 'cancel'
-        },
-        {
-          text: t('common.delete'),
-          style: 'destructive',
-          onPress: async () => {
-            Alert.alert(
-              t('profile.finalConfirmation'),
-              t('profile.deleteConfirmMessage'),
-              [
-                {
-                  text: t('common.cancel'),
-                  style: 'cancel'
-                },
-                {
-                  text: t('profile.yesDeleteEverything'),
-                  style: 'destructive',
-                  onPress: async () => {
-                    try {
-                      const { data: { session } } = await supabase.auth.getSession();
-                      if (!session) return;
+  const confirmLogout = async () => {
+    setLogoutModalVisible(false);
+    try {
+      console.log('🚪 Logging out...');
+      await AsyncStorage.removeItem('last_app_open');
+      await setUserMode(null);
+      await supabase.auth.signOut();
+      console.log('✅ Logout successful');
+      navigation.reset({ index: 0, routes: [{ name: 'Landing' }] });
+    } catch (error) {
+      console.error('❌ Error logging out:', error);
+      Alert.alert('Error', 'Failed to log out. Please try again.');
+    }
+  };
 
-                      const { data, error } = await supabase.functions.invoke('delete-user', {
-                        headers: {
-                          Authorization: `Bearer ${session.access_token}`
-                        }
-                      });
+  const handleDeleteAccount = () => {
+    setDeleteModalStep(1);
+  };
 
-                      if (error) throw error;
+  const confirmDeleteAccountFinal = async () => {
+    setDeleteModalStep(0);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
 
-                      await supabase.auth.signOut();
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
 
-                      Alert.alert(
-                        t('profile.accountDeleted'),
-                        t('profile.accountDeletedMessage'),
-                        [
-                          {
-                            text: t('common.ok'),
-                            onPress: () => {
-                              navigation.reset({
-                                index: 0,
-                                routes: [{ name: 'Landing' }],
-                              });
-                            }
-                          }
-                        ]
-                      );
-                    } catch (error) {
-                      console.error('Error deleting account:', error);
-                      // Data is deleted even if Edge Function errored — sign out and go to Landing
-                      await supabase.auth.signOut();
-                      await AsyncStorage.clear();
-                      navigation.reset({
-                        index: 0,
-                        routes: [{ name: 'Landing' }],
-                      });
-                    }
-                  }
-                }
-              ]
-            );
-          }
-        }
-      ]
-    );
+      if (error) throw error;
+      await supabase.auth.signOut();
+
+      showToast('success', t('profile.accountDeleted'), t('profile.accountDeletedMessage'));
+      navigation.reset({ index: 0, routes: [{ name: 'Landing' }] });
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      Alert.alert(t('common.error'), `${t('profile.deleteError')}: ${error.message}`);
+    }
   };
 
   const handleToggleDarkMode = () => {
@@ -243,6 +209,100 @@ export default function ProfileScreen({ navigation }) {
   };
 
   console.log('📱 ProfileScreen: Rendering with userStats =', userStats);
+
+  const handlePickAvatar = async () => {
+    if (isGuest) {
+      setGuestSheetVisible(true);
+      return;
+    }
+    setPhotoPickerVisible(true);
+  };
+
+  const handleTakePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(t('common.error'), 'Camera permission is required.');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (!result.canceled) await uploadAvatar(result.assets[0].uri);
+  };
+
+  const handleChooseFromLibrary = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(t('common.error'), 'Permission to access photos is required.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    }); 
+
+    if (!result.canceled) await uploadAvatar(result.assets[0].uri);
+  };
+
+  const uploadAvatar = async (uri) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const ext = uri.split('.').pop().toLowerCase();
+      const fileName = `avatar-${user.id}.${ext}`;
+      const contentType = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+
+      const formData = new FormData();
+      formData.append('file', {
+        uri,
+        name: fileName,
+        type: contentType,
+      });
+
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const response = await fetch(
+        `https://bfgreozkoftncayzyzhz.supabase.co/storage/v1/object/avatars/${fileName}`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            'x-upsert': 'true',
+          },
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText);
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id);
+
+      setAvatarUrl(`${publicUrl}?t=${Date.now()}`);
+      console.log('✅ Avatar updated:', publicUrl);
+
+    } catch (error) {
+      console.error('❌ Error uploading avatar:', error);
+      Alert.alert(t('common.error'), 'Failed to upload photo.');
+    }
+  };
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -263,11 +323,24 @@ export default function ProfileScreen({ navigation }) {
             >
               {/* Header */}
               <View style={[styles.header, { backgroundColor: theme.cardBackground }]}>
-                <View style={styles.avatarContainer}>
-                  <Text style={styles.avatarText}>
-                    {userName.charAt(0).toUpperCase()}
-                  </Text>
-                </View>
+                <TouchableOpacity onPress={handlePickAvatar} style={styles.avatarWrapper}>
+                  <View style={styles.avatarContainer}>
+                    {avatarUrl ? (
+                      <Image
+                        source={{ uri: avatarUrl }}
+                        style={styles.avatarImage}
+                        onError={() => setAvatarUrl(null)}
+                      />
+                    ) : (
+                      <>
+                        <Text style={styles.avatarText}>
+                          {userName.charAt(0).toUpperCase()}
+                        </Text>
+                        <Text style={styles.avatarCameraIcon}>📷</Text>
+                      </>
+                    )}
+                  </View>
+                </TouchableOpacity>
                 <Text style={[styles.userName, { color: theme.text }]}>{userName}</Text>
                 <Text style={[styles.userEmail, { color: theme.textSecondary }]}>{userEmail}</Text>
                 <TouchableOpacity 
@@ -360,14 +433,6 @@ export default function ProfileScreen({ navigation }) {
                   />
                 </View>
 
-                <TouchableOpacity style={[styles.settingItem, { backgroundColor: theme.cardBackground }]}>
-                  <View style={styles.settingLeft}>
-                    <Text style={styles.settingIcon}>🔔</Text>
-                    <Text style={[styles.settingLabel, { color: theme.text }]}>{t('profile.notifications')}</Text>
-                  </View>
-                  <Text style={styles.settingArrow}>›</Text>
-                </TouchableOpacity>
-
                 <TouchableOpacity 
                   ref={goalsButtonRef}
                   onLayout={(event) => {
@@ -423,6 +488,7 @@ export default function ProfileScreen({ navigation }) {
                   </View>
                   <Text style={styles.settingArrow}>›</Text>
                 </TouchableOpacity>
+                {!isGuest && (
                 <TouchableOpacity
                   ref={displaySettingsButtonRef}
                   onLayout={(event) => {
@@ -431,8 +497,8 @@ export default function ProfileScreen({ navigation }) {
                       if (displaySettingsButtonRef?.current?.measureInWindow) {
                         displaySettingsButtonRef.current.measureInWindow((wx, wy, w, h) => {
                           if (displaySettingsButtonRef.current) {
-                            displaySettingsButtonRef.current.tutorialCoords = { 
-                              top: wy, left: wx, width: w, height: h, borderRadius: 16 
+                            displaySettingsButtonRef.current.tutorialCoords = {
+                              top: wy, left: wx, width: w, height: h, borderRadius: 16
                             };
                           }
                         });
@@ -453,6 +519,7 @@ export default function ProfileScreen({ navigation }) {
                   </View>
                   <Text style={[styles.menuArrow, { color: theme.textTertiary }]}>›</Text>
               </TouchableOpacity>
+                )}
               </View>
 
               {/* Resources Section */}
@@ -513,17 +580,42 @@ export default function ProfileScreen({ navigation }) {
                 </View>
               </View>
 
-              {/* Logout Button */}
-              <TouchableOpacity style={[styles.logoutButton, { backgroundColor: theme.cardBackground }]} onPress={handleLogout}>
-                <Text style={styles.logoutText}>{t('profile.logOut')}</Text>
-              </TouchableOpacity>
+              {/* Logout Button — hidden for guests */}
+              {!isGuest && (
+                <TouchableOpacity style={[styles.logoutButton, { backgroundColor: theme.cardBackground }]} onPress={handleLogout}>
+                  <Text style={styles.logoutText}>{t('profile.logOut')}</Text>
+                </TouchableOpacity>
+              )}
 
-              <TouchableOpacity
-                style={[styles.deleteButton, { backgroundColor: theme.error || '#ff3b30' }]}
-                onPress={handleDeleteAccount}
-              >
-                <Text style={styles.deleteButtonText}>🗑️ Delete Account</Text>
-              </TouchableOpacity>
+              {/* Delete Account — hidden for guests */}
+              {!isGuest && (
+                <TouchableOpacity
+                  style={[styles.deleteButton, { backgroundColor: theme.error || '#ff3b30' }]}
+                  onPress={handleDeleteAccount}
+                >
+                  <Text style={styles.deleteButtonText}>🗑️ Delete Account</Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Guest upgrade banner */}
+              {isGuest && (
+                <View style={[styles.guestBanner, { backgroundColor: theme.cardBackground }]}>
+                  <Text style={[styles.guestBannerText, { color: theme.text }]}>
+                    {t('guest.profileBanner')}
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.guestBannerButton}
+                    onPress={() => {
+                      navigation.reset({
+                        index: 0,
+                        routes: [{ name: 'Landing' }],
+                      });
+                    }}
+                  >
+                    <Text style={styles.guestBannerButtonText}>{t('guest.signUpLogIn')}</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
 
               {/* Bottom Padding */}
               <View style={{ height: 100 }} />
@@ -542,8 +634,63 @@ export default function ProfileScreen({ navigation }) {
             />
           </AnimatedThemeWrapper>
 
+          {/* Guest Upsell Sheet */}
+          <GuestUpsellSheet
+            visible={guestSheetVisible}
+            onClose={() => setGuestSheetVisible(false)}
+            message={t('guest.signUpProfilePhoto')}
+          />
+
+          {/* Logout Confirmation */}
+          <VeethaModal
+            visible={logoutModalVisible}
+            title={t('profile.logOut')}
+            message={t('profile.logOutConfirm')}
+            confirmText={t('profile.logOut')}
+            cancelText={t('profile.cancel')}
+            confirmStyle="destructive"
+            onConfirm={confirmLogout}
+            onCancel={() => setLogoutModalVisible(false)}
+          />
+
+          {/* Delete Account - Step 1 */}
+          <VeethaModal
+            visible={deleteModalStep === 1}
+            title={t('profile.deleteAccount')}
+            message={t('profile.deleteWarning')}
+            confirmText={t('common.delete')}
+            cancelText={t('common.cancel')}
+            confirmStyle="destructive"
+            onConfirm={() => setDeleteModalStep(2)}
+            onCancel={() => setDeleteModalStep(0)}
+          />
+
+          {/* Delete Account - Step 2 (Final) */}
+          <VeethaModal
+            visible={deleteModalStep === 2}
+            title={t('profile.finalConfirmation')}
+            message={t('profile.deleteConfirmMessage')}
+            confirmText={t('profile.yesDeleteEverything')}
+            cancelText={t('common.cancel')}
+            confirmStyle="destructive"
+            onConfirm={confirmDeleteAccountFinal}
+            onCancel={() => setDeleteModalStep(0)}
+          />
+
+          {/* Photo Picker Modal */}
+          <VeethaModal
+            visible={photoPickerVisible}
+            title={t('profile.profilePhoto') || 'Profile Photo'}
+            onCancel={() => setPhotoPickerVisible(false)}
+            buttons={[
+              { text: t('profile.takePhoto') || 'Take Photo', onPress: () => { setPhotoPickerVisible(false); handleTakePhoto(); } },
+              { text: t('profile.chooseFromLibrary') || 'Choose from Library', onPress: () => { setPhotoPickerVisible(false); handleChooseFromLibrary(); } },
+              { text: t('common.cancel') || 'Cancel', style: 'cancel', onPress: () => setPhotoPickerVisible(false) },
+            ]}
+          />
+
           {/* Bottom Navigation */}
-          <BottomNav 
+          <BottomNav
             theme={theme}
             t={t}
             navigation={navigation}
@@ -744,5 +891,44 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  guestBanner: {
+    marginHorizontal: 20,
+    marginTop: 20,
+    padding: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#4CAF50',
+  },
+  guestBannerText: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 15,
+  },
+  guestBannerButton: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+  },
+  guestBannerButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  avatarCameraIcon: {
+    fontSize: 16,
+    position: 'absolute',
+    bottom: 8,
+  },
+  avatarImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    position: 'absolute',
+    top: 0,
+    left: 0,
   },
 });

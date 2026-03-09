@@ -22,6 +22,7 @@ export default {
     tagline2: 'travaillez sur vous.',
     login: 'CONNEXION',
     signup: 'INSCRIPTION',
+    continue: 'CONTINUER',
     continueWithGoogle: '🔵 Continuer avec Google',
   },
   // Login Screen
@@ -42,6 +43,8 @@ export default {
     invalidCredentials: 'E-mail ou mot de passe invalide',
     verifyEmail: 'Veuillez vérifier votre e-mail avant de vous connecter',
     loginFailed: 'Échec de la connexion. Veuillez réessayer.',
+    continueWithGoogle: 'Continuer avec Google',
+    continueWithFacebook: 'Continuer avec Facebook',
   },
 
   // SignUp Screen
@@ -67,6 +70,7 @@ export default {
     passwordsMatch: 'Les mots de passe ne correspondent pas',
     emailInUse: 'L\'e-mail est déjà enregistré',
     signupFailed: 'Échec de l\'inscription. Veuillez réessayer.',
+    rateLimitError: 'Trop de tentatives. Veuillez patienter quelques minutes et réessayer.',
     // Signup steps
     success: 'Succès!',
     accountCreated: 'Compte créé! Veuillez vérifier votre e-mail pour vérifier votre compte.',
@@ -140,6 +144,10 @@ export default {
     extremelyActive: 'Extrêmement actif',
     extremelyActiveDesc: 'Travail physique + exercice quotidien',
     selectActivityLevel: 'Veuillez sélectionner votre niveau d\'activité',
+    statLabel: 'plus de poids perdu',
+    quote: '"Les personnes qui suivent leur alimentation perdent 2x plus de poids que celles qui ne le font pas."',
+    source: 'Étude Kaiser Permanente 2008 — American Journal of Preventive Medicine. 1 700 participants. Ceux qui tenaient un journal alimentaire ont perdu deux fois plus de poids.',
+    message: 'Vous faites déjà la chose la plus importante.',
     
     // Step 5 - Dietary Restrictions
     step5Title: 'Des besoins alimentaires?',
@@ -213,6 +221,7 @@ export default {
   },
 
   tutorial: {
+    preparing: 'Préparation du tutoriel...',
     tapToScan: 'Appuyez pour scanner!',
     tapToExit: 'Appuyez pour quitter',
     tapToProfile: 'Appuyez pour ouvrir le profil',
@@ -356,6 +365,7 @@ export default {
     done: 'Terminé',
     exercise: 'Exercice',
     water: 'Eau',
+    noWaterYet: "Pas encore d'eau",
     comingSoon: 'Bientôt disponible',
     fromExercise: 'de l\'exercice',
 
@@ -418,7 +428,18 @@ export default {
     },
     mealsList: {
       serving: 'Portion:',
-    }
+      protein: 'Protéines',
+      carbs: 'Glucides',
+      fat: 'Lipides',
+      sodium: 'Sodium',
+      sugar: 'Sucre',
+      fiber: 'Fibres'
+    },
+    guestBanner: {
+      message: "Vous naviguez en tant qu'invit\u00e9. Vous pouvez scanner des codes-barres et voir les infos nutritionnelles, mais c'est tout. Inscrivez-vous pour profiter de toutes les fonctionnalit\u00e9s\u00a0!",
+      signUp: "S'inscrire",
+      dismiss: '\u2715',
+    },
   },
 
   // Exercise Feature
@@ -601,7 +622,7 @@ export default {
     noInternet: 'Pas de connexion internet. Vérifiez votre réseau.',
     serverError: 'Erreur serveur',
     scanFood: 'Prendre une photo',
-    photoInstruction: 'Centrez l\'aliment dans le cadre',
+    photoInstruction: 'Placez le produit dans le cadre',
     photoTip1: 'Bon éclairage',
     photoTip2: 'Fond uni',
     photoTip3: '⚠️ UN SEUL ARTICLE - Plusieurs articles échoueront',
@@ -622,6 +643,45 @@ export default {
     takeAnotherPhoto: 'Prendre une autre photo',
     scanAgain: 'Scanner à nouveau',
     scanBarcode: 'Scanner le code-barres',
+    submitProduct: 'Soumettre un Produit',
+    monthlyLimitReached: 'Limite Mensuelle Atteinte',
+    monthlyLimitMessage: "Vous avez utilisé vos {limit} analyses photo ce mois-ci. Votre limite sera réinitialisée le {date}.\n\nAstuce : Utilisez le scanner de codes-barres pour les produits emballés (illimité !)",
+    dailyLimitReached: 'Limite Quotidienne Atteinte',
+    dailyLimitMessage: "Vous avez utilisé vos {limit} demandes photo aujourd'hui. Réessayez demain !",
+    lastRequest: 'Dernière Demande',
+    lastRequestMessage: "Il vous reste 1 demande photo aujourd'hui.",
+    lowOnScans: 'Peu de Scans Restants',
+    lowOnScansMessage: 'Il vous reste {remaining} demandes photo ce mois-ci.',
+    waitBetweenPhotos: 'Veuillez patienter un moment entre les photos.',
+  },
+
+  // Submit Product Screen
+  submitProduct: {
+    title: 'Soumettre un Produit',
+    subtitle: 'Aidez-nous à enrichir notre base de données ! Remplissez ce que vous pouvez.',
+    barcode: 'Code-barres',
+    productName: 'Nom du Produit',
+    productNamePlaceholder: 'ex. Lait d\'avoine bio',
+    servingSize: 'Taille de Portion',
+    servingSizePlaceholder: 'ex. 240ml, 30g, 1 tasse',
+    nutritionInfo: 'Informations Nutritionnelles',
+    calories: 'Calories',
+    proteinG: 'Protéines (g)',
+    carbsG: 'Glucides (g)',
+    fatG: 'Lipides (g)',
+    sugarG: 'Sucres (g)',
+    sodiumMg: 'Sodium (mg)',
+    photos: 'Photos',
+    photosHint: 'Prenez des photos de l\'étiquette pour aider nos réviseurs',
+    nutritionLabel: 'Tableau Nutritionnel',
+    ingredients: 'Ingrédients',
+    productPhoto: 'Face du Produit',
+    submit: 'Soumettre pour Révision',
+    missingInfo: 'Information Manquante',
+    enterName: 'Veuillez entrer le nom du produit',
+    thankYou: 'Merci !',
+    submitted: 'Produit soumis pour révision. Nous l\'ajouterons bientôt à la base de données !',
+    failedToSubmit: 'Échec de la soumission. Veuillez réessayer.',
   },
 
   //Results Screen
@@ -630,17 +690,14 @@ export default {
     gotIt: 'Compris!',
     uploading: '',
     pleaseWait: '',
-    
     // Serving size
     servingSize: 'Portion (grammes):',
     maximumAllowed: 'Maximum autorisé: 2000 g',
     adjustPortion: 'Ajustez à votre portion',
-    
     // Calories
     caloriesInfo: 'Calories ⓘ',
     kcal: 'kcal',
     ofDailyGoal: '% de l\'objectif quotidien',
-    
     // Details
     showDetails: 'Afficher les détails',
     hideDetails: 'Masquer les détails',
@@ -648,17 +705,17 @@ export default {
     fiber: 'Fibres',
     sodium: 'Sodium',
     valuesShownPer: 'Valeurs affichées pour {grams}g',
-    
     // Buttons
     logMeal: 'Enregistrer ce repas',
     scanAgain: 'Scanner à nouveau',
     saving: 'Enregistrement...',
     submitProduct: 'Soumettre ce produit',
     enterManually: 'Entrer manuellement',
-
     //Alerts - Alertes
+    enterFoodName: "Entrez un nom d'aliment",
+    notFound: 'Non trouvé',
+    notAuthenticated: 'Utilisateur non authentifié. Veuillez vous connecter.',
     mealLogged: 'Repas enregistré ! ✅',
-    
     // Photo view
     photoView: 'Vue photo',
     detailedView: 'Vue détaillée',
@@ -666,11 +723,17 @@ export default {
     swipeRightSave: 'Glisser à droite pour enregistrer',
     delete: 'SUPPRIMER',
     save: 'ENREGISTRER',
-    
     // Macros (short labels)
     protein: 'Prot.',
     carbs: 'Gluc.',
     fat: 'Lip.',
+    allergenWarning: {
+      title: "ALERTE DIÉTÉTIQUE",
+      subtitle: "Ce produit contient des ingrédients que vous avez marqués :",
+      disclaimer: "ℹ️ Cet avertissement est basé sur vos restrictions alimentaires. Vérifiez toujours les étiquettes des produits.",
+      goBack: "← Retour",
+      logAnyway: "Enregistrer quand même",
+    },
   },
 
   // Stats Screen
@@ -718,12 +781,12 @@ export default {
       back: '← Retour',
       reports: 'Rapports',
       weeklyReport: 'Rapport Hebdomadaire',
-      subtitle: '',
-      card1Title: '',
-      card1Subtitle: '',
-      consumed: '',
-      goal: '',
-      card2Title: '',
+      subtitle: 'Résumé des 7 derniers jours',
+      card1Title: 'Calories quotidiennes',
+      card1Subtitle: 'Consommé vs objectif',
+      consumed: 'Consommé',
+      goal: 'Objectif',
+      card2Title: 'Répartition des macronutriments',
       card2Subtitle: '',
       protein: '💪 Protéine',
       carbs: '🌾 Glucides',
@@ -735,7 +798,96 @@ export default {
       day: 'Jour',
       burned: 'Brûlé',
       sessions: 'Séances',
-      exportReport: 'Exporter le Rapport'
+      exportReport: 'Exporter le Rapport',
+      kcal: 'kcal',
+    },
+    exportReport: {
+      title: 'Exporter le rapport',
+      subtitle: 'Téléchargez vos données nutritionnelles',
+      startExport: "Démarrer l'export",
+      whatsIncluded: 'Contenu inclus',
+      dailyCalories: 'Calories quotidiennes totales',
+      macroBreakdown: 'Répartition des macronutriments',
+      goalComparison: 'Objectif vs réel',
+      summaryStats: 'Statistiques récapitulatives',
+      selectPeriod: 'Sélectionner la période',
+      last7Days: '7 derniers jours',
+      currentMonth: 'Mois actuel',
+      selectFormat: 'Sélectionner le format',
+      pdfReport: 'Rapport PDF',
+      excelSpreadsheet: 'Tableur Excel',
+      weekly: 'Hebdomadaire',
+      monthly: 'Mensuel',
+      nutritionReportTitle: 'Rapport nutritionnel {{period}}',
+      savePdf: 'Enregistrer le rapport PDF',
+      saveExcel: 'Enregistrer le rapport Excel',
+      fetchFailed: 'Impossible de récupérer les données',
+      name: 'Nom',
+      generated: 'Généré le',
+      dailyTotals: 'Totaux quotidiens',
+      date: 'Date',
+      calories: 'Calories',
+      summary: 'Résumé',
+      totalCalories: 'Calories totales',
+      avgDailyCalories: 'Moyenne quotidienne de calories',
+      totalProtein: 'Protéines totales',
+      totalCarbs: 'Glucides totaux',
+      totalFat: 'Lipides totaux',
+      goal: 'Objectif',
+      protein: 'Protéines (g)',
+      carbs: 'Glucides (g)',
+      fat: 'Lipides (g)',
+      generated: 'Généré',
+      summary: 'Résumé',
+      dailyTotals: 'Totaux journaliers',
+      totalCalories: 'Calories totales',
+      avgDailyCalories: 'Moyenne quotidienne de calories',
+      totalProtein: 'Protéines totales',
+      totalCarbs: 'Glucides totaux',
+      totalFat: 'Lipides totaux',
+      name: 'Nom',
+      date: 'Date',
+      calories: 'Calories',
+      share: 'Partager',
+      download: 'Télécharger',
+    },
+    quickEntry: {
+      title: 'Entrée rapide',
+      quickAdd: '⚡ Ajout rapide',
+      popularIn: 'Populaire en {{country}}',
+      commonFoods: 'Aliments courants',
+      add: '+ Ajouter',
+
+      mealDetails: 'Détails du repas',
+      mealName: 'Nom du repas *',
+      mealNamePlaceholder: 'ex.: Salade de poulet',
+      servingSize: 'Taille de portion (grammes)',
+      calories: 'Calories (kcal) *',
+
+      macros: 'Macros (Optionnel)',
+      protein: 'Protéines (g)',
+      carbs: 'Glucides (g)',
+      fat: 'Lipides (g)',
+
+      saving: 'Enregistrement...',
+      saveMeal: '✓ Enregistrer le repas',
+
+      tip: '💡 Astuce : utilisez Ajout rapide pour les aliments courants ou saisissez des repas personnalisés ci-dessus',
+
+      loggedTitle: 'Enregistré ! ✅',
+      loggedMessage: '{{meal}} ajouté',
+
+      missingInfo: 'Informations manquantes',
+      enterMealName: 'Veuillez entrer un nom de repas',
+      enterCalories: 'Veuillez entrer les calories',
+
+      pleaseLogin: 'Veuillez vous connecter',
+
+      successTitle: 'Succès ! ✅',
+      successMessage: 'Repas enregistré avec succès',
+
+      failedLog: 'Échec de l’enregistrement du repas',
+      failedSave: 'Échec de la sauvegarde du repas'
     },
   },
 
@@ -783,6 +935,9 @@ export default {
     accountDeleted: 'Compte Supprimé',
     accountDeletedMessage: 'Votre compte a été supprimé définitivement.',
     deleteError: 'Échec de la suppression du compte',
+    profilePhoto: 'Photo de Profil',
+    takePhoto: 'Prendre une Photo',
+    chooseFromLibrary: 'Choisir depuis la Galerie',
   },
 
   // Edit Profile Screen
@@ -809,6 +964,10 @@ export default {
     failedToSave: 'Échec de l\'enregistrement. Veuillez réessayer.',
     loadingProfile: 'Chargement du profil...',
     ok: 'OK',
+    metric: 'Métrique',
+    imperial: 'Impérial',
+    weight: 'Poids',
+    height: 'Taille',
   },
 
   // Objectifs et Préférences
@@ -863,6 +1022,12 @@ export default {
     waterGoalHelper: 'Recommandé : 8 tasses (2 litres) par jour',
     cups: 'Tasses',
     liters: 'Litres',
+    light: 'Légèrement actif',
+    lightDesc: 'Exercice léger ou activité 1–3 jours par semaine',
+    moderate: 'Modérément actif',
+    moderateDesc: 'Exercice modéré ou activité 3–5 jours par semaine',
+    very_active: 'Très actif',
+    very_activeDesc: 'Exercice intense ou activité 6–7 jours par semaine',
   },
 
   dietaryRestrictions: {
@@ -878,7 +1043,7 @@ export default {
     soy: 'Soja',
     wheat: 'Blé',
     fish: 'Poisson',
-    treeNuts: 'Noix',
+    treenuts: 'Noix',
     dietTypeTitle: '🍽️ Type de Régime',
     dietTypeHelper: 'Choisissez votre mode de vie alimentaire principal',
     none: 'Aucune Restriction',
@@ -1002,5 +1167,32 @@ export default {
     footerAcknowledge: 'En utilisant Veetha, vous reconnaissez avoir lu et compris cette Politique de Confidentialité et acceptez ses termes.',
     footerThankYou: 'Merci de faire confiance à Veetha avec vos données de santé et de nutrition. Votre vie privée est importante pour nous.',
     version: 'Version 1.0 • Dernière mise à jour: 21 novembre 2024',
+  },
+
+  // Guest upsell prompts
+  guest: {
+    createAccount: 'Créer un Compte',
+    signUpToLog: 'Inscrivez-vous pour enregistrer repas, eau, exercice et plus.',
+    signUpProfilePhoto: 'Inscrivez-vous pour définir une photo de profil.',
+    signUp: 'S\'inscrire',
+    weeklyProgress: 'Votre progression hebdomadaire apparaîtra ici une fois votre compte créé.',
+    monthlyProgress: 'Votre progression mensuelle apparaîtra ici une fois votre compte créé.',
+    exerciseHistory: 'Votre historique d\'exercice apparaîtra ici une fois votre compte créé.',
+    signUpLogIn: 'S\'inscrire / Se Connecter',
+    profileBanner: 'Créez un compte pour débloquer toutes les fonctionnalités, sauvegarder vos données et synchroniser entre appareils.',
+  },
+  guestSheet: {
+    brand: 'Veetha',
+    defaultMessage: 'Creez un compte pour debloquer toutes les fonctionnalites et sauvegarder votre progression.',
+    createAccount: 'Creer un Compte',
+    logIn: 'Se Connecter',
+  },
+  mealReminders: {
+    breakfastTitle: 'L\'heure du Petit-déjeuner !',
+    breakfastBody: 'Bien commencer la journée — enregistrez votre petit-déjeuner.',
+    lunchTitle: 'L\'heure du Déjeuner !',
+    lunchBody: 'N\'oubliez pas d\'enregistrer votre déjeuner.',
+    dinnerTitle: 'L\'heure du Dîner !',
+    dinnerBody: 'Il est temps de se détendre — enregistrez votre dîner.',
   },
 }

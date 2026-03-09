@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, Pressable } from 'react-native';
+import GuestUpsellSheet from './GuestUpsellSheet';
 
 export default function MealsList({
   theme,
@@ -15,8 +16,10 @@ export default function MealsList({
   toggledMeals,
   navigation,
   mealsListRef,
+  isGuestMode,
 }) {
   const [selectedMeal, setSelectedMeal] = useState(null);
+  const [guestSheetVisible, setGuestSheetVisible] = useState(false);
 
   const handleMealPress = (meal) => {
     setSelectedMeal(meal);
@@ -33,12 +36,14 @@ export default function MealsList({
         const { x, y, width, height } = event.nativeEvent.layout;
         if (mealsListRef.current && mealsListRef.current.measureInWindow) {
           mealsListRef.current.measureInWindow((wx, wy, w, h) => {
-            mealsListRef.current.tutorialCoords = {
-              top: wy,
-              left: wx,
-              width: w,
-              height: h,
-              borderRadius: 16
+            if (mealsListRef.current) {
+              mealsListRef.current.tutorialCoords = {
+                top: wy,
+                left: wx,
+                width: w,
+                height: h,
+                borderRadius: 16
+              };
             };
           });
         }
@@ -66,7 +71,13 @@ export default function MealsList({
                     
                     <TouchableOpacity
                     style={[styles.quickEntryButton, { backgroundColor: '#2196F3' }]}
-                    onPress={() => navigation.navigate('QuickEntry')}
+                    onPress={() => {
+                      if (isGuestMode) {
+                        setGuestSheetVisible(true);
+                        return;
+                      }
+                      navigation.navigate('QuickEntry');
+                    }}
                     >
                     <Text style={styles.quickEntryButtonText}>
                        {t('home.quickEntry')}
@@ -92,6 +103,7 @@ export default function MealsList({
         meals.map((meal) => {
           // Calculate actual nutrition based on serving size
           const product = meal.product;
+          console.log("IMAGE CHECK:", meal.image_url, product.image_url);
           if (!product) return null; // Skip if product was deleted
           
           const actualCalories = (product.calories * meal.serving_grams) / 100;
@@ -118,21 +130,26 @@ export default function MealsList({
                 fiber: actualFiber,
                 serving_unit: product.serving_unit,
               })}
-              onLongPress={() => handleMealLongPress(meal)}
+              onLongPress={() => handleMealLongPress({
+              ...meal,
+              product_name: meal.product?.name ?? meal.product_name,
+              calories: meal.product?.calories ?? meal.calories,
+              protein: meal.product?.protein ?? meal.protein,
+              carbs: meal.product?.carbs ?? meal.carbs,
+              fat: meal.product?.fat ?? meal.fat,
+            })}
               activeOpacity={0.7}
             >
               {/* Image Section */}
               <View style={styles.imageSection}>
-                {meal.image_url || product.image_url ? (
-                  <Image 
-                    source={{ uri: meal.image_url || product.image_url }} 
+                {(meal.image_url || product.image_url) ? (
+                  <Image
+                    source={{ uri: meal.image_url || product.image_url }}
                     style={styles.mealImage}
                     resizeMode="contain"
                   />
                 ) : (
-                  <View style={styles.placeholderImage}>
-                    <Text style={styles.placeholderEmoji}>🍽️</Text>
-                  </View>
+                  <Text style={styles.mealEmoji}>{product.emoji}</Text>
                 )}
               </View>
 
@@ -207,6 +224,13 @@ export default function MealsList({
         })
       )}
 
+      {/* Guest Upsell Sheet */}
+      <GuestUpsellSheet
+        visible={guestSheetVisible}
+        onClose={() => setGuestSheetVisible(false)}
+        message={t('guest.signUpToLog')}
+      />
+
       {/* Post-it Note Modal */}
       <Modal
         visible={selectedMeal !== null}
@@ -244,7 +268,7 @@ export default function MealsList({
               <View style={styles.postItMacros}>
                 <View style={styles.postItMacroRow}>
                   <Text style={styles.postItMacroEmoji}>💪</Text>
-                  <Text style={styles.postItMacroLabel}>Protein:</Text>
+                  <Text style={styles.postItMacroLabel}>{t('home.mealsList.protein')}:</Text>
                   <Text style={styles.postItMacroValue}>
                     {Math.round(selectedMeal?.protein || 0)}g
                   </Text>
@@ -252,7 +276,7 @@ export default function MealsList({
 
                 <View style={styles.postItMacroRow}>
                   <Text style={styles.postItMacroEmoji}>🌾</Text>
-                  <Text style={styles.postItMacroLabel}>Carbs:</Text>
+                  <Text style={styles.postItMacroLabel}>{t('home.mealsList.carbs')}:</Text>
                   <Text style={styles.postItMacroValue}>
                     {Math.round(selectedMeal?.carbs || 0)}g
                   </Text>
@@ -260,7 +284,7 @@ export default function MealsList({
 
                 <View style={styles.postItMacroRow}>
                   <Text style={styles.postItMacroEmoji}>🥑</Text>
-                  <Text style={styles.postItMacroLabel}>Fat:</Text>
+                  <Text style={styles.postItMacroLabel}>{t('home.mealsList.fat')}:</Text>
                   <Text style={styles.postItMacroValue}>
                     {Math.round(selectedMeal?.fat || 0)}g
                   </Text>
@@ -268,7 +292,7 @@ export default function MealsList({
 
                 <View style={styles.postItMacroRow}>
                   <Text style={styles.postItMacroEmoji}>🧂</Text>
-                  <Text style={styles.postItMacroLabel}>Sodium:</Text>
+                  <Text style={styles.postItMacroLabel}>{t('home.mealsList.sodium')}:</Text>
                   <Text style={styles.postItMacroValue}>
                     {Math.round(selectedMeal?.sodium || 0)}mg
                   </Text>
@@ -276,7 +300,7 @@ export default function MealsList({
 
                 <View style={styles.postItMacroRow}>
                   <Text style={styles.postItMacroEmoji}>🍬</Text>
-                  <Text style={styles.postItMacroLabel}>Sugar:</Text>
+                  <Text style={styles.postItMacroLabel}>{t('home.mealsList.sugar')}:</Text>
                   <Text style={styles.postItMacroValue}>
                     {Math.round(selectedMeal?.sugar || 0)}g
                   </Text>
@@ -284,7 +308,7 @@ export default function MealsList({
 
                 <View style={styles.postItMacroRow}>
                   <Text style={styles.postItMacroEmoji}>🌿</Text>
-                  <Text style={styles.postItMacroLabel}>Fiber:</Text>
+                  <Text style={styles.postItMacroLabel}>{t('home.mealsList.fiber')}:</Text>
                   <Text style={styles.postItMacroValue}>
                     {Math.round(selectedMeal?.fiber || 0)}g
                   </Text>
@@ -294,7 +318,7 @@ export default function MealsList({
               {/* Serving size footer */}
               <View style={styles.postItFooter}>
                 <Text style={styles.postItServingText}>
-                  {t('mealslist.serving')}: {selectedMeal?.serving_grams}{selectedMeal?.serving_unit || 'g'}
+                  {t('home.mealsList.serving')}: {selectedMeal?.serving_grams}{selectedMeal?.serving_unit || 'g'}
                 </Text>
               </View>
             </View>

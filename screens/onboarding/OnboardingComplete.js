@@ -6,6 +6,7 @@ import { useOnboarding } from '../../utils/OnboardingContext';
 import { supabase } from '../../utils/supabase';
 import { useLanguage } from '../../utils/LanguageContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { scale } from '../../utils/responsive';
 
 export default function OnboardingComplete({ navigation }) {
   const { onboardingData, clearOnboardingData } = useOnboarding();
@@ -79,64 +80,61 @@ export default function OnboardingComplete({ navigation }) {
       const savedEmail = await AsyncStorage.getItem('pendingUserEmail');
       const savedPassword = await AsyncStorage.getItem('pendingUserPassword');
 
+      const { data: { user } } = await supabase.auth.getUser();
+
       if (!savedEmail || !savedPassword) {
-        console.log('❌ No saved credentials found');
-        Alert.alert(
-          t('onboarding.error'),
-          'Session expired. Please log in again.',
-          [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
-        );
-        return;
-      }
-
-      console.log('📧 Attempting to sign in with:', savedEmail);
-
-      // Try to sign in - this will only work if email is verified
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: savedEmail,
-        password: savedPassword,
-      });
-
-      if (error) {
-        console.log('❌ Sign in failed:', error.message);
-        
-        // Email not verified yet
-        if (error.message.includes('Email not confirmed') || 
-            error.message.includes('not verified')) {
-          console.log('⚠️ Email not verified yet');
-          
+        // If anonymous user already has a valid session, continue
+        if (user) {
+          console.log('✅ Anonymous user detected — continuing without email login');
+        } else {
+          console.log('❌ No saved credentials and no active session');
           Alert.alert(
-            '📧 Email Verification Required',
-            `Please check your email (${savedEmail}) and click the verification link before continuing.\n\nOnce verified, tap "I've Verified" below.`,
-            [
-              {
-                text: 'Resend Email',
-                style: 'cancel',
-                onPress: () => handleResendConfirmation(savedEmail)
-              },
-              {
-                text: "I've Verified",
-                onPress: () => recheckVerification(savedEmail, savedPassword)
-              }
-            ]
+            t('onboarding.error'),
+            'Session expired. Please log in again.',
+            [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
           );
           return;
         }
-        
-        // Some other error
-        Alert.alert(t('onboarding.error'), error.message);
+      }
+
+      // Try to sign in - this will only work if email is verified
+      let authUser = null;
+
+      // If we have email credentials, use password login
+      if (savedEmail && savedPassword) {
+        const response = await supabase.auth.signInWithPassword({
+          email: savedEmail,
+          password: savedPassword,
+        });
+
+        if (response.error) {
+          console.error('❌ Email login failed:', response.error);
+          Alert.alert('Error', response.error.message);
+          return;
+        }
+
+        authUser = response.data?.user;
+      } else {
+        // Anonymous user already signed in
+        const { data: { user } } = await supabase.auth.getUser();
+        authUser = user;
+      }
+
+      if (!authUser) {
+        console.error('❌ No authenticated user found');
+        Alert.alert('Error', 'Authentication failed.');
         return;
       }
 
       // Success! Email was verified
-      if (data.session && data.user) {
-        console.log('✅ Email verified! User signed in:', data.user.email);
+      if (authUser) {
+        console.log('✅ Email verified! User signed in:', authUser.email);
         
         // Check if profile was auto-created by trigger
         const { data: existingProfile } = await supabase
           .from('profiles')
           .select('id')
-          .eq('id', data.user.id)
+          .eq('id', authUser.id)
           .maybeSingle();
         
         if (existingProfile) {
@@ -147,7 +145,7 @@ export default function OnboardingComplete({ navigation }) {
           
           // Update the existing profile with onboarding data
           const profileData = {
-            full_name: data.user.email.split('@')[0],
+            full_name: authUser.email ? authUser.email.split('@')[0] : null,
             gender: onboardingData.gender,
             age: parseInt(onboardingData.age),
             height_ft: onboardingData.unit === 'imperial' ? parseInt(onboardingData.heightFeet) : null,
@@ -172,14 +170,14 @@ export default function OnboardingComplete({ navigation }) {
           const { error: updateError } = await supabase
             .from('profiles')
             .update(profileData)
-            .eq('id', data.user.id);
+            .eq('id', authUser.id);
           
           if (updateError) throw updateError;
           
           console.log('✅ Profile updated with onboarding data');
         } else {
           console.log('📝 No profile exists, creating new one...');
-          await saveProfileAndNavigate(data.user);
+          await saveProfileAndNavigate(authUser);
           return;
         }
         
@@ -191,12 +189,16 @@ export default function OnboardingComplete({ navigation }) {
         
         // Refresh UserContext
         await refreshProfile();
-        
+
         // Clear onboarding data
         clearOnboardingData();
-        
+
         // Navigate to Home
         console.log('🏠 Navigating to Home...');
+
+        // ✅ START tutorial freeze immediately
+        await AsyncStorage.setItem('tutorial_loading', 'true');
+
         navigation.reset({
           index: 0,
           routes: [{ name: 'Home' }],
@@ -216,13 +218,13 @@ export default function OnboardingComplete({ navigation }) {
     try {
       console.log('🔄 Rechecking verification status...');
 
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const response = await supabase.auth.signInWithPassword({
         email: email,
         password: password,
       });
 
-      if (error) {
-        if (error.message.includes('Email not confirmed')) {
+      if (response.error) {
+        if (response.error.message.includes('Email not confirmed')) {
           console.log('❌ Still not verified');
           Alert.alert(
             'Not Verified Yet',
@@ -230,15 +232,15 @@ export default function OnboardingComplete({ navigation }) {
             [{ text: 'OK' }]
           );
         } else {
-          Alert.alert('Error', error.message);
+          Alert.alert('Error', response.error.message);
         }
         return;
       }
 
       // Success! They verified it
-      if (data.session && data.user) {
+      if (response.data.session && response.data.user) {
         console.log('✅ Email verified! Proceeding...');
-        await saveProfileAndNavigate(data.user);
+        await saveProfileAndNavigate(authUser);
       }
 
     } catch (error) {
@@ -326,6 +328,7 @@ export default function OnboardingComplete({ navigation }) {
 
       // Navigate to Home
       console.log('🏠 Navigating to Home...');
+      await AsyncStorage.setItem('tutorial_loading', 'true');
       navigation.reset({
         index: 0,
         routes: [{ name: 'Home' }],
@@ -462,7 +465,7 @@ export default function OnboardingComplete({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#EAE0C8',
   },
   scrollContent: {
     flexGrow: 1,
@@ -474,7 +477,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   progressContainer: {
-    marginBottom: 40,
+    marginBottom: scale(30),
   },
   progressBar: {
     height: 4,
@@ -487,7 +490,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
   },
   progressText: {
-    fontSize: 14,
+    fontSize: scale(13),
     color: '#4CAF50',
     marginTop: 8,
     textAlign: 'center',
@@ -495,48 +498,48 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: scale(24),
   },
   icon: {
-    fontSize: 80,
+    fontSize: scale(68),
   },
   title: {
-    fontSize: 32,
+    fontSize: scale(28),
     fontWeight: 'bold',
     color: '#333',
     textAlign: 'center',
-    marginBottom: 40,
+    marginBottom: scale(30),
   },
   goalCard: {
     backgroundColor: '#e8f5e9',
     borderRadius: 16,
-    padding: 30,
+    padding: scale(24),
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: scale(24),
     borderWidth: 2,
     borderColor: '#4CAF50',
   },
   goalLabel: {
-    fontSize: 14,
+    fontSize: scale(13),
     color: '#666',
     marginBottom: 8,
   },
   goalValue: {
-    fontSize: 48,
+    fontSize: scale(40),
     fontWeight: 'bold',
     color: '#4CAF50',
     marginBottom: 8,
   },
   goalDescription: {
-    fontSize: 14,
+    fontSize: scale(13),
     color: '#666',
     textAlign: 'center',
   },
   infoText: {
-    fontSize: 16,
+    fontSize: scale(15),
     color: '#666',
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: scale(22),
     marginBottom: 20,
   },
   noteCard: {
@@ -544,23 +547,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff3cd',
     borderLeftWidth: 4,
     borderLeftColor: '#ffc107',
-    padding: 15,
+    padding: scale(13),
     borderRadius: 8,
     marginBottom: 20,
   },
   noteIcon: {
-    fontSize: 24,
+    fontSize: scale(22),
     marginRight: 10,
   },
   noteText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: scale(13),
     color: '#856404',
-    lineHeight: 20,
+    lineHeight: scale(18),
   },
   startButton: {
     backgroundColor: '#4CAF50',
-    paddingVertical: 18,
+    paddingVertical: scale(16),
     borderRadius: 12,
     alignItems: 'center',
     marginBottom: 15,
@@ -575,11 +578,11 @@ const styles = StyleSheet.create({
   },
   startButtonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: scale(17),
     fontWeight: 'bold',
   },
   footerNote: {
-    fontSize: 12,
+    fontSize: scale(11),
     color: '#999',
     textAlign: 'center',
     marginBottom: 10,
@@ -590,7 +593,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   resendText: {
-    fontSize: 14,
+    fontSize: scale(13),
     color: '#4CAF50',
     textDecorationLine: 'underline',
   },

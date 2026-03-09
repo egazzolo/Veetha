@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLanguage } from '../../utils/LanguageContext';
 import { supabase } from '../../utils/supabase';
+import { showToast } from '../../components/VeethaToast';
 
 const DURATION_PRESETS = [15, 30, 45, 60];
 
@@ -71,11 +72,8 @@ export default function ExerciseLogModal({ navigation, route }) {
 
       if (error) throw error;
 
-      Alert.alert(
-        t('common.success'),
-        t('exercise.loggedSuccess', { calories: estimatedCalories }),
-        [{ text: t('common.ok'), onPress: () => navigation.navigate('Home') }]
-      );
+      showToast('success', t('common.success'), t('exercise.loggedSuccess', { calories: estimatedCalories }));
+      navigation.navigate('Home');
     } catch (err) {
       console.error('Error logging exercise:', err);
       Alert.alert(t('common.error'), t('exercise.logFailed'));
@@ -85,157 +83,162 @@ export default function ExerciseLogModal({ navigation, route }) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backArrow}>←</Text>
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.text }]}>
-          {t('exercise.logExercise')}
-        </Text>
-        <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.cancelButton}>
-          <Text style={[styles.cancelText, { color: theme.primary }]}>
-            {t('common.cancel')}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Text style={styles.backArrow}>←</Text>
+          </TouchableOpacity>
+          <Text style={[styles.title, { color: theme.text }]}>
+            {t('exercise.logExercise')}
           </Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.content}>
-        {/* Activity Info */}
-        <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
-          <Text style={[styles.activityName, { color: theme.text }]}>
-            {t(`exercise.activities.${activity}`)} ({t(`exercise.intensities.${intensity}`)})
-          </Text>
-        </View>
-
-        {/* Weight */}
-        <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
-          <View style={styles.row}>
-            <Text style={[styles.label, { color: theme.text }]}>
-              {t('exercise.weight')}:
-            </Text>
-            {editingWeight ? (
-              <View style={styles.weightEdit}>
-                <TextInput
-                  style={[styles.weightInput, { color: theme.text, borderColor: theme.border }]}
-                  value={newWeight}
-                  onChangeText={setNewWeight}
-                  keyboardType="decimal-pad"
-                  autoFocus
-                />
-                <TouchableOpacity onPress={handleSaveWeight}>
-                  <Text style={[styles.saveButton, { color: theme.primary }]}>
-                    {t('common.save')}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View style={styles.weightDisplay}>
-                <Text style={[styles.weightText, { color: theme.text }]}>
-                  {currentWeight} kg
-                </Text>
-                <TouchableOpacity onPress={() => setEditingWeight(true)}>
-                  <Text style={[styles.editButton, { color: theme.primary }]}>
-                    {t('common.edit')}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </View>
-
-        {/* Duration */}
-        <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
-          <Text style={[styles.label, { color: theme.text }]}>
-            {t('exercise.duration')}:
-          </Text>
-          <View style={styles.presetRow}>
-            {DURATION_PRESETS.map(dur => (
-              <TouchableOpacity
-                key={dur}
-                style={[
-                  styles.presetButton,
-                  !isCustom && selectedDuration === dur && { backgroundColor: theme.primary }
-                ]}
-                onPress={() => {
-                  setIsCustom(false);
-                  setSelectedDuration(dur);
-                }}
-              >
-                <Text style={[
-                  styles.presetText,
-                  !isCustom && selectedDuration === dur && { color: '#fff' }
-                ]}>
-                  {dur}
-                </Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity
-              style={[
-                styles.presetButton,
-                isCustom && { backgroundColor: theme.primary }
-              ]}
-              onPress={() => setIsCustom(true)}
-            >
-              <Text style={[
-                styles.presetText,
-                isCustom && { color: '#fff' }
-              ]}>
-                {t('exercise.custom')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {isCustom && (
-            <TextInput
-              style={[styles.customInput, { color: theme.text, borderColor: theme.border }]}
-              placeholder={t('exercise.enterMinutes')}
-              placeholderTextColor={theme.textSecondary}
-              value={customDuration}
-              onChangeText={setCustomDuration}
-              keyboardType="decimal-pad"
-            />
-          )}
-        </View>
-
-        {/* Estimated Burn */}
-        <View style={[styles.estimateCard, { backgroundColor: theme.primaryLight || '#E3F2FD' }]}>
-          <Text style={[styles.estimateLabel, { color: theme.textSecondary }]}>
-            📊 {t('exercise.estimatedBurn')}
-          </Text>
-          <Text style={[styles.estimateValue, { color: theme.primary }]}>
-            {estimatedCalories} {t('common.kcal')}
-          </Text>
-        </View>
-
-        {/* Action Buttons */}
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={[styles.button, styles.cancelBtn, { borderColor: theme.border }]}
-            onPress={() => navigation.navigate('Home')}
-          >
-            <Text style={[styles.buttonText, { color: theme.text }]}>
+          <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.cancelButton}>
+            <Text style={[styles.cancelText, { color: theme.primary }]}>
               {t('common.cancel')}
             </Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[styles.button, styles.logBtn, { backgroundColor: theme.primary }]}
-            onPress={handleLogExercise}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={[styles.buttonText, { color: '#fff' }]}>
-                {t('exercise.logExercise')}
+        </View>
+
+        <View style={styles.content}>
+          {/* Activity Info */}
+          <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
+            <Text style={[styles.activityName, { color: theme.text }]}>
+              {t(`exercise.activities.${activity}`)} ({t(`exercise.intensities.${intensity}`)})
+            </Text>
+          </View>
+
+          {/* Weight */}
+          <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
+            <View style={styles.row}>
+              <Text style={[styles.label, { color: theme.text }]}>
+                {t('exercise.weight')}:
               </Text>
+              {editingWeight ? (
+                <View style={styles.weightEdit}>
+                  <TextInput
+                    style={[styles.weightInput, { color: theme.text, borderColor: theme.border }]}
+                    value={newWeight}
+                    onChangeText={setNewWeight}
+                    keyboardType="decimal-pad"
+                    autoFocus
+                  />
+                  <TouchableOpacity onPress={handleSaveWeight}>
+                    <Text style={[styles.saveButton, { color: theme.primary }]}>
+                      {t('common.save')}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View style={styles.weightDisplay}>
+                  <Text style={[styles.weightText, { color: theme.text }]}>
+                    {currentWeight} kg
+                  </Text>
+                  <TouchableOpacity onPress={() => setEditingWeight(true)}>
+                    <Text style={[styles.editButton, { color: theme.primary }]}>
+                      {t('common.edit')}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* Duration */}
+          <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
+            <Text style={[styles.label, { color: theme.text }]}>
+              {t('exercise.duration')}:
+            </Text>
+            <View style={styles.presetRow}>
+              {DURATION_PRESETS.map(dur => (
+                <TouchableOpacity
+                  key={dur}
+                  style={[
+                    styles.presetButton,
+                    !isCustom && selectedDuration === dur && { backgroundColor: theme.primary }
+                  ]}
+                  onPress={() => {
+                    setIsCustom(false);
+                    setSelectedDuration(dur);
+                  }}
+                >
+                  <Text style={[
+                    styles.presetText,
+                    !isCustom && selectedDuration === dur && { color: '#fff' }
+                  ]}>
+                    {dur}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity
+                style={[
+                  styles.presetButton,
+                  isCustom && { backgroundColor: theme.primary }
+                ]}
+                onPress={() => setIsCustom(true)}
+              >
+                <Text style={[
+                  styles.presetText,
+                  isCustom && { color: '#fff' }
+                ]}>
+                  {t('exercise.custom')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {isCustom && (
+              <TextInput
+                style={[styles.customInput, { color: theme.text, borderColor: theme.border }]}
+                placeholder={t('exercise.enterMinutes')}
+                placeholderTextColor={theme.textSecondary}
+                value={customDuration}
+                onChangeText={setCustomDuration}
+                keyboardType="decimal-pad"
+              />
             )}
-          </TouchableOpacity>
+          </View>
+
+          {/* Estimated Burn */}
+          <View style={[styles.estimateCard, { backgroundColor: theme.primaryLight || '#E3F2FD' }]}>
+            <Text style={[styles.estimateLabel, { color: theme.textSecondary }]}>
+              📊 {t('exercise.estimatedBurn')}
+            </Text>
+            <Text style={[styles.estimateValue, { color: theme.primary }]}>
+              {estimatedCalories} {t('common.kcal')}
+            </Text>
+          </View>
+
+          {/* Action Buttons */}
+          <View style={styles.buttonRow}>
+            <TouchableOpacity
+              style={[styles.button, styles.cancelBtn, { borderColor: theme.border }]}
+              onPress={() => navigation.navigate('Home')}
+            >
+              <Text style={[styles.buttonText, { color: theme.text }]}>
+                {t('common.cancel')}
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[styles.button, styles.logBtn, { backgroundColor: theme.primary }]}
+              onPress={handleLogExercise}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={[styles.buttonText, { color: '#fff' }]}>
+                  {t('exercise.logExercise')}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -288,10 +291,16 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     borderRadius: 8,
-    backgroundColor: '#F0F0F0',
-    alignItems: 'center'
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    backgroundColor: '#f5f5f5',
   },
-  presetText: { fontSize: 16, fontWeight: '500' },
+  presetText: { 
+    fontSize: 16, 
+    fontWeight: '500', 
+    color: '#333' 
+  },
   customInput: {
     borderWidth: 1,
     borderRadius: 8,

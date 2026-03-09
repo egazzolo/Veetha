@@ -1,14 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import * as FileSystem from 'expo-file-system';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Image, Modal, Animated, Alert, Button } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Image, Modal, Animated, Alert, Button, ActivityIndicator } from 'react-native';
+import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Svg, Circle } from 'react-native-svg';
+import AllergenWarningModal from '../components/AllergenWarningModal';
+import GuestUpsellSheet from '../components/GuestUpsellSheet';
+import { showToast } from '../components/VeethaToast';
 import { supabase } from '../utils/supabase';
 import { useUser } from '../utils/UserContext';
 import { useTheme } from '../utils/ThemeContext';
-import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
-import AllergenWarningModal from '../components/AllergenWarningModal';
 import { useLanguage } from '../utils/LanguageContext';
+import { useUserMode } from '../utils/UserModeContext';
+import { blockIfGuest } from '../utils/guestBlock';
 import { logMealLogged } from '../utils/analytics';
 import { searchFood } from '../utils/foodDatabase';
 
@@ -169,6 +174,8 @@ export default function ResultScreen({ route, navigation }) {
   const { food } = route.params;
   const { t } = useLanguage();
   const { refreshMeals } = useUser();
+  const { user, isGuest } = useUser();
+  const { isGuest: isGuestMode } = useUserMode();
   const [servingGrams, setServingGrams] = useState(food.serving_quantity || 100);
   const [inputValue, setInputValue] = useState(String(food.serving_quantity || 100));
   const [showDetails, setShowDetails] = useState(false);
@@ -183,6 +190,7 @@ export default function ResultScreen({ route, navigation }) {
   const [wrongFoodInput, setWrongFoodInput] = useState('');
   const [searchingFood, setSearchingFood] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [guestSheetVisible, setGuestSheetVisible] = useState(false);
 
   const [viewMode, setViewMode] = useState(
     route.params?.fromMode === 'photo' ? 'photo' : 'detailed'
@@ -210,14 +218,14 @@ export default function ResultScreen({ route, navigation }) {
 
   const handleWrongFood = async () => {
     if (!wrongFoodInput || !wrongFoodInput.trim()) {
-      Alert.alert('Enter a food name');
+      Alert.alert(t('results.enterFoodName'));
       return;
     }
 
     const corrected = await searchFood(wrongFoodInput.trim());
 
     if (!corrected) {
-      Alert.alert('Not found');
+      Alert.alert(t('results.notFound'));
       return;
     }
 
@@ -278,9 +286,8 @@ export default function ResultScreen({ route, navigation }) {
 
   // Check for allergens and dietary restrictions
   const checkAllergens = async () => {
+    if (isGuest || !user) return;
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
 
       const { data: profile, error } = await supabase
         .from('profiles')
@@ -409,11 +416,42 @@ export default function ResultScreen({ route, navigation }) {
   }, []);
 
   const handleLogMeal = async () => {
+    if (blockIfGuest(isGuestMode, navigation, () => {}, t, () => setGuestSheetVisible(true))) return;
     try {
       setSavingMeal(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        Alert.alert('Error', 'User not authenticated');
+      console.log('🔥 HANDLE LOG MEAL STARTED', { isGuest, user });
+
+      /* ===== GUEST MODE EARLY EXIT ===== */
+      if (isGuest) {
+
+        console.log('👤 GUEST SAVE START');
+
+        const existingMeals =
+          JSON.parse(await AsyncStorage.getItem('guest_meals') || '[]');
+
+        existingMeals.unshift({
+          id: Date.now(),
+          serving_grams: servingGrams,
+          product: {
+            name: food.product_name || food.name || 'Unknown food',
+            calories: food.calories || 0,
+            protein: food.protein || 0,
+            carbs: food.carbs || 0,
+            fat: food.fat || 0,
+            image_url: imageUrl,
+          },
+          logged_at: new Date().toISOString(),
+        });
+
+        await AsyncStorage.setItem(
+          'guest_meals',
+          JSON.stringify(existingMeals)
+        );
+
+        console.log('✅ GUEST MEAL SAVED');
+
+        setSavingMeal(false);
+        navigation.goBack();
         return;
       }
 
@@ -429,24 +467,15 @@ export default function ResultScreen({ route, navigation }) {
         console.log('Original URI:', food.image_url);
 
         try {
-          // Read image as base64 using expo-file-system (reliable in React Native)
-          console.log('Reading image file as base64...');
-          const base64Data = await FileSystem.readAsStringAsync(food.image_url, {
-            encoding: FileSystem.EncodingType.Base64,
-          });
-          console.log('✅ Base64 read, length:', base64Data.length);
+          // Fetch local file and convert to ArrayBuffer (reliable in RN 0.81+)
+          console.log('Reading image file...');
+          const response = await fetch(food.image_url);
+          const arrayBuffer = await response.arrayBuffer();
+          console.log('✅ ArrayBuffer created, size:', arrayBuffer.byteLength, 'bytes');
 
-          if (!base64Data || base64Data.length === 0) {
+          if (!arrayBuffer || arrayBuffer.byteLength === 0) {
             throw new Error('Image file is empty');
           }
-
-          // Convert base64 to Uint8Array for Supabase upload
-          const binaryString = atob(base64Data);
-          const bytes = new Uint8Array(binaryString.length);
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-          }
-          console.log('✅ Converted to bytes, size:', bytes.length, 'bytes');
 
           // Generate unique filename
           const fileName = `meal-${user.id}-${Date.now()}.jpg`;
@@ -455,14 +484,14 @@ export default function ResultScreen({ route, navigation }) {
           // Upload to Supabase Storage
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from('meal-images')
-            .upload(fileName, bytes, {
+            .upload(fileName, arrayBuffer, {
               contentType: 'image/jpeg',
               cacheControl: '3600',
               upsert: false
             });
 
           if (uploadError) {
-            console.error('❌ Upload failed:', uploadError);
+            console.error('❌ Upload failed:', JSON.stringify(uploadError));
             throw uploadError;
           }
 
@@ -480,7 +509,7 @@ export default function ResultScreen({ route, navigation }) {
 
         } catch (error) {
           console.error('❌ Image upload failed:', error.message);
-          console.error('Continuing without image...');
+          console.error('Full error:', JSON.stringify(error));
           // Don't block meal logging if image upload fails
         }
       } else if (food.image_url && food.image_url.startsWith('http')) {
@@ -492,134 +521,72 @@ export default function ResultScreen({ route, navigation }) {
       }
 
       // STEP 2: Check if food exists in food_database (by name or barcode)
-      console.log('🔍 Checking if food exists in database...');
-      
-      let productId;
-      
-      if (food.barcode) {
-        // Check by barcode first
+      let productId = null;
+
+      if (!isGuest) {
+
+        console.log('🔍 Checking if food exists in database...');
+
         const { data: existingProduct } = await supabase
           .from('food_database')
-          .select('id, image_url')
-          .eq('barcode', food.barcode)
-          .maybeSingle();
-
-        if (existingProduct) {
-          productId = existingProduct.id;
-          console.log('✅ Found existing product by barcode:', productId);
-
-          // Update image_url if the existing product doesn't have one
-          if (!existingProduct.image_url && imageUrl) {
-            await supabase.from('food_database')
-              .update({ image_url: imageUrl })
-              .eq('id', productId);
-            console.log('🖼️ Updated existing product with image URL');
-          }
-        }
-      }
-
-      if (!productId) {
-        // Check by name
-        const { data: existingProduct } = await supabase
-          .from('food_database')
-          .select('id, image_url')
+          .select('id')
           .eq('name', food.product_name || food.name)
           .maybeSingle();
 
         if (existingProduct) {
           productId = existingProduct.id;
-          console.log('✅ Found existing product by name:', productId);
+        } else {
 
-          // Update image_url if the existing product doesn't have one
-          if (!existingProduct.image_url && imageUrl) {
-            await supabase.from('food_database')
-              .update({ image_url: imageUrl })
-              .eq('id', productId);
-            console.log('🖼️ Updated existing product with image URL');
-          }
+          console.log('➕ Creating new product in food_database...');
+
+          const { data: newProduct, error: productError } = await supabase
+            .from('food_database')
+            .insert({
+              name: food.product_name || food.name || 'Unknown food',
+              calories: food.nutriments?.['energy-kcal_100g'] || food.nutriments?.['energy-kcal'] || food.calories || 0,
+              protein: food.nutriments?.proteins_100g || food.nutriments?.proteins || food.protein || 0,
+              carbs: food.nutriments?.carbohydrates_100g || food.nutriments?.carbohydrates || food.carbs || 0,
+              fat: food.nutriments?.fat_100g || food.nutriments?.fat || food.fat || 0,
+              fiber: food.nutriments?.fiber_100g || food.nutriments?.fiber || 0,
+              sugar: food.nutriments?.sugars_100g || food.nutriments?.sugar || 0,
+              sodium: food.nutriments?.sodium_100g || food.nutriments?.sodium || 0,
+              image_url: imageUrl,
+            })
+            .select('id')
+            .single();
+
+          if (productError) throw productError;
+
+          productId = newProduct.id;
+          console.log('PRODUCT ID BEING INSERTED:', productId);
         }
-      }
 
-      // STEP 3: Create new product if doesn't exist
-      if (!productId) {
-        console.log('➕ Creating new product in food_database...');
-        
-        // Extract per-100g nutrition from nutriments object
-        const n = food.nutriments || {};
-        const { data: newProduct, error: productError } = await supabase
-          .from('food_database')
+        console.log('INSERTING MEAL WITH PRODUCT ID:', productId);
+
+        const { error } = await supabase
+          .from('meals')
           .insert({
-            name: food.product_name || food.name || 'Unknown food',
+            user_id: user.id,
+            product_id: productId,
+            serving_grams: servingGrams,
             barcode: food.barcode || null,
-            calories: n['energy-kcal_100g'] || food.calories || 0,
-            protein: n.proteins_100g || food.protein || 0,
-            carbs: n.carbohydrates_100g || food.carbs || 0,
-            fat: n.fat_100g || food.fat || 0,
-            fiber: n.fiber_100g || food.fiber || 0,
-            sugar: n.sugars_100g || food.sugar || 0,
-            sodium: n.sodium_100g || food.sodium || 0,
-            serving_unit: food.serving_unit || detectServingUnit(food.product_name, servingGrams),
-            source: food.source || (food.detected_by_ai ? 'photo_recognition' : 'manual'),
-            detected_by_ai: food.detected_by_ai || false,
-            ai_confidence: food.ai_confidence || null,
+            meal_type: null,
             image_url: imageUrl,
-          })
-          .select('id')
-          .single();
-        
-        if (productError) {
-          console.error('❌ Error creating product:', productError);
-          throw productError;
-        }
-        
-        productId = newProduct.id;
-        console.log('✅ Created new product:', productId);
+            logged_at: new Date().toISOString(),
+          });
+
+        if (error) throw error;
+        console.log('✅ SUPABASE MEAL INSERT SUCCESS');
+
       }
 
-      // STEP 4: Insert meal with product_id and image_url
-      console.log('💾 Inserting meal into meals table...');
-      console.log('   - product_id:', productId);
-      console.log('   - serving_grams:', servingGrams);
-      console.log('   - image_url:', imageUrl);
-      
-      const { error: mealError } = await supabase
-        .from('meals')
-        .insert({
-          user_id: user.id,
-          product_id: productId,
-          serving_grams: servingGrams,
-          barcode: food.barcode || null,
-          meal_type: null,
-          image_url: imageUrl, // ✅ Store image URL in meals table too
-          logged_at: new Date().toISOString(),
-        });
-      
-      if (mealError) {
-        console.error('❌ Error inserting meal:', mealError);
-        throw mealError;
-      }
-      
       console.log('✅ Meal logged successfully!');
-      
-      // Track API usage if it was photo recognition
-      if (food.detected_by_ai) {
-        await supabase.from('api_tracking').insert({
-          user_id: user.id,
-          service: 'clarifai',
-          type: 'food_recognition',
-          success: true,
-          metadata: {
-            food_name: food.product_name,
-            confidence: food.ai_confidence,
-          },
-        });
-      }
 
       // Refresh meals list before navigating
       await refreshMeals();
 
       // Navigate back to Home
-      Alert.alert('Success! ✅', `${food.product_name} logged`);
+      showToast('success', t('results.mealLogged'), `${food.product_name}`);
       navigation.navigate('Home');
       
     } catch (error) {
@@ -627,8 +594,8 @@ export default function ResultScreen({ route, navigation }) {
       
       // Show the ACTUAL error to user (for debugging)
       Alert.alert(
-        'Error Details', 
-        `${error.message}\n\nType: ${error.name || 'Unknown'}\n\nPlease screenshot this!`,
+        t('common.error'),
+        `${error.message}`,
         [{ text: 'OK' }]
       );
     } finally {
@@ -641,9 +608,15 @@ export default function ResultScreen({ route, navigation }) {
       .activeOffsetX([-10, 10])  // Only activate for horizontal movement
       .failOffsetY([-10, 10])    // Fail (allow ScrollView) for vertical movement
       .onUpdate((e) => {
+      // Block rightward movement for guests
+      if (isGuestMode && e.translationX > 0) {
+        detailedTranslateX.setValue(0);
+        detailedRotateZ.setValue(0);
+        return;
+      }
       detailedTranslateX.setValue(e.translationX);
       detailedRotateZ.setValue(e.translationX / 30);
-      
+
       if (e.translationX > 50) {
         setDetailedSwipeDirection('right');
         detailedSwipeOpacity.setValue(Math.min(e.translationX / 100, 1));
@@ -656,6 +629,15 @@ export default function ResultScreen({ route, navigation }) {
       }
     })
     .onEnd((e) => {
+      if (isGuestMode && e.translationX > 0) {
+        // Guest tried to swipe right — show prompt, snap back
+        blockIfGuest(isGuestMode, navigation, () => {}, t, () => setGuestSheetVisible(true));
+        detailedTranslateX.setValue(0);
+        detailedRotateZ.setValue(0);
+        setDetailedSwipeDirection(null);
+        detailedSwipeOpacity.setValue(0);
+        return;
+      }
       if (e.translationX > 100) {
         // Right swipe - Save
         Animated.parallel([
@@ -723,9 +705,15 @@ export default function ResultScreen({ route, navigation }) {
         .activeOffsetX([-10, 10])
         .failOffsetY([-10, 10])
         .onUpdate((e) => {
+        // Block rightward movement for guests
+        if (isGuestMode && e.translationX > 0) {
+          translateX.setValue(0);
+          rotateZ.setValue(0);
+          return;
+        }
         translateX.setValue(e.translationX);
         rotateZ.setValue(e.translationX / 20); // Rotate based on swipe
-        
+
         // Show swipe indicators
         if (e.translationX > 50) {
           setSwipeDirection('right');
@@ -739,6 +727,15 @@ export default function ResultScreen({ route, navigation }) {
         }
       })
       .onEnd((e) => {
+        if (isGuestMode && e.translationX > 0) {
+          // Guest tried to swipe right — show prompt, snap back
+          blockIfGuest(isGuestMode, navigation, () => {}, t, () => setGuestSheetVisible(true));
+          translateX.setValue(0);
+          rotateZ.setValue(0);
+          setSwipeDirection(null);
+          swipeOpacity.setValue(0);
+          return;
+        }
         if (e.translationX > 100) {
           // Right swipe - Save with animation
           Animated.parallel([
@@ -1189,9 +1186,17 @@ export default function ResultScreen({ route, navigation }) {
                         onPress={handleLogMeal}
                         disabled={savingMeal}
                       >
-                        <Text style={styles.logMealButtonText}>
-                          {savingMeal ? t('results.saving') : `✓ ${t('results.logMeal')}`}
-                        </Text>
+                        {savingMeal ? (
+
+                          <ActivityIndicator color="#fff" />
+
+                        ) : (
+
+                          <Text style={styles.logMealButtonText}>
+                            ✓ {t('results.logMeal')}
+                          </Text>
+
+                        )}
                       </TouchableOpacity>
 
                       {/* Scan Again Button */}
@@ -1252,7 +1257,7 @@ export default function ResultScreen({ route, navigation }) {
 
                 const corrected = await searchFood(wrongFoodInput);
                 if (!corrected) {
-                  Alert.alert('Not found');
+                  Alert.alert(t('results.notFound'));
                   return;
                 }
 
@@ -1314,6 +1319,13 @@ export default function ResultScreen({ route, navigation }) {
         </Text>
       </View>
     )}
+
+      {/* Guest Upsell Sheet */}
+      <GuestUpsellSheet
+        visible={guestSheetVisible}
+        onClose={() => setGuestSheetVisible(false)}
+        message={t('guest.signUpToLog')}
+      />
         </SafeAreaView>
   );
 }

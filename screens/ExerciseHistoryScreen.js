@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
 import { useLanguage } from '../utils/LanguageContext';
 import { supabase } from '../utils/supabase';
+import VeethaModal from '../components/VeethaModal';
 
 export default function ExerciseHistoryScreen({ route, nestedInScrollView }) {
   const { t } = useLanguage();
@@ -11,6 +12,8 @@ export default function ExerciseHistoryScreen({ route, nestedInScrollView }) {
   
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
 
   useEffect(() => {
     fetchExercises();
@@ -45,32 +48,26 @@ export default function ExerciseHistoryScreen({ route, nestedInScrollView }) {
     }
   };
 
-  const handleDelete = async (id) => {
-    Alert.alert(
-      t('common.confirm'),
-      t('exercise.deleteConfirm'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('common.delete'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const { error } = await supabase
-                .from('exercises')
-                .delete()
-                .eq('id', id);
+  const handleDelete = (id) => {
+    setDeleteTargetId(id);
+    setDeleteModalVisible(true);
+  };
 
-              if (error) throw error;
-              fetchExercises();
-            } catch (error) {
-              console.error('Error deleting exercise:', error);
-              Alert.alert(t('common.error'), t('exercise.deleteFailed'));
-            }
-          }
-        }
-      ]
-    );
+  const confirmDelete = async () => {
+    setDeleteModalVisible(false);
+    try {
+      const { error } = await supabase
+        .from('exercises')
+        .delete()
+        .eq('id', deleteTargetId);
+
+      if (error) throw error;
+      fetchExercises();
+    } catch (error) {
+      console.error('Error deleting exercise:', error);
+      Alert.alert(t('common.error'), t('exercise.deleteFailed'));
+    }
+    setDeleteTargetId(null);
   };
 
   const formatDate = (dateString) => {
@@ -154,7 +151,21 @@ export default function ExerciseHistoryScreen({ route, nestedInScrollView }) {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         scrollEnabled={nestedInScrollView !== true}
-        nestedScrollEnabled={true} 
+        nestedScrollEnabled={true}
+      />
+
+      <VeethaModal
+        visible={deleteModalVisible}
+        title={t('common.confirm')}
+        message={t('exercise.deleteConfirm')}
+        confirmText={t('common.delete')}
+        cancelText={t('common.cancel')}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setDeleteModalVisible(false);
+          setDeleteTargetId(null);
+        }}
+        destructive
       />
     </View>
   );

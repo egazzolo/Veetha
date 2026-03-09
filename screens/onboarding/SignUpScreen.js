@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { supabase } from '../../utils/supabase';
+import { supabase, createSessionFromUrl } from '../../utils/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as AuthSession from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
+import { Svg, Path } from 'react-native-svg';
 import { useLanguage } from '../../utils/LanguageContext';
+import { useUserMode } from '../../utils/UserModeContext';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function SignUpScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -17,6 +23,7 @@ export default function SignUpScreen({ navigation }) {
   const [emailExists, setEmailExists] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const { t } = useLanguage();
+  const { setUserMode } = useUserMode();
 
   // Real-time email validation
   const checkEmailExists = async (emailToCheck) => {
@@ -25,19 +32,19 @@ export default function SignUpScreen({ navigation }) {
       setError('');
       return;
     }
-    
+
     setCheckingEmail(true);
-    
+
     try {
       const trimmedEmail = emailToCheck.trim().toLowerCase();
       console.log('🔍 Checking:', trimmedEmail);
-      
-      const { data, error } = await supabase.rpc('check_email_exists', { 
-        email_to_check: trimmedEmail 
+
+      const { data, error } = await supabase.rpc('check_email_exists', {
+        email_to_check: trimmedEmail
       });
-      
+
       console.log('📊 Result:', data);
-      
+
       if (data === true) {
         setEmailExists(true);
         setError(t('signup.emailInUse'));
@@ -61,7 +68,7 @@ export default function SignUpScreen({ navigation }) {
       const timeoutId = setTimeout(() => {
         checkEmailExists(email);
       }, 500); // Wait 500ms after user stops typing
-      
+
       return () => clearTimeout(timeoutId);
     } else {
       // Clear error if email is cleared or invalid
@@ -107,8 +114,8 @@ export default function SignUpScreen({ navigation }) {
         'This email is already registered. Please sign in instead.',
         [
           { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Go to Login', 
+          {
+            text: 'Go to Login',
             onPress: () => navigation.navigate('Login')
           }
         ]
@@ -119,6 +126,11 @@ export default function SignUpScreen({ navigation }) {
     setLoading(true);
 
     try {
+      // Capture guest session before it's replaced
+      const { data: { session: guestSession } } = await supabase.auth.getSession();
+      const guestUserId = guestSession?.user?.is_anonymous ? guestSession.user.id : null;
+      const guestToken = guestSession?.access_token || null;
+      console.log('👤 Guest user to delete after signup:', guestUserId);
       console.log('🚀 Creating account for:', email.trim().toLowerCase());
 
       // Create the user account
@@ -131,6 +143,12 @@ export default function SignUpScreen({ navigation }) {
       });
 
       if (error) {
+        // Check for rate limit
+        if (error.message.toLowerCase().includes('rate limit')) {
+          setError(t('signup.rateLimitError'));
+          setLoading(false);
+          return;
+        }
         // Check if email already exists
         if (error.message.includes('already') || error.message.includes('exist')) {
           Alert.alert( t('signup.emailInUse'));
@@ -144,9 +162,9 @@ export default function SignUpScreen({ navigation }) {
         const userCreatedAt = new Date(data.user.created_at);
         const now = new Date();
         const secondsAgo = (now - userCreatedAt) / 1000;
-        
+
         console.log(`⏰ User created ${secondsAgo.toFixed(1)} seconds ago`);
-        
+
         // If user was created more than 5 seconds ago, it's an existing user
         if (secondsAgo > 3) {
           console.log('❌ Email already registered (existing auth user)');
@@ -155,8 +173,8 @@ export default function SignUpScreen({ navigation }) {
             'This email is already registered. Please sign in instead.',
             [
               { text: 'Cancel', style: 'cancel' },
-              { 
-                text: 'Go to Login', 
+              {
+                text: 'Go to Login',
                 onPress: () => navigation.navigate('Login')
               }
             ]
@@ -164,21 +182,37 @@ export default function SignUpScreen({ navigation }) {
           setLoading(false);
           return;
         }
-        
+
         console.log('✅ New user created successfully!');
         console.log('📧 Confirmation email sent to:', email);
+
+        // Set authenticated mode
+        await setUserMode('authenticated');
+
+        // Delete the anonymous guest user
+        if (guestUserId && guestToken) {
+          try {
+            await supabase.functions.invoke('delete-user', {
+              headers: { Authorization: `Bearer ${guestToken}` }
+            });
+            console.log('🗑️ Guest user deleted:', guestUserId);
+          } catch (deleteError) {
+            // Non-fatal — guest cleanup failed but signup succeeded
+            console.warn('⚠️ Could not delete guest user:', deleteError);
+          }
+        }
 
         // Save credentials temporarily for later verification
         await AsyncStorage.setItem('pendingUserEmail', email.trim().toLowerCase());
         await AsyncStorage.setItem('pendingUserPassword', password);
-        
+
         console.log('💾 Credentials saved for verification step');
-        
+
         // After successful signup, navigate directly to OnboardingStep1
         Alert.alert(
           t('signup.success'),t('signup.accountCreated'),
-          [{ 
-            text: 'Continue', 
+          [{
+            text: 'Continue',
             onPress: () => navigation.navigate('OnboardingStep1')
           }]
         );
@@ -186,9 +220,16 @@ export default function SignUpScreen({ navigation }) {
 
     } catch (err) {
       console.error('❌ Sign up error:', err);
-      
+
+      // Handle email rate limit error
+      if (err.message.toLowerCase().includes('rate limit') ||
+          err.message.toLowerCase().includes('email rate limit')) {
+        setError(t('signup.rateLimitError'));
+        return;
+      }
+
       // Handle duplicate email errors
-      if (err.message.includes('already registered') || 
+      if (err.message.includes('already registered') ||
           err.message.includes('User already registered') ||
           err.message.includes('email address is already in use') ||
           err.code === 'user_already_exists') {
@@ -197,8 +238,8 @@ export default function SignUpScreen({ navigation }) {
           'This email is already registered. Please sign in instead.',
           [
             { text: 'Cancel', style: 'cancel' },
-            { 
-              text: 'Go to Login', 
+            {
+              text: 'Go to Login',
               onPress: () => navigation.navigate('Login')
             }
           ]
@@ -213,12 +254,75 @@ export default function SignUpScreen({ navigation }) {
     }
   };
 
+  const handlePostSignUp = async (user) => {
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('daily_calorie_goal')
+      .eq('id', user.id)
+      .single();
+
+    if (profileData?.daily_calorie_goal) {
+      navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+    } else {
+      navigation.reset({ index: 0, routes: [{ name: 'OnboardingStep1' }] });
+    }
+  };
+
+  const handleGoogleSignUp = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const redirectTo = AuthSession.makeRedirectUri({ scheme: 'veetha', path: 'auth/callback' });
+      console.log('🔗 Google SignUp redirect URL:', redirectTo);
+
+      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+          skipBrowserRedirect: true,
+        },
+      });
+
+      if (oauthError) throw oauthError;
+      if (!data?.url) throw new Error('No OAuth URL returned');
+
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+      console.log('🌐 Browser result:', result.type);
+
+      if (result.type === 'success' && result.url) {
+        const { data: sessionData, error: sessionError } = await createSessionFromUrl(result.url);
+        if (sessionError) throw sessionError;
+
+        if (sessionData?.session?.user) {
+          await setUserMode('authenticated');
+          await handlePostSignUp(sessionData.session.user);
+          return;
+        }
+      }
+
+      // Browser was dismissed — check if OAuth completed via deep link handler
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user && !session.user.is_anonymous) {
+        console.log('✅ Session found after browser dismiss');
+        await setUserMode('authenticated');
+        await handlePostSignUp(session.user);
+        return;
+      }
+    } catch (err) {
+      console.error('Google sign-up error:', err);
+      setError(err.message || t('signup.signupFailed'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Determine if button should be disabled
   const isButtonDisabled = loading || emailExists || checkingEmail || !agreeToTerms;
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
@@ -226,7 +330,9 @@ export default function SignUpScreen({ navigation }) {
           <View style={styles.content}>
 
             {/* Logo */}
-            <Text style={styles.logo}>Veetha</Text>
+            <View style={styles.logoContainer}>
+              <Image source={require('../../assets/LogoB.png')} style={styles.logo} />
+            </View>
             <Text style={styles.welcomeText}>{t('signup.createAccount')}</Text>
 
             {/* Error Message */}
@@ -234,7 +340,7 @@ export default function SignUpScreen({ navigation }) {
               <View style={styles.errorContainer}>
                 <Text style={styles.errorText}>{error}</Text>
                 {emailExists && (
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     onPress={() => navigation.navigate('Login')}
                     style={styles.goToLoginButton}
                   >
@@ -254,6 +360,7 @@ export default function SignUpScreen({ navigation }) {
                     emailExists && styles.inputError,
                   ]}
                   placeholder={t('signup.emailPlaceholder')}
+                  placeholderTextColor="#999"
                   value={email}
                   onChangeText={setEmail}
                   onBlur={() => checkEmailExists(email)}
@@ -277,6 +384,7 @@ export default function SignUpScreen({ navigation }) {
                 <TextInput
                   style={styles.passwordInput}
                   placeholder={t('signup.passwordPlaceholder')}
+                  placeholderTextColor="#999"
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
@@ -301,6 +409,7 @@ export default function SignUpScreen({ navigation }) {
                 <TextInput
                   style={styles.passwordInput}
                   placeholder={t('signup.confirmPasswordPlaceholder')}
+                  placeholderTextColor="#999"
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry={!showConfirmPassword}
@@ -365,13 +474,21 @@ export default function SignUpScreen({ navigation }) {
               <View style={styles.dividerLine} />
             </View>
 
-            {/* Google Sign-In */}
+            {/* Google Button */}
             <TouchableOpacity
               style={styles.googleButton}
-              onPress={() => console.log('Google Sign-Up')}
+              onPress={handleGoogleSignUp}
               disabled={loading}
             >
-              <Text style={styles.googleButtonText}>{t('signup.signupWithGoogle')}</Text>
+              <View style={styles.socialButtonInner}>
+                <Svg width={20} height={20} viewBox="0 0 48 48">
+                  <Path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                  <Path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                  <Path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                  <Path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                </Svg>
+                <Text style={styles.googleButtonText}>{t('login.continueWithGoogle')}</Text>
+              </View>
             </TouchableOpacity>
 
             {/* Login Link */}
@@ -391,7 +508,7 @@ export default function SignUpScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#EAE0C8',
   },
   keyboardView: {
     flex: 1,
@@ -404,12 +521,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     paddingTop: 40,
   },
+  logoContainer: {
+    marginBottom: 30,
+    alignItems: 'center',
+  },
   logo: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#4CAF50',
-    textAlign: 'center',
-    marginBottom: 10,
+    width: 200,
+    height: 100,
+    resizeMode: 'contain',
   },
   welcomeText: {
     fontSize: 20,
@@ -559,14 +678,22 @@ const styles = StyleSheet.create({
   googleButton: {
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#ddd',
-    paddingVertical: 15,
-    borderRadius: 10,
-    alignItems: 'center',
+    borderColor: '#dadce0',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 4,
+    marginBottom: 12,
   },
   googleButtonText: {
-    color: '#333',
-    fontSize: 16,
+    color: '#3c4043',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 12,
+  },
+  socialButtonInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   footer: {
     flexDirection: 'row',

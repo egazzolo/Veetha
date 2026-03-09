@@ -5,6 +5,10 @@ import { useTheme } from '../utils/ThemeContext';
 import { supabase } from '../utils/supabase';
 import { useUser } from '../utils/UserContext';
 import { useLanguage } from '../utils/LanguageContext';
+import { useUserMode } from '../utils/UserModeContext';
+import { blockIfGuest } from '../utils/guestBlock';
+import { showToast } from '../components/VeethaToast';
+import GuestUpsellSheet from '../components/GuestUpsellSheet';
 
 const ALLERGIES = [
   { id: 'peanuts', emoji: '🥜' },
@@ -40,9 +44,13 @@ export default function DietaryRestrictionsScreen({ navigation }) {
   const { theme } = useTheme();
   const { t } = useLanguage();
   const { profile, refreshProfile } = useUser();
-  
+  const { isGuest: isGuestMode } = useUserMode();
+
+  const guestCheck = (action) => blockIfGuest(isGuestMode, navigation, action, t);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showGuestSheet, setShowGuestSheet] = useState(false);
   
   const [selectedAllergies, setSelectedAllergies] = useState([]);
   const [dietType, setDietType] = useState('none');
@@ -82,6 +90,7 @@ export default function DietaryRestrictionsScreen({ navigation }) {
   };
 
   const toggleAllergy = (allergyId) => {
+    if (isGuestMode) { setShowGuestSheet(true); return; }
     if (selectedAllergies.includes(allergyId)) {
       setSelectedAllergies(selectedAllergies.filter(id => id !== allergyId));
     } else {
@@ -90,6 +99,7 @@ export default function DietaryRestrictionsScreen({ navigation }) {
   };
 
   const togglePreference = (prefId) => {
+    if (isGuestMode) { setShowGuestSheet(true); return; }
     if (selectedPreferences.includes(prefId)) {
       setSelectedPreferences(selectedPreferences.filter(id => id !== prefId));
     } else {
@@ -98,6 +108,7 @@ export default function DietaryRestrictionsScreen({ navigation }) {
   };
 
   const handleSave = async () => {
+    if (isGuestMode) { setShowGuestSheet(true); return; }
     setSaving(true);
 
     try {
@@ -122,16 +133,8 @@ export default function DietaryRestrictionsScreen({ navigation }) {
 
       await refreshProfile();
 
-      Alert.alert(
-        t('dietaryRestrictions.success'),
-        t('dietaryRestrictions.successMessage'),
-        [
-          {
-            text: t('dietaryRestrictions.ok'),
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
+      showToast('success', t('dietaryRestrictions.success'), t('dietaryRestrictions.successMessage'));
+      navigation.goBack();
     } catch (error) {
       console.error('Error saving restrictions:', error);
       Alert.alert(t('dietaryRestrictions.error'), t('dietaryRestrictions.errorSaving'));
@@ -228,7 +231,7 @@ export default function DietaryRestrictionsScreen({ navigation }) {
                     borderWidth: dietType === diet.value ? 2 : 1,
                   }
                 ]}
-                onPress={() => setDietType(diet.value)}
+                onPress={() => guestCheck(() => setDietType(diet.value))}
               >
                 <View style={styles.dietOptionContent}>
                   <Text style={[styles.dietLabel, { color: theme.text }]}>
@@ -311,6 +314,11 @@ export default function DietaryRestrictionsScreen({ navigation }) {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+      <GuestUpsellSheet
+        visible={showGuestSheet}
+        onClose={() => setShowGuestSheet(false)}
+        message={t('guestSheet.defaultMessage')}
+      />
     </SafeAreaView>
   );
 }

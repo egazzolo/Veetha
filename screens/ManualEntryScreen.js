@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Alert,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../utils/supabase';
 import { useTheme } from '../utils/ThemeContext';
+import { showToast } from '../components/VeethaToast';
 
 export default function ManualEntryScreen({ navigation }) {
   const { theme } = useTheme();
@@ -39,10 +40,7 @@ export default function ManualEntryScreen({ navigation }) {
         setSugar(nutritionData.nutriments.sugar?.toString() || '');
         setSodium(nutritionData.nutriments.sodium?.toString() || '');
 
-        Alert.alert(
-          'Nutrition Found! ✅',
-          `We found nutrition info for "${nutritionData.name}". You can edit it if needed.`
-        );
+        showToast('success', 'Nutrition Found!', `We found nutrition info for "${nutritionData.name}". You can edit it if needed.`);
       } else {
         Alert.alert(
           'Not Found',
@@ -97,16 +95,8 @@ export default function ManualEntryScreen({ navigation }) {
 
       if (error) throw error;
 
-      Alert.alert(
-        'Meal Logged! ✅',
-        `${mealName} has been added to your meal log.`,
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.navigate('Home'),
-          },
-        ]
-      );
+      showToast('success', 'Meal Logged!', `${mealName} has been added to your meal log.`);
+      navigation.navigate('Home');
 
     } catch (error) {
       console.error('Error saving meal:', error);

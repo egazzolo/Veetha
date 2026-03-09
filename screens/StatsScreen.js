@@ -8,6 +8,7 @@ import { useLanguage } from '../utils/LanguageContext';
 import { supabase } from '../utils/supabase';
 import { useFocusEffect } from '@react-navigation/native';
 import { logScreen, logEvent, logMealLogged } from '../utils/analytics';
+import { useUserMode } from '../utils/UserModeContext';
 import AnimatedThemeWrapper from '../components/AnimatedThemeWrapper';
 import BottomNav from '../components/BottomNav';
 import ExerciseHistoryScreen from './ExerciseHistoryScreen';
@@ -17,6 +18,7 @@ const { width } = Dimensions.get('window');
 export default function StatsScreen({ navigation }) {
   const { theme, isDark } = useTheme();
   const { t } = useLanguage();
+  const { isGuest: isGuestMode } = useUserMode();
   const [weeklyData, setWeeklyData] = useState([]);
   const [monthlyData, setMonthlyData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -95,7 +97,15 @@ export default function StatsScreen({ navigation }) {
       // Get ALL meals from current week in ONE query
       const { data: meals, error } = await supabase
         .from('meals')
-        .select('logged_at, calories, protein, carbs, fat')
+        .select(`
+          logged_at,
+          product:food_database!meals_product_fk (
+            calories,
+            protein,
+            carbs,
+            fat
+          )
+        `)
         .eq('user_id', user.id)
         .gte('logged_at', startDate.toISOString())
         .lte('logged_at', endDate.toISOString())
@@ -123,10 +133,10 @@ export default function StatsScreen({ navigation }) {
         const dateStr = date.toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
         const dayMeals = mealsByDate[dateStr] || [];
 
-        const totalCalories = dayMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
-        const totalProtein = dayMeals.reduce((sum, m) => sum + (m.protein || 0), 0);
-        const totalCarbs = dayMeals.reduce((sum, m) => sum + (m.carbs || 0), 0);
-        const totalFat = dayMeals.reduce((sum, m) => sum + (m.fat || 0), 0);
+        const totalCalories = dayMeals.reduce((sum, m) => sum + (m.product?.calories || 0), 0);
+        const totalProtein = dayMeals.reduce((sum, m) => sum + (m.product?.protein || 0), 0);
+        const totalCarbs = dayMeals.reduce((sum, m) => sum + (m.product?.carbs || 0), 0);
+        const totalFat = dayMeals.reduce((sum, m) => sum + (m.product?.fat || 0), 0);
 
         weekData.push({
           day: date.toLocaleDateString('en-US', { weekday: 'short' }),
@@ -167,7 +177,12 @@ export default function StatsScreen({ navigation }) {
       // Get ALL meals from current month in ONE query
       const { data: meals, error } = await supabase
         .from('meals')
-        .select('logged_at, calories')
+        .select(`
+          logged_at,
+          product:food_database!meals_product_fk (
+            calories
+          )
+        `)
         .eq('user_id', user.id)
         .gte('logged_at', firstDay.toISOString())
         .lte('logged_at', lastDay.toISOString())
@@ -195,7 +210,7 @@ export default function StatsScreen({ navigation }) {
         const dateStr = date.toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
         const dayMeals = mealsByDate[dateStr] || [];
 
-        const totalCalories = dayMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
+        const totalCalories = dayMeals.reduce((sum, m) => sum + (m.product?.calories || 0), 0);
 
         monthData.push({
           date: dateStr,
@@ -427,6 +442,19 @@ export default function StatsScreen({ navigation }) {
 
               {activeTab === 'week' && (
                 <>
+                  {isGuestMode && (
+                    <View style={[styles.guestBanner, { backgroundColor: theme.cardBackground, borderColor: theme.primary }]}>
+                      <Text style={[styles.guestBannerText, { color: theme.text }]}>
+                        {t('guest.weeklyProgress')}
+                      </Text>
+                      <TouchableOpacity
+                        style={[styles.guestBannerBtn, { backgroundColor: theme.primary }]}
+                        onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Landing' }] })}
+                      >
+                        <Text style={styles.guestBannerBtnText}>{t('guest.signUpLogIn')}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
                   {/* Weekly Bar Chart */}
                   <View style={[styles.chartCard, { backgroundColor: theme.cardBackground }]}>
                     <Text style={[styles.cardTitle, { color: theme.text }]}>{t('stats.weeklyCals')}</Text>
@@ -437,6 +465,7 @@ export default function StatsScreen({ navigation }) {
                       <>
                         <View style={styles.chart}>
                           {weeklyData.map((day, index) => {
+                            const isToday = day.date === new Date().toLocaleDateString('en-CA');
                             const barHeight = (day.calories / maxCalories) * 150;
                             const isOverGoal = day.calories > dailyGoal;
                             const hasData = day.calories > 0;
@@ -464,7 +493,10 @@ export default function StatsScreen({ navigation }) {
                                     <View style={[styles.emptyBar, { backgroundColor: theme.border }]} />
                                   )}
                                 </View>
-                                <Text style={[styles.barLabel, { color: theme.textSecondary }]}>
+                                <Text style={[
+                                  styles.barLabel,
+                                  { color: isToday ? theme.primary : theme.textSecondary }
+                                ]}>
                                   {day.day}
                                 </Text>
                               </View>
@@ -537,6 +569,19 @@ export default function StatsScreen({ navigation }) {
 
               {activeTab === 'month' && (
                 <>
+                  {isGuestMode && (
+                    <View style={[styles.guestBanner, { backgroundColor: theme.cardBackground, borderColor: theme.primary }]}>
+                      <Text style={[styles.guestBannerText, { color: theme.text }]}>
+                        {t('guest.monthlyProgress')}
+                      </Text>
+                      <TouchableOpacity
+                        style={[styles.guestBannerBtn, { backgroundColor: theme.primary }]}
+                        onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Landing' }] })}
+                      >
+                        <Text style={styles.guestBannerBtnText}>{t('guest.signUpLogIn')}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
                   {/* Monthly Calendar */}
                   <View style={[styles.chartCard, { backgroundColor: theme.cardBackground }]}>
                     <Text style={[styles.cardTitle, { color: theme.text }]}>{t('stats.monthlyActivity')}</Text>
@@ -691,44 +736,48 @@ export default function StatsScreen({ navigation }) {
               )}
 
               {activeTab === 'exercise' && (
-                <ExerciseHistoryScreen 
-                  route={{ params: { theme, isPremium } }} 
-                  nestedInScrollView={true}
-                />
+                <>
+                  {isGuestMode && (
+                    <View style={[styles.guestBanner, { backgroundColor: theme.cardBackground, borderColor: theme.primary }]}>
+                      <Text style={[styles.guestBannerText, { color: theme.text }]}>
+                        {t('guest.exerciseHistory')}
+                      </Text>
+                      <TouchableOpacity
+                        style={[styles.guestBannerBtn, { backgroundColor: theme.primary }]}
+                        onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Landing' }] })}
+                      >
+                        <Text style={styles.guestBannerBtnText}>{t('guest.signUpLogIn')}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                  <ExerciseHistoryScreen
+                    route={{ params: { theme, isPremium } }}
+                    nestedInScrollView={true}
+                  />
+                </>
               )}
 
-              {/* REPORTS SECTION */}
+              {/* REPORTS SECTION — hidden for guests */}
+              {!isGuestMode && (
               <View style={styles.section}>
                 <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>
                   {t('stats.reports')}
                 </Text>
-                
-                <TouchableOpacity 
-                  style={[styles.settingItem, { backgroundColor: theme.cardBackground }]}
-                  onPress={() => navigation.navigate('WeeklyReport')}
-                >
-                  <View style={styles.settingLeft}>
-                    <Text style={styles.settingIcon}>📊</Text>
-                    <Text style={[styles.settingLabel, { color: theme.text }]}>
-                      {t('stats.weeklyReport')}
-                    </Text>
-                  </View>
-                  <Text style={styles.settingArrow}>›</Text>
-                </TouchableOpacity>
 
                 <TouchableOpacity
                   style={[styles.settingItem, { backgroundColor: theme.cardBackground }]}
                   onPress={() => navigation.navigate('ExportReport')}
                 >
                   <View style={styles.settingLeft}>
-                    <Text style={styles.settingIcon}>📥</Text>
+                    <Text style={styles.settingIcon}>📄</Text>
                     <Text style={[styles.settingLabel, { color: theme.text }]}>
-                      Export Report
+                      {t('stats.reports')}
                     </Text>
                   </View>
                   <Text style={styles.settingArrow}>›</Text>
                 </TouchableOpacity>
               </View>
+              )}
 
               {/* Bottom Padding */}
               <View style={{ height: 100 }} />
@@ -1003,5 +1052,29 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 15,
+  },
+  guestBanner: {
+    marginHorizontal: 20,
+    marginBottom: 15,
+    padding: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  guestBannerText: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 15,
+  },
+  guestBannerBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+  },
+  guestBannerBtnText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

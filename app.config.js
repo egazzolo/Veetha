@@ -2,9 +2,10 @@ module.exports = {
   expo: {
     name: "Veetha",
     slug: "Veetha",
+    scheme: "veetha",
     version: "1.0.1",
     orientation: "portrait",
-    icon: "./assets/icon.png",
+    icon: "./assets/LogoD.png",
     userInterfaceStyle: "light",
     newArchEnabled: false,
     assetBundlePatterns: [
@@ -25,9 +26,25 @@ module.exports = {
       }
     },
     android: {
+      intentFilters: [
+        {
+          action: "VIEW",
+          autoVerify: true,
+          data: [
+            {
+              scheme: "veetha",
+              host: "auth",
+              pathPrefix: "/callback",
+            },
+          ],
+          category: ["BROWSABLE", "DEFAULT"],
+        },
+      ],
+      softwareKeyboardLayoutMode: "resize",
       package: "com.yourname.veetha",
+      allowBackup: false,
       adaptiveIcon: {
-        foregroundImage: "./assets/adaptive-icon.png",
+        foregroundImage: "./assets/LogoD.png",
         backgroundColor: "#ffffff"
       },
       permissions: [

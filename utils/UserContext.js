@@ -6,10 +6,12 @@ const UserContext = createContext();
 
 export function UserProvider({ children }) {
   const [profile, setProfile] = useState(null);
+  const [user, setUser] = useState(null);
   const [meals, setMeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cacheLoaded, setCacheLoaded] = useState(false);
   const [freshDataLoaded, setFreshDataLoaded] = useState(false);
+  const [isGuest, setIsGuest] = useState(false);
 
   useEffect(() => {
     initializeUserData();
@@ -19,6 +21,10 @@ export function UserProvider({ children }) {
       console.log('🔐 Auth state changed:', event);
       
       if (event === 'SIGNED_IN') {
+        setIsGuest(false);
+        // Clear stale cache so a re-created account never sees old data
+        AsyncStorage.multiRemove(['cached_meals', 'cached_profile']);
+        setMeals([]);
         console.log('✅ User signed in, reloading data');
         loadUserData();
       } else if (event === 'SIGNED_OUT') {
@@ -35,12 +41,25 @@ export function UserProvider({ children }) {
   // Initialize: Load cache FIRST, then fetch fresh data
   const initializeUserData = async () => {
     try {
-      // Step 1: Load cached data immediately
-      await loadCachedData();
-      
-      // Step 2: Fetch fresh data in background
-      await loadUserData();
-      
+
+      const { data } = await supabase.auth.getUser();
+      const authUser = data?.user;
+
+      if (!authUser) {
+
+        // GUEST → load local cache
+        setIsGuest(true);
+        await loadCachedData();
+        await loadUserData();
+
+      } else {
+
+        // AUTHENTICATED → NEVER load local cache
+        setIsGuest(false);
+        await loadUserData();
+
+      }
+
     } catch (error) {
       console.error('Error initializing user data:', error);
       setLoading(false);
@@ -75,25 +94,40 @@ export function UserProvider({ children }) {
     try {
       console.log('🔍 UserContext: Loading user data...');
       
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      console.log('👤 UserContext: User =', user?.id);
-      
-      if (!user) {
-        console.log('❌ UserContext: No user found');
+      const { data } = await supabase.auth.getUser();
+      const authUser = data?.user;
+
+      setUser(authUser);
+
+      // ✅ GUEST MODE SUPPORT
+      if (!authUser) {
+        console.log('👤 Guest mode activated');
+
+        setIsGuest(true);      // NEW
+        setProfile(null);      // important cleanup
+        setMeals([]);          // prevent stale cache UI
+
         setLoading(false);
         return;
       }
 
+      //console.log('👤 UserContext: User =', authUser.id);
+
       // Load profile
+      if (!authUser?.id) {
+        console.log('❌ UserContext: authUser has no id');
+        setLoading(false);
+        return;
+      }
+
       const { data: profileData, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', authUser.id)
         .maybeSingle();
 
-      console.log('📊 UserContext: Profile data =', profileData);
-      console.log('📊 UserContext: Profile error =', error);
+      //console.log('📊 UserContext: Profile data =', profileData);
+      //console.log('📊 UserContext: Profile error =', error);
 
       if (profileData) {
         loadedProfile = profileData;  // ← ADD THIS LINE
@@ -106,7 +140,7 @@ export function UserProvider({ children }) {
       }
 
       // Load today's meals
-      await loadTodaysMeals(user.id);
+      await loadTodaysMeals(authUser.id);
 
     } catch (error) {
       console.error('❌ UserContext: Error =', error);
@@ -126,7 +160,8 @@ export function UserProvider({ children }) {
         .from('meals')
         .select(`
           *,
-          product:food_database (
+          product:food_database!meals_product_fk(
+            id,
             name,
             calories,
             protein,
@@ -156,10 +191,12 @@ export function UserProvider({ children }) {
   };
 
   const refreshMeals = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await loadTodaysMeals(user.id);
-    }
+    const { data } = await supabase.auth.getUser();
+    const authUser = data?.user;
+
+    if (!authUser?.id) return;
+
+    await loadTodaysMeals(authUser.id);
   };
 
   const refreshProfile = async () => {
@@ -170,14 +207,21 @@ export function UserProvider({ children }) {
   const clearUserData = async () => {
     setProfile(null);
     setMeals([]);
-    await AsyncStorage.removeItem('cached_profile');
-    await AsyncStorage.removeItem('cached_meals');
+    setUser(null);
+    setFreshDataLoaded(false);
+    setCacheLoaded(false);
+    // Keep app_language — language preference persists across logout
+    // Keep tutorial_completed_home — tutorial completion persists across logout
+    // Keep veetha_user_mode — userMode persists across logout
+    await AsyncStorage.multiRemove(['cached_meals', 'cached_profile', 'tutorial_loading']);
   };
 
   return (
-    <UserContext.Provider value={{ 
-      profile, 
-      meals, 
+    <UserContext.Provider value={{
+      user,
+      profile,
+      meals,
+      isGuest,
       loading: loading && !cacheLoaded, // Only show loading if no cache
       freshDataLoaded,
       refreshMeals,

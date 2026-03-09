@@ -1,14 +1,17 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
-export default function MonthlyCalendar({ 
-  monthlyData, 
-  theme, 
-  t, 
-  selectedDate, 
+const LOCALE_MAP = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', tl: 'fil-PH' };
+
+export default function MonthlyCalendar({
+  monthlyData,
+  theme,
+  t,
+  language,
+  selectedDate,
   onDateSelect,
   currentMonth,
-  onMonthChange 
+  onMonthChange
 }) {
   const year = currentMonth.year;
   const month = currentMonth.month;
@@ -67,7 +70,7 @@ export default function MonthlyCalendar({
         </TouchableOpacity>
         
         <Text style={[styles.monthHeader, { color: theme.text }]}>
-          {new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          {new Date(year, month).toLocaleDateString(LOCALE_MAP[language] || 'en-US', { month: 'long', year: 'numeric' })}
         </Text>
         
         <TouchableOpacity 

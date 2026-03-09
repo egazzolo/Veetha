@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../utils/ThemeContext';
 import { useLanguage } from '../../utils/LanguageContext';
+import { scale } from '../../utils/responsive';
 
 export default function OnboardingStep1b({ navigation }) {
   const { theme } = useTheme();
@@ -72,27 +73,27 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 40,
-    paddingBottom: 130,
+    paddingTop: scale(35),
+    paddingBottom: 100,
   },
   mainEmoji: {
-    fontSize: 72,
+    fontSize: scale(60),
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: scale(16),
   },
   title: {
-    fontSize: 28,
+    fontSize: scale(26),
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 36,
+    marginBottom: scale(28),
+    lineHeight: scale(32),
   },
   statsContainer: {
-    gap: 16,
-    marginBottom: 32,
+    gap: scale(14),
+    marginBottom: scale(28),
   },
   statCard: {
-    padding: 20,
+    padding: scale(18),
     borderRadius: 16,
     alignItems: 'center',
     shadowColor: '#000',
@@ -102,21 +103,21 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   statNumber: {
-    fontSize: 48,
+    fontSize: scale(42),
     fontWeight: 'bold',
     color: '#4CAF50',
     marginBottom: 8,
   },
   statText: {
-    fontSize: 16,
+    fontSize: scale(15),
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: scale(20),
     color: '#333',
   },
   message: {
-    fontSize: 16,
+    fontSize: scale(15),
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: scale(22),
     fontStyle: 'italic',
     color: '#333',
   },
@@ -127,13 +128,13 @@ const styles = StyleSheet.create({
     right: 24,
   },
   button: {
-    paddingVertical: 16,
+    paddingVertical: scale(14),
     borderRadius: 12,
     alignItems: 'center',
   },
   buttonText: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: scale(17),
     fontWeight: '600',
   },
 });

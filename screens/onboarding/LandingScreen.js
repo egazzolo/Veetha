@@ -1,11 +1,27 @@
-import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
+import React, { useState } from 'react';
+import * as Crypto from 'expo-crypto';
+import { StyleSheet, Text, View, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
 import { useLanguage } from '../../utils/LanguageContext';
+import { useUserMode } from '../../utils/UserModeContext';
+import { supabase } from '../../utils/supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LandingScreen({ navigation }) {
   const { t } = useLanguage();
+  const { setUserMode } = useUserMode();
+  const [guestLoading, setGuestLoading] = useState(false);
+
+  if (guestLoading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <View style={styles.content}>
+          <ActivityIndicator size="large" color="#4CAF50" />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -16,9 +32,9 @@ export default function LandingScreen({ navigation }) {
           <LanguageSwitcher />
         </View>
 
-        {/* Logo placeholder - replace with your actual logo */}
+        {/* Logo */}
         <View style={styles.logoContainer}>
-          <Text style={styles.logoText}>Veetha</Text>
+          <Image source={require('../../assets/LogoB.png')} style={styles.logo} />
         </View>
 
         {/* Tagline */}
@@ -38,6 +54,65 @@ export default function LandingScreen({ navigation }) {
           onPress={() => navigation.navigate('SignUp')}
         >
           <Text style={styles.secondaryButtonText}>{t('landing.signup')}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={async () => {
+            try {
+              setGuestLoading(true);
+              const { data, error } = await supabase.auth.signInAnonymously();
+
+              if (error) {
+                console.error('Anonymous sign-in error:', error);
+                return;
+              }
+
+              console.log('✅ Anonymous user created:', data?.user?.id);
+
+              // 🔐 CHECK IF RECOVERY CODE EXISTS
+              const { data: existingCode } = await supabase
+                .from('recovery_codes')
+                .select('id')
+                .eq('user_id', data.user.id)
+                .maybeSingle();
+
+              if (!existingCode) {
+
+                const rawCode = Crypto.randomUUID()
+                  .replace(/-/g,'')
+                  .slice(0,12)
+                  .toUpperCase();
+
+                const codeHash = await Crypto.digestStringAsync(
+                  Crypto.CryptoDigestAlgorithm.SHA256,
+                  rawCode
+                );
+
+                await supabase
+                  .from('recovery_codes')
+                  .insert({
+                    user_id: data.user.id,
+                    code_hash: codeHash
+                  });
+
+                // TEMP DEBUG — REMOVE LATER
+                console.log('🔑 RECOVERY CODE:', rawCode);
+              }
+
+              // Set guest mode — go straight to Home, skip onboarding
+              await setUserMode('guest');
+
+              navigation.replace('Home');
+            } catch (e) {
+              console.error('Anonymous sign-in failed:', e);
+              setGuestLoading(false);
+            }
+          }}
+        >
+          <Text style={styles.secondaryButtonText}>
+            {t('landing.continue')}
+          </Text>
         </TouchableOpacity>
 
         {/* Google Sign-In (we'll implement this later) */}
@@ -61,7 +136,7 @@ export default function LandingScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#EAE0C8',
   },
   content: {
     flex: 1,
@@ -76,6 +151,11 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: 'bold',
     color: '#4CAF50',
+  },
+  logo: {
+    width: 200,
+    height: 100,
+    resizeMode: 'contain',
   },
   tagline: {
     fontSize: 20,

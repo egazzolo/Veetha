@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StyleSheet, Text, View, TouchableOpacity, Alert, Modal, TextInput, ActivityIndicator, Animated } from 'react-native';
 import { CameraView } from 'expo-camera';
 import { useTheme } from '../utils/ThemeContext';
@@ -14,19 +15,19 @@ import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-ha
 import { useSwipeNavigation } from '../utils/useSwipeNavigation';
 import { searchFood } from '../utils/foodDatabase';
 import { useUser, UserContext } from '../utils/UserContext';
-import { analyzePhoto as analyzeClarifai, imageUriToBase64 as clarifaiToBase64 } from '../utils/clarifaiApi';
-import { analyzePhoto as analyzeGoogle, imageUriToBase64 as googleToBase64 } from '../utils/visionApi';
+import { useUserMode } from '../utils/UserModeContext';
+import { analyzePhoto, imageUriToBase64 } from '../utils/visionApi';
+import VeethaModal from '../components/VeethaModal';
+import GuestUpsellSheet from '../components/GuestUpsellSheet';
 
 const DAILY_PHOTO_LIMIT = 30;
-
-// 🔄 API TOGGLE - Switch between Clarifai and Google Vision
-const USE_GOOGLE_VISION = false; // ← Change to true when $4.99 runs out
 
 export default function ScannerScreen({ navigation }) {
   const { theme } = useTheme();
   const { t } = useLanguage();
   const { tutorialCompleted, startTutorial } = useTutorial();
   const { refreshProfile } = useUser();
+  const { isGuest } = useUserMode();
   const [showArrowToBack, setShowArrowToBack] = useState(false);
   const [backButtonCoords, setBackButtonCoords] = useState(null); 
   const cameraRef = useRef(null);
@@ -44,23 +45,31 @@ export default function ScannerScreen({ navigation }) {
   const [manualBarcode, setManualBarcode] = useState('');
   const [mode, setMode] = useState('barcode');
   const [checkingTutorial, setCheckingTutorial] = useState(true);
+  const [loggingMeal, setLoggingMeal] = useState(false);
+  const [guestSheetVisible, setGuestSheetVisible] = useState(false);
+  const [lowScansModalVisible, setLowScansModalVisible] = useState(false);
+  const [lowScansRemaining, setLowScansRemaining] = useState(0);
+  const [productNotFoundModalVisible, setProductNotFoundModalVisible] = useState(false);
+  const [notFoundBarcode, setNotFoundBarcode] = useState(null);
+  const [lastRequestModalVisible, setLastRequestModalVisible] = useState(false);
   
   // Swipe navigation (only when camera is idle, not during scan)
   const swipeGesture = useSwipeNavigation(navigation, 'Scanner', mode === 'barcode' && !scanned);
   // 🎨 ANIMATION: Photo tips fade out after 3 seconds
-  const photoTipsOpacity = useRef(new Animated.Value(1)).current;
-  const [showPhotoTips, setShowPhotoTips] = useState(true);
+  const photoTipsOpacity = useRef(new Animated.Value(0)).current;
+  // 🎨 ANIMATION: Instruction text fades out after 5 seconds
+  const instructionOpacity = useRef(new Animated.Value(1)).current;
 
-  // Check number of Clarifai calls per month
+  // Check number of Google Vision calls per month
   const checkMonthlyPhotoLimit = async (user) => {
     const now = new Date();
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     firstDayOfMonth.setHours(0, 0, 0, 0);
-    
-    const apiName = USE_GOOGLE_VISION ? 'google_vision' : 'clarifai';
-    const monthlyLimit = USE_GOOGLE_VISION ? 950 : 900; // Google: 950, Clarifai: 900
 
-    const { data: monthlyPhotos, error } = await supabase
+    const apiName = 'google_vision';
+    const monthlyLimit = 950;
+
+    /*const { data: monthlyPhotos, error } = await supabase
       .from('api_tracking')
       .select('id')
       .eq('user_id', user.id)
@@ -76,22 +85,16 @@ export default function ScannerScreen({ navigation }) {
       // Check if limit reached
       if (photosUsed >= monthlyLimit) {
         Alert.alert(
-          'Monthly Limit Reached',
-          `You've used all ${monthlyLimit} photo requests for this month using ${USE_GOOGLE_VISION ? 'Google Vision' : 'Clarifai'}. Try again tomorrow!`
+          t('scanner.monthlyLimitReached'),
+          t('scanner.monthlyLimitMessage').replace('{limit}', monthlyLimit).replace('{date}', '')
         );
         return;
       }
 
       // ⚠️ WARNING when near limit
       if (photosUsed >= monthlyLimit - 50) {
-        Alert.alert(
-          'Low on Photo Scans',
-          `⚠️ You have ${monthlyLimit - photosUsed} photo requests left this month.`,
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Continue', onPress: () => proceedWithPhotoCapture() }
-          ]
-        );
+        setLowScansRemaining(monthlyLimit - photosUsed);
+        setLowScansModalVisible(true);
         return;
       }
     }
@@ -111,19 +114,19 @@ export default function ScannerScreen({ navigation }) {
       const resetDate = nextMonth.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
       
       Alert.alert(
-        'Monthly Limit Reached',
-        `You've used all ${MONTHLY_LIMIT} photo scans for this month. Your limit resets on ${resetDate}.\n\nTip: Use barcode scanning for packaged foods (unlimited!)`,
-        [{ text: 'OK' }]
+        t('scanner.monthlyLimitReached'),
+        t('scanner.monthlyLimitMessage').replace('{limit}', MONTHLY_LIMIT).replace('{date}', resetDate),
+        [{ text: t('common.ok') }]
       );
       return false;
-    }
+    }*/
 
     // Warn at 850 uses (50 left)
     if (photosUsedThisMonth >= 850) {
       Alert.alert(
-        'Low on Photo Scans',
-        `You've used ${photosUsedThisMonth}/${MONTHLY_LIMIT} scans. ${MONTHLY_LIMIT - photosUsedThisMonth} remaining this month.`,
-        [{ text: 'OK' }]
+        t('scanner.lowOnScans'),
+        t('scanner.lowOnScansMessage').replace('{remaining}', MONTHLY_LIMIT - photosUsedThisMonth),
+        [{ text: t('common.ok') }]
       );
     }
 
@@ -150,18 +153,21 @@ export default function ScannerScreen({ navigation }) {
       console.log('📷 Scanner focused - resetting state');
       setScanned(false);
       setLoading(false);
+      setMode('barcode');
       lastPhotoTime.current = 0;
     }, [])
   );
   
   // Check if tips should show and fade them out
   useEffect(() => {
+    let timer;
+
     const checkAndShowTips = async () => {
       if (mode === 'photo') {
         try {
           const { data: { user } } = await supabase.auth.getUser();
           if (!user) {
-            setShowPhotoTips(false);
+            photoTipsOpacity.setValue(0);
             return;
           }
 
@@ -176,7 +182,6 @@ export default function ScannerScreen({ navigation }) {
 
           if (tipsCount < 5) {
             // Show tips and increment counter
-            setShowPhotoTips(true);
             photoTipsOpacity.setValue(1);
 
             // Increment counter in database
@@ -187,39 +192,61 @@ export default function ScannerScreen({ navigation }) {
 
             console.log(`📸 Photo tips shown: ${tipsCount + 1}/5`);
 
-            // Fade out after 3 seconds
-            const timer = setTimeout(() => {
+            // Fade out after 3 seconds (no state update to avoid re-render)
+            timer = setTimeout(() => {
               Animated.timing(photoTipsOpacity, {
                 toValue: 0,
                 duration: 500,
                 useNativeDriver: true,
-              }).start(() => setShowPhotoTips(false));
+              }).start();
             }, 3000);
-
-            return () => clearTimeout(timer);
           } else {
             // Don't show tips anymore
             console.log('📸 Photo tips limit reached (5/5)');
-            setShowPhotoTips(false);
+            photoTipsOpacity.setValue(0);
           }
         } catch (error) {
           console.error('Error checking photo tips:', error);
-          setShowPhotoTips(false);
+          photoTipsOpacity.setValue(0);
         }
       } else if (mode === 'barcode') {
         // Reset when switching to barcode
-        setShowPhotoTips(false);
         photoTipsOpacity.setValue(0);
       }
     };
 
     checkAndShowTips();
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [mode]);
+
+  // Fade instruction text after 5 seconds (both modes)
+  useEffect(() => {
+    instructionOpacity.setValue(1);
+
+    const timer = setTimeout(() => {
+      Animated.timing(instructionOpacity, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }).start();
+    }, 5000);
+
+    return () => clearTimeout(timer);
   }, [mode]);
 
   // Start tutorial on first visit to Scanner
   useEffect(() => {
     const checkScannerTutorial = async () => {
       try {
+        const cached = await AsyncStorage.getItem('scanner_tutorial_completed');
+        if (cached === 'true') {
+          setCheckingTutorial(false);
+          return;
+        }
+
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           setCheckingTutorial(false);
@@ -232,21 +259,18 @@ export default function ScannerScreen({ navigation }) {
           .eq('id', user.id)
           .single();
 
-        // If tutorial already completed, unfreeze immediately
         if (profile?.scanner_tutorial_completed) {
-          console.log('✅ Scanner tutorial already completed - unfreezing');
+          await AsyncStorage.setItem('scanner_tutorial_completed', 'true');
           setCheckingTutorial(false);
           return;
         }
 
-        // Tutorial needs to start - unfreeze and start
-        console.log('🎓 Starting Scanner tutorial');
-        setCheckingTutorial(false); // Unfreeze before tutorial
+        setCheckingTutorial(false);
         setTimeout(() => startTutorial('Scanner'), 500);
-        
+
       } catch (error) {
         console.error('Error checking scanner tutorial:', error);
-        setCheckingTutorial(false); // Unfreeze on error
+        setCheckingTutorial(false);
       }
     };
 
@@ -315,12 +339,6 @@ export default function ScannerScreen({ navigation }) {
         }
         p.image_url = imageUrl;
 
-        // Log API call
-        await logApiCall('openfoodfacts', 'barcode_scan', true, null, {
-          barcode: barcode,
-          product_name: p.product_name
-        });
-
         console.log("✅ Navigating to Result...");
         navigation.navigate("Result", { 
           food: p,
@@ -328,16 +346,13 @@ export default function ScannerScreen({ navigation }) {
         });
       } else {
         console.log("❌ Product not found in database");
-        Alert.alert(
-          t('scanner.productNotFound'),
-          t('scanner.notInDatabase'),
-          [
-            { text: t('scanner.ok'), onPress: () => setScanned(false) },
-          ]
-        );
+        setLoading(false);
+        setNotFoundBarcode(barcode);
+        setProductNotFoundModalVisible(true);
       }
     } catch (error) {
       console.error('❌ Error fetching food info:', error);
+      setLoading(false);
       Alert.alert(
         t('scanner.error'),
         t('scanner.errorMessage'),
@@ -350,42 +365,16 @@ export default function ScannerScreen({ navigation }) {
     }
   };
 
-  // Log API call to Supabase
-  const logApiCall = async (service, callType, success, errorMessage = null, metadata = {}) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      const { error } = await supabase.from('api_tracking').insert({  // ← FIXED TABLE NAME
-        user_id: user?.id || null,
-        service: service,  // ← Changed from api_service
-        type: callType,    // ← Changed from call_type
-        success: success,
-        error_message: errorMessage,
-        metadata: metadata
-      });
-      
-      if (error) {
-        console.error('❌ Failed to log API call:', error);
-      } else {
-        console.log(`📊 Logged API call: ${service} - ${callType} - ${success ? 'SUCCESS' : 'FAILED'}`);
-      }
-    } catch (error) {
-      console.error('❌ Exception logging API call:', error);
-    }
-  };
-
-  // Analyze food photo with AI (Clarifai or Google Vision)
+  // Analyze food photo with Google Vision
   const analyzeFoodPhoto = async (photoUri) => {
     try {
       setLoading(true);
-      console.log(`📸 Analyzing food photo with ${USE_GOOGLE_VISION ? 'Google Vision' : 'Clarifai'}...`);
+      console.log('📸 Analyzing food photo with Google Vision...');
 
       // Convert image to base64
-      const imageToBase64 = USE_GOOGLE_VISION ? googleToBase64 : clarifaiToBase64;
-      const base64 = await imageToBase64(photoUri);
-      
-      // Analyze with selected API
-      const analyzePhoto = USE_GOOGLE_VISION ? analyzeGoogle : analyzeClarifai;
+      const base64 = await imageUriToBase64(photoUri);
+
+      // Analyze with Google Vision
       const result = await analyzePhoto(base64);
       
       const foodName = result.foodName;
@@ -395,12 +384,6 @@ export default function ScannerScreen({ navigation }) {
 
       // ✅ CONFIDENCE THRESHOLD CHECK
       if (confidence < 60) {
-        const apiName = USE_GOOGLE_VISION ? 'google_vision' : 'clarifai';
-        await logApiCall(apiName, 'food_recognition', false, 'Low confidence', {
-          detected_food: foodName,
-          confidence: confidence
-        });
-
         Alert.alert(
           t('scanner.lowConfidence'),
           t('scanner.lowConfidenceMessage').replace('{food}', foodName).replace('{confidence}', confidence),
@@ -445,13 +428,6 @@ export default function ScannerScreen({ navigation }) {
   // Proceed with food after confidence check
   const proceedWithFood = async (foodName, confidence, photoUri) => {
     try {
-      const apiName = USE_GOOGLE_VISION ? 'google_vision' : 'clarifai';
-      await logApiCall(apiName, 'food_recognition', true, null, {
-        detected_food: foodName,
-        confidence: confidence,
-        total_concepts: 1,
-      });
-
       console.log('🔍 Searching for nutrition data...');
 
       // ✅ SEARCH FOR NUTRITION DATA (local DB + USDA)
@@ -510,15 +486,21 @@ export default function ScannerScreen({ navigation }) {
     }
   };
 
+  const showGuestPrompt = () => {
+    setGuestSheetVisible(true);
+  };
+
   // Take photo using the camera
   const takePhoto = async () => {
     if (!cameraRef.current || loading) return;
+
+    if (isGuest) { showGuestPrompt(); return; }
 
     try {
       // ⏱️ RATE LIMIT CHECK (3 seconds between photos)
       const now = Date.now();
       if (now - lastPhotoTime.current < 3000) {
-        Alert.alert(t('scanner.error'), 'Please wait a moment between photos.');
+        Alert.alert(t('scanner.error'), t('scanner.waitBetweenPhotos'));
         return;
       }
 
@@ -530,7 +512,7 @@ export default function ScannerScreen({ navigation }) {
           .from('api_tracking')
           .select('id')
           .eq('user_id', user.id)
-          .eq('service', 'clarifai')
+          .eq('service', 'google_vision')
           .eq('type', 'food_recognition')
           .gte('created_at', today + 'T00:00:00')
           .lte('created_at', today + 'T23:59:59');
@@ -543,28 +525,15 @@ export default function ScannerScreen({ navigation }) {
           // Check if limit reached
           if (photosUsed >= DAILY_PHOTO_LIMIT) {
             Alert.alert(
-              'Daily Limit Reached',
-              `You've used all ${DAILY_PHOTO_LIMIT} photo requests for today. Try again tomorrow!`
+              t('scanner.dailyLimitReached'),
+              t('scanner.dailyLimitMessage').replace('{limit}', DAILY_PHOTO_LIMIT)
             );
             return;
           }
 
           // ⚠️ WARNING when 1 request left
           if (photosUsed === DAILY_PHOTO_LIMIT - 1) {
-            Alert.alert(
-              'Last Request',
-              `⚠️ You have 1 photo request left today.`,
-              [
-                {
-                  text: 'Cancel',
-                  style: 'cancel',
-                },
-                {
-                  text: 'Continue',
-                  onPress: () => proceedWithPhotoCapture(),
-                },
-              ]
-            );
+            setLastRequestModalVisible(true);
             return;
           }
         }
@@ -624,6 +593,7 @@ export default function ScannerScreen({ navigation }) {
   const toggleMode = () => {
     setMode(prev => prev === 'barcode' ? 'photo' : 'barcode');
     setScanned(false);
+    setLoading(false);
   };
 
   return (
@@ -636,9 +606,10 @@ export default function ScannerScreen({ navigation }) {
             ref={cameraRef}
             style={styles.camera}
             facing="back"
-            barcodeScannerSettings={mode === 'barcode' ? {
+            onCameraReady={() => console.log('📷 Camera ready - mode:', mode)}
+            barcodeScannerSettings={{
               barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'code39'],
-            } : undefined}
+            }}
             onBarcodeScanned={mode === 'barcode' ? handleBarcodeScanned : undefined}
           >
             {/* Header */}
@@ -655,48 +626,54 @@ export default function ScannerScreen({ navigation }) {
                 {mode === 'barcode' ? t('scanner.scanBarcode') : t('scanner.scanFood')}
               </Text>
 
-              {/* Mode Toggle Button */}
-              <TouchableOpacity
-                ref={modeToggleRef}
-                style={[
-                  styles.modeToggle,
-                  { backgroundColor: mode === 'barcode' ? '#4CAF50' : '#2196F3' }
-                ]}
-                onPress={toggleMode}
-              >
-                <Text style={styles.modeToggleText}>
-                  {mode === 'barcode' ? '📊' : '📷'}
-                </Text>
-              </TouchableOpacity>
+              {/* Spacer to balance header layout */}
+              <View style={{ width: 44 }} />
             </View>
 
             {/* Scanning Overlay */}
-            {mode === 'barcode' ? (
-              // Barcode Mode
-              <View style={styles.overlay}>
-                <View style={styles.focusFrame}>
-                  <View style={[styles.corner, styles.topLeft]} />
-                  <View style={[styles.corner, styles.topRight]} />
-                  <View style={[styles.corner, styles.bottomLeft]} />
-                  <View style={[styles.corner, styles.bottomRight]} />
+            <View key={mode} style={{ flex: 1 }}>
+
+              {mode === 'barcode' ? (
+                <View style={styles.overlay}>
+                  <View style={styles.focusFrame}>
+                    <View style={[styles.corner, styles.topLeft]} />
+                    <View style={[styles.corner, styles.topRight]} />
+                    <View style={[styles.corner, styles.bottomLeft]} />
+                    <View style={[styles.corner, styles.bottomRight]} />
+                  </View>
+                  <Animated.View style={{ opacity: instructionOpacity }} pointerEvents="none">
+                    <Text style={styles.instruction}>{t('scanner.barcodeInstruction')}</Text>
+                  </Animated.View>
                 </View>
-                <Text style={styles.instruction}>{t('scanner.barcodeInstruction')}</Text>
-              </View>
-            ) : (
-              // Photo Mode
-              <View style={styles.overlay}>
-                <View style={styles.photoFrame} />
-                {showPhotoTips && (
-                  <Animated.View style={[styles.photoTipsContainer, { opacity: photoTipsOpacity }]}>
-                    <Text style={styles.photoInstruction}>{t('scanner.photoInstruction')}</Text>
+              ) : (
+                <View style={styles.overlay}>
+                  <View style={styles.photoFrame} />
+                  <Animated.View style={{ opacity: instructionOpacity }} pointerEvents="none">
+                    <Text style={styles.instruction}>{t('scanner.photoInstruction')}</Text>
+                  </Animated.View>
+                  <Animated.View
+                    style={[styles.photoTipsContainer, { opacity: photoTipsOpacity }]}
+                    pointerEvents="none"
+                  >
                     <View style={styles.photoTips}>
                       <Text style={styles.photoTip}>✓ {t('scanner.photoTip1')}</Text>
                       <Text style={styles.photoTip}>✓ {t('scanner.photoTip2')}</Text>
                       <Text style={styles.photoTip}>✓ {t('scanner.photoTip3')}</Text>
                     </View>
                   </Animated.View>
-                )}
-              </View>
+                </View>
+              )}
+            </View>
+
+            {/* Mode Toggle Button - absolutely positioned top right */}
+            {mode === 'barcode' && (
+              <TouchableOpacity
+                ref={modeToggleRef}
+                style={[styles.modeToggle, { backgroundColor: '#4CAF50' }]}
+                onPress={toggleMode}
+              >
+                <Text style={styles.modeToggleText}>📷</Text>
+              </TouchableOpacity>
             )}
 
             {/* Bottom Buttons */}
@@ -721,13 +698,11 @@ export default function ScannerScreen({ navigation }) {
             </View>
 
             {/* Loading Overlay */}
-            {loading && (
+            {loading && mode === 'photo' && (
               <View style={styles.loadingOverlay}>
                 <View style={styles.loadingCard}>
                   <ActivityIndicator size="large" color="#4CAF50" />
-                  <Text style={styles.loadingText}>
-                    {mode === 'barcode' ? t('scanner.loadingNutrition') : t('scanner.analyzingPhoto')}
-                  </Text>
+                  <Text style={styles.loadingText}>{t('scanner.analyzingPhoto')}</Text>
                 </View>
               </View>
             )}
@@ -801,6 +776,68 @@ export default function ScannerScreen({ navigation }) {
               visible={showArrowToBack}
             />
           )}
+          {/* Guest Upsell Sheet */}
+          <GuestUpsellSheet
+            visible={guestSheetVisible}
+            onClose={() => setGuestSheetVisible(false)}
+            onSignUp={() => {
+              setGuestSheetVisible(false);
+              navigation.navigate('SignUp');
+            }}
+          />
+
+          {/* Low on Scans Modal */}
+          <VeethaModal
+            visible={lowScansModalVisible}
+            title={t('scanner.lowOnScans')}
+            message={t('scanner.lowOnScansMessage').replace('{remaining}', lowScansRemaining)}
+            confirmText={t('common.continue')}
+            cancelText={t('common.cancel')}
+            onConfirm={() => {
+              setLowScansModalVisible(false);
+              proceedWithPhotoCapture();
+            }}
+            onCancel={() => setLowScansModalVisible(false)}
+          />
+
+          {/* Product Not Found Modal */}
+          <VeethaModal
+            visible={productNotFoundModalVisible}
+            title={t('scanner.productNotFound')}
+            message={t('scanner.notInDatabase')}
+            confirmText={t('scanner.submitProduct')}
+            cancelText={t('scanner.cancel')}
+            onConfirm={() => {
+              setProductNotFoundModalVisible(false);
+              setTimeout(() => {
+                setScanned(false);
+                setLoading(false);
+                navigation.navigate('SubmitProduct', { barcode: notFoundBarcode });
+              }, 100);
+            }}
+            onCancel={() => {
+              setProductNotFoundModalVisible(false);
+              setTimeout(() => {
+                setScanned(false);
+                setLoading(false);
+              }, 100);
+            }}
+          />
+
+          {/* Last Request Modal */}
+          <VeethaModal
+            visible={lastRequestModalVisible}
+            title={t('scanner.lastRequest')}
+            message={t('scanner.lastRequestMessage')}
+            confirmText={t('common.continue')}
+            cancelText={t('common.cancel')}
+            onConfirm={() => {
+              setLastRequestModalVisible(false);
+              proceedWithPhotoCapture();
+            }}
+            onCancel={() => setLastRequestModalVisible(false)}
+          />
+
           {/* Freeze overlay during tutorial check */}
           {checkingTutorial && (
             <View style={{
@@ -832,27 +869,6 @@ const styles = StyleSheet.create({
   camera: {
     flex: 1,
   },
-  // permissionContainer: {
-  //   flex: 1,
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  //   padding: 20,
-  // },
-  // permissionText: {
-  //   fontSize: 18,
-  //   textAlign: 'center',
-  //   marginBottom: 20,
-  // },
-  // permissionButton: {
-  //   paddingHorizontal: 30,
-  //   paddingVertical: 15,
-  //   borderRadius: 10,
-  // },
-  // permissionButtonText: {
-  //   color: '#fff',
-  //   fontSize: 16,
-  //   fontWeight: 'bold',
-  // },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -882,11 +898,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   modeToggle: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
     width: 44,
     height: 44,
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 100,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,

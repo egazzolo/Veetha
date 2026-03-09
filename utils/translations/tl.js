@@ -22,6 +22,7 @@ export default {
     tagline2: 'magtrabaho sa sarili mo.',
     login: 'MAG-LOG IN',
     signup: 'MAG-SIGN UP',
+    continue: 'MAGPATULOY',
     continueWithGoogle: '🔵 Magpatuloy gamit ang Google',
   },
   // Login Screen
@@ -42,6 +43,8 @@ export default {
     invalidCredentials: 'Invalid na email o password',
     verifyEmail: 'Pakiusap na i-verify ang iyong email bago mag-log in',
     loginFailed: 'Nabigo ang pag-login. Subukan ulit.',
+    continueWithGoogle: 'Magpatuloy sa Google',
+    continueWithFacebook: 'Magpatuloy sa Facebook',
   },
 
   // SignUp Screen
@@ -67,6 +70,7 @@ export default {
     passwordsMatch: 'Hindi nagtutugma ang mga password',
     emailInUse: 'Ang email ay nakarehis tro na',
     signupFailed: 'Nabigo ang pag-sign up. Subukan ulit.',
+    rateLimitError: 'Masyadong maraming pagtatangka. Maghintay ng ilang minuto at subukan ulit.',
     // Signup steps
     success: 'Tagumpay!',
     accountCreated: 'Nalikha na ang account! Pakisuri ang iyong email para i-verify ang iyong account.',
@@ -140,6 +144,10 @@ export default {
     extremelyActive: 'Sobrang Aktibo',
     extremelyActiveDesc: 'Physical na trabaho + araw-arawang exercise',
     selectActivityLevel: 'Pakiusap na piliin ang iyong activity level',
+    statLabel: 'mas maraming timbang ang nawala',
+    quote: '"Ang mga taong nagtatala ng kanilang pagkain ay nagbabawas ng 2x mas maraming timbang kaysa sa mga hindi."',
+    source: 'Pag-aaral ng Kaiser Permanente 2008 — American Journal of Preventive Medicine. 1,700 kalahok. Ang mga nagpanatili ng talaarawan ng pagkain ay nagbawas ng doble ng timbang.',
+    message: 'Ginagawa mo na ang pinakamahalagang bagay.',
     
     // Step 5 - Dietary Restrictions
     step5Title: 'May mga pangangailangan sa pagkain?',
@@ -213,6 +221,7 @@ export default {
   },
 
   tutorial: {
+    preparing: 'Inihahanda ang tutorial...',
     tapToScan: 'I-tap para mag-scan!',
     tapToExit: 'I-tap para lumabas',
     tapToProfile: 'I-tap para sa Profile',
@@ -356,6 +365,7 @@ export default {
     done: 'Tapos na',
     exercise: 'Ehersisyo',
     water: 'Tubig',
+    noWaterYet: 'Wala pang tubig',
     comingSoon: 'Malapit na',
     fromExercise: 'mula sa ehersisyo',
 
@@ -417,8 +427,19 @@ export default {
       gotIt: 'Nakuha ko na!',
     },
     mealsList: {
-     serving: 'Sukatan:', 
-    }
+      serving: 'Sukatan:',
+      protein: 'Protina',
+      carbs: 'Carbohydrates',
+      fat: 'Taba',
+      sodium: 'Sodium',
+      sugar: 'Asukal',
+      fiber: 'Hibla'
+    },
+    guestBanner: {
+      message: 'Nagba-browse ka bilang bisita. Maaari kang mag-scan ng barcode at tingnan ang nutritional info, pero hanggang doon lang. Mag-sign up para sa buong karanasan!',
+      signUp: 'Mag-sign Up',
+      dismiss: '\u2715',
+    },
   },
 
   // Exercise Feature
@@ -601,7 +622,7 @@ export default {
     noInternet: 'Walang koneksyon sa internet. Pakisuri ang iyong network.',
     serverError: 'Server error',
     scanFood: 'Kumuha ng Larawan',
-    photoInstruction: 'I-center ang pagkain sa frame',
+    photoInstruction: 'Ilagay ang produkto sa loob ng frame',
     photoTip1: 'Magandang liwanag',
     photoTip2: 'Plain na background',
     photoTip3: '⚠️ ISANG ITEM LAMANG - Maraming item ay mabibigo',
@@ -622,6 +643,45 @@ export default {
     takeAnotherPhoto: 'Kumuha ng Ibang Larawan',
     scanAgain: 'Mag-scan Ulit',
     scanBarcode: 'I-scan ang Barcode',
+    submitProduct: 'Magsumite ng Produkto',
+    monthlyLimitReached: 'Naabot na ang Buwanang Limitasyon',
+    monthlyLimitMessage: "Nagamit mo na lahat ng {limit} na photo scan ngayong buwan. Mare-reset ang iyong limit sa {date}.\n\nTip: Gamitin ang barcode scanner para sa mga naka-package na pagkain (walang limit!)",
+    dailyLimitReached: 'Naabot na ang Araw-araw na Limitasyon',
+    dailyLimitMessage: "Nagamit mo na lahat ng {limit} na photo request ngayon. Subukan ulit bukas!",
+    lastRequest: 'Huling Request',
+    lastRequestMessage: 'May 1 photo request ka na lang ngayon.',
+    lowOnScans: 'Kaunti na lang ang Natitira',
+    lowOnScansMessage: 'May {remaining} na photo request ka pa ngayong buwan.',
+    waitBetweenPhotos: 'Maghintay muna ng ilang sandali sa pagitan ng mga litrato.',
+  },
+
+  // Submit Product Screen
+  submitProduct: {
+    title: 'Magsumite ng Produkto',
+    subtitle: 'Tulungan kaming palakihin ang aming database! Punan ang kaya mo.',
+    barcode: 'Barcode',
+    productName: 'Pangalan ng Produkto',
+    productNamePlaceholder: 'hal. Organic Oat Milk',
+    servingSize: 'Sukat ng Serving',
+    servingSizePlaceholder: 'hal. 240ml, 30g, 1 tasa',
+    nutritionInfo: 'Impormasyon sa Nutrisyon',
+    calories: 'Calories',
+    proteinG: 'Protina (g)',
+    carbsG: 'Carbs (g)',
+    fatG: 'Taba (g)',
+    sugarG: 'Asukal (g)',
+    sodiumMg: 'Sodium (mg)',
+    photos: 'Mga Larawan',
+    photosHint: 'Kunan ng litrato ang label para matulungan ang aming mga reviewer',
+    nutritionLabel: 'Nutrition Facts',
+    ingredients: 'Mga Sangkap',
+    productPhoto: 'Harap ng Produkto',
+    submit: 'Isumite para sa Pagsusuri',
+    missingInfo: 'Kulang na Impormasyon',
+    enterName: 'Pakilagay ang pangalan ng produkto',
+    thankYou: 'Salamat!',
+    submitted: 'Naisumite na ang produkto para sa pagsusuri. Idaragdag namin ito sa database sa lalong madaling panahon!',
+    failedToSubmit: 'Hindi naisumite ang produkto. Pakisubukan muli.',
   },
 
   //Results Screen
@@ -630,17 +690,14 @@ export default {
     gotIt: 'Nakuha ko na!',
     uploading: '',
     pleaseWait: '',
-    
     // Serving size
     servingSize: 'Serving Size (gramo):',
     maximumAllowed: 'Maximum na pinapayagan: 2000 g',
     adjustPortion: 'I-adjust sa iyong portion size',
-    
     // Calories
     caloriesInfo: 'Calories ⓘ',
     kcal: 'kcal',
     ofDailyGoal: '% ng arawang layunin',
-    
     // Details
     showDetails: 'Ipakita ang Mga Detalye',
     hideDetails: 'Itago ang Mga Detalye',
@@ -648,17 +705,17 @@ export default {
     fiber: 'Fiber',
     sodium: 'Sodium',
     valuesShownPer: 'Mga values na ipinakita kada {grams}g serving',
-    
     // Buttons
     logMeal: 'I-log ang Pagkaing Ito',
     scanAgain: 'Mag-scan Ulit',
     saving: 'Nag-se-save...',
     submitProduct: 'I-submit ang Produktong Ito',
     enterManually: 'I-enter Nang Manu-mano',
-
     // Alerts - Mga Alerto
+    enterFoodName: 'Maglagay ng pangalan ng pagkain',
+    notFound: 'Hindi natagpuan',
+    notAuthenticated: 'Hindi naka-authenticate ang user. Mag-log in muna.',
     mealLogged: 'Na-log na ang pagkain! ✅',
-    
     // Photo view
     photoView: 'Photo View',
     detailedView: 'Detailed View',
@@ -666,11 +723,17 @@ export default {
     swipeRightSave: 'Mag-swipe pakanan para i-save',
     delete: 'TANGGALIN',
     save: 'I-SAVE',
-    
     // Macros (short labels)
     protein: 'Prot.',
     carbs: 'Carbs',
     fat: 'Fats',
+    allergenWarning: {
+      title: "BABALA SA DIYETA",
+      subtitle: "Ang produktong ito ay naglalaman ng mga sangkap na iyong minarkahan:",
+      disclaimer: "ℹ️ Ang babalang ito ay batay sa iyong mga paghihigpit sa diyeta. Palaging suriin ang mga label ng produkto.",
+      goBack: "← Bumalik",
+      logAnyway: "I-log pa rin",
+    },
   },
 
   // Stats Screen
@@ -718,12 +781,12 @@ export default {
       back: '← Bumalik',
       reports: 'Mga Ulat',
       weeklyReport: 'Lingguhang Ulat',
-      subtitle: '',
-      card1Title: '',
-      card1Subtitle: '',
-      consumed: '',
-      goal: '',
-      card2Title: '',
+      subtitle: 'Buod ng huling 7 araw',
+      card1Title: 'Arawang calories',
+      card1Subtitle: 'Nakonsumo vs target',
+      consumed: 'Nakonsumo',
+      goal: 'Target',
+      card2Title: 'Breakdown ng macronutrients',
       card2Subtitle: '',
       protein: '💪 Protina',
       carbs: '🌾 Carbs',
@@ -735,7 +798,96 @@ export default {
       day: 'Araw',
       burned: 'Nasunog',
       sessions: 'Mga Sesyon',
-      exportReport: 'I-export ang Ulat'
+      exportReport: 'I-export ang Ulat',
+      kcal: 'kcal',
+    },
+    exportReport: {
+      title: 'I-export ang ulat',
+      subtitle: 'I-download ang iyong nutrition data',
+      startExport: 'Simulan ang export',
+      whatsIncluded: 'Ano ang kasama?',
+      dailyCalories: 'Arawang kabuuang calories',
+      macroBreakdown: 'Breakdown ng macronutrients',
+      goalComparison: 'Goal kumpara sa actual',
+      summaryStats: 'Buod ng stats',
+      selectPeriod: 'Piliin ang period',
+      last7Days: 'Huling 7 araw',
+      currentMonth: 'Kasalukuyang buwan',
+      selectFormat: 'Piliin ang format',
+      pdfReport: 'PDF ulat',
+      excelSpreadsheet: 'Excel spreadsheet',
+      weekly: 'Lingguhan',
+      monthly: 'Buwanang',
+      nutritionReportTitle: 'Ulat sa nutrisyon - {{period}}',
+      savePdf: 'I-save ang PDF report',
+      saveExcel: 'I-save ang Excel report',
+      fetchFailed: 'Hindi makuha ang data',
+      name: 'Pangalan',
+      generated: 'Nabuo noong',
+      dailyTotals: 'Pang-araw-araw na kabuuan',
+      date: 'Petsa',
+      calories: 'Calories',
+      summary: 'Buod',
+      totalCalories: 'Kabuuang Calories',
+      avgDailyCalories: 'Karaniwang Calories bawat araw',
+      totalProtein: 'Kabuuang Protina',
+      totalCarbs: 'Kabuuang Carbs',
+      totalFat: 'Kabuuang Taba',
+      goal: 'Target',
+      protein: 'Protina (g)',
+      carbs: 'Karbohidrat (g)',
+      fat: 'Taba (g)',
+      generated: 'Nabuo',
+      summary: 'Buod',
+      dailyTotals: 'Araw-araw na Kabuuan',
+      totalCalories: 'Kabuuang Calories',
+      avgDailyCalories: 'Average na Daily Calories',
+      totalProtein: 'Kabuuang Protina',
+      totalCarbs: 'Kabuuang Karbohidrat',
+      totalFat: 'Kabuuang Taba',
+      name: 'Pangalan',
+      date: 'Petsa',
+      calories: 'Calories',
+      share: 'Ibahagi',
+      download: 'I-download',
+    },
+    quickEntry: {
+      title: 'Mabilis na Entry',
+      quickAdd: '⚡ Mabilis na Add',
+      popularIn: 'Sikat sa {{country}}',
+      commonFoods: 'Karaniwang pagkain',
+      add: '+ Add',
+
+      mealDetails: 'Detalye ng pagkain',
+      mealName: 'Pangalan ng pagkain *',
+      mealNamePlaceholder: 'hal.: Chicken Salad',
+      servingSize: 'Laki ng serving (grams)',
+      calories: 'Calories (kcal) *',
+
+      macros: 'Macros (Opsyonal)',
+      protein: 'Protein (g)',
+      carbs: 'Carbs (g)',
+      fat: 'Fat (g)',
+
+      saving: 'Nagse-save...',
+      saveMeal: '✓ I-save ang pagkain',
+
+      tip: '💡 Tip: Gamitin ang Quick Add para sa karaniwang pagkain o maglagay ng custom meal sa itaas',
+
+      loggedTitle: 'Na-log! ✅',
+      loggedMessage: '{{meal}} nadagdag',
+
+      missingInfo: 'Kulang ang impormasyon',
+      enterMealName: 'Maglagay ng pangalan ng pagkain',
+      enterCalories: 'Maglagay ng calories',
+
+      pleaseLogin: 'Mag-login muna',
+
+      successTitle: 'Tagumpay! ✅',
+      successMessage: 'Matagumpay na na-log ang pagkain',
+
+      failedLog: 'Hindi na-log ang pagkain',
+      failedSave: 'Hindi na-save ang pagkain'
     },
   },
 
@@ -783,6 +935,9 @@ export default {
     accountDeleted: 'Natanggal ang Account',
     accountDeletedMessage: 'Ang iyong account ay permanenteng natanggal na.',
     deleteError: 'Hindi natanggal ang account',
+    profilePhoto: 'Larawan sa Profile',
+    takePhoto: 'Kumuha ng Larawan',
+    chooseFromLibrary: 'Pumili mula sa Galería',
   },
 
   // Edit Profile Screen
@@ -809,6 +964,10 @@ export default {
     failedToSave: 'Nabigo ang pag-save ng profile. Subukan ulit.',
     loadingProfile: 'Naglo-load ng profile...',
     ok: 'OK',
+    metric: 'Panukat na Metro',
+    imperial: 'Panukat na Imperial',
+    weight: 'Timbang',
+    height: 'Taas',
   },
 
   // Mga Layunin at Kagustuhan
@@ -863,6 +1022,12 @@ export default {
     waterGoalHelper: 'Inirerekomenda: 8 tasa (2 litro) bawat araw',
     cups: 'Tasa',
     liters: 'Litro',
+    light: 'Magaan na aktibidad',
+    lightDesc: 'Magaan na ehersisyo o aktibidad 1–3 araw bawat linggo',
+    moderate: 'Katamtamang aktibidad',
+    moderateDesc: 'Katamtamang ehersisyo o aktibidad 3–5 araw bawat linggo',
+    very_active: 'Napakaaktibo',
+    very_activeDesc: 'Matinding ehersisyo o aktibidad 6–7 araw bawat linggo',
   },
 
   dietaryRestrictions: {
@@ -878,7 +1043,7 @@ export default {
     soy: 'Soy',
     wheat: 'Trigo',
     fish: 'Isda',
-    treeNuts: 'Tree Nuts',
+    treenuts: 'Tree Nuts',
     dietTypeTitle: '🍽️ Uri ng Diyeta',
     dietTypeHelper: 'Piliin ang iyong pangunahing pamumuhay sa pagkain',
     none: 'Walang Paghihigpit',
@@ -1002,5 +1167,32 @@ export default {
     footerAcknowledge: 'Sa paggamit ng Veetha, kinikilala mo na nabasa at naunawaan mo ang Patakaran sa Privacy na ito at sumasang-ayon sa mga tuntunin nito.',
     footerThankYou: 'Salamat sa pagtitiwala sa Veetha ng iyong health at nutrition data. Ang iyong privacy ay mahalaga sa amin.',
     version: 'Bersyon 1.0 • Huling Na-update: Nobyembre 21, 2024',
+  },
+
+  // Guest upsell prompts
+  guest: {
+    createAccount: 'Gumawa ng Account',
+    signUpToLog: 'Mag-sign up para mag-log ng mga pagkain, tubig, ehersisyo, at iba pa.',
+    signUpProfilePhoto: 'Mag-sign up para maglagay ng profile photo.',
+    signUp: 'Mag-sign Up',
+    weeklyProgress: 'Ang iyong lingguhang progreso ay lalabas dito kapag gumawa ka ng account.',
+    monthlyProgress: 'Ang iyong buwanang progreso ay lalabas dito kapag gumawa ka ng account.',
+    exerciseHistory: 'Ang iyong kasaysayan ng ehersisyo ay lalabas dito kapag gumawa ka ng account.',
+    signUpLogIn: 'Mag-sign Up / Mag-log In',
+    profileBanner: 'Gumawa ng account para ma-unlock ang lahat ng features, i-save ang iyong data, at mag-sync sa iba\'t ibang device.',
+  },
+  guestSheet: {
+    brand: 'Veetha',
+    defaultMessage: 'Gumawa ng account para ma-unlock ang lahat ng features at i-save ang iyong progreso.',
+    createAccount: 'Gumawa ng Account',
+    logIn: 'Mag-log In',
+  },
+  mealReminders: {
+    breakfastTitle: 'Oras na ng Almusal!',
+    breakfastBody: 'Simulan ng tama ang araw — i-log ang iyong almusal.',
+    lunchTitle: 'Oras na ng Tanghalian!',
+    lunchBody: 'Huwag kalimutang i-log ang iyong tanghalian.',
+    dinnerTitle: 'Oras na ng Hapunan!',
+    dinnerBody: 'Oras na para magpahinga — i-log ang iyong hapunan.',
   },
 }

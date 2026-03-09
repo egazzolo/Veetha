@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, ActivityIndicator, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../utils/ThemeContext';
 import { useLanguage } from '../utils/LanguageContext';
 import { supabase } from '../utils/supabase';
 import { useUser } from '../utils/UserContext';
+import { useUserMode } from '../utils/UserModeContext';
+import { blockIfGuest } from '../utils/guestBlock';
 import { logScreen, logEvent } from '../utils/analytics';
+import { showToast } from '../components/VeethaToast';
+import VeethaModal from '../components/VeethaModal';
+import GuestUpsellSheet from '../components/GuestUpsellSheet';
 
 const ACTIVITY_LEVELS = [
   { value: 'sedentary', multiplier: 1.2 },
@@ -19,9 +24,22 @@ export default function GoalsPreferencesScreen({ navigation }) {
   const { theme } = useTheme();
   const { t } = useLanguage();
   const { profile, refreshProfile } = useUser();
-  
+  const { isGuest: isGuestMode } = useUserMode();
+
+  const guestCheck = (action) => {
+    if (isGuestMode) { 
+      Keyboard.dismiss();
+      setShowGuestSheet(true); 
+      return; 
+    }
+    action();
+  };
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [recalcModalVisible, setRecalcModalVisible] = useState(false);
+  const [recalcTdee, setRecalcTdee] = useState(null);
+  const [showGuestSheet, setShowGuestSheet] = useState(false);
   
   // Goals state
   const [dailyCalorieGoal, setDailyCalorieGoal] = useState('2000');
@@ -131,17 +149,8 @@ export default function GoalsPreferencesScreen({ navigation }) {
 
       const tdee = Math.round(bmr * (ACTIVITY_MULTIPLIERS[activityLevel] || 1.55));
       
-      Alert.alert(
-        t('goalsPreferences.recalculateTitle'),
-        t('goalsPreferences.recalculateMessage').replace('{calories}', tdee),
-        [
-          { text: t('goalsPreferences.cancel'), style: 'cancel' },
-          { 
-            text: t('goalsPreferences.update'),
-            onPress: () => setDailyCalorieGoal(String(tdee))
-          },
-        ]
-      );
+      setRecalcTdee(tdee);
+      setRecalcModalVisible(true);
     } catch (error) {
       console.error('Error recalculating:', error);
       Alert.alert(
@@ -152,6 +161,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
   };
 
   const handleSave = async () => {
+    if (isGuestMode) { setShowGuestSheet(true); return; }
     // Validation
     const calories = parseFloat(dailyCalorieGoal);
     const protein = parseFloat(proteinGoal);
@@ -226,16 +236,8 @@ export default function GoalsPreferencesScreen({ navigation }) {
       // Refresh profile context
       await refreshProfile();
 
-      Alert.alert(
-        t('goalsPreferences.success'),
-        t('goalsPreferences.successMessage'),
-        [
-          {
-            text: t('goalsPreferences.ok'),
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
+      showToast('success', t('goalsPreferences.success'), t('goalsPreferences.successMessage'));
+      navigation.goBack();
     } catch (error) {
       console.error('Error saving goals:', error);
       Alert.alert(
@@ -293,7 +295,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
               placeholderTextColor={theme.textTertiary}
               keyboardType="numeric"
               value={dailyCalorieGoal}
-              onChangeText={setDailyCalorieGoal}
+              onChangeText={(v) => guestCheck(() => setDailyCalorieGoal(v))}
               maxLength={5}
             />
             <Text style={[styles.helperText, { color: theme.textTertiary }]}>
@@ -320,14 +322,21 @@ export default function GoalsPreferencesScreen({ navigation }) {
                     borderWidth: activityLevel === level.value ? 2 : 1,
                   }
                 ]}
-                onPress={() => setActivityLevel(level.value)}
+                onPress={() => guestCheck(() => setActivityLevel(level.value))}
               >
                 <View style={styles.activityOptionContent}>
                   <Text style={[styles.activityLabel, { color: theme.text }]}>
-                    {t(`goalsPreferences.${level.value}`)}
+                    {level.value === 'sedentary' ? t('goalsPreferences.sedentary')
+                      : level.value === 'light' ? t('goalsPreferences.light')
+                      : level.value === 'moderate' ? t('goalsPreferences.moderate')
+                      : level.value === 'active' ? t('goalsPreferences.active')
+                      : level.value === 'very_active' ? t('goalsPreferences.very_active')
+                      :''
+                    }
                   </Text>
+
                   <Text style={[styles.activityDescription, { color: theme.textSecondary }]}>
-                    {t(`goalsPreferences.${level.value}Desc`)}
+                    {t('goalsPreferences.recalculate')}
                   </Text>
                 </View>
                 {activityLevel === level.value && (
@@ -367,7 +376,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
                 placeholderTextColor={theme.textTertiary}
                 keyboardType="numeric"
                 value={proteinGoal}
-                onChangeText={setProteinGoal}
+                onChangeText={(v) => guestCheck(() => setProteinGoal(v))}
                 maxLength={4}
               />
               <Text style={[styles.macroUnit, { color: theme.textSecondary }]}>g</Text>
@@ -384,7 +393,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
                 placeholderTextColor={theme.textTertiary}
                 keyboardType="numeric"
                 value={carbsGoal}
-                onChangeText={setCarbsGoal}
+                onChangeText={(v) => guestCheck(() => setCarbsGoal(v))}
                 maxLength={4}
               />
               <Text style={[styles.macroUnit, { color: theme.textSecondary }]}>g</Text>
@@ -401,7 +410,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
                 placeholderTextColor={theme.textTertiary}
                 keyboardType="numeric"
                 value={fatGoal}
-                onChangeText={setFatGoal}
+                onChangeText={(v) => guestCheck(() => setFatGoal(v))}
                 maxLength={4}
               />
               <Text style={[styles.macroUnit, { color: theme.textSecondary }]}>g</Text>
@@ -423,7 +432,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
                 placeholderTextColor={theme.textTertiary}
                 keyboardType="numeric"
                 value={targetWeight}
-                onChangeText={setTargetWeight}
+                onChangeText={(v) => guestCheck(() => setTargetWeight(v))}
                 maxLength={5}
               />
               <Text style={[styles.weightUnit, { color: theme.textSecondary }]}>
@@ -448,7 +457,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
                   styles.unitToggle,
                   { backgroundColor: waterUnit === 'cups' ? theme.primary : theme.background }
                 ]}
-                onPress={() => setWaterUnit('cups')}
+                onPress={() => guestCheck(() => setWaterUnit('cups'))}
               >
                 <Text style={{ color: waterUnit === 'cups' ? '#fff' : theme.text }}>
                   {t('goalsPreferences.cups')}
@@ -460,7 +469,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
                   styles.unitToggle,
                   { backgroundColor: waterUnit === 'liters' ? theme.primary : theme.background }
                 ]}
-                onPress={() => setWaterUnit('liters')}
+                onPress={() => guestCheck(() => setWaterUnit('liters'))}
               >
                 <Text style={{ color: waterUnit === 'liters' ? '#fff' : theme.text }}>
                   {t('goalsPreferences.liters')}
@@ -475,7 +484,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
                 placeholderTextColor={theme.textTertiary}
                 keyboardType="numeric"
                 value={waterGoal}
-                onChangeText={setWaterGoal}
+                onChangeText={(v) => guestCheck(() => setWaterGoal(v))}
                 maxLength={3}
               />
               <Text style={[styles.weightUnit, { color: theme.textSecondary }]}>
@@ -506,6 +515,24 @@ export default function GoalsPreferencesScreen({ navigation }) {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <VeethaModal
+        visible={recalcModalVisible}
+        title={t('goalsPreferences.recalculateTitle')}
+        message={t('goalsPreferences.recalculateMessage').replace('{calories}', recalcTdee)}
+        confirmText={t('goalsPreferences.update')}
+        cancelText={t('goalsPreferences.cancel')}
+        onConfirm={() => {
+          setDailyCalorieGoal(String(recalcTdee));
+          setRecalcModalVisible(false);
+        }}
+        onCancel={() => setRecalcModalVisible(false)}
+      />
+      <GuestUpsellSheet
+        visible={showGuestSheet}
+        onClose={() => setShowGuestSheet(false)}
+        message={t('guestSheet.defaultMessage')}
+      />
     </SafeAreaView>
   );
 }

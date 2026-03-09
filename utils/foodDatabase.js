@@ -81,6 +81,10 @@ async function searchLocalFoodDatabase(foodName) {
 
     if (data && data.length > 0) {
       const food = data[0];
+      const resultName = food.name.toLowerCase();
+      const queryWords = normalized.split(' ');
+      const isRelevant = queryWords.some(word => word.length > 2 && resultName.includes(word));
+      if (!isRelevant) return null;
       return {
         id: food.id,
         name: food.name,

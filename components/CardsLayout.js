@@ -77,13 +77,15 @@ export default function CardsLayout({
           const { x, y, width, height } = event.nativeEvent.layout;
           if (macroCardsRef.current && macroCardsRef.current.measureInWindow) {
             macroCardsRef.current.measureInWindow((wx, wy, w, h) => {
-              macroCardsRef.current.tutorialCoords = {
-                top: wy,
-                left: wx,
-                width: w,
-                height: h,
-                borderRadius: 16
-              };
+              if (macroCardsRef.current) {
+                macroCardsRef.current.tutorialCoords = {
+                  top: wy,
+                  left: wx,
+                  width: w,
+                  height: h,
+                  borderRadius: 16
+                };
+              }
             });
           }
         }}
@@ -96,13 +98,15 @@ export default function CardsLayout({
             const { x, y, width, height } = event.nativeEvent.layout;
             if (caloriesCardRef.current && caloriesCardRef.current.measureInWindow) {
               caloriesCardRef.current.measureInWindow((wx, wy, w, h) => {
-                caloriesCardRef.current.tutorialCoords = {
-                  top: wy,
-                  left: wx,
-                  width: w,
-                  height: h,
-                  borderRadius: 16
-                };
+                if (caloriesCardRef.current) {
+                  caloriesCardRef.current.tutorialCoords = {
+                    top: wy,
+                    left: wx,
+                    width: w,
+                    height: h,
+                    borderRadius: 16
+                  };
+                }
               });
             }
           }}

@@ -4,6 +4,7 @@ import { StyleSheet, Text, View, TouchableOpacity, TextInput, KeyboardAvoidingVi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useOnboarding } from '../../utils/OnboardingContext';
 import { useLanguage } from '../../utils/LanguageContext';
+import { scale } from '../../utils/responsive';
 
 export default function OnboardingStep2({ navigation }) {
   const { updateOnboardingData } = useOnboarding();
@@ -13,6 +14,9 @@ export default function OnboardingStep2({ navigation }) {
   const [heightCm, setHeightCm] = useState('');
   const [weight, setWeight] = useState('');
   const [error, setError] = useState('');
+  const heightInchesRef = React.useRef(null);
+  const heightCmWeightRef = React.useRef(null);
+  const weightRef = React.useRef(null);
   const { t } = useLanguage(); 
 
   const handleContinue = () => {
@@ -146,41 +150,49 @@ export default function OnboardingStep2({ navigation }) {
               {unit === 'imperial' ? (
                 <View style={styles.heightRow}>
                   <View style={styles.heightInput}>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="5"
-                      placeholderTextColor="#999" 
-                      value={heightFeet}
-                      onChangeText={setHeightFeet}
-                      keyboardType="number-pad"
-                      maxLength={1}
-                    />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="5"
+                    placeholderTextColor="#999"
+                    value={heightFeet}
+                    onChangeText={setHeightFeet}
+                    keyboardType="number-pad"
+                    maxLength={1}
+                    returnKeyType="next"
+                    onSubmitEditing={() => heightInchesRef.current?.focus()}
+                  />
                     <Text style={styles.unitLabel}>ft</Text>
                   </View>
                   <View style={styles.heightInput}>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="7"
-                      placeholderTextColor="#999" 
-                      value={heightInches}
-                      onChangeText={setHeightInches}
-                      keyboardType="number-pad"
-                      maxLength={2}
-                    />
+                  <TextInput
+                    ref={heightInchesRef}
+                    style={styles.input}
+                    placeholder="7"
+                    placeholderTextColor="#999"
+                    value={heightInches}
+                    onChangeText={setHeightInches}
+                    keyboardType="number-pad"
+                    maxLength={2}
+                    returnKeyType="next"
+                    onSubmitEditing={() => weightRef.current?.focus()}
+                  />
                     <Text style={styles.unitLabel}>in</Text>
                   </View>
                 </View>
               ) : (
                 <View style={styles.singleInput}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="170"
-                    placeholderTextColor="#999" 
-                    value={heightCm}
-                    onChangeText={setHeightCm}
-                    keyboardType="number-pad"
-                    maxLength={3}
-                  />
+                <TextInput
+                  ref={heightCmWeightRef}
+                  style={styles.input}
+                  placeholder="170"
+                  placeholderTextColor="#999"
+                  value={heightCm}
+                  onChangeText={setHeightCm}
+                  keyboardType="number-pad"
+                  maxLength={3}
+                  returnKeyType="next"
+                  onSubmitEditing={() => weightRef.current?.focus()}
+                />
                   <Text style={styles.unitLabel}>cm</Text>
                 </View>
               )}
@@ -190,14 +202,17 @@ export default function OnboardingStep2({ navigation }) {
             <View style={styles.section}>
               <Text style={styles.label}>{t('onboarding.weight')}</Text>
               <View style={styles.singleInput}>
-                <TextInput
-                  style={styles.input}
-                  placeholder={unit === 'imperial' ? '165' : '75'}
-                  placeholderTextColor="#999" 
-                  value={weight}
-                  onChangeText={setWeight}
-                  keyboardType="decimal-pad"
-                />
+              <TextInput
+                ref={weightRef}
+                style={styles.input}
+                placeholder={unit === 'imperial' ? '165' : '75'}
+                placeholderTextColor="#999"
+                value={weight}
+                onChangeText={setWeight}
+                keyboardType="decimal-pad"
+                returnKeyType="done"
+                onSubmitEditing={handleContinue}
+              />
                 <Text style={styles.unitLabel}>{unit === 'imperial' ? 'lbs' : 'kg'}</Text>
               </View>
             </View>
@@ -232,7 +247,7 @@ export default function OnboardingStep2({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#EAE0C8',
   },
   content: {
     flex: 1,
@@ -240,7 +255,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   progressContainer: {
-    marginBottom: 30,
+    marginBottom: scale(25),
   },
   progressBar: {
     height: 4,
@@ -253,16 +268,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
   },
   progressText: {
-    fontSize: 12,
+    fontSize: scale(12),
     color: '#999',
     marginTop: 8,
     textAlign: 'center',
   },
   title: {
-    fontSize: 28,
+    fontSize: scale(26),
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 30,
+    marginBottom: scale(25),
   },
   errorContainer: {
     backgroundColor: '#ffebee',
@@ -273,17 +288,18 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#c62828',
     textAlign: 'center',
+    fontSize: scale(14),
   },
   unitToggle: {
     flexDirection: 'row',
     backgroundColor: '#f5f5f5',
     borderRadius: 10,
     padding: 4,
-    marginBottom: 30,
+    marginBottom: scale(25),
   },
   unitButton: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: scale(10),
     alignItems: 'center',
     borderRadius: 8,
   },
@@ -291,7 +307,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   unitText: {
-    fontSize: 14,
+    fontSize: scale(14),
     color: '#999',
     flexShrink: 1,
   },
@@ -300,10 +316,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   section: {
-    marginBottom: 30,
+    marginBottom: scale(25),
   },
   label: {
-    fontSize: 16,
+    fontSize: scale(15),
     fontWeight: '600',
     color: '#333',
     marginBottom: 12,
@@ -321,18 +337,18 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 2,
-    borderColor: '#ddd',
+    borderColor: '#6B5B45',
     borderRadius: 10,
-    padding: 15,
-    fontSize: 16,
+    padding: scale(14),
+    fontSize: scale(15),
     paddingRight: 50,
     color: '#333',
   },
   unitLabel: {
     position: 'absolute',
     right: 15,
-    top: 15,
-    fontSize: 16,
+    top: scale(14),
+    fontSize: scale(15),
     color: '#999',
   },
   navigationButtons: {
@@ -342,28 +358,28 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   backButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: scale(46),
+    height: scale(46),
+    borderRadius: scale(23),
     borderWidth: 2,
-    borderColor: '#ddd',
+    borderColor: '#6B5B45',
     justifyContent: 'center',
     alignItems: 'center',
   },
   backArrow: {
-    fontSize: 24,
+    fontSize: scale(22),
     color: '#666',
   },
   continueButton: {
     flex: 1,
     backgroundColor: '#4CAF50',
-    paddingVertical: 15,
+    paddingVertical: scale(14),
     borderRadius: 10,
     alignItems: 'center',
   },
   continueButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: scale(16),
     fontWeight: '600',
   },
   scrollContent: {

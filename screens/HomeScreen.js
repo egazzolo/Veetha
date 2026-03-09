@@ -1,7 +1,12 @@
 import StepsCard from '../components/StepsCard';
 import React, { useState, useEffect, useRef, useContext } from 'react';
+import * as ImagePicker from 'expo-image-picker';
+import * as Notifications from 'expo-notifications';
 import * as Location from 'expo-location';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, RefreshControl, Alert, Modal, Platform, Animated } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, RefreshControl, Alert, Modal, Platform, Animated, ActivityIndicator } from 'react-native';
+import { showToast } from '../components/VeethaToast';
+import VeethaModal from '../components/VeethaModal';
+import GuestUpsellSheet from '../components/GuestUpsellSheet';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSwipeNavigation } from '../utils/useSwipeNavigation';
@@ -12,11 +17,14 @@ import { useTheme } from '../utils/ThemeContext';
 import { useLanguage } from '../utils/LanguageContext';
 import { useGreeting } from '../utils/GreetingContext';
 import { useUser, UserContext } from '../utils/UserContext';
+import { useUserMode } from '../utils/UserModeContext';
+import { blockIfGuest } from '../utils/guestBlock';
 import { useLayout } from '../utils/LayoutContext';
 import { supabase } from '../utils/supabase';
 import { logScreen, logEvent } from '../utils/analytics';
 import { getSuggestionsForMealTime, LOCAL_FOODS } from '../utils/localFoods';
 import { Pedometer } from 'expo-sensors';
+import { Camera } from 'expo-camera';
 import AppTutorial from '../components/AppTutorial';
 import AnimatedThemeWrapper from '../components/AnimatedThemeWrapper';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -30,6 +38,7 @@ import CalorieWarningBanner from '../components/CalorieWarningBanner';
 import FrameWarning from '../components/FrameWarning';
 import TutorialArrow from '../components/TutorialArrow';
 import MonthlyCalendar from '../components/MonthlyCalendar';
+import { useCameraPermissions } from 'expo-camera';
 import ExerciseButton from '../components/ExerciseButton';
 import WaterPitcher from '../components/WaterPitcher';
 
@@ -81,6 +90,7 @@ function CircularProgress({ percentage, size = 100, strokeWidth = 8, color = '#4
 // Add quick log function
 const handleQuickLog = async (food) => {
   try {
+    console.log("FOOD OBJECT:", food);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -117,13 +127,14 @@ const handleQuickLog = async (food) => {
       user_id: user.id,
       product_id: productId,
       serving_grams: 100,
-      image_url: imageUrl, 
+      image_url: food.image_url,
+      logged_at: new Date().toISOString(),
     });
 
-    await refreshMeals();
+    await loadMealsForDate(selectedDate);
     
-    Alert.alert('Logged! ✅', `${food.emoji} ${food.name} added`);
-    
+    showToast('success', 'Logged!', `${food.emoji} ${food.name} added`);
+
   } catch (error) {
     console.error('Error quick logging:', error);
     Alert.alert('Error', 'Failed to log meal');
@@ -282,9 +293,12 @@ function NutrientModal({ visible, nutrient, onClose, theme, currentIntake, daily
 
 export default function HomeScreen({ navigation }) {
   const { theme, isDark } = useTheme();
-  const { t } = useLanguage();
-  const { profile, loading: userLoading, refreshProfile } = useUser();
-  const { user } = useUser();
+  const { t, language } = useLanguage();
+  const LOCALE_MAP = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', tl: 'fil-PH' };
+  const { user, isGuest, profile, loading: userLoading, refreshProfile } = useUser();
+  const { isGuest: isGuestMode } = useUserMode();
+  const [, requestCameraPermission] = useCameraPermissions();
+  console.log("👤 USER FROM CONTEXT:", user);
   const { layout } = useLayout();
   const { startTutorial, tutorialCompleted } = useTutorial();
   const { freshDataLoaded } = useContext(UserContext);
@@ -293,9 +307,11 @@ export default function HomeScreen({ navigation }) {
   // Date selection state (MOVED HERE - correct location!)
   const [showArrowToProfile, setShowArrowToProfile] = useState(false);
   const [profileCoords, setProfileCoords] = useState(null);
+  const profileArrowShownRef = useRef(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [monthlyData, setMonthlyData] = useState([]);
   const [waterIntake, setWaterIntake] = useState(0);
+  const [updatingWater, setUpdatingWater] = useState(false);
   const [meals, setMeals] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -313,6 +329,29 @@ export default function HomeScreen({ navigation }) {
   const [checkingTutorial, setCheckingTutorial] = useState(true);
   const [quickSuggestions, setQuickSuggestions] = useState([]);
   const [userCountry, setUserCountry] = useState(null);
+  const [guestBannerDismissed, setGuestBannerDismissed] = useState(false);
+  const [guestSheetVisible, setGuestSheetVisible] = useState(false);
+  const [guestSheetMessage, setGuestSheetMessage] = useState('');
+  const [mealActionModal, setMealActionModal] = useState({ visible: false, meal: null });
+  const [deleteMealModal, setDeleteMealModal] = useState({ visible: false, meal: null });
+
+  // Safe numeric helper
+  const num = (v) => {
+    const n = typeof v === 'number' ? v : parseFloat(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  const normalizeProduct = (p) => ({
+    name: p?.name ?? '',
+    image_url: p?.image_url ?? null,
+    calories: num(p?.calories),
+    protein: num(p?.protein),
+    carbs: num(p?.carbs),
+    fat: num(p?.fat),
+    fiber: num(p?.fiber),
+    sugar: num(p?.sugar),
+    sodium: num(p?.sodium),
+  });
 
   // Tutorial refs
   const profileButtonRef = useRef(null);
@@ -356,8 +395,11 @@ export default function HomeScreen({ navigation }) {
         setQuickSuggestions(DEFAULT_FOODS[mealType]);
       }
     } catch (error) {
-      console.error('Error loading suggestions:', error);
-    }
+          // Location unavailable — fall back to default suggestions silently
+          const hour = new Date().getHours();
+          const mealType = hour < 11 ? 'breakfast' : hour < 16 ? 'lunch' : 'dinner';
+          setQuickSuggestions(DEFAULT_FOODS[mealType]);
+        }
   };
 
   const loadExerciseCalories = async () => {
@@ -409,66 +451,223 @@ export default function HomeScreen({ navigation }) {
 
   // Load water intake
   const loadWaterIntake = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    const dateStr = selectedDate.toLocaleDateString('en-CA');
-    
-    const { data } = await supabase
-      .from('water_logs')
-      .select('cups')
-      .eq('user_id', user.id)
-      .eq('date', dateStr)
-      .single();
-    
-    setWaterIntake(data?.cups || 0);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('💧 loadWaterIntake: no user, skipping');
+        setWaterIntake(0);
+        return;
+      }
+      const dateStr = selectedDate.toLocaleDateString('en-CA');
+      console.log('💧 loadWaterIntake: fetching for', dateStr, 'user', user.id);
+
+      const { data, error } = await supabase
+        .from('water_logs')
+        .select('cups')
+        .eq('user_id', user.id)
+        .eq('date', dateStr)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('💧 loadWaterIntake error:', error);
+      }
+
+      console.log('💧 loadWaterIntake result:', data);
+      setWaterIntake(data?.cups || 0);
+    } catch (e) {
+      console.error('💧 loadWaterIntake exception:', e);
+      setWaterIntake(0);
+    }
+  };
+
+  // Request camera permission once for guest users on Home mount
+  useEffect(() => {
+    if (!isGuestMode) return;
+    const requestOnce = async () => {
+      const alreadyRequested = await AsyncStorage.getItem('camera_permission_requested');
+      if (!alreadyRequested) {
+        await requestCameraPermission();
+        await AsyncStorage.setItem('camera_permission_requested', 'true');
+      }
+    };
+    requestOnce();
+  }, [isGuestMode]);
+
+  // Request camera and location permissions for email/password users who skipped onboarding
+  useEffect(() => {
+    const requestPermissions = async () => {
+      try {
+        const { status: cameraStatus } = await Camera.requestCameraPermissionsAsync();
+        if (cameraStatus !== 'granted') {
+          console.log('📷 Camera permission denied');
+        }
+
+        const { status: locationStatus } = await Location.requestForegroundPermissionsAsync();
+        if (locationStatus !== 'granted') {
+          console.log('📍 Location permission denied');
+        }
+
+        const { status: notificationStatus } = await Notifications.requestPermissionsAsync();
+        if (notificationStatus !== 'granted') {
+          console.log('🔔 Notification permission denied');
+        }
+
+        // Schedule daily meal reminders (once only)
+        if (notificationStatus === 'granted') {
+          const alreadyScheduled = await AsyncStorage.getItem('notifications_scheduled');
+          if (!alreadyScheduled) {
+            const meals = [
+              { hour: 8, minute: 0, titleKey: 'mealReminders.breakfastTitle', bodyKey: 'mealReminders.breakfastBody' },
+              { hour: 13, minute: 0, titleKey: 'mealReminders.lunchTitle', bodyKey: 'mealReminders.lunchBody' },
+              { hour: 19, minute: 0, titleKey: 'mealReminders.dinnerTitle', bodyKey: 'mealReminders.dinnerBody' },
+            ];
+            for (const meal of meals) {
+              await Notifications.scheduleNotificationAsync({
+                content: {
+                  title: t(meal.titleKey),
+                  body: t(meal.bodyKey),
+                },
+                trigger: {
+                  type: 'daily',
+                  hour: meal.hour,
+                  minute: meal.minute,
+                  repeats: true,
+                },
+              });
+            }
+            await AsyncStorage.setItem('notifications_scheduled', 'true');
+            console.log('🔔 Daily meal reminders scheduled');
+          }
+        }
+      } catch (err) {
+        console.error('Permission request error:', err);
+      }
+    };
+
+    requestPermissions();
+  }, []);
+
+  const showGuestAlert = (message) => {
+    setGuestSheetMessage(message || t('guest.signUpToLog'));
+    setGuestSheetVisible(true);
   };
 
   const handleAddWater = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    const dateStr = selectedDate.toLocaleDateString('en-CA');
-    
-    const newAmount = waterIntake + 1;
-    
-    // Add onConflict to specify unique constraint
-    const { error } = await supabase.from('water_logs').upsert({
-      user_id: user.id,
-      date: dateStr,
-      cups: newAmount,
-    }, { 
-      onConflict: 'user_id,date'  // ← THIS IS THE FIX
-    });
-    
-    if (error) {
-      console.error('Error updating water:', error);
-      return;
+    if (isGuestMode) { showGuestAlert(); return; }
+
+    if (updatingWater) return;
+
+    try {
+
+      setUpdatingWater(true);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('💧 handleAddWater: no user, skipping');
+        return;
+      }
+      const dateStr = selectedDate.toLocaleDateString('en-CA');
+
+      const newAmount = waterIntake + 1;
+      console.log('💧 handleAddWater: upsert', { user_id: user.id, date: dateStr, cups: newAmount });
+
+      const { error } = await supabase.from('water_logs').upsert({
+        user_id: user.id,
+        date: dateStr,
+        cups: newAmount,
+      }, {
+        onConflict: 'user_id,date'
+      });
+
+      console.log("UPSERT RESULT:", error);
+
+      if (error) {
+        console.error('💧 handleAddWater error:', error);
+        throw error;
+      }
+
+      console.log('💧 handleAddWater success:', newAmount);
+      setWaterIntake(newAmount);
+
+    } catch (e) {
+
+      console.error('💧 handleAddWater exception:', e);
+
+    } finally {
+
+      setUpdatingWater(false);
+
     }
-    
-    setWaterIntake(newAmount);
   };
 
   const handleSubtractWater = async () => {
-    if (waterIntake <= 0) return;
-    
-    const { data: { user } } = await supabase.auth.getUser();
-    const dateStr = selectedDate.toLocaleDateString('en-CA');
-    
-    const newAmount = waterIntake - 1;
-    
-    // Add onConflict here too
-    const { error } = await supabase.from('water_logs').upsert({
-      user_id: user.id,
-      date: dateStr,
-      cups: newAmount,
-    }, { 
-      onConflict: 'user_id,date'  // ← THIS IS THE FIX
-    });
-    
-    if (error) {
-      console.error('Error updating water:', error);
-      return;
+    if (isGuestMode) { showGuestAlert(); return; }
+
+    if (updatingWater) return;
+
+    try {
+
+      setUpdatingWater(true);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('💧 handleSubtractWater: no user, skipping');
+        return;
+      }
+      const dateStr = selectedDate.toLocaleDateString('en-CA');
+
+      const newAmount = waterIntake - 1;
+      console.log('💧 handleSubtractWater: upsert', { user_id: user.id, date: dateStr, cups: newAmount });
+
+      const { error } = await supabase.from('water_logs').upsert({
+        user_id: user.id,
+        date: dateStr,
+        cups: newAmount,
+      }, {
+        onConflict: 'user_id,date'
+      });
+
+      if (error) {
+        console.error('💧 handleSubtractWater error:', error);
+        return;
+      }
+
+      console.log('💧 handleSubtractWater success:', newAmount);
+      setWaterIntake(newAmount);
+
+    } catch (e) {
+
+      console.error('💧 handleSubtractWater exception:', e);
+
+    } finally {
+
+      setUpdatingWater(false);
+
     }
-    
-    setWaterIntake(newAmount);
   };
+
+  useEffect(() => {
+    const checkTutorialLoading = async () => {
+      const loadingFlag = await AsyncStorage.getItem('tutorial_loading');
+      const everShown = await AsyncStorage.getItem('tutorial_ever_shown');
+      const completedHome = await AsyncStorage.getItem('tutorial_completed_home');
+
+      // If tutorial already done, clean up the stale flag and don't freeze
+      if (everShown === 'true' || completedHome === 'true') {
+        await AsyncStorage.removeItem('tutorial_loading');
+        setCheckingTutorial(false);
+        return;
+      }
+
+      if (loadingFlag === 'true') {
+        console.log('🧊 Tutorial freeze active');
+        setCheckingTutorial(true);
+      } else {
+        setCheckingTutorial(false);
+      }
+    };
+    checkTutorialLoading();
+  }, []);
 
   useEffect(() => {
     logScreen('Home');
@@ -492,22 +691,30 @@ export default function HomeScreen({ navigation }) {
   // Calculate totals from meals (with safety check)
   const consumed = (meals || []).reduce((sum, meal) => {
     if (!meal.product) return sum;
-    return sum + ((meal.product.calories * meal.serving_grams) / 100);
+
+    const c = num(meal.product.calories);
+    const g = num(meal.serving_grams);
+    return sum + (c * g) / 100;
   }, 0);
 
   const consumedProtein = (meals || []).reduce((sum, meal) => {
-    if (!meal.product) return sum;
-    return sum + ((meal.product.protein * meal.serving_grams) / 100);
+    const p = num(meal.product?.protein);
+    const g = num(meal.serving_grams);
+    return sum + (p * g) / 100;
   }, 0);
 
   const consumedCarbs = (meals || []).reduce((sum, meal) => {
     if (!meal.product) return sum;
-    return sum + ((meal.product.carbs * meal.serving_grams) / 100);
+    const c = num(meal.product.carbs);
+    const g = num(meal.serving_grams);
+    return sum + (c * g) / 100;
   }, 0);
 
   const consumedFat = (meals || []).reduce((sum, meal) => {
     if (!meal.product) return sum;
-    return sum + ((meal.product.fat * meal.serving_grams) / 100);
+    const f = num(meal.product.fat);
+    const g = num(meal.serving_grams);
+    return sum + (f * g) / 100;
   }, 0);
 
   // Get daily goals from profile
@@ -613,8 +820,43 @@ export default function HomeScreen({ navigation }) {
   const loadMealsForDate = async (date) => {
     try {
       setLoading(true);
+      // ===== GUEST MODE LOAD =====
+      if (isGuest) {
+
+        console.log('👤 Loading guest meals from AsyncStorage');
+
+        const guestMeals =
+          JSON.parse(await AsyncStorage.getItem('guest_meals') || '[]');
+
+        // Convert guest meals into Supabase-like structure
+        const formattedMeals = guestMeals.map(meal => {
+          const product = normalizeProduct({
+            name: meal.product_name,
+            image_url: meal.image_url,
+
+            // IMPORTANT: read from BOTH possible locations (flat OR nested)
+            calories: meal.calories ?? meal.product?.calories,
+            protein: meal.protein ?? meal.product?.protein,
+            carbs: meal.carbs ?? meal.product?.carbs,
+            fat: meal.fat ?? meal.product?.fat,
+            fiber: meal.fiber ?? meal.product?.fiber,
+            sugar: meal.sugar ?? meal.product?.sugar,
+            sodium: meal.sodium ?? meal.product?.sodium,
+          });
+
+          return {
+            ...meal,
+            product,
+          };
+        });
+
+        setMeals(formattedMeals);
+        setLoading(false);
+        return;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) return;
 
       // Format date to YYYY-MM-DD
@@ -627,12 +869,12 @@ export default function HomeScreen({ navigation }) {
       startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(date);
       endOfDay.setHours(23, 59, 59, 999);
-      
+
       const { data, error } = await supabase
         .from('meals')
         .select(`
           *,
-          product:food_database (
+          product:food_database!meals_product_fk (
             name,
             calories,
             protein,
@@ -651,8 +893,13 @@ export default function HomeScreen({ navigation }) {
         .order('logged_at', { ascending: false });
 
       if (error) throw error;
+      console.log('HOME MEALS RESPONSE:', meals);
 
-      setMeals(data || []);
+      const normalizedMeals = (data || []).map(m => ({
+        ...m,
+        product: normalizeProduct(m.product),
+      }));
+      setMeals(normalizedMeals);
       console.log(`📅 Loaded ${data?.length || 0} meals for ${dateStr}`);
     } catch (error) {
       console.error('Error loading meals:', error);
@@ -682,16 +929,18 @@ export default function HomeScreen({ navigation }) {
         .select(`
           logged_at,
           serving_grams,
-          product:food_database (
+          product:food_database!meals_product_fk (
             calories
           )
         `)
+        
         .eq('user_id', user.id)
         .gte('logged_at', firstDay.toISOString())
         .lte('logged_at', lastDay.toISOString())
         .order('logged_at', { ascending: true });
 
       if (error) throw error;
+      console.log('MEALS STRUCTURE:', JSON.stringify(meals, null, 2));
 
       // Group meals by LOCAL date (not UTC!)
       const mealsByDate = {};
@@ -742,7 +991,7 @@ export default function HomeScreen({ navigation }) {
     loadStepCalories();
     calculateStreak();
     fetchMonthlyData(calendarMonth.year, calendarMonth.month);
-  }, [selectedDate, calendarMonth]);
+  }, [selectedDate, calendarMonth, isGuest]);
 
   // Check greeting only when needed (login or 5 hours later)
   useEffect(() => {
@@ -810,11 +1059,20 @@ export default function HomeScreen({ navigation }) {
           
           if (refsReady) {
             console.log('✅ All refs ready! Starting tutorial...');
-            setCheckingTutorial(false); // UNFREEZE before tutorial starts
-            setTimeout(() => {
+
+            setTimeout(async () => {
+
+              // ✅ remove loading freeze flag
+              await AsyncStorage.removeItem('tutorial_loading');
+
               tutorialStartedRef.current = true;
+
+              // keep screen frozen until tutorial overlay takes control
               startTutorial('Home');
-            }, 500); // Small delay to ensure unfreeze happens first
+
+              setCheckingTutorial(false);
+
+            }, 500);
           } else {
             console.log('⏳ Refs not ready yet, checking again in 500ms...');
             timeoutId = setTimeout(checkRefsReady, 500);
@@ -830,10 +1088,33 @@ export default function HomeScreen({ navigation }) {
           }
         };
       } else {
-        // If none of the above conditions are met, unfreeze anyway
-        setCheckingTutorial(false);
+        // Profile not loaded yet — stay frozen until it arrives
+        // Failsafe timeout (6s) will unfreeze if profile never arrives
+        if (!profile) {
+          console.log('⏳ Tutorial freeze: profile not loaded yet, waiting...');
+        } else {
+          // Profile loaded but conditions not met — safe to unfreeze
+          console.log('ℹ️ Tutorial conditions not met, unfreezing');
+          setCheckingTutorial(false);
+        }
       }
     }, [tutorialCompleted, layout, profile, loading, userLoading, freshDataLoaded]);
+
+    // Failsafe: unfreeze after 6s to avoid trapping user
+    useEffect(() => {
+      if (!checkingTutorial) return;
+
+      console.log('🔒 Tutorial freeze ON');
+      const failsafeId = setTimeout(() => {
+        console.warn('⚠️ Tutorial freeze failsafe triggered after 6s — unfreezing');
+        setCheckingTutorial(false);
+      }, 6000);
+
+      return () => {
+        clearTimeout(failsafeId);
+        console.log('🔓 Tutorial freeze OFF');
+      };
+    }, [checkingTutorial]);
 
   // Refresh meals when screen focuses
   useFocusEffect(
@@ -864,10 +1145,11 @@ export default function HomeScreen({ navigation }) {
         
         console.log('✅ Home tutorial done, checking for profile arrow...');
         
-        // Check if we should show Profile arrow
-        if (freshProfile?.scanner_tutorial_completed && !freshProfile?.profile_tutorial_completed) {
-          console.log('✅ CONDITIONS MET - Showing arrow to Profile');
-          
+        // Check if we should show Profile arrow (only once)
+        if (freshProfile?.scanner_tutorial_completed && !freshProfile?.profile_tutorial_completed && !profileArrowShownRef.current) {
+          console.log('✅ CONDITIONS MET - Showing arrow to Profile (once)');
+          profileArrowShownRef.current = true;
+
           // Small delay for layout to settle
           setTimeout(() => {
             measureProfileButton();
@@ -882,7 +1164,7 @@ export default function HomeScreen({ navigation }) {
       };
       
       checkArrows();
-    }, [selectedDate])
+    }, [selectedDate, isGuest])
   );
 
   // Date navigation functions
@@ -913,11 +1195,12 @@ export default function HomeScreen({ navigation }) {
   };
 
   const goToStartOfWeek = () => {
+    if (blockIfGuest(isGuestMode, navigation, () => {}, t, () => showGuestAlert())) return;
     const date = new Date(selectedDate);
     const day = date.getDay();
     const diff = day === 0 ? -6 : 1 - day; // Monday as first day
     date.setDate(date.getDate() + diff);
-    
+
     // Check if before minimum date
     if (date >= MIN_DATE) {
       setSelectedDate(date);
@@ -927,9 +1210,10 @@ export default function HomeScreen({ navigation }) {
   };
 
   const goToStartOfMonth = () => {
+    if (blockIfGuest(isGuestMode, navigation, () => {}, t, () => showGuestAlert())) return;
     const date = new Date(selectedDate);
     date.setDate(1);
-    
+
     // Check if before minimum date
     if (date >= MIN_DATE) {
       setSelectedDate(date);
@@ -959,10 +1243,10 @@ export default function HomeScreen({ navigation }) {
     if (diffDays === 1) return t('home.tomorrow');
     
     // Format as "Mon, Jan 15"
-    return selected.toLocaleDateString('en-US', { 
-      weekday: 'short', 
-      month: 'short', 
-      day: 'numeric' 
+    return selected.toLocaleDateString(LOCALE_MAP[language] || 'en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric'
     });
   };
 
@@ -975,27 +1259,8 @@ export default function HomeScreen({ navigation }) {
   };
 
   const handleMealLongPress = (meal) => {
-    Alert.alert(
-      meal.product_name,
-      t('home.whatToDo'),
-      [
-        {
-          text: t('home.cancel'),
-          style: 'cancel',
-        },
-        {
-          text: t('home.edit'),
-          onPress: () => {
-            navigation.navigate('EditMeal', { meal });
-          },
-        },
-        {
-          text: t('home.delete'),
-          style: 'destructive',
-          onPress: () => handleDeleteMeal(meal),
-        },
-      ]
-    );
+    if (isGuestMode) { showGuestAlert(); return; }
+    setMealActionModal({ visible: true, meal });
   };
 
   const handleMealToggle = (mealId) => {
@@ -1011,38 +1276,47 @@ export default function HomeScreen({ navigation }) {
   };
 
   const handleDeleteMeal = (meal) => {
-    Alert.alert(
-      t('home.deleteMeal'),
-      `${t('home.deleteMealConfirm')} "${meal.product_name}"?`,
-      [
-        {
-          text: t('home.cancel'),
-          style: 'cancel',
-        },
-        {
-          text: t('home.delete'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const { error } = await supabase
-                .from('meals')
-                .delete()
-                .eq('id', meal.id);
+    setDeleteMealModal({ visible: true, meal });
+  };
 
-              if (error) throw error;
+  const confirmDeleteMeal = async (meal) => {
+    setDeleteMealModal({ visible: false, meal: null });
+    try {
+      // ===== GUEST DELETE =====
+      if (!user) {
+        const existingMeals =
+          JSON.parse(await AsyncStorage.getItem('guest_meals') || '[]');
 
-              await loadMealsForDate(selectedDate);
-              await calculateStreak(); // ← ADD THIS LINE
+        const updatedMeals =
+          existingMeals.filter(m => m.id !== meal.id);
 
-              Alert.alert(t('home.success'), t('home.mealDeleted'));
-            } catch (error) {
-              console.error('Error deleting meal:', error);
-              Alert.alert(t('home.error'), t('home.failedToDelete'));
-            }
-          },
-        },
-      ]
-    );
+        await AsyncStorage.setItem(
+          'guest_meals',
+          JSON.stringify(updatedMeals)
+        );
+
+        setMeals(prev => prev.filter(m => m.id !== meal.id));
+
+        showToast('success', t('home.success'), t('home.mealDeleted'));
+        return;
+      }
+
+      // ===== SUPABASE DELETE =====
+      const { error } = await supabase
+        .from('meals')
+        .delete()
+        .eq('id', meal.id);
+
+      if (error) throw error;
+
+      await loadMealsForDate(selectedDate);
+      await calculateStreak();
+
+      showToast('success', t('home.success'), t('home.mealDeleted'));
+    } catch (error) {
+      console.error('Error deleting meal:', error);
+      Alert.alert(t('home.error'), t('home.failedToDelete'));
+    }
   };
 
   // Pull to refresh
@@ -1054,9 +1328,20 @@ export default function HomeScreen({ navigation }) {
   };
 
   const copyYesterdaysMeals = async () => {
+    if (isGuestMode) { showGuestAlert(); return; }
     try {
       setCopyingMeals(true);
-      const { data: { user } } = await supabase.auth.getUser();
+
+      if (userLoading) {
+        console.log("⏳ User still loading, blocking copy");
+        return;
+      }
+
+      if (!user) {
+        console.log("❌ No user after loading completed");
+        Alert.alert(t('home.error'), "Authentication error. Please restart the app.");
+        return;
+      }
       
       // Get yesterday's date in LOCAL time
       const yesterday = new Date(selectedDate);
@@ -1072,7 +1357,7 @@ export default function HomeScreen({ navigation }) {
         .from('meals')
         .select(`
           *,
-          product:food_database (*)
+          product:food_database!meals_product_fk (*)
         `)
         .eq('user_id', user.id)
         .gte('logged_at', yesterday.toISOString())
@@ -1082,17 +1367,16 @@ export default function HomeScreen({ navigation }) {
 
         if (yesterdayMeals && yesterdayMeals.length > 0) {
           const copiedMeals = yesterdayMeals.map(meal => ({
+
             user_id: user.id,
-            product_name: meal.product_name,
-            calories: meal.calories,
-            protein: meal.protein,
-            carbs: meal.carbs,
-            fat: meal.fat,
-            sodium: meal.sodium,
-            sugar: meal.sugar,
-            fiber: meal.fiber,
+            product_id: meal.product_id,
+            barcode: meal.barcode,
+            serving_grams: meal.serving_grams,
+            serving_unit: meal.serving_unit,
+            meal_type: meal.meal_type,
             image_url: meal.image_url,
             logged_at: new Date().toISOString(),
+
           }));
 
           const { error: insertError } = await supabase
@@ -1105,15 +1389,9 @@ export default function HomeScreen({ navigation }) {
           await loadMealsForDate(selectedDate);
           await calculateStreak();
 
-          Alert.alert(
-            t('home.successCopy'),
-            `${t('home.copiedMealsPrefix')} ${yesterdayMeals.length} ${t('home.copiedMeals')}`
-          );
+          showToast('success', t('home.successCopy'), `${t('home.copiedMealsPrefix')} ${yesterdayMeals.length} ${t('home.copiedMeals')}`);
         } else {
-          Alert.alert(
-            t('home.noMeals'),
-            t('home.noMealsYesterday')
-          );
+          showToast('info', t('home.noMeals'), t('home.noMealsYesterday'));
         }
       } catch (error) {
         console.error('Error copying meals:', error);
@@ -1168,7 +1446,7 @@ export default function HomeScreen({ navigation }) {
                 ref={scrollViewRef} 
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
-                scrollEnabled={tutorialCompleted}
+                scrollEnabled={!checkingTutorial}
                 refreshControl={
                   <RefreshControl
                     refreshing={refreshing}
@@ -1184,6 +1462,33 @@ export default function HomeScreen({ navigation }) {
                   greeting={greetingText}
                   onComplete={hideGreeting}
                 />
+
+                {/* Guest Banner */}
+                {isGuestMode && !guestBannerDismissed && (
+                  <View style={styles.guestBanner}>
+                    <View style={styles.guestBannerContent}>
+                      <Text style={styles.guestBannerText}>
+                        {t('home.guestBanner.message')}
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.guestBannerSignUp}
+                        onPress={() => navigation.navigate('SignUp')}
+                      >
+                        <Text style={styles.guestBannerSignUpText}>
+                          {t('home.guestBanner.signUp')}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.guestBannerDismiss}
+                      onPress={() => setGuestBannerDismissed(true)}
+                    >
+                      <Text style={styles.guestBannerDismissText}>
+                        {t('home.guestBanner.dismiss')}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
 
                 {/* Streak Badge - Always visible */}
                 <View style={styles.streakBadgeWrapper}>
@@ -1209,8 +1514,8 @@ export default function HomeScreen({ navigation }) {
 
                     <TouchableOpacity 
                       style={styles.dateLabel} 
-                      onPress={() => tutorialCompleted && setShowCalendar(true)}
-                      disabled={!tutorialCompleted}
+                      onPress={() => setShowCalendar(true)}
+                      disabled={false}
                     >
                       <Text style={[styles.dateLabelText, { color: theme.text }]}>{getDateLabel()}</Text>
                     </TouchableOpacity>
@@ -1315,7 +1620,7 @@ export default function HomeScreen({ navigation }) {
                 {/* Exercise & Water Cards - SIDE BY SIDE */}
                 <View style={styles.activityCardsRow}>
                   {/* Exercise Card - LEFT SIDE */}
-                  <ExerciseButton theme={theme} navigation={navigation} />
+                  <ExerciseButton theme={theme} navigation={navigation} isGuestMode={isGuestMode} onGuestPress={showGuestAlert} />
 
                   {/* Water Intake with Animated Pitcher */}
                   <View style={[styles.activityCard, { backgroundColor: theme.cardBackground }]}>
@@ -1326,20 +1631,30 @@ export default function HomeScreen({ navigation }) {
                     />
                     
                     {/* Water Control Buttons */}
+                    {updatingWater && (
+                      <ActivityIndicator size="small" color={theme.primary} />
+                    )}
                     <View style={styles.waterButtons}>
-                      <TouchableOpacity 
-                        style={[styles.waterButton, { backgroundColor: theme.border }]}
+                      <TouchableOpacity
+                        style={[styles.waterButton, { backgroundColor: theme.border }, updatingWater && { opacity: 0.5 }]}
                         onPress={handleSubtractWater}
-                        disabled={waterIntake <= 0}
+                        disabled={waterIntake <= 0 || updatingWater}
                       >
-                        <Text style={[styles.waterButtonText, { color: theme.text }]}>−</Text>
+                        {updatingWater
+                          ? <ActivityIndicator color={theme.text} />
+                          : <Text style={[styles.waterButtonText, { color: theme.text }]}>−</Text>
+                        }
                       </TouchableOpacity>
-                      
-                      <TouchableOpacity 
-                        style={[styles.waterButton, { backgroundColor: theme.primary }]}
+
+                      <TouchableOpacity
+                        style={[styles.waterButton, { backgroundColor: theme.primary }, updatingWater && { opacity: 0.5 }]}
                         onPress={handleAddWater}
+                        disabled={updatingWater}
                       >
-                        <Text style={styles.waterButtonText}>+</Text>
+                        {updatingWater
+                          ? <ActivityIndicator color="#fff" />
+                          : <Text style={styles.waterButtonText}>+</Text>
+                        }
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -1362,6 +1677,7 @@ export default function HomeScreen({ navigation }) {
                   toggledMeals={toggledMeals}
                   navigation={navigation}
                   mealsListRef={mealsListRef}
+                  isGuestMode={isGuestMode}
                 />
               </ScrollView>
 
@@ -1397,6 +1713,7 @@ export default function HomeScreen({ navigation }) {
                           monthlyData={monthlyData}
                           theme={theme}
                           t={t}
+                          language={language}
                           selectedDate={`${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`}
                           currentMonth={calendarMonth}
                           onMonthChange={(newMonth) => {
@@ -1404,6 +1721,7 @@ export default function HomeScreen({ navigation }) {
                             fetchMonthlyData(newMonth.year, newMonth.month);
                           }}
                           onDateSelect={(dateStr) => {
+                            if (isGuestMode) { showGuestAlert(); return; }
                             const [year, month, day] = dateStr.split('-').map(Number);
                             const newDate = new Date(year, month - 1, day);
                             newDate.setHours(0, 0, 0, 0);
@@ -1444,7 +1762,63 @@ export default function HomeScreen({ navigation }) {
                 }
                 t={t}
               />
+
+              {/* Guest Upsell Sheet */}
+              <GuestUpsellSheet
+                visible={guestSheetVisible}
+                onClose={() => setGuestSheetVisible(false)}
+                message={guestSheetMessage}
+              />
+
+              {/* Meal Action Modal (long-press) */}
+              <VeethaModal
+                visible={mealActionModal.visible}
+                title={mealActionModal.meal?.product_name}
+                message={t('home.whatToDo')}
+                onCancel={() => setMealActionModal({ visible: false, meal: null })}
+                buttons={[
+                  { text: t('home.cancel'), style: 'cancel', onPress: () => setMealActionModal({ visible: false, meal: null }) },
+                  { text: t('home.edit'), onPress: () => { setMealActionModal({ visible: false, meal: null }); navigation.navigate('EditMeal', { meal: mealActionModal.meal }); } },
+                  { text: t('home.delete'), style: 'destructive', onPress: () => { setMealActionModal({ visible: false, meal: null }); handleDeleteMeal(mealActionModal.meal); } },
+                ]}
+              />
+
+              {/* Delete Meal Confirmation */}
+              <VeethaModal
+                visible={deleteMealModal.visible}
+                title={t('home.deleteMeal')}
+                message={`${t('home.deleteMealConfirm')} "${deleteMealModal.meal?.product_name}"?`}
+                confirmText={t('home.delete')}
+                cancelText={t('home.cancel')}
+                confirmStyle="destructive"
+                onConfirm={() => confirmDeleteMeal(deleteMealModal.meal)}
+                onCancel={() => setDeleteMealModal({ visible: false, meal: null })}
+              />
             </AnimatedThemeWrapper>
+
+            {/* Tutorial freeze overlay — MUST be last child to cover everything */}
+            {checkingTutorial && (
+              <View
+                pointerEvents="auto"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: isDark ? '#121212' : '#fff',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  zIndex: 9999,
+                  elevation: 9999,
+                }}
+              >
+                <ActivityIndicator size="large" color="#4CAF50" />
+                <Text style={{ color: isDark ? '#aaa' : '#666', marginTop: 12, fontSize: 14 }}>
+                  {t('tutorial.preparing')}
+                </Text>
+              </View>
+            )}
           </SafeAreaView>
         </GestureDetector>
       </GestureHandlerRootView>
@@ -1455,6 +1829,46 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  guestBanner: {
+    flexDirection: 'row',
+    backgroundColor: '#FFF3CD',
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 4,
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'flex-start',
+  },
+  guestBannerContent: {
+    flex: 1,
+    marginRight: 8,
+  },
+  guestBannerText: {
+    fontSize: 13,
+    color: '#664D03',
+    lineHeight: 19,
+    marginBottom: 10,
+  },
+  guestBannerSignUp: {
+    backgroundColor: '#FF9800',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+    alignSelf: 'flex-start',
+  },
+  guestBannerSignUpText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  guestBannerDismiss: {
+    padding: 4,
+  },
+  guestBannerDismissText: {
+    fontSize: 18,
+    color: '#664D03',
+    fontWeight: 'bold',
   },
   scrollView: {
     flex: 1,
@@ -2003,11 +2417,10 @@ const styles = StyleSheet.create({
   },
   activityCard: {
     flex: 1,
-    padding: 15,
+    padding: 10,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 100,
   },
   activityCardTitle: {
     fontSize: 14,

@@ -1,18 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, ActivityIndicator, Pressable } from 'react-native';
+import GuestUpsellSheet from '../components/GuestUpsellSheet';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, ActivityIndicator, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../utils/ThemeContext';
 import { supabase } from '../utils/supabase';
 import { useUser } from '../utils/UserContext';
 import { useLanguage } from '../utils/LanguageContext';
+import { useUserMode } from '../utils/UserModeContext';
+import { blockIfGuest } from '../utils/guestBlock';
 import { logScreen, logEvent } from '../utils/analytics';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { showToast } from '../components/VeethaToast';
 
 export default function EditProfileScreen({ navigation }) {
   const { theme } = useTheme();
   const { language, t, setLanguage } = useLanguage();
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  const [showGuestSheet, setShowGuestSheet] = useState(false);
   const { profile, refreshProfile } = useUser();
-  
+  const { isGuest: isGuestMode } = useUserMode();
+
+  const guestCheck = (action) => {
+    if (isGuestMode) { 
+      Keyboard.dismiss();
+      setShowGuestSheet(true); 
+      return; 
+    }
+    action();
+  };
+
   const [displayName, setDisplayName] = useState('');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -24,6 +40,7 @@ export default function EditProfileScreen({ navigation }) {
   const [heightFeet, setHeightFeet] = useState('');
   const [heightInches, setHeightInches] = useState('');
   const [unitSystem, setUnitSystem] = useState('metric');
+  const [showSuccessAfterSave, setShowSuccessAfterSave] = useState(false);
 
   useEffect(() => {
     logScreen('EditProfile');
@@ -33,6 +50,15 @@ export default function EditProfileScreen({ navigation }) {
   useEffect(() => {
     loadProfile();
   }, []);
+
+  useEffect(() => {
+    if (showSuccessAfterSave) {
+      showToast('success', t('editProfile.success'), t('editProfile.profileUpdated'));
+      navigation.goBack();
+
+      setShowSuccessAfterSave(false);
+    }
+  }, [language, showSuccessAfterSave]);
 
   const loadProfile = async () => {
     try {
@@ -88,6 +114,14 @@ export default function EditProfileScreen({ navigation }) {
   };
 
   const handleSave = async () => {
+    // Guest: only save language to AsyncStorage, skip everything else
+    if (isGuestMode) {
+      if (tempLanguage !== language) {
+        await setLanguage(tempLanguage);
+      }
+      setShowSuccessAfterSave(true);
+      return;
+    }
     // Validation
     if (!fullName.trim()) {
       Alert.alert(t('editProfile.missingInfo'), t('editProfile.enterFullName'));
@@ -125,7 +159,7 @@ export default function EditProfileScreen({ navigation }) {
 
       // Apply language change NOW (on save)
       if (tempLanguage !== language) {
-        setLanguage(tempLanguage);
+        await setLanguage(tempLanguage);
       }
 
       // Convert measurements to metric for storage
@@ -165,19 +199,8 @@ export default function EditProfileScreen({ navigation }) {
       // Refresh profile context
       await refreshProfile();
 
-      // Wait for language to update, then show message in new language
-      setTimeout(() => {
-        Alert.alert(
-          t('editProfile.success'),
-          t('editProfile.profileUpdated'),
-          [
-            {
-              text: t('editProfile.ok'),
-              onPress: () => navigation.goBack(),
-            },
-          ]
-        );
-      }, 200);
+      setShowSuccessAfterSave(true);
+
     } catch (error) {
       console.error('Error saving profile:', error);
       Alert.alert(t('editProfile.error'), t('editProfile.failedToSave'));
@@ -199,15 +222,16 @@ export default function EditProfileScreen({ navigation }) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
-      <Pressable style={{ flex: 1 }} onPress={() => setShowLanguageDropdown(false)}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={{ flex: 1 }}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-        >
-          <ScrollView 
+      <View style={{ flex: 1 }} onStartShouldSetResponder={() => {
+        if (showLanguageDropdown) setShowLanguageDropdown(false);
+        return false;
+      }}>
+
+          <KeyboardAwareScrollView
             style={styles.scrollView}
             contentContainerStyle={{ paddingBottom: 40 }}
+            enableOnAndroid={true}
+            extraScrollHeight={30}
             keyboardShouldPersistTaps="handled"
           >
             {/* Header */}
@@ -231,7 +255,7 @@ export default function EditProfileScreen({ navigation }) {
                   placeholder={t('editProfile.displayNamePlaceholder')}
                   placeholderTextColor={theme.textTertiary}
                   value={displayName}
-                  onChangeText={setDisplayName}
+                  onChangeText={(v) => guestCheck(() => setDisplayName(v))}
                   maxLength={30}
                 />
               </View>
@@ -244,7 +268,7 @@ export default function EditProfileScreen({ navigation }) {
                   placeholder={t('editProfile.fullNamePlaceholder')}
                   placeholderTextColor={theme.textTertiary}
                   value={fullName}
-                  onChangeText={setFullName}
+                  onChangeText={(v) => guestCheck(() => setFullName(v))}
                   maxLength={50}
                 />
               </View>
@@ -274,7 +298,7 @@ export default function EditProfileScreen({ navigation }) {
                       tempLanguage === 'en' ? '🇬🇧 English' :
                       tempLanguage === 'es' ? '🇪🇸 Español' :
                       tempLanguage === 'fr' ? '🇫🇷 Français' :
-                      tempLanguage === 'fil' ? '🇵🇭 Filipino' :
+                      tempLanguage === 'tl' ? '🇵🇭 Filipino' :
                       ''
                     }
                   </Text>
@@ -361,22 +385,22 @@ export default function EditProfileScreen({ navigation }) {
                         backgroundColor: unitSystem === 'metric' ? theme.primary : theme.cardBackground 
                       }
                     ]}
-                    onPress={() => setUnitSystem('metric')}
+                    onPress={() => guestCheck(() => setUnitSystem('metric'))}
                   >
                     <Text style={[styles.unitButtonText, { color: unitSystem === 'metric' ? '#fff' : theme.text }]}>
                       Metric
                     </Text>
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity
                     style={[
                       styles.unitButton,
-                      { 
-                        borderColor: theme.border, 
-                        backgroundColor: unitSystem === 'imperial' ? theme.primary : theme.cardBackground 
+                      {
+                        borderColor: theme.border,
+                        backgroundColor: unitSystem === 'imperial' ? theme.primary : theme.cardBackground
                       }
                     ]}
-                    onPress={() => setUnitSystem('imperial')}
+                    onPress={() => guestCheck(() => setUnitSystem('imperial'))}
                   >
                     <Text style={[styles.unitButtonText, { color: unitSystem === 'imperial' ? '#fff' : theme.text }]}>
                       Imperial
@@ -395,7 +419,7 @@ export default function EditProfileScreen({ navigation }) {
                   placeholder={unitSystem === 'metric' ? '70' : '154'}
                   placeholderTextColor={theme.textTertiary}
                   value={weight}
-                  onChangeText={setWeight}
+                  onChangeText={(v) => guestCheck(() => setWeight(v))}
                   keyboardType="decimal-pad"
                 />
               </View>
@@ -409,7 +433,7 @@ export default function EditProfileScreen({ navigation }) {
                     placeholder="170"
                     placeholderTextColor={theme.textTertiary}
                     value={heightCm}
-                    onChangeText={setHeightCm}
+                    onChangeText={(v) => guestCheck(() => setHeightCm(v))}
                     keyboardType="decimal-pad"
                   />
                 </View>
@@ -422,7 +446,7 @@ export default function EditProfileScreen({ navigation }) {
                       placeholder="5"
                       placeholderTextColor={theme.textTertiary}
                       value={heightFeet}
-                      onChangeText={setHeightFeet}
+                      onChangeText={(v) => guestCheck(() => setHeightFeet(v))}
                       keyboardType="number-pad"
                     />
                     <Text style={[styles.heightLabel, { color: theme.text }]}>ft</Text>
@@ -432,7 +456,7 @@ export default function EditProfileScreen({ navigation }) {
                       placeholder="8"
                       placeholderTextColor={theme.textTertiary}
                       value={heightInches}
-                      onChangeText={setHeightInches}
+                      onChangeText={(v) => guestCheck(() => setHeightInches(v))}
                       keyboardType="number-pad"
                     />
                     <Text style={[styles.heightLabel, { color: theme.text }]}>in</Text>
@@ -462,9 +486,14 @@ export default function EditProfileScreen({ navigation }) {
                 <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>{t('editProfile.cancel')}</Text>
               </TouchableOpacity>
             </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </Pressable>
+          </KeyboardAwareScrollView>
+
+      </View>
+      <GuestUpsellSheet
+        visible={showGuestSheet}
+        onClose={() => setShowGuestSheet(false)}
+        message={t('guestSheet.defaultMessage')}
+      />
     </SafeAreaView>
   );
 }

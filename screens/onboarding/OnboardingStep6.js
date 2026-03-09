@@ -4,6 +4,7 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, KeyboardAvoidingV
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useOnboarding } from '../../utils/OnboardingContext';
 import { useLanguage } from '../../utils/LanguageContext';
+import { scale } from '../../utils/responsive';
 
 export default function OnboardingStep6({ navigation }) {
   const { updateOnboardingData } = useOnboarding();
@@ -122,7 +123,7 @@ export default function OnboardingStep6({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#EAE0C8',
   },
   scrollContent: {
     flexGrow: 1,
@@ -133,7 +134,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   progressContainer: {
-    marginBottom: 30,
+    marginBottom: scale(25),
   },
   progressBar: {
     height: 4,
@@ -146,38 +147,38 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
   },
   progressText: {
-    fontSize: 12,
+    fontSize: scale(12),
     color: '#999',
     marginTop: 8,
     textAlign: 'center',
   },
   iconContainer: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: scale(16),
   },
   icon: {
-    fontSize: 64,
+    fontSize: scale(54),
   },
   title: {
-    fontSize: 28,
+    fontSize: scale(26),
     fontWeight: 'bold',
     color: '#333',
     textAlign: 'center',
-    marginBottom: 30,
+    marginBottom: scale(25),
   },
   disclaimerBox: {
     backgroundColor: '#fff8e1',
     borderLeftWidth: 4,
     borderLeftColor: '#ffa726',
-    padding: 20,
+    padding: scale(18),
     borderRadius: 8,
-    marginBottom: 30,
+    marginBottom: scale(25),
   },
   disclaimerText: {
-    fontSize: 15,
-    lineHeight: 24,
+    fontSize: scale(14),
+    lineHeight: scale(22),
     color: '#333',
-    marginBottom: 15,
+    marginBottom: scale(12),
   },
   bold: {
     fontWeight: '700',
@@ -192,15 +193,16 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#c62828',
     textAlign: 'center',
+    fontSize: scale(14),
   },
   checkboxContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: scale(25),
   },
   checkbox: {
-    width: 28,
-    height: 28,
+    width: scale(26),
+    height: scale(26),
     borderWidth: 2,
     borderColor: '#4CAF50',
     borderRadius: 6,
@@ -213,12 +215,12 @@ const styles = StyleSheet.create({
   },
   checkmark: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: scale(16),
     fontWeight: 'bold',
   },
   checkboxLabel: {
     flex: 1,
-    fontSize: 16,
+    fontSize: scale(15),
     color: '#333',
     fontWeight: '600',
   },
@@ -229,22 +231,22 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   backButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: scale(46),
+    height: scale(46),
+    borderRadius: scale(23),
     borderWidth: 2,
     borderColor: '#ddd',
     justifyContent: 'center',
     alignItems: 'center',
   },
   backArrow: {
-    fontSize: 24,
+    fontSize: scale(22),
     color: '#666',
   },
   continueButton: {
     flex: 1,
     backgroundColor: '#4CAF50',
-    paddingVertical: 15,
+    paddingVertical: scale(14),
     borderRadius: 10,
     alignItems: 'center',
   },
@@ -253,7 +255,7 @@ const styles = StyleSheet.create({
   },
   continueButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: scale(16),
     fontWeight: '600',
   },
 });

@@ -22,6 +22,7 @@ export default {
     tagline2: 'trabaja en ti.',
     login: 'INICIAR SESIÓN',
     signup: 'REGISTRARSE',
+    continue: 'CONTINUAR',
     continueWithGoogle: '🔵 Continuar con Google',
   },
   // Login Screen
@@ -42,6 +43,8 @@ export default {
     invalidCredentials: 'Correo o contraseña inválidos',
     verifyEmail: 'Por favor verifica tu correo antes de iniciar sesión',
     loginFailed: 'Error al iniciar sesión. Por favor intenta de nuevo.',
+    continueWithGoogle: 'Continuar con Google',
+    continueWithFacebook: 'Continuar con Facebook',
   },
 
   // SignUp Screen
@@ -67,6 +70,7 @@ export default {
     passwordsMatch: 'Las contraseñas no coinciden',
     emailInUse: 'Este correo ya está registrado',
     signupFailed: 'Error al registrarse. Por favor intenta de nuevo.',
+    rateLimitError: 'Demasiados intentos. Por favor espera unos minutos e intenta de nuevo.',
     // Signup steps
     success: '¡Éxito!',
     accountCreated: '¡Cuenta creada! Por favor revisa tu correo para verificar tu cuenta.',
@@ -140,6 +144,10 @@ export default {
     extremelyActive: 'Extremadamente Activo',
     extremelyActiveDesc: 'Trabajo físico + ejercicio diario',
     selectActivityLevel: 'Por favor selecciona tu nivel de actividad',
+    statLabel: 'más peso perdido',
+    quote: '"Las personas que registran su alimentación pierden el doble de peso que las que no lo hacen."',
+    source: 'Estudio Kaiser Permanente 2008 — American Journal of Preventive Medicine. 1,700 participantes. Quienes llevaron un diario alimenticio perdieron el doble de peso.',
+    message: 'Ya estás haciendo lo más importante.',
     
     // Step 5 - Dietary Restrictions
     step5Title: '¿Alguna necesidad dietética?',
@@ -213,6 +221,7 @@ export default {
   },
 
   tutorial: {
+    preparing: 'Preparando tutorial...',
     tapToScan: '¡Toca para escanear!',
     tapToExit: 'Toca para salir',
     tapToProfile: 'Toca para abrir Perfil',
@@ -356,6 +365,7 @@ export default {
     done: 'Listo',
     exercise: 'Ejercicio',
     water: 'Agua',
+    noWaterYet: 'Sin agua aún',
     comingSoon: 'Próximamente',
     fromExercise: 'del ejercicio',
 
@@ -418,7 +428,18 @@ export default {
     },
     mealsList: {
       serving: 'Porción:',
-    }
+      protein: 'Proteína',
+      carbs: 'Carbohidratos',
+      fat: 'Grasa',
+      sodium: 'Sodio',
+      sugar: 'Azúcar',
+      fiber: 'Fibra'
+        },
+    guestBanner: {
+      message: 'Estás navegando como invitado. Puedes escanear códigos de barras y ver información nutricional, pero eso es todo. ¡Regístrate para la experiencia completa!',
+      signUp: 'Registrarse',
+      dismiss: '\u2715',
+    },
   },
 
   // Exercise Feature
@@ -601,7 +622,7 @@ export default {
     noInternet: 'Sin conexión a internet. Por favor verifica tu red.',
     serverError: 'Error del servidor',
     scanFood: 'Tomar Foto',
-    photoInstruction: 'Centra el alimento en el cuadro',
+    photoInstruction: 'Coloca el producto dentro del cuadro',
     photoTip1: 'Buena iluminación',
     photoTip2: 'Fondo simple',
     photoTip3: '⚠️ SOLO UN ARTÍCULO - Varios fallarán',
@@ -622,6 +643,45 @@ export default {
     takeAnotherPhoto: 'Tomar Otra Foto',
     scanAgain: 'Escanear de Nuevo',
     scanBarcode: 'Escanea el código de barra',
+    submitProduct: 'Enviar Producto',
+    monthlyLimitReached: 'Límite Mensual Alcanzado',
+    monthlyLimitMessage: "Has usado todas las {limit} fotos de este mes. Tu límite se restablece el {date}.\n\nConsejo: ¡Usa el escáner de código de barras para productos empacados (ilimitado!)",
+    dailyLimitReached: 'Límite Diario Alcanzado',
+    dailyLimitMessage: "Has usado todas las {limit} solicitudes de fotos de hoy. ¡Inténtalo mañana!",
+    lastRequest: 'Última Solicitud',
+    lastRequestMessage: 'Te queda 1 solicitud de foto hoy.',
+    lowOnScans: 'Pocas Fotos Restantes',
+    lowOnScansMessage: 'Te quedan {remaining} solicitudes de fotos este mes.',
+    waitBetweenPhotos: 'Por favor espera un momento entre fotos.',
+  },
+
+  // Submit Product Screen
+  submitProduct: {
+    title: 'Enviar Producto',
+    subtitle: '¡Ayúdanos a crecer nuestra base de datos! Llena lo que puedas.',
+    barcode: 'Código de barras',
+    productName: 'Nombre del Producto',
+    productNamePlaceholder: 'ej. Leche de Avena Orgánica',
+    servingSize: 'Tamaño de Porción',
+    servingSizePlaceholder: 'ej. 240ml, 30g, 1 taza',
+    nutritionInfo: 'Información Nutricional',
+    calories: 'Calorías',
+    proteinG: 'Proteína (g)',
+    carbsG: 'Carbohidratos (g)',
+    fatG: 'Grasa (g)',
+    sugarG: 'Azúcar (g)',
+    sodiumMg: 'Sodio (mg)',
+    photos: 'Fotos',
+    photosHint: 'Toma fotos de la etiqueta para ayudar a nuestros revisores',
+    nutritionLabel: 'Info. Nutricional',
+    ingredients: 'Ingredientes',
+    productPhoto: 'Frente del Producto',
+    submit: 'Enviar para Revisión',
+    missingInfo: 'Información Faltante',
+    enterName: 'Por favor ingresa el nombre del producto',
+    thankYou: '¡Gracias!',
+    submitted: '¡Producto enviado para revisión. Lo agregaremos a la base de datos pronto!',
+    failedToSubmit: 'Error al enviar el producto. Por favor intenta de nuevo.',
   },
 
   //Results Screen
@@ -630,17 +690,14 @@ export default {
     gotIt: '¡Entendido!',
     uploading: 'Cargando',
     pleaseWait: 'Por favor, espere',
-    
     // Serving size
     servingSize: 'Tamaño de Porción (gramos):',
     maximumAllowed: 'Máximo permitido: 2000 g',
     adjustPortion: 'Ajusta a tu tamaño de porción',
-    
     // Calories
     caloriesInfo: 'Calorías ⓘ',
     kcal: 'kcal',
     ofDailyGoal: '% de meta diaria',
-    
     // Details
     showDetails: 'Mostrar Detalles',
     hideDetails: 'Ocultar Detalles',
@@ -648,17 +705,17 @@ export default {
     fiber: 'Fibra',
     sodium: 'Sodio',
     valuesShownPer: 'Valores mostrados por {grams}g porción',
-    
     // Buttons
     logMeal: 'Registrar Comida',
     scanAgain: 'Escanear de Nuevo',
     saving: 'Guardando...',
     submitProduct: 'Enviar Este Producto',
     enterManually: 'Ingresar Manualmente',
-
     // Alerts - Alertas
+    enterFoodName: 'Ingresa un nombre de alimento',
+    notFound: 'No encontrado',
+    notAuthenticated: 'Usuario no autenticado. Por favor inicia sesión.',
     mealLogged: '¡Comida registrada! ✅',
-    
     // Photo view
     photoView: 'Vista de Foto',
     detailedView: 'Vista Detallada',
@@ -666,11 +723,17 @@ export default {
     swipeRightSave: 'Desliza der. para guardar',
     delete: 'ELIMINAR',
     save: 'GUARDAR',
-    
     // Macros
     protein: 'Prot.',
     carbs: 'Carbos',
     fat: 'Grasa',
+    allergenWarning: {
+      title: "ALERTA DIETÉTICA",
+      subtitle: "Este producto contiene ingredientes que has marcado:",
+      disclaimer: "ℹ️ Esta advertencia se basa en tus restricciones dietéticas. Siempre verifica las etiquetas del producto.",
+      goBack: "← Volver",
+      logAnyway: "Registrar de todas formas",
+    },
   },
 
   // Stats Screen
@@ -718,12 +781,12 @@ export default {
       back: '← Atras',
       weeklyReport: 'Reporte Semanal',
       loadingReport: 'Cargando reporte...',
-      subtitle: 'Últimos 7 días',
+      subtitle: 'Resumen de los últimos 7 días',
       card1Title: 'Calorías diarias',
       card1Subtitle: 'Lo consumido vs el Objetivo',
       consumed: 'Consumido',
       goal: 'Objetivo',
-      card2Title: '',
+      card2Title: 'Desglose de macronutrientes',
       card2Subtitle: 'Proteínas, carbohidratos y grasa',
       protein: '💪 Proteína',
       carbs: '🌾 Carbos',
@@ -735,7 +798,96 @@ export default {
       day: 'Día',
       burned: 'Quemado',
       sessions: 'Sesiones',
-      exportReport: 'Exportar Reporte'
+      exportReport: 'Exportar Reporte',
+      kcal: 'kcal',
+    },
+    exportReport: {
+      title: 'Exportar reporte',
+      subtitle: 'Descarga tus datos nutricionales',
+      startExport: 'Iniciar exportación',
+      whatsIncluded: '¿Qué incluye?',
+      dailyCalories: 'Totales diarios de calorías',
+      macroBreakdown: 'Desglose de macronutrientes',
+      goalComparison: 'Comparación objetivo vs real',
+      summaryStats: 'Estadísticas resumidas',
+      selectPeriod: 'Seleccionar período',
+      last7Days: 'Últimos 7 días',
+      currentMonth: 'Mes actual',
+      selectFormat: 'Seleccionar formato',
+      pdfReport: 'Reporte PDF',
+      excelSpreadsheet: 'Hoja de cálculo Excel',
+      weekly: 'Semanal',
+      monthly: 'Mensual',
+      nutritionReportTitle: 'Reporte nutricional {{period}}',
+      savePdf: 'Guardar reporte PDF',
+      saveExcel: 'Guardar reporte Excel',
+      fetchFailed: 'Error al obtener datos',
+      name: 'Nombre',
+      generated: 'Generado',
+      dailyTotals: 'Totales diarios',
+      date: 'Fecha',
+      calories: 'Calorías',
+      summary: 'Resumen',
+      totalCalories: 'Calorías totales',
+      avgDailyCalories: 'Promedio diario de calorías',
+      totalProtein: 'Proteína total',
+      totalCarbs: 'Carbohidratos totales',
+      totalFat: 'Grasa total',
+      goal: 'Meta',
+      protein: 'Proteína (g)',
+      carbs: 'Carbohidratos (g)',
+      fat: 'Grasa (g)',
+      generated: 'Generado',
+      summary: 'Resumen',
+      dailyTotals: 'Totales diarios',
+      totalCalories: 'Calorías totales',
+      avgDailyCalories: 'Promedio diario de calorías',
+      totalProtein: 'Proteína total',
+      totalCarbs: 'Carbohidratos totales',
+      totalFat: 'Grasa total',
+      name: 'Nombre',
+      date: 'Fecha',
+      calories: 'Calorías',
+      share: 'Compartir',
+      download: 'Descargar',
+    },
+    quickEntry: {
+      title: 'Entrada rápida',
+      quickAdd: '⚡ Añadir rápido',
+      popularIn: 'Popular en {{country}}',
+      commonFoods: 'Comidas comunes',
+      add: '+ Añadir',
+
+      mealDetails: 'Detalles de la comida',
+      mealName: 'Nombre de la comida *',
+      mealNamePlaceholder: 'ej.: Ensalada de pollo',
+      servingSize: 'Tamaño de porción (gramos)',
+      calories: 'Calorías (kcal) *',
+
+      macros: 'Macros (Opcional)',
+      protein: 'Proteína (g)',
+      carbs: 'Carbohidratos (g)',
+      fat: 'Grasa (g)',
+
+      saving: 'Guardando...',
+      saveMeal: '✓ Guardar comida',
+
+      tip: '💡 Consejo: Usa Añadir rápido para comidas comunes o introduce comidas personalizadas arriba',
+
+      loggedTitle: '¡Registrado! ✅',
+      loggedMessage: '{{meal}} añadido',
+
+      missingInfo: 'Información faltante',
+      enterMealName: 'Por favor introduce un nombre de comida',
+      enterCalories: 'Por favor introduce calorías',
+
+      pleaseLogin: 'Por favor inicia sesión',
+
+      successTitle: '¡Éxito! ✅',
+      successMessage: 'Comida registrada correctamente',
+
+      failedLog: 'Error al registrar la comida',
+      failedSave: 'Error al guardar la comida'
     },
   },
   
@@ -783,6 +935,9 @@ export default {
     accountDeleted: 'Cuenta Eliminada',
     accountDeletedMessage: 'Tu cuenta ha sido eliminada permanentemente.',
     deleteError: 'Error al eliminar cuenta',
+    profilePhoto: 'Foto de Perfil',
+    takePhoto: 'Tomar Foto',
+    chooseFromLibrary: 'Elegir de la Galería',
   },
 
   // Edit Profile Screen
@@ -809,6 +964,10 @@ export default {
     failedToSave: 'Error al guardar el perfil. Inténtalo de nuevo.',
     loadingProfile: 'Cargando perfil...',
     ok: 'OK',
+    metric: 'Métrico',
+    imperial: 'Imperial',
+    weight: 'Peso',
+    height: 'Altura',
   },
 
   // Objetivos y Preferencias
@@ -862,7 +1021,13 @@ export default {
     dailyWaterGoal: 'Meta Diaria de Agua',
     waterGoalHelper: 'Recomendado: 8 vasos (2 litros) por día',
     cups: 'Vasos',
-  liters: 'Litros',
+    liters: 'Litros',
+    light: 'Actividad ligera',
+    lightDesc: 'Ejercicio ligero o actividad 1–3 días por semana',
+    moderate: 'Actividad moderada',
+    moderateDesc: 'Ejercicio moderado o actividad 3–5 días por semana',
+    very_active: 'Muy activo',
+    very_activeDesc: 'Ejercicio intenso o actividad 6–7 días por semana',
   },
 
   dietaryRestrictions: {
@@ -878,7 +1043,7 @@ export default {
     soy: 'Soya',
     wheat: 'Trigo',
     fish: 'Pescado',
-    treeNuts: 'Frutos Secos',
+    treenuts: 'Frutos Secos',
     dietTypeTitle: '🍽️ Tipo de Dieta',
     dietTypeHelper: 'Elige tu estilo de vida dietético principal',
     none: 'Sin Restricción',
@@ -1002,5 +1167,32 @@ export default {
     footerAcknowledge: 'Al usar Veetha, reconoces que has leído y comprendido esta Política de Privacidad y aceptas sus términos.',
     footerThankYou: 'Gracias por confiar en Veetha con tus datos de salud y nutrición. Tu privacidad es importante para nosotros.',
     version: 'Versión 1.0 • Última Actualización: 21 de Noviembre, 2024',
+  },
+
+  // Guest upsell prompts
+  guest: {
+    createAccount: 'Crear una Cuenta',
+    signUpToLog: 'Regístrate para registrar comidas, agua, ejercicio y más.',
+    signUpProfilePhoto: 'Regístrate para establecer una foto de perfil.',
+    signUp: 'Registrarse',
+    weeklyProgress: 'Tu progreso semanal aparecerá aquí una vez que crees una cuenta.',
+    monthlyProgress: 'Tu progreso mensual aparecerá aquí una vez que crees una cuenta.',
+    exerciseHistory: 'Tu historial de ejercicios aparecerá aquí una vez que crees una cuenta.',
+    signUpLogIn: 'Registrarse / Iniciar Sesión',
+    profileBanner: 'Crea una cuenta para desbloquear todas las funciones, guardar tus datos y sincronizar entre dispositivos.',
+  },
+  guestSheet: {
+    brand: 'Veetha',
+    defaultMessage: 'Crea una cuenta para desbloquear todas las funciones y guardar tu progreso.',
+    createAccount: 'Crear Cuenta',
+    logIn: 'Iniciar Sesion',
+  },
+  mealReminders: {
+    breakfastTitle: '¡Hora del Desayuno!',
+    breakfastBody: 'Empieza bien el día — registra tu desayuno ahora.',
+    lunchTitle: '¡Hora del Almuerzo!',
+    lunchBody: 'No olvides registrar tu almuerzo.',
+    dinnerTitle: '¡Hora de la Cena!',
+    dinnerBody: 'Es hora de relajarse — registra tu cena.',
   },
 }

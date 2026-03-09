@@ -32,12 +32,57 @@ export default function ExportReportScreen({ navigation }) {
 
   // Handle format selection
   const handleFormatSelect = async (format) => {
+
     setShowFormatModal(false);
-    
-    if (format === 'pdf') {
-      await exportPDF();
-    } else {
-      await exportExcel();
+
+    try {
+
+      setExporting(true);
+
+      const data = await fetchData();
+
+      if (!data || data.length === 0) {
+        Alert.alert(t('common.error'), t('stats.exportReport.fetchFailed'));
+        return;
+      }
+
+      // ✅ PDF → go to preview screen
+      if (format === 'pdf') {
+
+        const html = buildReportHTML(data);
+
+        const periodLabel =
+          selectedPeriod === 'weekly'
+            ? t('stats.exportReport.weekly')
+            : t('stats.exportReport.monthly');
+
+        navigation.navigate('ReportViewer', {
+          reportHTML: html,
+          reportType: selectedPeriod,
+          exportFormat: format,
+          rawData: data,
+          periodLabel: periodLabel   // 👈 ADD THIS
+        });
+
+        return;
+      }
+
+      // ✅ EXCEL → export using full layout (same as PDF)
+      if (format === 'excel') {
+
+        await exportExcel();
+
+        return;
+      }
+
+    } catch (error) {
+
+      console.error(error);
+
+    } finally {
+
+      setExporting(false);
+
     }
   };
 
@@ -71,7 +116,15 @@ export default function ExportReportScreen({ navigation }) {
       // Fetch meals
       const { data: meals, error } = await supabase
         .from('meals')
-        .select('logged_at, calories, protein, carbs, fat')
+        .select(`
+          logged_at,
+          product:food_database!meals_product_fk (
+            calories,
+            protein,
+            carbs,
+            fat
+          )
+        `)
         .eq('user_id', user.id)
         .gte('logged_at', startDate.toISOString())
         .lte('logged_at', endDate.toISOString())
@@ -86,10 +139,10 @@ export default function ExportReportScreen({ navigation }) {
         if (!mealsByDate[date]) {
           mealsByDate[date] = { calories: 0, protein: 0, carbs: 0, fat: 0 };
         }
-        mealsByDate[date].calories += meal.calories || 0;
-        mealsByDate[date].protein += meal.protein || 0;
-        mealsByDate[date].carbs += meal.carbs || 0;
-        mealsByDate[date].fat += meal.fat || 0;
+        mealsByDate[date].calories += meal.product?.calories || 0;
+        mealsByDate[date].protein += meal.product?.protein || 0;
+        mealsByDate[date].carbs += meal.product?.carbs || 0;
+        mealsByDate[date].fat += meal.product?.fat || 0;
       });
 
       // Build daily data
@@ -118,6 +171,106 @@ export default function ExportReportScreen({ navigation }) {
     }
   };
 
+  const buildReportHTML = (data) => {
+
+    const periodLabel =
+      selectedPeriod === 'weekly'
+        ? t('stats.exportReport.weekly')
+        : t('stats.exportReport.monthly');
+
+    const userName = profile?.full_name || 'User';
+
+    const totalCalories = data.reduce((sum, d) => sum + d.calories, 0);
+    const avgCalories = Math.round(totalCalories / data.length);
+    const totalProtein = data.reduce((sum, d) => sum + d.protein, 0);
+    const totalCarbs = data.reduce((sum, d) => sum + d.carbs, 0);
+    const totalFat = data.reduce((sum, d) => sum + d.fat, 0);
+
+    return `
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          h1 { color: #4CAF50; text-align: center; }
+          h2 { color: #333; margin-top: 30px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+          th { background-color: #4CAF50; color: white; }
+          tr:nth-child(even) { background-color: #f2f2f2; }
+          .summary { background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; }
+          .summary-item { display: flex; justify-content: space-between; margin: 10px 0; }
+        </style>
+      </head>
+
+      <body>
+
+        <h1>${t('stats.exportReport.nutritionReportTitle', { period: periodLabel })}</h1>
+
+        <p><strong>${t('stats.exportReport.name')}:</strong> ${userName}</p>
+
+        <p><strong>${t('stats.exportReport.generated')}:</strong>
+          ${new Date().toLocaleDateString()}
+        </p>
+
+        <h2>${t('stats.exportReport.dailyTotals')}</h2>
+
+        <table>
+          <tr>
+            <th>${t('stats.exportReport.date')}</th>
+            <th>${t('stats.exportReport.calories')}</th>
+            <th>${t('stats.exportReport.goal')}</th>
+            <th>${t('stats.exportReport.protein')}</th>
+            <th>${t('stats.exportReport.carbs')}</th>
+            <th>${t('stats.exportReport.fat')}</th>
+          </tr>
+
+          ${data.map(day => `
+            <tr>
+              <td>${day.date}</td>
+              <td>${day.calories}</td>
+              <td>${day.goal}</td>
+              <td>${day.protein}</td>
+              <td>${day.carbs}</td>
+              <td>${day.fat}</td>
+            </tr>
+          `).join('')}
+        </table>
+
+        <div class="summary">
+          <h2>${t('stats.exportReport.summary')}</h2>
+
+          <div class="summary-item">
+            <span>${t('stats.exportReport.totalCalories')}:</span>
+            <strong>${totalCalories.toLocaleString()}</strong>
+          </div>
+
+          <div class="summary-item">
+            <span>${t('stats.exportReport.avgDailyCalories')}:</span>
+            <strong>${avgCalories}</strong>
+          </div>
+
+          <div class="summary-item">
+            <span>${t('stats.exportReport.totalProtein')}:</span>
+            <strong>${totalProtein}g</strong>
+          </div>
+
+          <div class="summary-item">
+            <span>${t('stats.exportReport.totalCarbs')}:</span>
+            <strong>${totalCarbs}g</strong>
+          </div>
+
+          <div class="summary-item">
+            <span>${t('stats.exportReport.totalFat')}:</span>
+            <strong>${totalFat}g</strong>
+          </div>
+
+        </div>
+
+      </body>
+    </html>
+    `;
+  };
+
   // Export as PDF
   const exportPDF = async () => {
     try {
@@ -128,82 +281,12 @@ export default function ExportReportScreen({ navigation }) {
       console.log('🔍 Data fetched:', data?.length, 'days');
       
       if (!data) {
-        Alert.alert('Error', 'Failed to fetch data');
+        Alert.alert(t('common.error'), t('stats.exportReport.fetchFailed'));
         return;
       }
 
-      const periodLabel = selectedPeriod === 'weekly' ? 'Weekly' : 'Monthly';
-      const userName = profile?.full_name || 'User';
+      const html = buildReportHTML(data);
 
-      // Build HTML
-      const html = `
-        <html>
-          <head>
-            <style>
-              body { font-family: Arial, sans-serif; padding: 20px; }
-              h1 { color: #4CAF50; text-align: center; }
-              h2 { color: #333; margin-top: 30px; }
-              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-              th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-              th { background-color: #4CAF50; color: white; }
-              tr:nth-child(even) { background-color: #f2f2f2; }
-              .summary { background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; }
-              .summary-item { display: flex; justify-content: space-between; margin: 10px 0; }
-            </style>
-          </head>
-          <body>
-            <h1>${periodLabel} Nutrition Report</h1>
-            <p><strong>Name:</strong> ${userName}</p>
-            <p><strong>Generated:</strong> ${new Date().toLocaleDateString()}</p>
-            
-            <h2>Daily Totals</h2>
-            <table>
-              <tr>
-                <th>Date</th>
-                <th>Calories</th>
-                <th>Goal</th>
-                <th>Protein (g)</th>
-                <th>Carbs (g)</th>
-                <th>Fat (g)</th>
-              </tr>
-              ${data.map(day => `
-                <tr>
-                  <td>${day.date}</td>
-                  <td>${day.calories}</td>
-                  <td>${day.goal}</td>
-                  <td>${day.protein}</td>
-                  <td>${day.carbs}</td>
-                  <td>${day.fat}</td>
-                </tr>
-              `).join('')}
-            </table>
-
-            <div class="summary">
-              <h2>Summary</h2>
-              <div class="summary-item">
-                <span>Total Calories:</span>
-                <strong>${data.reduce((sum, d) => sum + d.calories, 0).toLocaleString()}</strong>
-              </div>
-              <div class="summary-item">
-                <span>Avg Daily Calories:</span>
-                <strong>${Math.round(data.reduce((sum, d) => sum + d.calories, 0) / data.length)}</strong>
-              </div>
-              <div class="summary-item">
-                <span>Total Protein:</span>
-                <strong>${data.reduce((sum, d) => sum + d.protein, 0)}g</strong>
-              </div>
-              <div class="summary-item">
-                <span>Total Carbs:</span>
-                <strong>${data.reduce((sum, d) => sum + d.carbs, 0)}g</strong>
-              </div>
-              <div class="summary-item">
-                <span>Total Fat:</span>
-                <strong>${data.reduce((sum, d) => sum + d.fat, 0)}g</strong>
-              </div>
-            </div>
-          </body>
-        </html>
-      `;
 
       console.log('🔍 Creating PDF...');
       const { uri } = await Print.printToFileAsync({ html });
@@ -212,7 +295,7 @@ export default function ExportReportScreen({ navigation }) {
       // Just share it
       await Sharing.shareAsync(uri, {
         mimeType: 'application/pdf',
-        dialogTitle: 'Save your PDF report'
+        dialogTitle: t('stats.exportReport.savePdf')
       });
 
     } catch (error) {
@@ -225,70 +308,121 @@ export default function ExportReportScreen({ navigation }) {
 
   // Export as Excel
   const exportExcel = async () => {
+
     try {
+
       setExporting(true);
-      console.log('🔍 Starting Excel export...');
 
       const data = await fetchData();
-      console.log('🔍 Data fetched:', data?.length, 'days');
 
       if (!data) {
-        Alert.alert('Error', 'Failed to fetch data');
+        Alert.alert(t('common.error'), t('stats.exportReport.fetchFailed'));
         return;
       }
 
-      // Prepare data for Excel
-      const excelData = data.map(day => ({
-        'Date': day.date,
-        'Calories': day.calories,
-        'Goal': day.goal,
-        'Protein (g)': day.protein,
-        'Carbs (g)': day.carbs,
-        'Fat (g)': day.fat,
-      }));
+      // SAME calculations as PDF
+      const periodLabel =
+        selectedPeriod === 'weekly'
+          ? t('stats.exportReport.weekly')
+          : t('stats.exportReport.monthly');
 
-      // Create worksheet
+      const userName = profile?.full_name || 'User';
+
+      const totalCalories = data.reduce((sum,d)=>sum+d.calories,0);
+      const avgCalories = Math.round(totalCalories / data.length);
+      const totalProtein = data.reduce((sum,d)=>sum+d.protein,0);
+      const totalCarbs = data.reduce((sum,d)=>sum+d.carbs,0);
+      const totalFat = data.reduce((sum,d)=>sum+d.fat,0);
+
+      // FULL STRUCTURE (MATCHES PDF)
+      const excelData = [
+
+        { A: t('stats.exportReport.nutritionReportTitle',{period:periodLabel}) },
+
+        {},
+
+        { A: t('stats.exportReport.name'), B: userName },
+        { A: t('stats.exportReport.generated'), B: new Date().toLocaleDateString() },
+
+        {},
+
+        { A: t('stats.exportReport.dailyTotals') },
+
+        {},
+
+        {
+          A: t('stats.exportReport.date'),
+          B: t('stats.exportReport.calories'),
+          C: t('stats.exportReport.goal'),
+          D: t('stats.exportReport.protein'),
+          E: t('stats.exportReport.carbs'),
+          F: t('stats.exportReport.fat'),
+        },
+
+        ...data.map(day => ({
+          A: day.date,
+          B: day.calories,
+          C: day.goal,
+          D: day.protein,
+          E: day.carbs,
+          F: day.fat,
+        })),
+
+        {},
+
+        { A: t('stats.exportReport.summary') },
+
+        { A: t('stats.exportReport.totalCalories'), B: totalCalories },
+        { A: t('stats.exportReport.avgDailyCalories'), B: avgCalories },
+        { A: t('stats.exportReport.totalProtein'), B: `${totalProtein}g` },
+        { A: t('stats.exportReport.totalCarbs'), B: `${totalCarbs}g` },
+        { A: t('stats.exportReport.totalFat'), B: `${totalFat}g` },
+
+      ];
+
       const ws = XLSX.utils.json_to_sheet(excelData);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Nutrition Data');
+      XLSX.utils.book_append_sheet(wb, ws, 'Nutrition');
 
-      // Generate base64 string
-      const wbout = XLSX.write(wb, { type: 'base64', bookType: 'xlsx' });
-      
-      const periodLabel = selectedPeriod === 'weekly' ? 'Weekly' : 'Monthly';
-      const fileName = `Veetha_${periodLabel}_Report_${new Date().toLocaleDateString('en-CA')}.xlsx`;
-      const fileUri = FileSystem.cacheDirectory + fileName;
+      const wbout = XLSX.write(wb, { type:'base64', bookType:'xlsx' });
 
-      // Write file
+      const fileUri =
+        FileSystem.cacheDirectory +
+        `Veetha_${periodLabel}_Report_${new Date().toLocaleDateString('en-CA')}.xlsx`;
+
       await FileSystem.writeAsStringAsync(fileUri, wbout, {
-        encoding: 'base64'
+        encoding:'base64'
       });
 
-      console.log('✅ Excel file created at:', fileUri);
-      
-      // Just share it
       await Sharing.shareAsync(fileUri, {
-        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        dialogTitle: 'Save your Excel report'
+        mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
 
-    } catch (error) {
-      console.error('❌ Excel ERROR:', error);
-      Alert.alert('Error', `Failed to export Excel: ${error.message}`);
+    } catch(error) {
+
+      console.error(error);
+
     } finally {
+
       setExporting(false);
+
     }
+
   };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
       <View style={[styles.header, { backgroundColor: theme.cardBackground }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={[styles.backButtonText, { color: theme.primary }]}>← Back</Text>
+          <Text style={[styles.backButtonText, { color: theme.primary }]}>
+            {t('stats.wreport.back')}
+          </Text>
         </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.text }]}>Export Report</Text>
+        <Text style={[styles.title, { color: theme.text }]}>
+          {t('stats.exportReport.title')}
+        </Text>
         <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-          Download your nutrition data
+          {t('stats.exportReport.subtitle')}
         </Text>
       </View>
 
@@ -303,18 +437,22 @@ export default function ExportReportScreen({ navigation }) {
           ) : (
             <>
               <Text style={styles.bigButtonIcon}>📥</Text>
-              <Text style={styles.bigButtonText}>Start Export</Text>
+              <Text style={styles.bigButtonText}>
+                {t('stats.exportReport.startExport')}
+              </Text>
             </>
           )}
         </TouchableOpacity>
 
         <View style={[styles.infoCard, { backgroundColor: theme.cardBackground }]}>
-          <Text style={[styles.infoTitle, { color: theme.text }]}>What's Included?</Text>
+          <Text style={[styles.infoTitle, { color: theme.text }]}>
+            {t('stats.exportReport.whatsIncluded')}
+          </Text>
           <Text style={[styles.infoText, { color: theme.textSecondary }]}>
-            • Daily calorie totals{'\n'}
-            • Macronutrient breakdown{'\n'}
-            • Goal vs actual comparison{'\n'}
-            • Summary statistics
+            • {t('stats.exportReport.dailyCalories')}{'\n'}
+            • {t('stats.exportReport.macroBreakdown')}{'\n'}
+            • {t('stats.exportReport.goalComparison')}{'\n'}
+            • {t('stats.exportReport.summaryStats')}
           </Text>
         </View>
       </ScrollView>
@@ -333,27 +471,35 @@ export default function ExportReportScreen({ navigation }) {
         >
           <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
             <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
-              <Text style={[styles.modalTitle, { color: theme.text }]}>Select Period</Text>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>
+                {t('stats.exportReport.selectPeriod')}
+              </Text>
               
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: theme.primary }]}
                 onPress={() => handlePeriodSelect('weekly')}
               >
-                <Text style={styles.modalButtonText}>📅 Last 7 Days</Text>
+                <Text style={styles.modalButtonText}>
+                  📅 {t('stats.exportReport.last7Days')}
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: theme.primary }]}
                 onPress={() => handlePeriodSelect('monthly')}
               >
-                <Text style={styles.modalButtonText}>📆 Current Month</Text>
+                <Text style={styles.modalButtonText}>
+                  📆 {t('stats.exportReport.currentMonth')}
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.modalCancelButton, { borderColor: theme.border }]}
                 onPress={() => setShowPeriodModal(false)}
               >
-                <Text style={[styles.modalCancelText, { color: theme.text }]}>Cancel</Text>
+                <Text style={[styles.modalCancelText, { color: theme.text }]}>
+                  {t('common.cancel')}
+                </Text>
               </TouchableOpacity>
             </View>
           </TouchableOpacity>
@@ -374,27 +520,35 @@ export default function ExportReportScreen({ navigation }) {
         >
           <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
             <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
-              <Text style={[styles.modalTitle, { color: theme.text }]}>Select Format</Text>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>
+                {t('stats.exportReport.selectFormat')}
+              </Text>
               
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: '#E53935' }]}
                 onPress={() => handleFormatSelect('pdf')}
               >
-                <Text style={styles.modalButtonText}>📄 PDF Report</Text>
+                <Text style={styles.modalButtonText}>
+                  📄 {t('stats.exportReport.pdfReport')}
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: '#43A047' }]}
                 onPress={() => handleFormatSelect('excel')}
               >
-                <Text style={styles.modalButtonText}>📊 Excel Spreadsheet</Text>
+                <Text style={styles.modalButtonText}>
+                  📊 {t('stats.exportReport.excelSpreadsheet')}
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.modalCancelButton, { borderColor: theme.border }]}
                 onPress={() => setShowFormatModal(false)}
               >
-                <Text style={[styles.modalCancelText, { color: theme.text }]}>Cancel</Text>
+                <Text style={[styles.modalCancelText, { color: theme.text }]}>
+                  {t('common.cancel')}
+                </Text>
               </TouchableOpacity>
             </View>
           </TouchableOpacity>

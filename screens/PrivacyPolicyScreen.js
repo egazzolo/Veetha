@@ -549,7 +549,7 @@ As part of our Services, we offer products, features, or tools powered by artifi
 
 Use of AI Technologies
 
-We provide the AI Products through third-party service providers ("AI Service Providers"), including Clarifai. As outlined in this Privacy Notice, your input, output, and personal information will be shared with and processed by these AI Service Providers to enable your use of our AI Products for purposes outlined in "WHAT LEGAL BASES DO WE RELY ON TO PROCESS YOUR PERSONAL INFORMATION?" You must not use the AI Products in any way that violates the terms or policies of any AI Service Provider.
+We provide the AI Products through third-party service providers ("AI Service Providers"), including Google Cloud Vision. As outlined in this Privacy Notice, your input, output, and personal information will be shared with and processed by these AI Service Providers to enable your use of our AI Products for purposes outlined in "WHAT LEGAL BASES DO WE RELY ON TO PROCESS YOUR PERSONAL INFORMATION?" You must not use the AI Products in any way that violates the terms or policies of any AI Service Provider.
 
 Our AI Products
 
@@ -567,7 +567,7 @@ We believe in giving you the power to decide how your data is used. To opt out, 
 -	Log in to your account settings and update your user account
 -	Log in to your account settings and update your user account
 -	Contact us using the contact information provided
--	Veetha offers AI-powered photo food recognition in both free and premium tiers: FREE USERS: Limited to 5 photo scans per day. Users can opt out by using the barcode scanning feature instead of taking photos. PREMIUM USERS ($3.99/month or $39.99/year): Increased limit of 50 photo scans per day. Users can opt out by canceling their premium subscription through their app store settings (Google Play Store or Apple App Store), or by using barcode scanning instead. Photos uploaded by users are analyzed by Clarifai's food recognition API and may be used in aggregate (anonymized) form to train and improve our custom food recognition database. Users can delete their photos at any time through the app.
+-	Veetha offers AI-powered photo food recognition in both free and premium tiers: FREE USERS: Limited to 5 photo scans per day. Users can opt out by using the barcode scanning feature instead of taking photos. PREMIUM USERS ($3.99/month or $39.99/year): Increased limit of 50 photo scans per day. Users can opt out by canceling their premium subscription through their app store settings (Google Play Store or Apple App Store), or by using barcode scanning instead. Photos uploaded by users are analyzed by Google Cloud Vision's image recognition API and may be used in aggregate (anonymized) form to train and improve our custom food recognition database. Users can delete their photos at any time through the app.
 
 7. HOW DO WE HANDLE YOUR SOCIAL LOGINS?
 In Short: If you choose to register or log in to our Services using a social media account, we may have access to certain information about you.
