@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import GuestUpsellSheet from '../components/GuestUpsellSheet';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, ActivityIndicator, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../utils/ThemeContext';
 import { supabase } from '../utils/supabase';
@@ -15,10 +16,18 @@ export default function EditProfileScreen({ navigation }) {
   const { theme } = useTheme();
   const { language, t, setLanguage } = useLanguage();
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  const [showGuestSheet, setShowGuestSheet] = useState(false);
   const { profile, refreshProfile } = useUser();
   const { isGuest: isGuestMode } = useUserMode();
 
-  const guestCheck = (action) => blockIfGuest(isGuestMode, navigation, action, t);
+  const guestCheck = (action) => {
+    if (isGuestMode) { 
+      Keyboard.dismiss();
+      setShowGuestSheet(true); 
+      return; 
+    }
+    action();
+  };
 
   const [displayName, setDisplayName] = useState('');
   const [fullName, setFullName] = useState('');
@@ -480,6 +489,11 @@ export default function EditProfileScreen({ navigation }) {
           </KeyboardAwareScrollView>
 
       </View>
+      <GuestUpsellSheet
+        visible={showGuestSheet}
+        onClose={() => setShowGuestSheet(false)}
+        message={t('guestSheet.defaultMessage')}
+      />
     </SafeAreaView>
   );
 }

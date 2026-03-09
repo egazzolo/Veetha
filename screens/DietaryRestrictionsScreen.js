@@ -8,6 +8,7 @@ import { useLanguage } from '../utils/LanguageContext';
 import { useUserMode } from '../utils/UserModeContext';
 import { blockIfGuest } from '../utils/guestBlock';
 import { showToast } from '../components/VeethaToast';
+import GuestUpsellSheet from '../components/GuestUpsellSheet';
 
 const ALLERGIES = [
   { id: 'peanuts', emoji: '🥜' },
@@ -49,6 +50,7 @@ export default function DietaryRestrictionsScreen({ navigation }) {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showGuestSheet, setShowGuestSheet] = useState(false);
   
   const [selectedAllergies, setSelectedAllergies] = useState([]);
   const [dietType, setDietType] = useState('none');
@@ -88,7 +90,7 @@ export default function DietaryRestrictionsScreen({ navigation }) {
   };
 
   const toggleAllergy = (allergyId) => {
-    if (blockIfGuest(isGuestMode, navigation, () => {}, t)) return;
+    if (isGuestMode) { setShowGuestSheet(true); return; }
     if (selectedAllergies.includes(allergyId)) {
       setSelectedAllergies(selectedAllergies.filter(id => id !== allergyId));
     } else {
@@ -97,7 +99,7 @@ export default function DietaryRestrictionsScreen({ navigation }) {
   };
 
   const togglePreference = (prefId) => {
-    if (blockIfGuest(isGuestMode, navigation, () => {}, t)) return;
+    if (isGuestMode) { setShowGuestSheet(true); return; }
     if (selectedPreferences.includes(prefId)) {
       setSelectedPreferences(selectedPreferences.filter(id => id !== prefId));
     } else {
@@ -106,7 +108,7 @@ export default function DietaryRestrictionsScreen({ navigation }) {
   };
 
   const handleSave = async () => {
-    if (blockIfGuest(isGuestMode, navigation, () => {}, t)) return;
+    if (isGuestMode) { setShowGuestSheet(true); return; }
     setSaving(true);
 
     try {
@@ -312,6 +314,11 @@ export default function DietaryRestrictionsScreen({ navigation }) {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+      <GuestUpsellSheet
+        visible={showGuestSheet}
+        onClose={() => setShowGuestSheet(false)}
+        message={t('guestSheet.defaultMessage')}
+      />
     </SafeAreaView>
   );
 }

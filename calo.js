@@ -205,6 +205,9 @@ function AppNavigator() {
         } else if (profile?.daily_calorie_goal) {
           // Profile complete → Home
           setInitialRoute('Home');
+        } else if (validUser.is_anonymous) {
+          // Anonymous/guest user with no goal → Home, never onboarding
+          setInitialRoute('Home');
         } else {
           // Authenticated but no profile yet → onboarding
           setInitialRoute('OnboardingStep1');

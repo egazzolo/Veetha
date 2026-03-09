@@ -727,6 +727,7 @@ export default {
     protein: 'Prot.',
     carbs: 'Carbs',
     fat: 'Fat',
+    wrongfood: 'Wrong Food?',
     allergenWarning: {
       title: "DIETARY ALERT",
       subtitle: "This product contains ingredients you've marked:",
@@ -964,6 +965,10 @@ export default {
     failedToSave: 'Failed to save profile. Please try again.',
     loadingProfile: 'Loading profile...',
     ok: 'OK',
+    metric: 'Metric',
+    imperial: 'Imperial',
+    weight: 'Weight',
+    height: 'Height',
   },
 
   // Goals & Preferences
@@ -1039,7 +1044,7 @@ export default {
     soy: 'Soy',
     wheat: 'Wheat',
     fish: 'Fish',
-    treeNuts: 'Tree Nuts',
+    treenuts: 'Tree Nuts',
     dietTypeTitle: '🍽️ Diet Type',
     dietTypeHelper: 'Choose your primary dietary lifestyle',
     none: 'No Restriction',

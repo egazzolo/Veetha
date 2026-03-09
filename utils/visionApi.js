@@ -32,11 +32,15 @@ export async function analyzePhoto(imageBase64) {
             features: [
               {
                 type: 'LABEL_DETECTION',
-                maxResults: 10
+                maxResults: 20
               },
               {
                 type: 'WEB_DETECTION',
                 maxResults: 5
+              },
+              {
+                type: 'OBJECT_LOCALIZATION',
+                maxResults: 10
               }
             ]
           }
@@ -85,6 +89,8 @@ export async function analyzePhoto(imageBase64) {
     );
 
     // Build detections — labels first so they take priority at equal confidence
+    const localizedObjects = result.localizedObjectAnnotations || [];
+
     const allDetections = [
       ...labels.map(l => ({
         name: l.description,
@@ -95,6 +101,11 @@ export async function analyzePhoto(imageBase64) {
         name: e.description,
         confidence: Math.round(e.score * 100),
         source: 'web'
+      })),
+      ...localizedObjects.map(o => ({
+        name: o.name,
+        confidence: Math.round(o.score * 100),
+        source: 'object'
       }))
     ];
 

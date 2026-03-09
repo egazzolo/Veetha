@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, ActivityIndicator, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../utils/ThemeContext';
 import { useLanguage } from '../utils/LanguageContext';
@@ -10,6 +10,7 @@ import { blockIfGuest } from '../utils/guestBlock';
 import { logScreen, logEvent } from '../utils/analytics';
 import { showToast } from '../components/VeethaToast';
 import VeethaModal from '../components/VeethaModal';
+import GuestUpsellSheet from '../components/GuestUpsellSheet';
 
 const ACTIVITY_LEVELS = [
   { value: 'sedentary', multiplier: 1.2 },
@@ -25,12 +26,20 @@ export default function GoalsPreferencesScreen({ navigation }) {
   const { profile, refreshProfile } = useUser();
   const { isGuest: isGuestMode } = useUserMode();
 
-  const guestCheck = (action) => blockIfGuest(isGuestMode, navigation, action, t);
+  const guestCheck = (action) => {
+    if (isGuestMode) { 
+      Keyboard.dismiss();
+      setShowGuestSheet(true); 
+      return; 
+    }
+    action();
+  };
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [recalcModalVisible, setRecalcModalVisible] = useState(false);
   const [recalcTdee, setRecalcTdee] = useState(null);
+  const [showGuestSheet, setShowGuestSheet] = useState(false);
   
   // Goals state
   const [dailyCalorieGoal, setDailyCalorieGoal] = useState('2000');
@@ -152,7 +161,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
   };
 
   const handleSave = async () => {
-    if (blockIfGuest(isGuestMode, navigation, () => {}, t)) return;
+    if (isGuestMode) { setShowGuestSheet(true); return; }
     // Validation
     const calories = parseFloat(dailyCalorieGoal);
     const protein = parseFloat(proteinGoal);
@@ -518,6 +527,11 @@ export default function GoalsPreferencesScreen({ navigation }) {
           setRecalcModalVisible(false);
         }}
         onCancel={() => setRecalcModalVisible(false)}
+      />
+      <GuestUpsellSheet
+        visible={showGuestSheet}
+        onClose={() => setShowGuestSheet(false)}
+        message={t('guestSheet.defaultMessage')}
       />
     </SafeAreaView>
   );

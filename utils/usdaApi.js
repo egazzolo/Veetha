@@ -33,8 +33,7 @@ export async function searchUSDAFood(query, pageSize = 5) {
     const params = new URLSearchParams({
       query: q,
       pageSize: pageSize.toString(),
-      dataType: 'Survey (FNDDS)', // Prioritize survey foods (most complete data)
-      api_key: USDA_API_KEY, // ✅ NOW REQUIRED
+      api_key: USDA_API_KEY,
     });
 
     const response = await fetch(`${USDA_API_BASE}/foods/search?${params}`, {
@@ -186,6 +185,11 @@ export async function getBestUSDAMatch(query) {
       // General fuzzy match
       if (nameLower.includes(queryLower)) score += 15;
 
+      // Penalize results with zero query word overlap
+      const queryWords = queryLower.split(' ').filter(w => w.length > 2);
+      const hasAnyMatch = queryWords.some(w => nameLower.includes(w));
+      if (!hasAnyMatch) score -= 40;
+
       console.log(`   - ${food.name} (score: ${score})`);
       
       return { ...food, score };
@@ -230,7 +234,7 @@ export async function searchFoodVariants(query) {
     query,
     query + ' raw',
     query + ' cooked',
-    query.replace('s', ''), // singular
+    query.endsWith('s') ? query.slice(0, -1) : query, // proper singular
   ];
 
   console.log('🔄 Trying variants:', variants);

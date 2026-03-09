@@ -964,6 +964,10 @@ export default {
     failedToSave: 'Error al guardar el perfil. Inténtalo de nuevo.',
     loadingProfile: 'Cargando perfil...',
     ok: 'OK',
+    metric: 'Métrico',
+    imperial: 'Imperial',
+    weight: 'Peso',
+    height: 'Altura',
   },
 
   // Objetivos y Preferencias
@@ -1039,7 +1043,7 @@ export default {
     soy: 'Soya',
     wheat: 'Trigo',
     fish: 'Pescado',
-    treeNuts: 'Frutos Secos',
+    treenuts: 'Frutos Secos',
     dietTypeTitle: '🍽️ Tipo de Dieta',
     dietTypeHelper: 'Elige tu estilo de vida dietético principal',
     none: 'Sin Restricción',

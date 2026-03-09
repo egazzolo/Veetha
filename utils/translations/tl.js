@@ -964,6 +964,10 @@ export default {
     failedToSave: 'Nabigo ang pag-save ng profile. Subukan ulit.',
     loadingProfile: 'Naglo-load ng profile...',
     ok: 'OK',
+    metric: 'Panukat na Metro',
+    imperial: 'Panukat na Imperial',
+    weight: 'Timbang',
+    height: 'Taas',
   },
 
   // Mga Layunin at Kagustuhan
@@ -1039,7 +1043,7 @@ export default {
     soy: 'Soy',
     wheat: 'Trigo',
     fish: 'Isda',
-    treeNuts: 'Tree Nuts',
+    treenuts: 'Tree Nuts',
     dietTypeTitle: '🍽️ Uri ng Diyeta',
     dietTypeHelper: 'Piliin ang iyong pangunahing pamumuhay sa pagkain',
     none: 'Walang Paghihigpit',

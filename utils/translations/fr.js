@@ -964,6 +964,10 @@ export default {
     failedToSave: 'Échec de l\'enregistrement. Veuillez réessayer.',
     loadingProfile: 'Chargement du profil...',
     ok: 'OK',
+    metric: 'Métrique',
+    imperial: 'Impérial',
+    weight: 'Poids',
+    height: 'Taille',
   },
 
   // Objectifs et Préférences
@@ -1039,7 +1043,7 @@ export default {
     soy: 'Soja',
     wheat: 'Blé',
     fish: 'Poisson',
-    treeNuts: 'Noix',
+    treenuts: 'Noix',
     dietTypeTitle: '🍽️ Type de Régime',
     dietTypeHelper: 'Choisissez votre mode de vie alimentaire principal',
     none: 'Aucune Restriction',
