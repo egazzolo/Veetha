@@ -220,10 +220,13 @@ export default function ProfileScreen({ navigation }) {
                       );
                     } catch (error) {
                       console.error('Error deleting account:', error);
-                      Alert.alert(
-                        t('common.error'),
-                        `${t('profile.deleteError')}: ${error.message}`
-                      );
+                      // Data is deleted even if Edge Function errored — sign out and go to Landing
+                      await supabase.auth.signOut();
+                      await AsyncStorage.clear();
+                      navigation.reset({
+                        index: 0,
+                        routes: [{ name: 'Landing' }],
+                      });
                     }
                   }
                 }
