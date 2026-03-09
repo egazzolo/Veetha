@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../utils/supabase';
 import { useTheme } from '../utils/ThemeContext';
 import { useLanguage } from '../utils/LanguageContext';
+import { showToast } from '../components/VeethaToast';
 
 export default function EditMealScreen({ route, navigation }) {
   const { meal } = route.params;
@@ -40,11 +41,8 @@ export default function EditMealScreen({ route, navigation }) {
 
       if (error) throw error;
 
-      Alert.alert(
-        t('editMeal.updated'),
-        t('editMeal.mealUpdated'),
-        [{ text: t('editMeal.ok'), onPress: () => navigation.goBack() }]
-      );
+      showToast('success', t('editMeal.updated'), t('editMeal.mealUpdated'));
+      navigation.goBack();
 
     } catch (error) {
       console.error('Error updating meal:', error);

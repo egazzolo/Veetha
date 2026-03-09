@@ -7,6 +7,7 @@ import { useUser } from '../utils/UserContext';
 import { useTheme } from '../utils/ThemeContext';
 import { useLanguage } from '../utils/LanguageContext';
 import { getSuggestionsForMealTime, LOCAL_FOODS, DEFAULT_FOODS } from '../utils/localFoods';
+import { showToast } from '../components/VeethaToast';
 
 export default function QuickEntryScreen({ navigation }) {
   const { refreshMeals } = useUser();
@@ -127,18 +128,8 @@ export default function QuickEntryScreen({ navigation }) {
       // refresh context meals
       await refreshMeals();
 
-      Alert.alert(
-        t('stats.quickEntry.loggedTitle'),
-        t('stats.quickEntry.loggedMessage', {
-          meal: food.name
-        }),
-        [
-          {
-            text: t('common.ok'),
-            onPress: () => navigation.navigate('Home')
-          }
-        ]
-      );
+      showToast('success', t('stats.quickEntry.loggedTitle'), t('stats.quickEntry.loggedMessage', { meal: food.name }));
+      navigation.navigate('Home');
 
     } catch (error) {
       console.error('Error quick logging:', error);
@@ -213,16 +204,8 @@ export default function QuickEntryScreen({ navigation }) {
 
       await refreshMeals();
 
-      Alert.alert(
-        t('stats.quickEntry.successTitle'),
-        t('stats.quickEntry.successMessage'),
-        [
-          {
-            text: t('common.ok'),
-            onPress: () => navigation.navigate('Home')
-          }
-        ]
-      );
+      showToast('success', t('stats.quickEntry.successTitle'), t('stats.quickEntry.successMessage'));
+      navigation.navigate('Home');
 
     } catch (error) {
       console.error('Error saving meal:', error);

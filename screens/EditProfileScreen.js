@@ -9,6 +9,7 @@ import { useUserMode } from '../utils/UserModeContext';
 import { blockIfGuest } from '../utils/guestBlock';
 import { logScreen, logEvent } from '../utils/analytics';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { showToast } from '../components/VeethaToast';
 
 export default function EditProfileScreen({ navigation }) {
   const { theme } = useTheme();
@@ -43,16 +44,8 @@ export default function EditProfileScreen({ navigation }) {
 
   useEffect(() => {
     if (showSuccessAfterSave) {
-      Alert.alert(
-        t('editProfile.success'),
-        t('editProfile.profileUpdated'),
-        [
-          {
-            text: t('editProfile.ok'),
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
+      showToast('success', t('editProfile.success'), t('editProfile.profileUpdated'));
+      navigation.goBack();
 
       setShowSuccessAfterSave(false);
     }

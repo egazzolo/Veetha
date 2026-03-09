@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, Pressable, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, Pressable } from 'react-native';
+import GuestUpsellSheet from './GuestUpsellSheet';
 
 export default function MealsList({
   theme,
@@ -18,6 +19,7 @@ export default function MealsList({
   isGuestMode,
 }) {
   const [selectedMeal, setSelectedMeal] = useState(null);
+  const [guestSheetVisible, setGuestSheetVisible] = useState(false);
 
   const handleMealPress = (meal) => {
     setSelectedMeal(meal);
@@ -71,10 +73,7 @@ export default function MealsList({
                     style={[styles.quickEntryButton, { backgroundColor: '#2196F3' }]}
                     onPress={() => {
                       if (isGuestMode) {
-                        Alert.alert(t('guest.createAccount'), t('guest.signUpToLog'), [
-                          { text: t('common.cancel'), style: 'cancel' },
-                          { text: t('guest.signUp'), onPress: () => navigation.navigate('SignUp') },
-                        ]);
+                        setGuestSheetVisible(true);
                         return;
                       }
                       navigation.navigate('QuickEntry');
@@ -224,6 +223,13 @@ export default function MealsList({
           );
         })
       )}
+
+      {/* Guest Upsell Sheet */}
+      <GuestUpsellSheet
+        visible={guestSheetVisible}
+        onClose={() => setGuestSheetVisible(false)}
+        message={t('guest.signUpToLog')}
+      />
 
       {/* Post-it Note Modal */}
       <Modal

@@ -7,6 +7,7 @@ import { useUser } from '../utils/UserContext';
 import { useLanguage } from '../utils/LanguageContext';
 import { useUserMode } from '../utils/UserModeContext';
 import { blockIfGuest } from '../utils/guestBlock';
+import { showToast } from '../components/VeethaToast';
 
 const ALLERGIES = [
   { id: 'peanuts', emoji: '🥜' },
@@ -130,16 +131,8 @@ export default function DietaryRestrictionsScreen({ navigation }) {
 
       await refreshProfile();
 
-      Alert.alert(
-        t('dietaryRestrictions.success'),
-        t('dietaryRestrictions.successMessage'),
-        [
-          {
-            text: t('dietaryRestrictions.ok'),
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
+      showToast('success', t('dietaryRestrictions.success'), t('dietaryRestrictions.successMessage'));
+      navigation.goBack();
     } catch (error) {
       console.error('Error saving restrictions:', error);
       Alert.alert(t('dietaryRestrictions.error'), t('dietaryRestrictions.errorSaving'));

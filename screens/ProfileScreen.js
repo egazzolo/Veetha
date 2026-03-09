@@ -1,5 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Switch, Alert, Linking, ActivityIndicator } from 'react-native';
+import { showToast } from '../components/VeethaToast';
+import VeethaModal from '../components/VeethaModal';
+import GuestUpsellSheet from '../components/GuestUpsellSheet';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../utils/supabase';
@@ -30,6 +33,10 @@ export default function ProfileScreen({ navigation }) {
   const { profile, loading, refreshProfile, refreshMeals } = useUser();
   const { isGuest, setUserMode } = useUserMode();
   const { startTutorial } = useTutorial();
+  const [guestSheetVisible, setGuestSheetVisible] = useState(false);
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [deleteModalStep, setDeleteModalStep] = useState(0); // 0=hidden, 1=first confirm, 2=final confirm
+  const [photoPickerVisible, setPhotoPickerVisible] = useState(false);
 
   // Swipe navigation
   const swipeGesture = useSwipeNavigation(navigation, 'Profile');
@@ -145,122 +152,56 @@ export default function ProfileScreen({ navigation }) {
 
   const handleLearnMore = () => {
     // TODO: Navigate to Learn More section
-    Alert.alert(t('profile.learnMore'), 'Educational content coming soon!');
+    showToast('info', t('profile.learnMore'), 'Educational content coming soon!');
   };
 
   const handleSupport = () => {
     // TODO: Navigate to support/help
-    Alert.alert(t('profile.helpSupport'), t('profile.contactSupport'));
+    showToast('info', t('profile.helpSupport'), t('profile.contactSupport'));
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      t('profile.logOut'),
-      t('profile.logOutConfirm'),
-      [
-        { text: t('profile.cancel'), style: 'cancel' },
-        { 
-          text: t('profile.logOut'),
-          style: 'destructive',
-          onPress: async () => {  // ← Made async
-            try {
-              console.log('🚪 Logging out...');
-              
-              // Clear greeting timestamp so next login shows greeting
-              await AsyncStorage.removeItem('last_app_open');
-
-              // Clear userMode
-              await setUserMode(null);
-
-              // Sign out from Supabase
-              await supabase.auth.signOut();
-              
-              console.log('✅ Logout successful');
-              
-              // Navigate to landing screen
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'Landing' }],
-              });
-            } catch (error) {
-              console.error('❌ Error logging out:', error);
-              Alert.alert('Error', 'Failed to log out. Please try again.');
-            }
-          }
-        },
-      ]
-    );
+    setLogoutModalVisible(true);
   };
 
-  const handleDeleteAccount = async () => {
-    Alert.alert(
-      t('profile.deleteAccount'),
-      t('profile.deleteWarning'),
-      [
-        {
-          text: t('common.cancel'),
-          style: 'cancel'
-        },
-        {
-          text: t('common.delete'),
-          style: 'destructive',
-          onPress: async () => {
-            Alert.alert(
-              t('profile.finalConfirmation'),
-              t('profile.deleteConfirmMessage'),
-              [
-                {
-                  text: t('common.cancel'),
-                  style: 'cancel'
-                },
-                {
-                  text: t('profile.yesDeleteEverything'),
-                  style: 'destructive',
-                  onPress: async () => {
-                    try {
-                      const { data: { session } } = await supabase.auth.getSession();
-                      if (!session) return;
+  const confirmLogout = async () => {
+    setLogoutModalVisible(false);
+    try {
+      console.log('🚪 Logging out...');
+      await AsyncStorage.removeItem('last_app_open');
+      await setUserMode(null);
+      await supabase.auth.signOut();
+      console.log('✅ Logout successful');
+      navigation.reset({ index: 0, routes: [{ name: 'Landing' }] });
+    } catch (error) {
+      console.error('❌ Error logging out:', error);
+      Alert.alert('Error', 'Failed to log out. Please try again.');
+    }
+  };
 
-                      const { data, error } = await supabase.functions.invoke('delete-user', {
-                        headers: {
-                          Authorization: `Bearer ${session.access_token}`
-                        }
-                      });
+  const handleDeleteAccount = () => {
+    setDeleteModalStep(1);
+  };
 
-                      if (error) throw error;
+  const confirmDeleteAccountFinal = async () => {
+    setDeleteModalStep(0);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
 
-                      await supabase.auth.signOut();
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
 
-                      Alert.alert(
-                        t('profile.accountDeleted'),
-                        t('profile.accountDeletedMessage'),
-                        [
-                          {
-                            text: t('common.ok'),
-                            onPress: () => {
-                              navigation.reset({
-                                index: 0,
-                                routes: [{ name: 'Landing' }],
-                              });
-                            }
-                          }
-                        ]
-                      );
-                    } catch (error) {
-                      console.error('Error deleting account:', error);
-                      Alert.alert(
-                        t('common.error'),
-                        `${t('profile.deleteError')}: ${error.message}`
-                      );
-                    }
-                  }
-                }
-              ]
-            );
-          }
-        }
-      ]
-    );
+      if (error) throw error;
+      await supabase.auth.signOut();
+
+      showToast('success', t('profile.accountDeleted'), t('profile.accountDeletedMessage'));
+      navigation.reset({ index: 0, routes: [{ name: 'Landing' }] });
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      Alert.alert(t('common.error'), `${t('profile.deleteError')}: ${error.message}`);
+    }
   };
 
   const handleToggleDarkMode = () => {
@@ -271,28 +212,10 @@ export default function ProfileScreen({ navigation }) {
 
   const handlePickAvatar = async () => {
     if (isGuest) {
-      Alert.alert(t('guest.createAccount'), t('guest.signUpProfilePhoto'));
+      setGuestSheetVisible(true);
       return;
     }
-
-    Alert.alert(
-      t('profile.profilePhoto') || 'Profile Photo',
-      '',
-      [
-        {
-          text: t('profile.takePhoto') || 'Take Photo',
-          onPress: handleTakePhoto,
-        },
-        {
-          text: t('profile.chooseFromLibrary') || 'Choose from Library',
-          onPress: handleChooseFromLibrary,
-        },
-        {
-          text: t('common.cancel') || 'Cancel',
-          style: 'cancel',
-        },
-      ]
-    );
+    setPhotoPickerVisible(true);
   };
 
   const handleTakePhoto = async () => {
@@ -711,8 +634,63 @@ export default function ProfileScreen({ navigation }) {
             />
           </AnimatedThemeWrapper>
 
+          {/* Guest Upsell Sheet */}
+          <GuestUpsellSheet
+            visible={guestSheetVisible}
+            onClose={() => setGuestSheetVisible(false)}
+            message={t('guest.signUpProfilePhoto')}
+          />
+
+          {/* Logout Confirmation */}
+          <VeethaModal
+            visible={logoutModalVisible}
+            title={t('profile.logOut')}
+            message={t('profile.logOutConfirm')}
+            confirmText={t('profile.logOut')}
+            cancelText={t('profile.cancel')}
+            confirmStyle="destructive"
+            onConfirm={confirmLogout}
+            onCancel={() => setLogoutModalVisible(false)}
+          />
+
+          {/* Delete Account - Step 1 */}
+          <VeethaModal
+            visible={deleteModalStep === 1}
+            title={t('profile.deleteAccount')}
+            message={t('profile.deleteWarning')}
+            confirmText={t('common.delete')}
+            cancelText={t('common.cancel')}
+            confirmStyle="destructive"
+            onConfirm={() => setDeleteModalStep(2)}
+            onCancel={() => setDeleteModalStep(0)}
+          />
+
+          {/* Delete Account - Step 2 (Final) */}
+          <VeethaModal
+            visible={deleteModalStep === 2}
+            title={t('profile.finalConfirmation')}
+            message={t('profile.deleteConfirmMessage')}
+            confirmText={t('profile.yesDeleteEverything')}
+            cancelText={t('common.cancel')}
+            confirmStyle="destructive"
+            onConfirm={confirmDeleteAccountFinal}
+            onCancel={() => setDeleteModalStep(0)}
+          />
+
+          {/* Photo Picker Modal */}
+          <VeethaModal
+            visible={photoPickerVisible}
+            title={t('profile.profilePhoto') || 'Profile Photo'}
+            onCancel={() => setPhotoPickerVisible(false)}
+            buttons={[
+              { text: t('profile.takePhoto') || 'Take Photo', onPress: () => { setPhotoPickerVisible(false); handleTakePhoto(); } },
+              { text: t('profile.chooseFromLibrary') || 'Choose from Library', onPress: () => { setPhotoPickerVisible(false); handleChooseFromLibrary(); } },
+              { text: t('common.cancel') || 'Cancel', style: 'cancel', onPress: () => setPhotoPickerVisible(false) },
+            ]}
+          />
+
           {/* Bottom Navigation */}
-          <BottomNav 
+          <BottomNav
             theme={theme}
             t={t}
             navigation={navigation}

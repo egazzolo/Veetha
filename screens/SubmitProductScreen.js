@@ -8,6 +8,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../utils/supabase';
 import { useTheme } from '../utils/ThemeContext';
 import { useLanguage } from '../utils/LanguageContext';
+import { showToast } from '../components/VeethaToast';
 
 export default function SubmitProductScreen({ route, navigation }) {
   const { barcode } = route.params;
@@ -105,9 +106,8 @@ export default function SubmitProductScreen({ route, navigation }) {
 
       if (error) throw error;
 
-      Alert.alert(t('submitProduct.thankYou'), t('submitProduct.submitted'), [
-        { text: t('common.ok'), onPress: () => navigation.navigate('Home') },
-      ]);
+      showToast('success', t('submitProduct.thankYou'), t('submitProduct.submitted'));
+      navigation.navigate('Home');
     } catch (error) {
       console.error('Error submitting product:', error);
       Alert.alert(t('common.error'), t('submitProduct.failedToSubmit'));

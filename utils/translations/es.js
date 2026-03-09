@@ -1177,6 +1177,12 @@ export default {
     signUpLogIn: 'Registrarse / Iniciar Sesión',
     profileBanner: 'Crea una cuenta para desbloquear todas las funciones, guardar tus datos y sincronizar entre dispositivos.',
   },
+  guestSheet: {
+    brand: 'Veetha',
+    defaultMessage: 'Crea una cuenta para desbloquear todas las funciones y guardar tu progreso.',
+    createAccount: 'Crear Cuenta',
+    logIn: 'Iniciar Sesion',
+  },
   mealReminders: {
     breakfastTitle: '¡Hora del Desayuno!',
     breakfastBody: 'Empieza bien el día — registra tu desayuno ahora.',

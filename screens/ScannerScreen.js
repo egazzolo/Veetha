@@ -17,6 +17,8 @@ import { searchFood } from '../utils/foodDatabase';
 import { useUser, UserContext } from '../utils/UserContext';
 import { useUserMode } from '../utils/UserModeContext';
 import { analyzePhoto, imageUriToBase64 } from '../utils/visionApi';
+import VeethaModal from '../components/VeethaModal';
+import GuestUpsellSheet from '../components/GuestUpsellSheet';
 
 const DAILY_PHOTO_LIMIT = 30;
 
@@ -44,6 +46,12 @@ export default function ScannerScreen({ navigation }) {
   const [mode, setMode] = useState('barcode');
   const [checkingTutorial, setCheckingTutorial] = useState(true);
   const [loggingMeal, setLoggingMeal] = useState(false);
+  const [guestSheetVisible, setGuestSheetVisible] = useState(false);
+  const [lowScansModalVisible, setLowScansModalVisible] = useState(false);
+  const [lowScansRemaining, setLowScansRemaining] = useState(0);
+  const [productNotFoundModalVisible, setProductNotFoundModalVisible] = useState(false);
+  const [notFoundBarcode, setNotFoundBarcode] = useState(null);
+  const [lastRequestModalVisible, setLastRequestModalVisible] = useState(false);
   
   // Swipe navigation (only when camera is idle, not during scan)
   const swipeGesture = useSwipeNavigation(navigation, 'Scanner', mode === 'barcode' && !scanned);
@@ -85,14 +93,8 @@ export default function ScannerScreen({ navigation }) {
 
       // ⚠️ WARNING when near limit
       if (photosUsed >= monthlyLimit - 50) {
-        Alert.alert(
-          t('scanner.lowOnScans'),
-          t('scanner.lowOnScansMessage').replace('{remaining}', monthlyLimit - photosUsed),
-          [
-            { text: t('common.cancel'), style: 'cancel' },
-            { text: t('common.continue'), onPress: () => proceedWithPhotoCapture() }
-          ]
-        );
+        setLowScansRemaining(monthlyLimit - photosUsed);
+        setLowScansModalVisible(true);
         return;
       }
     }
@@ -345,28 +347,8 @@ export default function ScannerScreen({ navigation }) {
       } else {
         console.log("❌ Product not found in database");
         setLoading(false);
-        Alert.alert(
-          t('scanner.productNotFound'),
-          t('scanner.notInDatabase'),
-          [
-            { text: t('scanner.cancel'), onPress: () => {
-              setTimeout(() => {
-                setScanned(false);
-                setLoading(false);
-              }, 100);
-            }, style: 'cancel' },
-            {
-              text: t('scanner.submitProduct'),
-              onPress: () => {
-                setTimeout(() => {
-                  setScanned(false);
-                  setLoading(false);
-                  navigation.navigate('SubmitProduct', { barcode });
-                }, 100);
-              },
-            },
-          ]
-        );
+        setNotFoundBarcode(barcode);
+        setProductNotFoundModalVisible(true);
       }
     } catch (error) {
       console.error('❌ Error fetching food info:', error);
@@ -505,14 +487,7 @@ export default function ScannerScreen({ navigation }) {
   };
 
   const showGuestPrompt = () => {
-    Alert.alert(
-      t('guest.createAccount'),
-      t('guest.signUpToLog'),
-      [
-        { text: t('guest.signUp'), onPress: () => navigation.navigate('SignUp') },
-        { text: t('common.cancel'), style: 'cancel' },
-      ]
-    );
+    setGuestSheetVisible(true);
   };
 
   // Take photo using the camera
@@ -558,14 +533,7 @@ export default function ScannerScreen({ navigation }) {
 
           // ⚠️ WARNING when 1 request left
           if (photosUsed === DAILY_PHOTO_LIMIT - 1) {
-            Alert.alert(
-              t('scanner.lastRequest'),
-              t('scanner.lastRequestMessage'),
-              [
-                { text: t('common.cancel'), style: 'cancel' },
-                { text: t('common.continue'), onPress: () => proceedWithPhotoCapture() },
-              ]
-            );
+            setLastRequestModalVisible(true);
             return;
           }
         }
@@ -808,6 +776,68 @@ export default function ScannerScreen({ navigation }) {
               visible={showArrowToBack}
             />
           )}
+          {/* Guest Upsell Sheet */}
+          <GuestUpsellSheet
+            visible={guestSheetVisible}
+            onClose={() => setGuestSheetVisible(false)}
+            onSignUp={() => {
+              setGuestSheetVisible(false);
+              navigation.navigate('SignUp');
+            }}
+          />
+
+          {/* Low on Scans Modal */}
+          <VeethaModal
+            visible={lowScansModalVisible}
+            title={t('scanner.lowOnScans')}
+            message={t('scanner.lowOnScansMessage').replace('{remaining}', lowScansRemaining)}
+            confirmText={t('common.continue')}
+            cancelText={t('common.cancel')}
+            onConfirm={() => {
+              setLowScansModalVisible(false);
+              proceedWithPhotoCapture();
+            }}
+            onCancel={() => setLowScansModalVisible(false)}
+          />
+
+          {/* Product Not Found Modal */}
+          <VeethaModal
+            visible={productNotFoundModalVisible}
+            title={t('scanner.productNotFound')}
+            message={t('scanner.notInDatabase')}
+            confirmText={t('scanner.submitProduct')}
+            cancelText={t('scanner.cancel')}
+            onConfirm={() => {
+              setProductNotFoundModalVisible(false);
+              setTimeout(() => {
+                setScanned(false);
+                setLoading(false);
+                navigation.navigate('SubmitProduct', { barcode: notFoundBarcode });
+              }, 100);
+            }}
+            onCancel={() => {
+              setProductNotFoundModalVisible(false);
+              setTimeout(() => {
+                setScanned(false);
+                setLoading(false);
+              }, 100);
+            }}
+          />
+
+          {/* Last Request Modal */}
+          <VeethaModal
+            visible={lastRequestModalVisible}
+            title={t('scanner.lastRequest')}
+            message={t('scanner.lastRequestMessage')}
+            confirmText={t('common.continue')}
+            cancelText={t('common.cancel')}
+            onConfirm={() => {
+              setLastRequestModalVisible(false);
+              proceedWithPhotoCapture();
+            }}
+            onCancel={() => setLastRequestModalVisible(false)}
+          />
+
           {/* Freeze overlay during tutorial check */}
           {checkingTutorial && (
             <View style={{

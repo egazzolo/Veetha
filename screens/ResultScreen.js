@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import * as FileSystem from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Image, Modal, Animated, Alert, Button, ActivityIndicator } from 'react-native';
+import { showToast } from '../components/VeethaToast';
+import GuestUpsellSheet from '../components/GuestUpsellSheet';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Svg, Circle } from 'react-native-svg';
 import { supabase } from '../utils/supabase';
@@ -188,6 +190,7 @@ export default function ResultScreen({ route, navigation }) {
   const [wrongFoodInput, setWrongFoodInput] = useState('');
   const [searchingFood, setSearchingFood] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [guestSheetVisible, setGuestSheetVisible] = useState(false);
 
   const [viewMode, setViewMode] = useState(
     route.params?.fromMode === 'photo' ? 'photo' : 'detailed'
@@ -413,7 +416,7 @@ export default function ResultScreen({ route, navigation }) {
   }, []);
 
   const handleLogMeal = async () => {
-    if (blockIfGuest(isGuestMode, navigation, () => {}, t)) return;
+    if (blockIfGuest(isGuestMode, navigation, () => {}, t, () => setGuestSheetVisible(true))) return;
     try {
       setSavingMeal(true);
       console.log('🔥 HANDLE LOG MEAL STARTED', { isGuest, user });
@@ -583,7 +586,7 @@ export default function ResultScreen({ route, navigation }) {
       await refreshMeals();
 
       // Navigate back to Home
-      Alert.alert(t('results.mealLogged'), `${food.product_name}`);
+      showToast('success', t('results.mealLogged'), `${food.product_name}`);
       navigation.navigate('Home');
       
     } catch (error) {
@@ -628,7 +631,7 @@ export default function ResultScreen({ route, navigation }) {
     .onEnd((e) => {
       if (isGuestMode && e.translationX > 0) {
         // Guest tried to swipe right — show prompt, snap back
-        blockIfGuest(isGuestMode, navigation, () => {}, t);
+        blockIfGuest(isGuestMode, navigation, () => {}, t, () => setGuestSheetVisible(true));
         detailedTranslateX.setValue(0);
         detailedRotateZ.setValue(0);
         setDetailedSwipeDirection(null);
@@ -726,7 +729,7 @@ export default function ResultScreen({ route, navigation }) {
       .onEnd((e) => {
         if (isGuestMode && e.translationX > 0) {
           // Guest tried to swipe right — show prompt, snap back
-          blockIfGuest(isGuestMode, navigation, () => {}, t);
+          blockIfGuest(isGuestMode, navigation, () => {}, t, () => setGuestSheetVisible(true));
           translateX.setValue(0);
           rotateZ.setValue(0);
           setSwipeDirection(null);
@@ -1316,6 +1319,13 @@ export default function ResultScreen({ route, navigation }) {
         </Text>
       </View>
     )}
+
+      {/* Guest Upsell Sheet */}
+      <GuestUpsellSheet
+        visible={guestSheetVisible}
+        onClose={() => setGuestSheetVisible(false)}
+        message={t('guest.signUpToLog')}
+      />
         </SafeAreaView>
   );
 }

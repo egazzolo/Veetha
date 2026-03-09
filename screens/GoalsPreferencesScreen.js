@@ -8,6 +8,8 @@ import { useUser } from '../utils/UserContext';
 import { useUserMode } from '../utils/UserModeContext';
 import { blockIfGuest } from '../utils/guestBlock';
 import { logScreen, logEvent } from '../utils/analytics';
+import { showToast } from '../components/VeethaToast';
+import VeethaModal from '../components/VeethaModal';
 
 const ACTIVITY_LEVELS = [
   { value: 'sedentary', multiplier: 1.2 },
@@ -27,6 +29,8 @@ export default function GoalsPreferencesScreen({ navigation }) {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [recalcModalVisible, setRecalcModalVisible] = useState(false);
+  const [recalcTdee, setRecalcTdee] = useState(null);
   
   // Goals state
   const [dailyCalorieGoal, setDailyCalorieGoal] = useState('2000');
@@ -136,17 +140,8 @@ export default function GoalsPreferencesScreen({ navigation }) {
 
       const tdee = Math.round(bmr * (ACTIVITY_MULTIPLIERS[activityLevel] || 1.55));
       
-      Alert.alert(
-        t('goalsPreferences.recalculateTitle'),
-        t('goalsPreferences.recalculateMessage').replace('{calories}', tdee),
-        [
-          { text: t('goalsPreferences.cancel'), style: 'cancel' },
-          { 
-            text: t('goalsPreferences.update'),
-            onPress: () => setDailyCalorieGoal(String(tdee))
-          },
-        ]
-      );
+      setRecalcTdee(tdee);
+      setRecalcModalVisible(true);
     } catch (error) {
       console.error('Error recalculating:', error);
       Alert.alert(
@@ -232,16 +227,8 @@ export default function GoalsPreferencesScreen({ navigation }) {
       // Refresh profile context
       await refreshProfile();
 
-      Alert.alert(
-        t('goalsPreferences.success'),
-        t('goalsPreferences.successMessage'),
-        [
-          {
-            text: t('goalsPreferences.ok'),
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
+      showToast('success', t('goalsPreferences.success'), t('goalsPreferences.successMessage'));
+      navigation.goBack();
     } catch (error) {
       console.error('Error saving goals:', error);
       Alert.alert(
@@ -519,6 +506,19 @@ export default function GoalsPreferencesScreen({ navigation }) {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <VeethaModal
+        visible={recalcModalVisible}
+        title={t('goalsPreferences.recalculateTitle')}
+        message={t('goalsPreferences.recalculateMessage').replace('{calories}', recalcTdee)}
+        confirmText={t('goalsPreferences.update')}
+        cancelText={t('goalsPreferences.cancel')}
+        onConfirm={() => {
+          setDailyCalorieGoal(String(recalcTdee));
+          setRecalcModalVisible(false);
+        }}
+        onCancel={() => setRecalcModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }

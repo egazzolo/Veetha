@@ -1177,6 +1177,12 @@ export default {
     signUpLogIn: 'Sign Up / Log In',
     profileBanner: 'Create an account to unlock all features, save your data, and sync across devices.',
   },
+  guestSheet: {
+    brand: 'Veetha',
+    defaultMessage: 'Create an account to unlock all features and save your progress.',
+    createAccount: 'Create Account',
+    logIn: 'Log In',
+  },
   mealReminders: {
     breakfastTitle: 'Breakfast Time!',
     breakfastBody: 'Start your day right — log your breakfast now.',

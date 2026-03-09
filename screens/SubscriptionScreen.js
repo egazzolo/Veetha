@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
+import { showToast } from '../components/VeethaToast';
 import Purchases from 'react-native-purchases';
 import { supabase } from '../utils/supabase';
 
@@ -35,7 +36,7 @@ export default function SubscriptionScreen({ navigation }) {
         subscription_type: isMonthly ? 'monthly' : 'annual'
       }).eq('id', user.id);
       
-      Alert.alert('Success!', 'Welcome to Veetha Premium! 🎉');
+      showToast('success', 'Success!', 'Welcome to Veetha Premium!');
       navigation.goBack();
       
     } catch (error) {

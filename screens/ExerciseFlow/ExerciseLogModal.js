@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLanguage } from '../../utils/LanguageContext';
 import { supabase } from '../../utils/supabase';
+import { showToast } from '../../components/VeethaToast';
 
 const DURATION_PRESETS = [15, 30, 45, 60];
 
@@ -71,11 +72,8 @@ export default function ExerciseLogModal({ navigation, route }) {
 
       if (error) throw error;
 
-      Alert.alert(
-        t('common.success'),
-        t('exercise.loggedSuccess', { calories: estimatedCalories }),
-        [{ text: t('common.ok'), onPress: () => navigation.navigate('Home') }]
-      );
+      showToast('success', t('common.success'), t('exercise.loggedSuccess', { calories: estimatedCalories }));
+      navigation.navigate('Home');
     } catch (err) {
       console.error('Error logging exercise:', err);
       Alert.alert(t('common.error'), t('exercise.logFailed'));

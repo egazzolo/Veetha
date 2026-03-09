@@ -1177,6 +1177,12 @@ export default {
     signUpLogIn: 'Mag-sign Up / Mag-log In',
     profileBanner: 'Gumawa ng account para ma-unlock ang lahat ng features, i-save ang iyong data, at mag-sync sa iba\'t ibang device.',
   },
+  guestSheet: {
+    brand: 'Veetha',
+    defaultMessage: 'Gumawa ng account para ma-unlock ang lahat ng features at i-save ang iyong progreso.',
+    createAccount: 'Gumawa ng Account',
+    logIn: 'Mag-log In',
+  },
   mealReminders: {
     breakfastTitle: 'Oras na ng Almusal!',
     breakfastBody: 'Simulan ng tama ang araw — i-log ang iyong almusal.',

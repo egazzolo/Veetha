@@ -4,6 +4,9 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Notifications from 'expo-notifications';
 import * as Location from 'expo-location';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, RefreshControl, Alert, Modal, Platform, Animated, ActivityIndicator } from 'react-native';
+import { showToast } from '../components/VeethaToast';
+import VeethaModal from '../components/VeethaModal';
+import GuestUpsellSheet from '../components/GuestUpsellSheet';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSwipeNavigation } from '../utils/useSwipeNavigation';
@@ -130,8 +133,8 @@ const handleQuickLog = async (food) => {
 
     await loadMealsForDate(selectedDate);
     
-    Alert.alert('Logged! ✅', `${food.emoji} ${food.name} added`);
-    
+    showToast('success', 'Logged!', `${food.emoji} ${food.name} added`);
+
   } catch (error) {
     console.error('Error quick logging:', error);
     Alert.alert('Error', 'Failed to log meal');
@@ -327,6 +330,10 @@ export default function HomeScreen({ navigation }) {
   const [quickSuggestions, setQuickSuggestions] = useState([]);
   const [userCountry, setUserCountry] = useState(null);
   const [guestBannerDismissed, setGuestBannerDismissed] = useState(false);
+  const [guestSheetVisible, setGuestSheetVisible] = useState(false);
+  const [guestSheetMessage, setGuestSheetMessage] = useState('');
+  const [mealActionModal, setMealActionModal] = useState({ visible: false, meal: null });
+  const [deleteMealModal, setDeleteMealModal] = useState({ visible: false, meal: null });
 
   // Safe numeric helper
   const num = (v) => {
@@ -540,15 +547,9 @@ export default function HomeScreen({ navigation }) {
     requestPermissions();
   }, []);
 
-  const showGuestAlert = () => {
-    Alert.alert(
-      t('guest.createAccount'),
-      t('guest.signUpToLog'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        { text: t('guest.signUp'), onPress: () => navigation.reset({ index: 0, routes: [{ name: 'Landing' }] }) },
-      ]
-    );
+  const showGuestAlert = (message) => {
+    setGuestSheetMessage(message || t('guest.signUpToLog'));
+    setGuestSheetVisible(true);
   };
 
   const handleAddWater = async () => {
@@ -1194,7 +1195,7 @@ export default function HomeScreen({ navigation }) {
   };
 
   const goToStartOfWeek = () => {
-    if (blockIfGuest(isGuestMode, navigation, () => {}, t)) return;
+    if (blockIfGuest(isGuestMode, navigation, () => {}, t, () => showGuestAlert())) return;
     const date = new Date(selectedDate);
     const day = date.getDay();
     const diff = day === 0 ? -6 : 1 - day; // Monday as first day
@@ -1209,7 +1210,7 @@ export default function HomeScreen({ navigation }) {
   };
 
   const goToStartOfMonth = () => {
-    if (blockIfGuest(isGuestMode, navigation, () => {}, t)) return;
+    if (blockIfGuest(isGuestMode, navigation, () => {}, t, () => showGuestAlert())) return;
     const date = new Date(selectedDate);
     date.setDate(1);
 
@@ -1259,27 +1260,7 @@ export default function HomeScreen({ navigation }) {
 
   const handleMealLongPress = (meal) => {
     if (isGuestMode) { showGuestAlert(); return; }
-    Alert.alert(
-      meal.product_name,
-      t('home.whatToDo'),
-      [
-        {
-          text: t('home.cancel'),
-          style: 'cancel',
-        },
-        {
-          text: t('home.edit'),
-          onPress: () => {
-            navigation.navigate('EditMeal', { meal });
-          },
-        },
-        {
-          text: t('home.delete'),
-          style: 'destructive',
-          onPress: () => handleDeleteMeal(meal),
-        },
-      ]
-    );
+    setMealActionModal({ visible: true, meal });
   };
 
   const handleMealToggle = (mealId) => {
@@ -1295,60 +1276,47 @@ export default function HomeScreen({ navigation }) {
   };
 
   const handleDeleteMeal = (meal) => {
-    Alert.alert(
-      t('home.deleteMeal'),
-      `${t('home.deleteMealConfirm')} "${meal.product_name}"?`,
-      [
-        {
-          text: t('home.cancel'),
-          style: 'cancel',
-        },
-        {
-          text: t('home.delete'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
+    setDeleteMealModal({ visible: true, meal });
+  };
 
-              // ===== GUEST DELETE =====
-              if (!user) {
+  const confirmDeleteMeal = async (meal) => {
+    setDeleteMealModal({ visible: false, meal: null });
+    try {
+      // ===== GUEST DELETE =====
+      if (!user) {
+        const existingMeals =
+          JSON.parse(await AsyncStorage.getItem('guest_meals') || '[]');
 
-                const existingMeals =
-                  JSON.parse(await AsyncStorage.getItem('guest_meals') || '[]');
+        const updatedMeals =
+          existingMeals.filter(m => m.id !== meal.id);
 
-                const updatedMeals =
-                  existingMeals.filter(m => m.id !== meal.id);
+        await AsyncStorage.setItem(
+          'guest_meals',
+          JSON.stringify(updatedMeals)
+        );
 
-                await AsyncStorage.setItem(
-                  'guest_meals',
-                  JSON.stringify(updatedMeals)
-                );
+        setMeals(prev => prev.filter(m => m.id !== meal.id));
 
-                setMeals(prev => prev.filter(m => m.id !== meal.id));
+        showToast('success', t('home.success'), t('home.mealDeleted'));
+        return;
+      }
 
-                Alert.alert(t('home.success'), t('home.mealDeleted'));
-                return;
-              }
+      // ===== SUPABASE DELETE =====
+      const { error } = await supabase
+        .from('meals')
+        .delete()
+        .eq('id', meal.id);
 
-              // ===== SUPABASE DELETE =====
-              const { error } = await supabase
-                .from('meals')
-                .delete()
-                .eq('id', meal.id);
+      if (error) throw error;
 
-              if (error) throw error;
+      await loadMealsForDate(selectedDate);
+      await calculateStreak();
 
-              await loadMealsForDate(selectedDate);
-              await calculateStreak(); // ← ADD THIS LINE
-
-              Alert.alert(t('home.success'), t('home.mealDeleted'));
-            } catch (error) {
-              console.error('Error deleting meal:', error);
-              Alert.alert(t('home.error'), t('home.failedToDelete'));
-            }
-          },
-        },
-      ]
-    );
+      showToast('success', t('home.success'), t('home.mealDeleted'));
+    } catch (error) {
+      console.error('Error deleting meal:', error);
+      Alert.alert(t('home.error'), t('home.failedToDelete'));
+    }
   };
 
   // Pull to refresh
@@ -1421,15 +1389,9 @@ export default function HomeScreen({ navigation }) {
           await loadMealsForDate(selectedDate);
           await calculateStreak();
 
-          Alert.alert(
-            t('home.successCopy'),
-            `${t('home.copiedMealsPrefix')} ${yesterdayMeals.length} ${t('home.copiedMeals')}`
-          );
+          showToast('success', t('home.successCopy'), `${t('home.copiedMealsPrefix')} ${yesterdayMeals.length} ${t('home.copiedMeals')}`);
         } else {
-          Alert.alert(
-            t('home.noMeals'),
-            t('home.noMealsYesterday')
-          );
+          showToast('info', t('home.noMeals'), t('home.noMealsYesterday'));
         }
       } catch (error) {
         console.error('Error copying meals:', error);
@@ -1709,7 +1671,7 @@ export default function HomeScreen({ navigation }) {
                   isToday={isToday}
                   getDateLabel={getDateLabel}
                   copyYesterdaysMeals={copyYesterdaysMeals}
-                  copyingMeals={copyingMeals}showGuestAlert
+                  copyingMeals={copyingMeals}
                   handleMealToggle={handleMealToggle}
                   handleMealLongPress={handleMealLongPress}
                   toggledMeals={toggledMeals}
@@ -1799,6 +1761,38 @@ export default function HomeScreen({ navigation }) {
                   totalFat
                 }
                 t={t}
+              />
+
+              {/* Guest Upsell Sheet */}
+              <GuestUpsellSheet
+                visible={guestSheetVisible}
+                onClose={() => setGuestSheetVisible(false)}
+                message={guestSheetMessage}
+              />
+
+              {/* Meal Action Modal (long-press) */}
+              <VeethaModal
+                visible={mealActionModal.visible}
+                title={mealActionModal.meal?.product_name}
+                message={t('home.whatToDo')}
+                onCancel={() => setMealActionModal({ visible: false, meal: null })}
+                buttons={[
+                  { text: t('home.cancel'), style: 'cancel', onPress: () => setMealActionModal({ visible: false, meal: null }) },
+                  { text: t('home.edit'), onPress: () => { setMealActionModal({ visible: false, meal: null }); navigation.navigate('EditMeal', { meal: mealActionModal.meal }); } },
+                  { text: t('home.delete'), style: 'destructive', onPress: () => { setMealActionModal({ visible: false, meal: null }); handleDeleteMeal(mealActionModal.meal); } },
+                ]}
+              />
+
+              {/* Delete Meal Confirmation */}
+              <VeethaModal
+                visible={deleteMealModal.visible}
+                title={t('home.deleteMeal')}
+                message={`${t('home.deleteMealConfirm')} "${deleteMealModal.meal?.product_name}"?`}
+                confirmText={t('home.delete')}
+                cancelText={t('home.cancel')}
+                confirmStyle="destructive"
+                onConfirm={() => confirmDeleteMeal(deleteMealModal.meal)}
+                onCancel={() => setDeleteMealModal({ visible: false, meal: null })}
               />
             </AnimatedThemeWrapper>
 
