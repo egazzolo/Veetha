@@ -37,6 +37,7 @@ import GoalsPreferencesScreen from './screens/GoalsPreferencesScreen';
 import DietaryRestrictionsScreen from './screens/DietaryRestrictionsScreen';
 import QuickEntryScreen from './screens/QuickEntryScreen';
 import GlobalTutorialOverlay from './components/GlobalTutorialOverlay';
+import { VeethaToastRoot } from './components/VeethaToast';
 import MealRecommendationsScreen from './screens/MealRecommendationsScreen';
 import AdminDashboardScreen from './screens/AdminDashboardScreen';
 import TermsOfServiceScreen from './screens/TermsOfServiceScreen';
@@ -198,6 +199,7 @@ function AppNavigator() {
           <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={{ title: 'Privacy Policy', headerShown: true, headerStyle: { backgroundColor: '#4CAF50' }, headerTintColor: '#fff', headerTitleStyle: { fontWeight: 'bold' }, }} />
         </Stack.Navigator>
         <GlobalTutorialOverlay />
+        <VeethaToastRoot />
       </NavigationContainer>
     </View>
   );
