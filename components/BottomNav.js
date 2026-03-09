@@ -42,10 +42,10 @@ export default function BottomNav({
       >
         <Text style={[styles.navIcon, activeScreen === 'Home' && styles.navIconActive]}>🏠</Text>
         <Text style={[
-          styles.navLabel, 
-          activeScreen === 'Home' && styles.navLabelActive, 
+          styles.navLabel,
+          activeScreen === 'Home' && styles.navLabelActive,
           { color: activeScreen === 'Home' ? theme.primary : theme.textSecondary }
-        ]}>
+        ]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
           {t('nav.home')}
         </Text>
         {activeScreen === 'Home' && (
@@ -89,10 +89,10 @@ export default function BottomNav({
       >
         <Text style={[styles.navIcon, activeScreen === 'Stats' && styles.navIconActive]}>📊</Text>
         <Text style={[
-          styles.navLabel, 
+          styles.navLabel,
           activeScreen === 'Stats' && styles.navLabelActive,
           { color: activeScreen === 'Stats' ? theme.primary : theme.textSecondary }
-        ]}>
+        ]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
           {t('nav.stats')}
         </Text>
         {activeScreen === 'Stats' && (
@@ -127,7 +127,7 @@ export default function BottomNav({
           styles.navLabel,
           activeScreen === 'Profile' && styles.navLabelActive,
           { color: activeScreen === 'Profile' ? theme.primary : theme.textSecondary }
-        ]}>
+        ]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
           {t('nav.profile')}
         </Text>
         {activeScreen === 'Profile' && (

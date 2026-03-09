@@ -109,7 +109,7 @@ export default function OnboardingStep6({ navigation }) {
                 style={[styles.continueButton, !agreed && styles.continueButtonDisabled]}
                 onPress={handleContinue}
               >
-                <Text style={styles.continueButtonText}>{t('onboarding.agreeButton')}</Text>
+                <Text style={styles.continueButtonText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{t('onboarding.agreeButton')}</Text>
               </TouchableOpacity>
             </View>
           </View>

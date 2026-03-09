@@ -101,7 +101,12 @@ export default function OnboardingStep1({ navigation }) {
               style={[styles.optionButton, gender === 'male' && styles.optionButtonSelected]}
               onPress={() => setGender('male')}
             >
-              <Text style={[styles.optionText, gender === 'male' && styles.optionTextSelected]}>
+              <Text
+                style={[styles.optionText, gender === 'male' && styles.optionTextSelected]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              >
                 {t('onboarding.male')}
               </Text>
             </TouchableOpacity>
@@ -110,7 +115,12 @@ export default function OnboardingStep1({ navigation }) {
               style={[styles.optionButton, gender === 'female' && styles.optionButtonSelected]}
               onPress={() => setGender('female')}
             >
-              <Text style={[styles.optionText, gender === 'female' && styles.optionTextSelected]}>
+              <Text
+                style={[styles.optionText, gender === 'female' && styles.optionTextSelected]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              >
                 {t('onboarding.female')}
               </Text>
             </TouchableOpacity>
@@ -156,7 +166,7 @@ export default function OnboardingStep1({ navigation }) {
             style={styles.continueButton}
             onPress={handleContinue}
           >
-            <Text style={styles.continueButtonText}>{t('onboarding.continue')}</Text>
+            <Text style={styles.continueButtonText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{t('onboarding.continue')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -240,6 +250,7 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 14,
     color: '#666',
+    flexShrink: 1,
   },
   optionTextSelected: {
     color: '#4CAF50',

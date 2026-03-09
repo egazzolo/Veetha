@@ -116,7 +116,12 @@ export default function OnboardingStep2({ navigation }) {
                 style={[styles.unitButton, unit === 'imperial' && styles.unitButtonSelected]}
                 onPress={() => setUnit('imperial')}
               >
-                <Text style={[styles.unitText, unit === 'imperial' && styles.unitTextSelected]}>
+                <Text
+                  style={[styles.unitText, unit === 'imperial' && styles.unitTextSelected]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                >
                   {t('onboarding.imperial')}
                 </Text>
               </TouchableOpacity>
@@ -124,7 +129,12 @@ export default function OnboardingStep2({ navigation }) {
                 style={[styles.unitButton, unit === 'metric' && styles.unitButtonSelected]}
                 onPress={() => setUnit('metric')}
               >
-                <Text style={[styles.unitText, unit === 'metric' && styles.unitTextSelected]}>
+                <Text
+                  style={[styles.unitText, unit === 'metric' && styles.unitTextSelected]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                >
                   {t('onboarding.metric')}
                 </Text>
               </TouchableOpacity>
@@ -209,7 +219,7 @@ export default function OnboardingStep2({ navigation }) {
                 style={styles.continueButton}
                 onPress={handleContinue}
               >
-                <Text style={styles.continueButtonText}>{t('onboarding.continue')}</Text>
+                <Text style={styles.continueButtonText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{t('onboarding.continue')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -283,6 +293,7 @@ const styles = StyleSheet.create({
   unitText: {
     fontSize: 14,
     color: '#999',
+    flexShrink: 1,
   },
   unitTextSelected: {
     color: '#4CAF50',

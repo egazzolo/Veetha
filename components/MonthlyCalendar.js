@@ -159,11 +159,16 @@ export default function MonthlyCalendar({
                   isFuture && { opacity: 0.3 },
                 ]}
               >
-                <Text style={[
-                  styles.calendarDayNumber,
-                  { color: dayData.mealsCount > 0 ? '#fff' : theme.textTertiary },
-                  isSelected && { fontWeight: 'bold' }
-                ]}>
+                <Text
+                  style={[
+                    styles.calendarDayNumber,
+                    { color: dayData.mealsCount > 0 ? '#fff' : theme.textTertiary },
+                    isSelected && { fontWeight: 'bold' }
+                  ]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                >
                   {dayData.day}
                 </Text>
               </View>

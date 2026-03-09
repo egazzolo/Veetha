@@ -150,7 +150,7 @@ console.log('✅ Step 3 saved:', { goal, targetWeight });
                 style={styles.continueButton}
                 onPress={handleContinue}
               >
-                <Text style={styles.continueButtonText}>{t('onboarding.continue')}</Text>
+                <Text style={styles.continueButtonText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{t('onboarding.continue')}</Text>
               </TouchableOpacity>
             </View>
           </View>
