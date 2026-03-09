@@ -217,6 +217,7 @@ export default {
     tapToExit: 'I-tap para lumabas',
     tapToProfile: 'I-tap para sa Profile',
     skip: 'Laktawan',
+    skipTutorial: 'Laktawan ang Tutorial',
     next: 'Sunod',
     finish: 'Nakuha ko na!',
     thankYou: "🎉 Salamat sa pagkumpleto ng tutorial! Handa ka nang magsimulang subaybayan ang iyong nutrisyon.",

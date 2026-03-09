@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+import { useLanguage } from '../utils/LanguageContext';
 
 export default function TutorialArrow({ 
   visible, 
@@ -8,6 +9,7 @@ export default function TutorialArrow({
   direction = 'down',
   message = 'Tap here to continue!'
 }) {
+  const { t } = useLanguage();
   const bounceAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -37,7 +39,7 @@ export default function TutorialArrow({
       <View style={styles.overlay} pointerEvents="box-none">
         {/* Skip button */}
         <TouchableOpacity style={styles.skipButton} onPress={onSkip}>
-          <Text style={styles.skipText}>Skip Tutorial</Text>
+          <Text style={styles.skipText}>{t('tutorial.skipTutorial')}</Text>
         </TouchableOpacity>
 
         {/* Bouncing arrow */}

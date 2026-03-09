@@ -217,6 +217,7 @@ export default {
     tapToExit: 'Appuyez pour quitter',
     tapToProfile: 'Appuyez pour ouvrir le profil',
     skip: 'Passer',
+    skipTutorial: 'Passer le tutoriel',
     next: 'Suivant',
     finish: 'Compris!',
     thankYou: '🎉 Merci d\'avoir terminé le tutoriel ! Vous êtes prêt à commencer à suivre votre nutrition.',

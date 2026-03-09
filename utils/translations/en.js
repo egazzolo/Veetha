@@ -217,6 +217,7 @@ export default {
     tapToExit: 'Tap to exit camera',
     tapToProfile: 'Tap to open Profile',
     skip: 'Skip',
+    skipTutorial: 'Skip Tutorial',
     next: 'Next',
     finish: 'Got it!',
     thankYou: '🎉 Thank you for completing the tutorial! You\'re all set to start tracking your nutrition.',

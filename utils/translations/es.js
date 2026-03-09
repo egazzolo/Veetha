@@ -217,6 +217,7 @@ export default {
     tapToExit: 'Toca para salir',
     tapToProfile: 'Toca para abrir Perfil',
     skip: 'Saltar',
+    skipTutorial: 'Saltar Tutorial',
     next: 'Siguiente',
     finish: '¡Entendido!',
     thankYou: "🎉 ¡Gracias por completar el tutorial! Ya estás listo para comenzar a rastrear tu nutrición.",
