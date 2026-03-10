@@ -119,6 +119,13 @@ export default function SignUpScreen({ navigation }) {
     setLoading(true);
 
     try {
+      // Clean up anonymous session if present
+      const { data: { session: anonSession } } = await supabase.auth.getSession();
+      if (anonSession?.user?.is_anonymous) {
+        await AsyncStorage.removeItem('veetha_user_mode');
+        await supabase.auth.signOut();
+      }
+
       console.log('🚀 Creating account for:', email.trim().toLowerCase());
 
       // Create the user account

@@ -35,9 +35,16 @@ export default function LoginScreen({ navigation }) {
     setLoading(true);
 
     try {
+      // Clean up anonymous session if present
+      const { data: { session: anonSession } } = await supabase.auth.getSession();
+      if (anonSession?.user?.is_anonymous) {
+        await AsyncStorage.removeItem('veetha_user_mode');
+        await supabase.auth.signOut();
+      }
+
       console.log('🔐 Attempting login...');
       console.log('📧 Email:', email);
-      
+
       // Sign in with Supabase
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),

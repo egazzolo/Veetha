@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as AuthSession from 'expo-auth-session';
@@ -10,6 +11,13 @@ GoogleSignin.configure({
 
 export const signInWithGoogle = async () => {
   try {
+    // Clean up anonymous session if present
+    const { data: { session: anonSession } } = await supabase.auth.getSession();
+    if (anonSession?.user?.is_anonymous) {
+      await AsyncStorage.removeItem('veetha_user_mode');
+      await supabase.auth.signOut();
+    }
+
     await GoogleSignin.hasPlayServices();
     const userInfo = await GoogleSignin.signIn();
     
