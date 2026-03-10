@@ -20,7 +20,7 @@ import { analyzePhoto as analyzeGoogle, imageUriToBase64 as googleToBase64 } fro
 const DAILY_PHOTO_LIMIT = 30;
 
 // 🔄 API TOGGLE - Switch between Clarifai and Google Vision
-const USE_GOOGLE_VISION = false; // ← Change to true when $4.99 runs out
+const USE_GOOGLE_VISION = true; // ← Change to true when $4.99 runs out
 
 export default function ScannerScreen({ navigation }) {
   const { theme } = useTheme();
@@ -665,7 +665,7 @@ export default function ScannerScreen({ navigation }) {
                 onPress={toggleMode}
               >
                 <Text style={styles.modeToggleText}>
-                  {mode === 'barcode' ? '📊' : '📷'}
+                  {mode === 'barcode' ? '📷' : '📊'}
                 </Text>
               </TouchableOpacity>
             </View>
