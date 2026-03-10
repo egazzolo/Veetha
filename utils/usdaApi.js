@@ -185,6 +185,18 @@ export async function getBestUSDAMatch(query) {
       // General fuzzy match
       if (nameLower.includes(queryLower)) score += 15;
 
+      // Boost partial word matches
+      const boostWords = queryLower.split(' ').filter(w => w.length > 3);
+      boostWords.forEach(word => {
+        if (nameLower.includes(word)) score += 10;
+      });
+
+      // Prefer raw/fresh over processed
+      if (nameLower.includes('raw')) score += 20;
+      if (nameLower.includes('raisin')) score -= 40;
+      if (nameLower.includes('canned')) score -= 20;
+      if (nameLower.includes('syrup')) score -= 30;
+
       // Penalize results with zero query word overlap
       const queryWords = queryLower.split(' ').filter(w => w.length > 2);
       const hasAnyMatch = queryWords.some(w => nameLower.includes(w));

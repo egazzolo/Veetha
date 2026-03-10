@@ -83,8 +83,20 @@ async function searchLocalFoodDatabase(foodName) {
       const food = data[0];
       const resultName = food.name.toLowerCase();
       const queryWords = normalized.split(' ');
-      const isRelevant = queryWords.some(word => word.length > 2 && resultName.includes(word));
+      const isRelevant = queryWords.some(word => 
+        word.length > 2 && new RegExp(`\\b${word}\\b`).test(resultName)
+      );
       if (!isRelevant) return null;
+
+      // Prefer exact or close matches over broad ones
+      const exactMatch = resultName.startsWith(normalized) || resultName === normalized;
+      const hasQualifier = resultName.includes('candied') || 
+        resultName.includes('dried') || 
+        resultName.includes('canned') ||
+        resultName.includes('juice') ||
+        resultName.includes('frozen') ||
+        resultName.includes('cooked');
+      if (!exactMatch && hasQualifier && normalized.split(' ').length === 1) return null;
       return {
         id: food.id,
         name: food.name,

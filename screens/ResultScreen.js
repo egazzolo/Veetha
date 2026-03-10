@@ -813,6 +813,50 @@ export default function ResultScreen({ route, navigation }) {
             <View style={styles.photoMealNameContainer}>
               <Text style={styles.photoMealName}>{food.product_name}</Text>
 
+              {route.params?.topSuggestions?.length > 0 && (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 8 }}>
+                  {route.params.topSuggestions.map((suggestion, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={{ backgroundColor: '#f0f0f0', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#1F9B39' }}
+                      onPress={async () => {
+                        const corrected = await searchFood(suggestion.name);
+                        if (!corrected) return;
+                        navigation.replace('Result', {
+                          food: { product_name: corrected.name, image_url: food.image_url, nutriments: { 'energy-kcal_100g': corrected.nutrients['energy-kcal'] || 0, proteins_100g: corrected.nutrients.proteins || 0, carbohydrates_100g: corrected.nutrients.carbohydrates || 0, fat_100g: corrected.nutrients.fat || 0 }, serving_quantity: 100, detected_by_ai: false },
+                          fromMode: 'photo',
+                          topSuggestions: route.params.topSuggestions,
+                        });
+                      }}
+                    >
+                      <Text style={{ color: '#1F9B39', fontSize: 13 }}>{suggestion.name} ({suggestion.confidence}%)</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              {route.params?.topSuggestions?.length > 0 && (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 8 }}>
+                  {route.params.topSuggestions.map((suggestion, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={{ backgroundColor: '#f0f0f0', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#1F9B39' }}
+                      onPress={async () => {
+                        const corrected = await searchFood(suggestion.name);
+                        if (!corrected) return;
+                        navigation.replace('Result', {
+                          food: { product_name: corrected.name, image_url: food.image_url, nutriments: { 'energy-kcal_100g': corrected.nutrients['energy-kcal'] || 0, proteins_100g: corrected.nutrients.proteins || 0, carbohydrates_100g: corrected.nutrients.carbohydrates || 0, fat_100g: corrected.nutrients.fat || 0 }, serving_quantity: 100, detected_by_ai: false },
+                          fromMode: 'photo',
+                          topSuggestions: route.params.topSuggestions,
+                        });
+                      }}
+                    >
+                      <Text style={{ color: '#1F9B39', fontSize: 13 }}>{suggestion.name} ({suggestion.confidence}%)</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
               {route.params?.fromMode === 'photo' && (
                 <TouchableOpacity onPress={() => setShowWrongFoodModal(true)} style={{ marginTop: 6 }}>
                   <Text style={{ color: '#4CAF50', fontWeight: '600', textAlign: 'center' }}>
@@ -950,6 +994,50 @@ export default function ResultScreen({ route, navigation }) {
                     )}
 
                     <Text style={styles.resultTitle}>{food.product_name}</Text>
+
+                    {route.params?.topSuggestions?.length > 0 && (
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 8 }}>
+                        {route.params.topSuggestions.map((suggestion, index) => (
+                          <TouchableOpacity
+                            key={index}
+                            style={{ backgroundColor: '#f0f0f0', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#1F9B39' }}
+                            onPress={async () => {
+                              const corrected = await searchFood(suggestion.name);
+                              if (!corrected) return;
+                              navigation.replace('Result', {
+                                food: { product_name: corrected.name, image_url: food.image_url, nutriments: { 'energy-kcal_100g': corrected.nutrients['energy-kcal'] || 0, proteins_100g: corrected.nutrients.proteins || 0, carbohydrates_100g: corrected.nutrients.carbohydrates || 0, fat_100g: corrected.nutrients.fat || 0 }, serving_quantity: 100, detected_by_ai: false },
+                                fromMode: 'photo',
+                                topSuggestions: route.params.topSuggestions,
+                              });
+                            }}
+                          >
+                            <Text style={{ color: '#1F9B39', fontSize: 13 }}>{suggestion.name} ({suggestion.confidence}%)</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+
+                    {route.params?.topSuggestions?.length > 0 && (
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 8 }}>
+                        {route.params.topSuggestions.map((suggestion, index) => (
+                          <TouchableOpacity
+                            key={index}
+                            style={{ backgroundColor: '#f0f0f0', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#1F9B39' }}
+                            onPress={async () => {
+                              const corrected = await searchFood(suggestion.name);
+                              if (!corrected) return;
+                              navigation.replace('Result', {
+                                food: { product_name: corrected.name, image_url: food.image_url, nutriments: { 'energy-kcal_100g': corrected.nutrients['energy-kcal'] || 0, proteins_100g: corrected.nutrients.proteins || 0, carbohydrates_100g: corrected.nutrients.carbohydrates || 0, fat_100g: corrected.nutrients.fat || 0 }, serving_quantity: 100, detected_by_ai: false },
+                                fromMode: 'photo',
+                                topSuggestions: route.params.topSuggestions,
+                              });
+                            }}
+                          >
+                            <Text style={{ color: '#1F9B39', fontSize: 13 }}>{suggestion.name} ({suggestion.confidence}%)</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
 
                     {/* 👇 WRONG FOOD BUTTON — ALWAYS AVAILABLE */}
                     {route.params?.fromMode === 'photo' && (
@@ -1263,18 +1351,20 @@ export default function ResultScreen({ route, navigation }) {
 
                 setShowWrongFoodModal(false);
 
+                const n = corrected.nutrients || corrected.nutriments || {};
+
                 // Convert USDA format to OpenFoodFacts format
                 const convertedFood = {
                   product_name: corrected.name || corrected.product_name,
                   image_url: food.image_url,
                   nutriments: {
-                    'energy-kcal_100g': corrected.nutrients['energy-kcal'] || corrected.nutrients['energy-kcal_100g'] || 0,
-                    proteins_100g: corrected.nutrients.proteins || corrected.nutrients.proteins_100g || 0,
-                    carbohydrates_100g: corrected.nutrients.carbohydrates || corrected.nutrients.carbohydrates_100g || 0,
-                    fat_100g: corrected.nutrients.fat || corrected.nutrients.fat_100g || 0,
-                    sodium_100g: corrected.nutrients.sodium || corrected.nutrients.sodium_100g || 0,
-                    sugars_100g: corrected.nutrients.sugar || corrected.nutrients.sugars_100g || 0,
-                    fiber_100g: corrected.nutrients.fiber || corrected.nutrients.fiber_100g || 0,
+                    'energy-kcal_100g': n['energy-kcal'] || n['energy-kcal_100g'] || 0,
+                    proteins_100g: n.proteins || n.proteins_100g || 0,
+                    carbohydrates_100g: n.carbohydrates || n.carbohydrates_100g || 0,
+                    fat_100g: n.fat || n.fat_100g || 0,
+                    sodium_100g: n.sodium || n.sodium_100g || 0,
+                    sugars_100g: n.sugar || n.sugars_100g || 0,
+                    fiber_100g: n.fiber || n.fiber_100g || 0,
                   },
                   serving_quantity: 100,
                   detected_by_ai: false,
@@ -1285,6 +1375,7 @@ export default function ResultScreen({ route, navigation }) {
                 navigation.replace('Result', {
                   food: convertedFood,
                   fromMode: 'photo',
+                  topSuggestions: analysisResult.topSuggestions,
                 });
               }}
             >

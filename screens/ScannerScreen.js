@@ -339,7 +339,10 @@ export default function ScannerScreen({ navigation }) {
         }
         p.image_url = imageUrl;
 
+        console.log('🍇 Passing to Result:', JSON.stringify(convertedFood.nutriments));
+        console.log('🍇 Nutriments being passed:', JSON.stringify(convertedFood.nutriments));
         console.log("✅ Navigating to Result...");
+
         navigation.navigate("Result", { 
           food: p,
           fromMode: 'barcode' 
@@ -439,12 +442,28 @@ export default function ScannerScreen({ navigation }) {
         // Found nutrition data!
         console.log('✅ Nutrition data found:', nutritionData.source);
         
+        const nm = nutritionData.nutriments || nutritionData.nutrients || {};
         detectedFood = {
           product_name: nutritionData.name || foodName,
           image_url: photoUri,
-          nutriments: nutritionData.nutriments,
+          nutriments: {
+            'energy-kcal_100g': nm['energy-kcal_100g'] || nm['energy-kcal'] || 0,
+            'energy-kcal': nm['energy-kcal'] || nm['energy-kcal_100g'] || 0,
+            proteins_100g: nm.proteins_100g || nm.proteins || 0,
+            proteins: nm.proteins || nm.proteins_100g || 0,
+            carbohydrates_100g: nm.carbohydrates_100g || nm.carbohydrates || 0,
+            carbohydrates: nm.carbohydrates || nm.carbohydrates_100g || 0,
+            fat_100g: nm.fat_100g || nm.fat || 0,
+            fat: nm.fat || nm.fat_100g || 0,
+            sodium_100g: nm.sodium_100g || nm.sodium || 0,
+            sodium: nm.sodium || nm.sodium_100g || 0,
+            sugars_100g: nm.sugars_100g || nm.sugar || 0,
+            sugar: nm.sugar || nm.sugars_100g || 0,
+            fiber_100g: nm.fiber_100g || nm.fiber || 0,
+            fiber: nm.fiber || nm.fiber_100g || 0,
+          },
           detected_by_ai: true,
-          ai_detected_name: foodName, // Original AI detection
+          ai_detected_name: foodName,
           confidence: confidence,
           nutrition_source: nutritionData.source,
           usda_fdc_id: nutritionData.fdcId || null,

@@ -145,7 +145,13 @@ export async function analyzePhoto(imageBase64) {
     });
 
     // Sort by confidence, with labels winning ties over web entities
+    const genericLabels = ['food', 'fruit', 'produce', 'ingredient', 'natural foods', 'superfood', 'dish', 'meal', 'seedless fruit', 'natural food'];
+
     foodDetections.sort((a, b) => {
+      const aIsGeneric = genericLabels.some(g => a.name.toLowerCase() === g);
+      const bIsGeneric = genericLabels.some(g => b.name.toLowerCase() === g);
+      if (aIsGeneric && !bIsGeneric) return 1;
+      if (!aIsGeneric && bIsGeneric) return -1;
       if (b.confidence !== a.confidence) return b.confidence - a.confidence;
       return a.source === 'label' ? -1 : 1;
     });
@@ -158,14 +164,18 @@ export async function analyzePhoto(imageBase64) {
       throw new Error('No food detected in image');
     }
 
-    const topDetection = confidentDetections[0];
+    const topDetections = confidentDetections.slice(0, 3);
 
-    console.log(`✅ Google Vision detected: ${topDetection.name} (${topDetection.confidence}% confidence)`);
-    console.log(`📊 Top 3 results:`, confidentDetections.slice(0, 3).map(d => `${d.name} (${d.confidence}%, ${d.source})`));
+    console.log(`✅ Google Vision detected: ${topDetections[0].name} (${topDetections[0].confidence}% confidence)`);
+    console.log(`📊 Top 3 results:`, topDetections.map(d => `${d.name} (${d.confidence}%, ${d.source})`));
 
     return {
-      foodName: topDetection.name,
-      confidence: topDetection.confidence,
+      foodName: topDetections[0].name,
+      confidence: topDetections[0].confidence,
+      topSuggestions: topDetections.map(d => ({
+        name: d.name,
+        confidence: d.confidence
+      })),
       allConcepts: confidentDetections.slice(0, 5).map(d => ({
         name: d.name,
         confidence: d.confidence
