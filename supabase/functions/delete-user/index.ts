@@ -68,11 +68,10 @@ serve(async (req) => {
     // Delete auth user (using service role)
     console.log('🗑️ Deleting auth user...');
     const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id)
-    
-    if (deleteError) {
-      console.error('❌ Error deleting auth user:', deleteError);
-      throw deleteError;
-    }
+      if (deleteError && deleteError.code !== 'user_not_found') {
+        console.error('❌ Error deleting auth user:', deleteError);
+        throw deleteError;
+      }
 
     console.log('✅ Account deleted successfully');
 
