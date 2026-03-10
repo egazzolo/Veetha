@@ -1317,15 +1317,14 @@ export default function HomeScreen({ navigation }) {
                   {/* Exercise Card - LEFT SIDE */}
                   <ExerciseButton theme={theme} navigation={navigation} />
 
-                  {/* Water Intake with Animated Pitcher */}
+                  {/* Water Card - RIGHT SIDE */}
                   <View style={[styles.activityCard, { backgroundColor: theme.cardBackground }]}>
-                    <WaterPitcher 
-                      cups={waterIntake} 
-                      maxCups={profile?.daily_water_goal_cups || 8}
-                      theme={theme}
-                    />
-                    
-                    {/* Water Control Buttons */}
+                    <Text style={[styles.waterProgress, { color: theme.text }]}>
+                      💧 {t('home.water')} {waterIntake} / {profile?.daily_water_goal_cups || 8}
+                    </Text>
+                    <Text style={[styles.waterUnit, { color: theme.textSecondary }]}>
+                      {profile?.water_unit_preference || t('goalsPreferences.cups')}
+                    </Text>
                     <View style={styles.waterButtons}>
                       <TouchableOpacity 
                         style={[styles.waterButton, { backgroundColor: theme.border }]}
