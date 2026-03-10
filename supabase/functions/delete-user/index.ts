@@ -47,12 +47,6 @@ serve(async (req) => {
       throw mealsError;
     }
 
-    // Delete recovery codes
-    const { error: recoveryError } = await supabase
-      .from('recovery_codes')
-      .delete()
-      .eq('user_id', user.id)
-
     // Delete api_tracking
     const { error: trackingError } = await supabase
       .from('api_tracking')

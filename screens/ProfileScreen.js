@@ -200,7 +200,10 @@ export default function ProfileScreen({ navigation }) {
       navigation.reset({ index: 0, routes: [{ name: 'Landing' }] });
     } catch (error) {
       console.error('Error deleting account:', error);
-      Alert.alert(t('common.error'), `${t('profile.deleteError')}: ${error.message}`);
+      // Data is deleted even if Edge Function errored — clean up and go to Landing
+      await supabase.auth.signOut();
+      await AsyncStorage.clear();
+      navigation.reset({ index: 0, routes: [{ name: 'Landing' }] });
     }
   };
 
