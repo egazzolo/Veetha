@@ -672,6 +672,14 @@ export default {
     protein: 'Prot.',
     carbs: 'Carbs',
     fat: 'Fats',
+
+    // Portion picker
+    portionQuestion: 'Magkano ang kinain mo?',
+    portionSmall: 'Maliit',
+    portionMedium: 'Katamtaman',
+    portionLarge: 'Malaki',
+    portionCustom: 'Custom',
+    portionCustomPlaceholder: 'Ilagay ang gramo...',
   },
 
   // Stats Screen

@@ -672,6 +672,14 @@ export default {
     protein: 'Prot.',
     carbs: 'Carbos',
     fat: 'Grasa',
+
+    // Selector de porción
+    portionQuestion: '¿Cuánto comiste?',
+    portionSmall: 'Pequeño',
+    portionMedium: 'Mediano',
+    portionLarge: 'Grande',
+    portionCustom: 'Personalizado',
+    portionCustomPlaceholder: 'Ingresa gramos...',
   },
 
   // Stats Screen

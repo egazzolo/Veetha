@@ -672,6 +672,14 @@ export default {
     protein: 'Prot.',
     carbs: 'Gluc.',
     fat: 'Lip.',
+
+    // Sélecteur de portion
+    portionQuestion: 'Quelle quantité avez-vous mangé ?',
+    portionSmall: 'Petite',
+    portionMedium: 'Moyenne',
+    portionLarge: 'Grande',
+    portionCustom: 'Personnalisé',
+    portionCustomPlaceholder: 'Entrez les grammes...',
   },
 
   // Stats Screen

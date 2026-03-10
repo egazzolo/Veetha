@@ -11,6 +11,7 @@ import AllergenWarningModal from '../components/AllergenWarningModal';
 import { useLanguage } from '../utils/LanguageContext';
 import { logMealLogged } from '../utils/analytics';
 import { searchFood } from '../utils/foodDatabase';
+import { getPortionDefault } from '../utils/portionDefaults';
 
 const detectServingUnit = (productName = '', servingSize) => {
   const nameLower = String(productName || '').toLowerCase();
@@ -183,6 +184,9 @@ export default function ResultScreen({ route, navigation }) {
   const [wrongFoodInput, setWrongFoodInput] = useState('');
   const [searchingFood, setSearchingFood] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showPortionPicker, setShowPortionPicker] = useState(false);
+  const [showCustomPortionInput, setShowCustomPortionInput] = useState(false);
+  const [customPortionInput, setCustomPortionInput] = useState('');
 
   const [viewMode, setViewMode] = useState(
     route.params?.fromMode === 'photo' ? 'photo' : 'detailed'
@@ -194,6 +198,15 @@ export default function ResultScreen({ route, navigation }) {
   const detailedRotateZ = useRef(new Animated.Value(0)).current;
   const detailedSwipeOpacity = useRef(new Animated.Value(0)).current;
   const [detailedSwipeDirection, setDetailedSwipeDirection] = useState(null);
+
+  const portionDefault = getPortionDefault(food.product_name);
+
+  // Show portion picker on mount when coming from photo mode
+  useEffect(() => {
+    if (route.params?.fromMode === 'photo') {
+      setShowPortionPicker(true);
+    }
+  }, []);
 
   // Helper function
   const getMacroLabel = (key) => {
@@ -1314,6 +1327,115 @@ export default function ResultScreen({ route, navigation }) {
         </Text>
       </View>
     )}
+
+      {/* PORTION PICKER MODAL */}
+      <Modal
+        visible={showPortionPicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => {
+          setServingGrams(portionDefault);
+          setInputValue(String(portionDefault));
+          setShowPortionPicker(false);
+        }}
+      >
+        <View style={styles.portionOverlay}>
+          <View style={styles.portionContainer}>
+            <TouchableOpacity
+              style={styles.portionCloseBtn}
+              onPress={() => {
+                setServingGrams(portionDefault);
+                setInputValue(String(portionDefault));
+                setShowPortionPicker(false);
+              }}
+            >
+              <Text style={styles.portionCloseBtnText}>✕</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.portionFoodName}>{food.product_name}</Text>
+            <Text style={styles.portionQuestion}>{t('results.portionQuestion')}</Text>
+
+            <TouchableOpacity
+              style={styles.portionOptionBtn}
+              onPress={() => {
+                const val = Math.round(portionDefault * 0.6);
+                setServingGrams(val);
+                setInputValue(String(val));
+                setShowPortionPicker(false);
+              }}
+            >
+              <Text style={styles.portionOptionBtnText}>
+                {t('results.portionSmall')}  ·  {Math.round(portionDefault * 0.6)}g
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.portionOptionBtn, styles.portionOptionBtnMedium]}
+              onPress={() => {
+                setServingGrams(portionDefault);
+                setInputValue(String(portionDefault));
+                setShowPortionPicker(false);
+              }}
+            >
+              <Text style={[styles.portionOptionBtnText, styles.portionOptionBtnTextMedium]}>
+                {t('results.portionMedium')}  ·  {portionDefault}g
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.portionOptionBtn}
+              onPress={() => {
+                const val = Math.round(portionDefault * 1.5);
+                setServingGrams(val);
+                setInputValue(String(val));
+                setShowPortionPicker(false);
+              }}
+            >
+              <Text style={styles.portionOptionBtnText}>
+                {t('results.portionLarge')}  ·  {Math.round(portionDefault * 1.5)}g
+              </Text>
+            </TouchableOpacity>
+
+            {!showCustomPortionInput ? (
+              <TouchableOpacity
+                style={[styles.portionOptionBtn, styles.portionCustomBtn]}
+                onPress={() => setShowCustomPortionInput(true)}
+              >
+                <Text style={[styles.portionOptionBtnText, styles.portionCustomBtnText]}>
+                  {t('results.portionCustom')}
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.portionCustomRow}>
+                <TextInput
+                  style={styles.portionCustomInput}
+                  keyboardType="numeric"
+                  value={customPortionInput}
+                  onChangeText={setCustomPortionInput}
+                  placeholder={t('results.portionCustomPlaceholder')}
+                  placeholderTextColor="#999"
+                  maxLength={4}
+                />
+                <TouchableOpacity
+                  style={styles.portionCustomConfirm}
+                  onPress={() => {
+                    const val = parseInt(customPortionInput, 10);
+                    if (val > 0 && val <= 2000) {
+                      setServingGrams(val);
+                      setInputValue(String(val));
+                      setShowPortionPicker(false);
+                      setShowCustomPortionInput(false);
+                    }
+                  }}
+                >
+                  <Text style={styles.portionCustomConfirmText}>{t('common.confirm')}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
+
         </SafeAreaView>
   );
 }
@@ -1663,5 +1785,100 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+
+  // Portion picker modal styles
+  portionOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'flex-end',
+  },
+  portionContainer: {
+    backgroundColor: '#EAE0C8',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 28,
+    paddingBottom: 40,
+  },
+  portionCloseBtn: {
+    position: 'absolute',
+    top: 16,
+    right: 20,
+    padding: 6,
+  },
+  portionCloseBtnText: {
+    fontSize: 18,
+    color: '#555',
+  },
+  portionFoodName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#222',
+    textAlign: 'center',
+    marginBottom: 6,
+    marginTop: 4,
+  },
+  portionQuestion: {
+    fontSize: 15,
+    color: '#444',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  portionOptionBtn: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    marginBottom: 10,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#ccc',
+  },
+  portionOptionBtnMedium: {
+    backgroundColor: '#1F9B39',
+    borderColor: '#1F9B39',
+  },
+  portionOptionBtnText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#222',
+  },
+  portionOptionBtnTextMedium: {
+    color: '#fff',
+  },
+  portionCustomBtn: {
+    backgroundColor: 'transparent',
+    borderColor: '#1F9B39',
+  },
+  portionCustomBtnText: {
+    color: '#1F9B39',
+  },
+  portionCustomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 10,
+  },
+  portionCustomInput: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: '#1F9B39',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 16,
+    backgroundColor: '#fff',
+    color: '#222',
+  },
+  portionCustomConfirm: {
+    backgroundColor: '#1F9B39',
+    borderRadius: 10,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+  },
+  portionCustomConfirmText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
   },
 });

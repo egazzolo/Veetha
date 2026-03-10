@@ -672,6 +672,14 @@ export default {
     protein: 'Prot.',
     carbs: 'Carbs',
     fat: 'Fat',
+
+    // Portion picker
+    portionQuestion: 'How much did you eat?',
+    portionSmall: 'Small',
+    portionMedium: 'Medium',
+    portionLarge: 'Large',
+    portionCustom: 'Custom',
+    portionCustomPlaceholder: 'Enter grams...',
   },
 
   // Stats Screen
