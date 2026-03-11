@@ -70,39 +70,8 @@ export default function LandingScreen({ navigation }) {
 
               console.log('✅ Anonymous user created:', data?.user?.id);
 
-              // 🔐 CHECK IF RECOVERY CODE EXISTS
-              const { data: existingCode } = await supabase
-                .from('recovery_codes')
-                .select('id')
-                .eq('user_id', data.user.id)
-                .maybeSingle();
-
-              if (!existingCode) {
-
-                const rawCode = Crypto.randomUUID()
-                  .replace(/-/g,'')
-                  .slice(0,12)
-                  .toUpperCase();
-
-                const codeHash = await Crypto.digestStringAsync(
-                  Crypto.CryptoDigestAlgorithm.SHA256,
-                  rawCode
-                );
-
-                await supabase
-                  .from('recovery_codes')
-                  .insert({
-                    user_id: data.user.id,
-                    code_hash: codeHash
-                  });
-
-                // TEMP DEBUG — REMOVE LATER
-                console.log('🔑 RECOVERY CODE:', rawCode);
-              }
-
               // Set guest mode — go straight to Home, skip onboarding
-              await setUserMode('guest');
-
+              await setUserMode('guest')
               navigation.replace('Home');
             } catch (e) {
               console.error('Anonymous sign-in failed:', e);

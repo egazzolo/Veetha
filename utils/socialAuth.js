@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as AuthSession from 'expo-auth-session';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Configure Google Sign-In
 GoogleSignin.configure({
@@ -10,6 +11,18 @@ GoogleSignin.configure({
 
 export const signInWithGoogle = async () => {
   try {
+    const { data: { session: anonSession } } = await supabase.auth.getSession();
+      if (anonSession?.user?.is_anonymous) {
+        await AsyncStorage.removeItem('veetha_user_mode');
+        try {
+          await supabase.functions.invoke('delete-user', {
+            headers: { Authorization: `Bearer ${anonSession.access_token}` }
+          });
+        } catch (e) {
+          console.warn('⚠️ Could not delete anon user:', e);
+        }
+        await supabase.auth.signOut();
+      }
     await GoogleSignin.hasPlayServices();
     const userInfo = await GoogleSignin.signIn();
     

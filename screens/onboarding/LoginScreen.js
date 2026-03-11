@@ -43,6 +43,23 @@ export default function LoginScreen({ navigation }) {
       console.log('🔐 Attempting login...');
       console.log('📧 Email:', email);
 
+      const { data: { session: anonSession } } = await supabase.auth.getSession();
+      if (anonSession?.user?.is_anonymous) {
+        console.log('🗑️ Anon user detected, deleting:', anonSession.user.id);
+        await AsyncStorage.removeItem('veetha_user_mode');
+        try {
+          await supabase.functions.invoke('delete-user', {
+            headers: { Authorization: `Bearer ${anonSession.access_token}` }
+          });
+          console.log('🗑️ Delete anon result:', JSON.stringify(result));
+        } catch (e) {
+          console.warn('⚠️ Could not delete anon user:', e);
+        }
+        await supabase.auth.signOut();
+      } else {
+        console.log('ℹ️ No anon session found, user is_anonymous:', anonSession?.user?.is_anonymous);
+      }
+
       // Sign in with Supabase
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
