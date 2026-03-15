@@ -1,4 +1,6 @@
 export default {
+
+  skipTutorial: 'Omitir  Tutorial',
   // Common
   common: {
     ok: 'OK',
@@ -653,6 +655,7 @@ export default {
     lowOnScans: 'Pocas Fotos Restantes',
     lowOnScansMessage: 'Te quedan {remaining} solicitudes de fotos este mes.',
     waitBetweenPhotos: 'Por favor espera un momento entre fotos.',
+    errorMessage: 'No se pudo obtener la información del producto. Por favor intenta de nuevo.',
   },
 
   // Submit Product Screen
@@ -727,6 +730,7 @@ export default {
     protein: 'Prot.',
     carbs: 'Carbos',
     fat: 'Grasa',
+    wrongFood: '¿Alimento incorrecto?',
     allergenWarning: {
       title: "ALERTA DIETÉTICA",
       subtitle: "Este producto contiene ingredientes que has marcado:",

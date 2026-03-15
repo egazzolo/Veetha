@@ -1,4 +1,6 @@
 export default {
+
+  skipTutorial: 'Laktawan ang Tutorial',
   // Common
   common: {
     ok: 'OK',
@@ -653,6 +655,7 @@ export default {
     lowOnScans: 'Kaunti na lang ang Natitira',
     lowOnScansMessage: 'May {remaining} na photo request ka pa ngayong buwan.',
     waitBetweenPhotos: 'Maghintay muna ng ilang sandali sa pagitan ng mga litrato.',
+    errorMessage: 'Hindi makuha ang impormasyon ng produkto. Pakisubukan muli.',
   },
 
   // Submit Product Screen
@@ -727,6 +730,7 @@ export default {
     protein: 'Prot.',
     carbs: 'Carbs',
     fat: 'Fats',
+    wrongFood: 'Maling pagkain?',
     allergenWarning: {
       title: "BABALA SA DIYETA",
       subtitle: "Ang produktong ito ay naglalaman ng mga sangkap na iyong minarkahan:",

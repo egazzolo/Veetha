@@ -118,6 +118,21 @@ function AppNavigator() {
           }
 
           oauthNavigating.current = true;
+
+          // Anonymous/guest users never go to onboarding
+          if (session.user?.is_anonymous) {
+            console.log('👤 Anonymous user - navigating to Home');
+            const tryNavigate = () => {
+              if (navigationRef.current?.isReady()) {
+                navigationRef.current.reset({ index: 0, routes: [{ name: 'Home' }] });
+              } else {
+                setTimeout(tryNavigate, 100);
+              }
+            };
+            tryNavigate();
+            return;
+          }
+
           await setUserMode('authenticated');
           console.log('🧭 OAuth login - navigating to OnboardingStep1');
 

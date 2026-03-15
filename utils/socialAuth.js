@@ -12,17 +12,18 @@ GoogleSignin.configure({
 export const signInWithGoogle = async () => {
   try {
     const { data: { session: anonSession } } = await supabase.auth.getSession();
-      if (anonSession?.user?.is_anonymous) {
-        await AsyncStorage.removeItem('veetha_user_mode');
-        try {
-          await supabase.functions.invoke('delete-user', {
-            headers: { Authorization: `Bearer ${anonSession.access_token}` }
-          });
-        } catch (e) {
-          console.warn('⚠️ Could not delete anon user:', e);
-        }
-        await supabase.auth.signOut();
+    if (anonSession?.user?.is_anonymous) {
+      await AsyncStorage.removeItem('veetha_user_mode');
+      try {
+        await supabase.functions.invoke('delete-user', {
+          headers: { Authorization: `Bearer ${anonSession.access_token}` }
+        });
+        console.log('🗑️ Anon user deleted before Google sign in');
+      } catch (e) {
+        console.warn('⚠️ Could not delete anon user:', e);
       }
+      await supabase.auth.signOut();
+    }
     await GoogleSignin.hasPlayServices();
     const userInfo = await GoogleSignin.signIn();
     

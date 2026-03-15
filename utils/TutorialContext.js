@@ -125,6 +125,11 @@ export const TutorialProvider = ({ children }) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
+      if (!user) {
+        console.log('⚠️ No user session — skipping tutorial DB update');
+        return;
+      }
+
       let updateField = {};
       
       if (currentScreen === 'Home') {

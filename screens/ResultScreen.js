@@ -535,6 +535,13 @@ export default function ResultScreen({ route, navigation }) {
 
         if (existingProduct) {
           productId = existingProduct.id;
+          // Update barcode if missing
+          if ((food.barcode || food.code) && !existingProduct.barcode) {
+            await supabase
+              .from('food_database')
+              .update({ barcode: food.barcode || food.code })
+              .eq('id', productId);
+          }
         } else {
 
           console.log('➕ Creating new product in food_database...');
@@ -551,8 +558,9 @@ export default function ResultScreen({ route, navigation }) {
               sugar: food.nutriments?.sugars_100g || food.nutriments?.sugar || 0,
               sodium: food.nutriments?.sodium_100g || food.nutriments?.sodium || 0,
               image_url: imageUrl,
+              barcode: food.barcode || food.code || null,
             })
-            .select('id')
+            .select('id, barcode')
             .single();
 
           if (productError) throw productError;
@@ -860,7 +868,7 @@ export default function ResultScreen({ route, navigation }) {
               {route.params?.fromMode === 'photo' && (
                 <TouchableOpacity onPress={() => setShowWrongFoodModal(true)} style={{ marginTop: 6 }}>
                   <Text style={{ color: '#4CAF50', fontWeight: '600', textAlign: 'center' }}>
-                    ✏️ Wrong food?
+                    ✏️ {t('results.wrongfood')}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -1046,7 +1054,7 @@ export default function ResultScreen({ route, navigation }) {
                         onPress={() => setShowWrongFoodModal(true)}  // ✅ Correct
                       >
                         <Text style={{ color: '#2196F3', fontWeight: '600' }}>
-                          ✏️ Wrong food?
+                          ✏️ {t('results.wrongfood')}
                         </Text>
                       </TouchableOpacity>
                     )}
@@ -1086,7 +1094,7 @@ export default function ResultScreen({ route, navigation }) {
                             setShowWrongFoodModal(true);
                           }}
                         >
-                          <Text>✏️ Wrong food?</Text>
+                          <Text>✏️ {t('results.wrongfood')}</Text>
                         </TouchableOpacity>
                         
                         <TouchableOpacity 
@@ -1328,7 +1336,7 @@ export default function ResultScreen({ route, navigation }) {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.nutrientModalContent}>
-            <Text style={styles.modalTitle}>Wrong food?</Text>
+            <Text style={styles.modalTitle}>{t('results.wrongfood')}</Text>
 
             <TextInput
               style={styles.servingInput}

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, Modal, TextInput, ActivityIndicator, Animated } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Alert, Modal, TextInput, ActivityIndicator, Animated, AppState } from 'react-native';
 import { CameraView } from 'expo-camera';
 import { useTheme } from '../utils/ThemeContext';
 import { useFocusEffect } from '@react-navigation/native';
@@ -13,7 +13,8 @@ import { logScreen, logEvent } from '../utils/analytics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSwipeNavigation } from '../utils/useSwipeNavigation';
-import { searchFood } from '../utils/foodDatabase';
+import { searchFood, searchLocalFoodDatabase } from '../utils/foodDatabase';
+import { searchUSDAFood, getBestUSDAMatch, parseUSDAFood } from '../utils/usdaApi';
 import { useUser, UserContext } from '../utils/UserContext';
 import { useUserMode } from '../utils/UserModeContext';
 import { analyzePhoto, imageUriToBase64 } from '../utils/visionApi';
@@ -276,27 +277,19 @@ export default function ScannerScreen({ navigation }) {
 
     checkScannerTutorial();
   }, []);
-
-  // Request camera permission
-  //if (!permission) {
-  //  return <View style={styles.container}><ActivityIndicator size="large" /></View>;
-  //}
-
-  //if (!permission.granted) {
-  //  return (
-  //    <View style={[styles.permissionContainer, { backgroundColor: theme.background }]}>
-  //      <Text style={[styles.permissionText, { color: theme.text }]}>
-  //        {t('scanner.cameraPermission')}
-  //      </Text>
-  //      <TouchableOpacity
-  //        style={[styles.permissionButton, { backgroundColor: theme.primary }]}
-  //        onPress={requestPermission}
-  //      >
-  //        <Text style={styles.permissionButtonText}>{t('scanner.grantPermission')}</Text>
-  //      </TouchableOpacity>
-  //    </View>
-  //  );
-  //}
+  
+  // Reset camera when app comes back from background
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        console.log('📷 App returned to foreground - resetting scanner');
+        setScanned(false);
+        setLoading(false);
+        lastPhotoTime.current = 0;
+      }
+    });
+    return () => subscription.remove();
+  }, []);
 
   // Fetch food info from OpenFoodFacts
   const fetchFoodInfo = async (barcode) => {
@@ -304,64 +297,125 @@ export default function ScannerScreen({ navigation }) {
       setLoading(true);
       console.log("🔍 Fetching product with barcode:", barcode);
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      // ── LEVEL 1: OpenFoodFacts ──────────────────────────────
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      let response;
-      let attempts = 0;
-      const maxAttempts = 2;
+        const response = await fetch(
+          `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`,
+          { signal: controller.signal }
+        );
+        clearTimeout(timeoutId);
 
-      while (attempts < maxAttempts) {
-        try {
-          response = await fetch(
-            `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`,
-            { signal: controller.signal }
-          );
-          clearTimeout(timeoutId);
-          break;
-        } catch (error) {
-          attempts++;
-          if (attempts >= maxAttempts) throw error;
-          console.log(`⚠️ Attempt ${attempts} failed, retrying...`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
+        const data = await response.json();
+
+        if (data.status === 1 && data.product) {
+          const p = data.product;
+          console.log("✅ OFF: Product found:", p.product_name);
+
+          let imageUrl = p.image_url || p.image_front_url || p.image_front_small_url;
+          if (imageUrl && !imageUrl.startsWith('http')) {
+            imageUrl = `https://world.openfoodfacts.org${imageUrl}`;
+          }
+          p.image_url = imageUrl;
+
+          navigation.navigate("Result", { food: p, fromMode: 'barcode' });
+          return;
         }
+        console.log("⚠️ OFF: Product not found, trying USDA...");
+      } catch (offError) {
+        console.log("⚠️ OFF failed:", offError.message, "— trying USDA...");
       }
 
-      const data = await response.json();
-
-      if (data.status === 1 && data.product) {
-        const p = data.product;
-        console.log("✅ Product found:", p.product_name);
-
-        let imageUrl = p.image_url || p.image_front_url || p.image_front_small_url;
-        if (imageUrl && !imageUrl.startsWith('http')) {
-          imageUrl = `https://world.openfoodfacts.org${imageUrl}`;
+      // ── LEVEL 2: USDA FoodData Central ─────────────────────
+      try {
+        const usdaResults = await searchUSDAFood(barcode);
+        if (usdaResults && usdaResults.length > 0) {
+          const best = getBestUSDAMatch(barcode, usdaResults);
+          if (best) {
+            const parsed = parseUSDAFood(best);
+            console.log("✅ USDA: Product found:", parsed.name);
+            navigation.navigate("Result", {
+              food: {
+                product_name: parsed.name,
+                image_url: null,
+                nutriments: {
+                  'energy-kcal_100g': parsed.nutrients['energy-kcal'] || 0,
+                  'energy-kcal': parsed.nutrients['energy-kcal'] || 0,
+                  proteins_100g: parsed.nutrients.proteins || 0,
+                  proteins: parsed.nutrients.proteins || 0,
+                  carbohydrates_100g: parsed.nutrients.carbohydrates || 0,
+                  carbohydrates: parsed.nutrients.carbohydrates || 0,
+                  fat_100g: parsed.nutrients.fat || 0,
+                  fat: parsed.nutrients.fat || 0,
+                  sodium_100g: parsed.nutrients.sodium || 0,
+                  sodium: parsed.nutrients.sodium || 0,
+                  sugars_100g: parsed.nutrients.sugar || 0,
+                  sugar: parsed.nutrients.sugar || 0,
+                  fiber_100g: parsed.nutrients.fiber || 0,
+                  fiber: parsed.nutrients.fiber || 0,
+                },
+                nutrition_source: 'usda',
+              },
+              fromMode: 'barcode'
+            });
+            return;
+          }
         }
-        p.image_url = imageUrl;
-
-        console.log('🍇 Passing to Result:', JSON.stringify(convertedFood.nutriments));
-        console.log('🍇 Nutriments being passed:', JSON.stringify(convertedFood.nutriments));
-        console.log("✅ Navigating to Result...");
-
-        navigation.navigate("Result", { 
-          food: p,
-          fromMode: 'barcode' 
-        });
-      } else {
-        console.log("❌ Product not found in database");
-        setLoading(false);
-        setNotFoundBarcode(barcode);
-        setProductNotFoundModalVisible(true);
+        console.log("⚠️ USDA: Product not found, trying local DB...");
+      } catch (usdaError) {
+        console.log("⚠️ USDA failed:", usdaError.message, "— trying local DB...");
       }
+
+      // ── LEVEL 3: Local Database ─────────────────────────────
+      try {
+        const localResult = await searchLocalFoodDatabase(barcode);
+        if (localResult) {
+          console.log("✅ Local DB: Product found:", localResult.name);
+          navigation.navigate("Result", {
+            food: {
+              product_name: localResult.name,
+              image_url: null,
+              nutriments: {
+                'energy-kcal_100g': localResult.calories || 0,
+                'energy-kcal': localResult.calories || 0,
+                proteins_100g: localResult.protein || 0,
+                proteins: localResult.protein || 0,
+                carbohydrates_100g: localResult.carbs || 0,
+                carbohydrates: localResult.carbs || 0,
+                fat_100g: localResult.fat || 0,
+                fat: localResult.fat || 0,
+                sodium_100g: localResult.sodium || 0,
+                sodium: localResult.sodium || 0,
+                sugars_100g: localResult.sugar || 0,
+                sugar: localResult.sugar || 0,
+                fiber_100g: localResult.fiber || 0,
+                fiber: localResult.fiber || 0,
+              },
+              nutrition_source: 'local',
+            },
+            fromMode: 'barcode'
+          });
+          return;
+        }
+      } catch (localError) {
+        console.log("⚠️ Local DB failed:", localError.message);
+      }
+
+      // ── ALL FAILED ──────────────────────────────────────────
+      console.log("❌ Product not found in any database");
+      setLoading(false);
+      setNotFoundBarcode(barcode);
+      setProductNotFoundModalVisible(true);
+
     } catch (error) {
       console.error('❌ Error fetching food info:', error);
       setLoading(false);
       Alert.alert(
         t('scanner.error'),
         t('scanner.errorMessage'),
-        [
-          { text: t('scanner.ok'), onPress: () => setScanned(false) },
-        ]
+        [{ text: t('scanner.ok'), onPress: () => setScanned(false) }]
       );
     } finally {
       setLoading(false);
@@ -594,6 +648,7 @@ export default function ScannerScreen({ navigation }) {
     if (scanned || mode !== 'barcode') return;
     
     setScanned(true);
+    setLoading(true);
     console.log("📊 Barcode scanned:", data);
     logEvent('barcode_scanned', { barcode: data });
     fetchFoodInfo(data);
@@ -717,7 +772,7 @@ export default function ScannerScreen({ navigation }) {
             </View>
 
             {/* Loading Overlay */}
-            {loading && mode === 'photo' && (
+            {loading && (
               <View style={styles.loadingOverlay}>
                 <View style={styles.loadingCard}>
                   <ActivityIndicator size="large" color="#4CAF50" />

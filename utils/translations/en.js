@@ -1,4 +1,6 @@
 export default {
+
+  skipTutorial: 'Skip Tutorial',
   // Common
   common: {
     ok: 'OK',
@@ -653,6 +655,7 @@ export default {
     lowOnScans: 'Low on Photo Scans',
     lowOnScansMessage: "You have {remaining} photo requests left this month.",
     waitBetweenPhotos: 'Please wait a moment between photos.',
+    errorMessage: 'Could not fetch product information. Please try again.',
   },
 
   // Submit Product Screen

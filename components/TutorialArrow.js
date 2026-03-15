@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+import { useLanguage } from '../utils/LanguageContext';
 
 export default function TutorialArrow({ 
   visible, 
@@ -9,6 +10,7 @@ export default function TutorialArrow({
   message = 'Tap here to continue!'
 }) {
   const bounceAnim = useRef(new Animated.Value(0)).current;
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (visible) {
@@ -37,7 +39,7 @@ export default function TutorialArrow({
       <View style={styles.overlay} pointerEvents="box-none">
         {/* Skip button */}
         <TouchableOpacity style={styles.skipButton} onPress={onSkip}>
-          <Text style={styles.skipText}>Skip Tutorial</Text>
+          <Text style={styles.skipText}>{t('skipTutorial')}</Text>
         </TouchableOpacity>
 
         {/* Bouncing arrow */}
@@ -49,8 +51,8 @@ export default function TutorialArrow({
                 ? targetCoords.top + (targetCoords.height / 2) - 25  // Vertically centered
                 : targetCoords.top - 80,
               left: direction === 'left'
-                ? targetCoords.left + targetCoords.width + 15  // To the right
-                : targetCoords.left + (targetCoords.width / 2) - 60,
+                ? targetCoords.left + targetCoords.width + 15
+                : targetCoords.left + (targetCoords.width / 2) - 80,
               transform: direction === 'left' 
                 ? [{ translateX: bounceAnim }]  // Bounce horizontally
                 : [{ translateY: bounceAnim }],  // Bounce vertically

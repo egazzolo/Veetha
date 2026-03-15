@@ -68,6 +68,47 @@ export async function searchFood(foodName) {
 async function searchLocalFoodDatabase(foodName) {
   try {
     const normalized = foodName.toLowerCase().trim();
+
+     // ── Barcode lookup first ──────────────────────────────────
+    const looksLikeBarcode = /^\d{6,14}$/.test(normalized);
+    if (looksLikeBarcode) {
+      const { data: barcodeData, error: barcodeError } = await supabase
+        .from('food_database')
+        .select('*')
+        .eq('barcode', normalized)
+        .limit(1);
+
+      if (!barcodeError && barcodeData && barcodeData.length > 0) {
+        const food = barcodeData[0];
+        console.log('✅ Local DB: Found by barcode:', food.name);
+        return {
+          id: food.id,
+          name: food.name,
+          product_name: food.name,
+          fdcId: food.usda_fdc_id,
+          nutriments: {
+            'energy-kcal_100g': food.calories,
+            'energy-kcal': food.calories,
+            proteins_100g: food.protein,
+            proteins: food.protein,
+            carbohydrates_100g: food.carbs,
+            carbohydrates: food.carbs,
+            fat_100g: food.fat,
+            fat: food.fat,
+            sodium_100g: food.sodium || 0,
+            sodium: food.sodium || 0,
+            sugars_100g: food.sugar || 0,
+            sugar: food.sugar || 0,
+            fiber_100g: food.fiber || 0,
+            fiber: food.fiber || 0,
+          },
+          source: food.source,
+          timesUsed: food.times_used,
+        };
+      }
+      // Barcode not in local DB — return null, let cascade continue
+      return null;
+    }
     
     // Search with fuzzy matching
     const { data, error } = await supabase
