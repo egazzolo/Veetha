@@ -60,7 +60,8 @@ module.exports = {
       bundleIdentifier: "com.yourname.veetha",
       icon: "./assets/LogoD.png",
       infoPlist: {
-        "NSLocationWhenInUseUsageDescription": "We use your location to suggest common foods in your area."
+        "NSLocationWhenInUseUsageDescription": "We use your location to suggest common foods in your area.",
+      "ITSAppUsesNonExemptEncryption": false
       }
     }
   }
