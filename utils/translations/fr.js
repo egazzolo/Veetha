@@ -17,6 +17,7 @@ export default {
     today: 'Aujourd\'hui',
     yesterday: 'Hier',
     confirm: 'Confirmer',
+    done: 'Terminé',
   },
   // Landing Screen
   landing: {

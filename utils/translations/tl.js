@@ -17,6 +17,7 @@ export default {
     today: 'Ngayon',
     yesterday: 'Kahapon',
     confirm: 'Kumpirmahin',
+    done: 'Tapos',
   },
   // Landing Screen
   landing: {

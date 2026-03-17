@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../utils/supabase';
 import { useTheme } from '../utils/ThemeContext';
@@ -28,7 +28,7 @@ export default function EditMealScreen({ route, navigation }) {
     setSaving(true);
 
     try {
-      const { error } = await supabase
+      const { error: foodError } = await supabase
         .from('food_database')
         .update({
           name: productName.trim(),
@@ -39,7 +39,14 @@ export default function EditMealScreen({ route, navigation }) {
         })
         .eq('id', meal.product_id);
 
-      if (error) throw error;
+      if (foodError) throw foodError;
+
+      const { error: mealError } = await supabase
+        .from('meals')
+        .update({ serving_grams: parseFloat(servingGrams) || 100 })
+        .eq('id', meal.id);
+
+      if (mealError) throw mealError;
 
       showToast('success', t('editMeal.updated'), t('editMeal.mealUpdated'));
       navigation.goBack();
@@ -60,6 +67,12 @@ export default function EditMealScreen({ route, navigation }) {
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
+
+      {Platform.OS === 'ios' && (
+        <TouchableOpacity style={styles.doneButton} onPress={Keyboard.dismiss}>
+          <Text style={styles.doneButtonText}>{t('done')}</Text>
+        </TouchableOpacity>
+      )}
 
         <ScrollView
           style={styles.scrollView}
@@ -217,5 +230,15 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     fontSize: 16,
+  },
+  doneButton: {
+    alignSelf: 'flex-end',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+  },
+  doneButtonText: {
+    color: '#1F9B39',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
