@@ -18,10 +18,13 @@ import { searchUSDAFood, getBestUSDAMatch, parseUSDAFood } from '../utils/usdaAp
 import { useUser, UserContext } from '../utils/UserContext';
 import { useUserMode } from '../utils/UserModeContext';
 import { analyzePhoto, imageUriToBase64 } from '../utils/visionApi';
+import { analyzePhotoLogMeal } from '../utils/logmealApi';
 import VeethaModal from '../components/VeethaModal';
 import GuestUpsellSheet from '../components/GuestUpsellSheet';
 
-const DAILY_PHOTO_LIMIT = 30;
+const DAILY_PHOTO_LIMIT = 2;
+const LOGMEAL_MONTHLY_LIMIT = 180;
+const LOGMEAL_API_TOKEN = 'fe0bc7c5555ed2eb1949d2ac62d178304286fdd9';
 
 export default function ScannerScreen({ navigation }) {
   const { theme } = useTheme();
@@ -426,13 +429,41 @@ export default function ScannerScreen({ navigation }) {
   const analyzeFoodPhoto = async (photoUri) => {
     try {
       setLoading(true);
-      console.log('📸 Analyzing food photo with Google Vision...');
 
-      // Convert image to base64
-      const base64 = await imageUriToBase64(photoUri);
+      // Check LogMeal monthly usage
+      const logmealCount = parseInt(await AsyncStorage.getItem('logmeal_monthly_count') || '0');
+      const logmealMonth = await AsyncStorage.getItem('logmeal_month');
+      const currentMonth = new Date().toISOString().slice(0, 7);
 
-      // Analyze with Google Vision
-      const result = await analyzePhoto(base64);
+      // Reset counter if new month
+      const effectiveCount = logmealMonth === currentMonth ? logmealCount : 0;
+      if (logmealMonth !== currentMonth) {
+        await AsyncStorage.setItem('logmeal_month', currentMonth);
+        await AsyncStorage.setItem('logmeal_monthly_count', '0');
+      }
+
+      let result;
+
+      if (effectiveCount < LOGMEAL_MONTHLY_LIMIT) {
+        // Use LogMeal
+        console.log(`📸 Analyzing with LogMeal (${effectiveCount + 1}/${LOGMEAL_MONTHLY_LIMIT})...`);
+        result = await analyzePhotoLogMeal(photoUri, LOGMEAL_API_TOKEN);
+        await AsyncStorage.setItem('logmeal_monthly_count', String(effectiveCount + 1));
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from('api_tracking').insert({
+            user_id: user.id,
+            service: 'logmeal',
+            type: 'food_recognition',
+            status: 'SUCCESS',
+          });
+        }
+      } else {
+        // Fall back to GCV
+        console.log('📸 LogMeal limit reached, falling back to Google Vision...');
+        const base64 = await imageUriToBase64(photoUri);
+        result = await analyzePhoto(base64);
+      }
       
       const foodName = result.foodName;
       const confidence = result.confidence;
@@ -585,7 +616,7 @@ export default function ScannerScreen({ navigation }) {
           .from('api_tracking')
           .select('id')
           .eq('user_id', user.id)
-          .eq('service', 'google_vision')
+          .in('service', ['google_vision', 'logmeal'])
           .eq('type', 'food_recognition')
           .gte('created_at', today + 'T00:00:00')
           .lte('created_at', today + 'T23:59:59');

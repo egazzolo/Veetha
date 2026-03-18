@@ -130,13 +130,14 @@ async function searchLocalFoodDatabase(foodName) {
       if (!isRelevant) return null;
 
       // Prefer exact or close matches over broad ones
-      const exactMatch = resultName.startsWith(normalized) || resultName === normalized;
+      const exactMatch = resultName === normalized || resultName === normalized + 's';
       const hasQualifier = resultName.includes('candied') || 
         resultName.includes('dried') || 
         resultName.includes('canned') ||
         resultName.includes('juice') ||
         resultName.includes('frozen') ||
-        resultName.includes('cooked');
+        resultName.includes('cooked') ||
+        resultName.includes('fruit');
       if (!exactMatch && hasQualifier && normalized.split(' ').length === 1) return null;
       return {
         id: food.id,
