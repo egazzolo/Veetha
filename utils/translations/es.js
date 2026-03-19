@@ -657,6 +657,7 @@ export default {
     lowOnScansMessage: 'Te quedan {remaining} solicitudes de fotos este mes.',
     waitBetweenPhotos: 'Por favor espera un momento entre fotos.',
     errorMessage: 'No se pudo obtener la información del producto. Por favor intenta de nuevo.',
+    photosLeft: 'fotos restantes hoy',
   },
 
   // Submit Product Screen
@@ -732,6 +733,9 @@ export default {
     carbs: 'Carbos',
     fat: 'Grasa',
     wrongFood: '¿Alimento incorrecto?',
+    wholeMeal: 'Comida completa',
+    individualFoods: 'Individual',
+    savingMeal: 'Guardando comida...',
     allergenWarning: {
       title: "ALERTA DIETÉTICA",
       subtitle: "Este producto contiene ingredientes que has marcado:",

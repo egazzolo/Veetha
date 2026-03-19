@@ -657,6 +657,7 @@ export default {
     lowOnScansMessage: "You have {remaining} photo requests left this month.",
     waitBetweenPhotos: 'Please wait a moment between photos.',
     errorMessage: 'Could not fetch product information. Please try again.',
+    photosLeft: 'photos left today',
   },
 
   // Submit Product Screen
@@ -732,6 +733,9 @@ export default {
     carbs: 'Carbs',
     fat: 'Fat',
     wrongfood: 'Wrong Food?',
+    wholeMeal: 'Whole Meal',
+    individualFoods: 'Individual',
+    savingMeal: 'Saving meal...',
     allergenWarning: {
       title: "DIETARY ALERT",
       subtitle: "This product contains ingredients you've marked:",

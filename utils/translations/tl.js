@@ -657,6 +657,7 @@ export default {
     lowOnScansMessage: 'May {remaining} na photo request ka pa ngayong buwan.',
     waitBetweenPhotos: 'Maghintay muna ng ilang sandali sa pagitan ng mga litrato.',
     errorMessage: 'Hindi makuha ang impormasyon ng produkto. Pakisubukan muli.',
+    photosLeft: 'mga larawang natitira ngayon',
   },
 
   // Submit Product Screen
@@ -732,6 +733,9 @@ export default {
     carbs: 'Carbs',
     fat: 'Fats',
     wrongFood: 'Maling pagkain?',
+    wholeMeal: 'Buong Pagkain',
+    individualFoods: 'Indibidwal',
+    savingMeal: 'Sine-save ang pagkain...',
     allergenWarning: {
       title: "BABALA SA DIYETA",
       subtitle: "Ang produktong ito ay naglalaman ng mga sangkap na iyong minarkahan:",

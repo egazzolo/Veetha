@@ -657,6 +657,7 @@ export default {
     lowOnScansMessage: 'Il vous reste {remaining} demandes photo ce mois-ci.',
     waitBetweenPhotos: 'Veuillez patienter un moment entre les photos.',
     errorMessage: 'Impossible de récupérer les informations du produit. Veuillez réessayer.',
+    photosLeft: 'photos restantes aujourd\'hui',
   },
 
   // Submit Product Screen
@@ -732,6 +733,9 @@ export default {
     carbs: 'Gluc.',
     fat: 'Lip.',
     wrongFood: 'Mauvais aliment ?',
+    wholeMeal: 'Repas complet',
+    individualFoods: 'Individuel',
+    savingMeal: 'Enregistrement...',
     allergenWarning: {
       title: "ALERTE DIÉTÉTIQUE",
       subtitle: "Ce produit contient des ingrédients que vous avez marqués :",

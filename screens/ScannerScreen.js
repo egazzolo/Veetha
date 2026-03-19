@@ -18,13 +18,11 @@ import { searchUSDAFood, getBestUSDAMatch, parseUSDAFood } from '../utils/usdaAp
 import { useUser, UserContext } from '../utils/UserContext';
 import { useUserMode } from '../utils/UserModeContext';
 import { analyzePhoto, imageUriToBase64 } from '../utils/visionApi';
-import { analyzePhotoLogMeal } from '../utils/logmealApi';
+import { analyzePhotoOpenAI } from '../utils/openaiVision';
 import VeethaModal from '../components/VeethaModal';
 import GuestUpsellSheet from '../components/GuestUpsellSheet';
 
 const DAILY_PHOTO_LIMIT = 2;
-const LOGMEAL_MONTHLY_LIMIT = 180;
-const LOGMEAL_API_TOKEN = 'fe0bc7c5555ed2eb1949d2ac62d178304286fdd9';
 
 export default function ScannerScreen({ navigation }) {
   const { theme } = useTheme();
@@ -34,6 +32,7 @@ export default function ScannerScreen({ navigation }) {
   const { isGuest } = useUserMode();
   const [showArrowToBack, setShowArrowToBack] = useState(false);
   const [backButtonCoords, setBackButtonCoords] = useState(null); 
+  const [photosUsedToday, setPhotosUsedToday] = useState(0);
   const cameraRef = useRef(null);
   const lastPhotoTime = useRef(0);
 
@@ -294,6 +293,24 @@ export default function ScannerScreen({ navigation }) {
     return () => subscription.remove();
   }, []);
 
+  useEffect(() => {
+    const loadPhotoCount = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const today = new Date().toISOString().split('T')[0];
+      const { data } = await supabase
+        .from('api_tracking')
+        .select('id')
+        .eq('user_id', user.id)
+        .in('service', ['google_vision', 'logmeal', 'openai'])
+        .eq('type', 'food_recognition')
+        .gte('created_at', today + 'T00:00:00')
+        .lte('created_at', today + 'T23:59:59');
+      setPhotosUsedToday(data?.length || 0);
+    };
+    loadPhotoCount();
+  }, [mode]);
+
   // Fetch food info from OpenFoodFacts
   const fetchFoodInfo = async (barcode) => {
     try {
@@ -323,7 +340,10 @@ export default function ScannerScreen({ navigation }) {
           }
           p.image_url = imageUrl;
 
-          navigation.navigate("Result", { food: p, fromMode: 'barcode' });
+          navigation.navigate("Result", { 
+            food: p, 
+            fromMode: 'barcode' 
+          });
           return;
         }
         console.log("⚠️ OFF: Product not found, trying USDA...");
@@ -430,39 +450,49 @@ export default function ScannerScreen({ navigation }) {
     try {
       setLoading(true);
 
-      // Check LogMeal monthly usage
-      const logmealCount = parseInt(await AsyncStorage.getItem('logmeal_monthly_count') || '0');
-      const logmealMonth = await AsyncStorage.getItem('logmeal_month');
-      const currentMonth = new Date().toISOString().slice(0, 7);
-
-      // Reset counter if new month
-      const effectiveCount = logmealMonth === currentMonth ? logmealCount : 0;
-      if (logmealMonth !== currentMonth) {
-        await AsyncStorage.setItem('logmeal_month', currentMonth);
-        await AsyncStorage.setItem('logmeal_monthly_count', '0');
+      // Get today's total photo count to determine which engine to use
+      const { data: { user: photoUser } } = await supabase.auth.getUser();
+      let todayCount = 0;
+      if (photoUser) {
+        const today = new Date().toISOString().split('T')[0];
+        const { data: todayData } = await supabase
+          .from('api_tracking')
+          .select('id')
+          .eq('user_id', photoUser.id)
+          .in('service', ['google_vision', 'openai'])
+          .eq('type', 'food_recognition')
+          .gte('created_at', today + 'T00:00:00')
+          .lte('created_at', today + 'T23:59:59');
+        todayCount = todayData?.length || 0;
       }
 
-      let result;
+      // Every 5th call uses GPT-4o, rest use GCV
+      const useGPT = (todayCount + 1) % 5 === 0;
 
-      if (effectiveCount < LOGMEAL_MONTHLY_LIMIT) {
-        // Use LogMeal
-        console.log(`📸 Analyzing with LogMeal (${effectiveCount + 1}/${LOGMEAL_MONTHLY_LIMIT})...`);
-        result = await analyzePhotoLogMeal(photoUri, LOGMEAL_API_TOKEN);
-        await AsyncStorage.setItem('logmeal_monthly_count', String(effectiveCount + 1));
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase.from('api_tracking').insert({
-            user_id: user.id,
-            service: 'logmeal',
-            type: 'food_recognition',
-            status: 'SUCCESS',
-          });
+      let result;
+      if (useGPT) {
+        try {
+          console.log(`📸 Analyzing with GPT-4o Vision (call ${todayCount + 1})...`);
+          result = await analyzePhotoOpenAI(photoUri);
+          console.log('✅ OpenAI identified:', result.foodName);
+        } catch (openaiError) {
+          console.log('⚠️ OpenAI failed, falling back to GCV:', openaiError.message);
+          const base64 = await imageUriToBase64(photoUri);
+          result = await analyzePhoto(base64);
         }
       } else {
-        // Fall back to GCV
-        console.log('📸 LogMeal limit reached, falling back to Google Vision...');
+        console.log(`📸 Analyzing with GCV (call ${todayCount + 1})...`);
         const base64 = await imageUriToBase64(photoUri);
         result = await analyzePhoto(base64);
+      }
+
+      if (photoUser) {
+        await supabase.from('api_tracking').insert({
+          user_id: photoUser.id,
+          service: useGPT ? 'openai' : 'google_vision',
+          type: 'food_recognition',
+          status: 'SUCCESS',
+        });
       }
       
       const foodName = result.foodName;
@@ -485,7 +515,7 @@ export default function ScannerScreen({ navigation }) {
             },
             {
               text: t('scanner.continueAnyway'),
-              onPress: () => proceedWithFood(foodName, confidence, photoUri),
+              onPress: () => proceedWithFood(foodName, confidence, photoUri, result.source === 'openai' ? result : null),
               style: 'cancel'
             }
           ]
@@ -493,7 +523,7 @@ export default function ScannerScreen({ navigation }) {
         return;
       }
 
-      await proceedWithFood(foodName, confidence, photoUri);
+      await proceedWithFood(foodName, confidence, photoUri, result.source === 'openai' ? result : null);
 
     } catch (error) {
       console.error('❌ Error analyzing photo:', error);
@@ -514,9 +544,41 @@ export default function ScannerScreen({ navigation }) {
   };
 
   // Proceed with food after confidence check
-  const proceedWithFood = async (foodName, confidence, photoUri) => {
+  const proceedWithFood = async (foodName, confidence, photoUri, openaiNutrition = null) => {
     try {
       console.log('🔍 Searching for nutrition data...');
+
+      // ✅ If OpenAI already provided nutrition data, use it directly
+      if (openaiNutrition) {
+        const detectedFood = {
+          product_name: foodName,
+          image_url: photoUri,
+          nutriments: {
+            'energy-kcal_100g': openaiNutrition.calories || 0,
+            'energy-kcal': openaiNutrition.calories || 0,
+            proteins_100g: openaiNutrition.protein || 0,
+            proteins: openaiNutrition.protein || 0,
+            carbohydrates_100g: openaiNutrition.carbs || 0,
+            carbohydrates: openaiNutrition.carbs || 0,
+            fat_100g: openaiNutrition.fat || 0,
+            fat: openaiNutrition.fat || 0,
+          },
+          detected_by_ai: true,
+          ai_detected_name: foodName,
+          confidence: confidence,
+          nutrition_source: 'openai',
+          ai_message: `${t('scanner.aiDetected')} "${foodName}" (${confidence}% ${t('scanner.confidence')}). ${t('scanner.pleaseVerify')}`
+        };
+        setLoading(false);
+        setScanned(false);
+        navigation.navigate("Result", { 
+          food: detectedFood, 
+          fromMode: 'photo',
+          individualFoods: openaiNutrition?.individualFoods || null,
+          typicalServing: openaiNutrition?.typicalServing || null,
+        });
+        return;
+      }
 
       // ✅ SEARCH FOR NUTRITION DATA (local DB + USDA)
       const nutritionData = await searchFood(foodName);
@@ -616,7 +678,7 @@ export default function ScannerScreen({ navigation }) {
           .from('api_tracking')
           .select('id')
           .eq('user_id', user.id)
-          .in('service', ['google_vision', 'logmeal'])
+          .in('service', ['google_vision', 'openai'])
           .eq('type', 'food_recognition')
           .gte('created_at', today + 'T00:00:00')
           .lte('created_at', today + 'T23:59:59');
@@ -771,7 +833,7 @@ export default function ScannerScreen({ navigation }) {
             </View>
 
             {/* Mode Toggle Button - absolutely positioned top right */}
-            {mode === 'barcode' && (
+            {mode === 'barcode' ? (
               <TouchableOpacity
                 ref={modeToggleRef}
                 style={[styles.modeToggle, { backgroundColor: '#4CAF50' }]}
@@ -779,6 +841,12 @@ export default function ScannerScreen({ navigation }) {
               >
                 <Text style={styles.modeToggleText}>📷</Text>
               </TouchableOpacity>
+            ) : (
+              <View style={styles.photoCounter}>
+                <Text style={styles.photoCounterText}>
+                  {DAILY_PHOTO_LIMIT - photosUsedToday}/{DAILY_PHOTO_LIMIT} {t('scanner.photosLeft')}
+                </Text>
+              </View>
             )}
 
             {/* Bottom Buttons */}
@@ -1213,5 +1281,19 @@ const styles = StyleSheet.create({
     top: '30%',
     alignSelf: 'center',
     alignItems: 'center',
+  },
+  photoCounter: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  photoCounterText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

@@ -38,6 +38,15 @@ export async function analyzePhotoLogMeal(photoUri, token) {
       })).filter(d => d.confidence >= 50);
     }
 
+    const genericCategories = ['dairy products', 'meat', 'vegetables', 'fruits', 'grains', 'beverages', 'snacks', 'sweets', 'seafood', 'bread', 'ingredients'];
+    
+    const nonGeneric = detections.filter(d => 
+      !genericCategories.includes(d.name.toLowerCase()) && d.confidence >= 70
+    );
+    
+    console.log('🔍 nonGeneric length:', nonGeneric.length, '| detections:', detections.map(d => d.name));
+    if (nonGeneric.length > 0) detections = nonGeneric;
+    else throw new Error('No specific food detected');
     if (detections.length === 0) throw new Error('No food detected with sufficient confidence');
 
     console.log('🍽️ LogMeal detections:', detections.slice(0, 3).map(d => `${d.name} (${d.confidence}%)`));

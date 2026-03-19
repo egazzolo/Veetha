@@ -145,7 +145,7 @@ export async function analyzePhoto(imageBase64) {
     });
 
     // Sort by confidence, with labels winning ties over web entities
-    const genericLabels = ['food', 'fruit', 'produce', 'ingredient', 'natural foods', 'superfood', 'dish', 'meal', 'seedless fruit', 'natural food'];
+    const genericLabels = ['food', 'fruit', 'produce', 'ingredient', 'natural foods', 'superfood', 'dish', 'meal', 'seedless fruit', 'natural food', 'green', 'accessory fruit', 'photography'];
 
     foodDetections.sort((a, b) => {
       const aIsGeneric = genericLabels.some(g => a.name.toLowerCase() === g);

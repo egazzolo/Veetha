@@ -176,7 +176,10 @@ export default function ResultScreen({ route, navigation }) {
   const { refreshMeals } = useUser();
   const { user, isGuest } = useUser();
   const { isGuest: isGuestMode } = useUserMode();
-  const [servingGrams, setServingGrams] = useState(food.serving_quantity || 100);
+  const [mealViewMode, setMealViewMode] = useState('whole'); // 'whole' or 'individual'
+  const [selectedFood, setSelectedFood] = useState(null);
+  const individualFoods = route.params?.individualFoods || null;
+  const [servingGrams, setServingGrams] = useState(food.serving_quantity || route.params?.typicalServing || 100);
   const [inputValue, setInputValue] = useState(String(food.serving_quantity || 100));
   const [showDetails, setShowDetails] = useState(false);
   const [showNutrientModal, setShowNutrientModal] = useState(false);
@@ -244,32 +247,39 @@ export default function ResultScreen({ route, navigation }) {
     });
   };
 
-  const nutritionValues = React.useMemo(() => {
-      const calculateNutrition = (per100g, grams) => {
-        if (per100g === undefined || per100g === null || per100g === "?") return "N/A";
-        const value = (per100g * grams) / 100;
-        
-        // If value is very small, return in mg
-        if (value < 0.1 && value > 0) {
-          return `${(value * 1000).toFixed(0)}mg`;
-        }
-        
-        return value.toFixed(1);
-      };
+  const activeFoodNutriments = mealViewMode === 'individual' && selectedFood ? {
+    'energy-kcal_100g': selectedFood.calories_per_100g || 0,
+    proteins_100g: selectedFood.protein_per_100g || 0,
+    carbohydrates_100g: selectedFood.carbs_per_100g || 0,
+    fat_100g: selectedFood.fat_per_100g || 0,
+    fiber_100g: 0,
+    sugars_100g: 0,
+    sodium_100g: 0,
+  } : food.nutriments;
 
-    return {
-      calories: calculateNutrition(food.nutriments?.["energy-kcal_100g"], servingGrams),
-      protein: calculateNutrition(food.nutriments?.proteins_100g, servingGrams),
-      carbs: calculateNutrition(
-        food.nutriments?.carbohydrates_100g ?? food.nutriments?.sugars_100g, 
-        servingGrams
-      ),
-      fat: calculateNutrition(food.nutriments?.fat_100g, servingGrams),
-      fiber: calculateNutrition(food.nutriments?.fiber_100g, servingGrams),
-      sugar: calculateNutrition(food.nutriments?.sugars_100g, servingGrams),
-      sodium: calculateNutrition(food.nutriments?.sodium_100g, servingGrams),
-    };
-  }, [food.nutriments, servingGrams]);
+  const nutritionValues = {
+    calories: activeFoodNutriments?.['energy-kcal_100g'] !== undefined 
+      ? ((activeFoodNutriments['energy-kcal_100g'] * servingGrams) / 100).toFixed(1) 
+      : "N/A",
+    protein: activeFoodNutriments?.proteins_100g !== undefined 
+      ? ((activeFoodNutriments.proteins_100g * servingGrams) / 100).toFixed(1) 
+      : "N/A",
+    carbs: activeFoodNutriments?.carbohydrates_100g !== undefined 
+      ? ((activeFoodNutriments.carbohydrates_100g * servingGrams) / 100).toFixed(1) 
+      : "N/A",
+    fat: activeFoodNutriments?.fat_100g !== undefined 
+      ? ((activeFoodNutriments.fat_100g * servingGrams) / 100).toFixed(1) 
+      : "N/A",
+    fiber: activeFoodNutriments?.fiber_100g !== undefined 
+      ? ((activeFoodNutriments.fiber_100g * servingGrams) / 100).toFixed(1) 
+      : "N/A",
+    sugar: activeFoodNutriments?.sugars_100g !== undefined 
+      ? ((activeFoodNutriments.sugars_100g * servingGrams) / 100).toFixed(1) 
+      : "N/A",
+    sodium: activeFoodNutriments?.sodium_100g !== undefined 
+      ? ((activeFoodNutriments.sodium_100g * servingGrams) / 100).toFixed(1) 
+      : "N/A",
+  };
 
   // Check if product has nutrition data
   const hasNutritionData = food.nutriments && 
@@ -843,28 +853,6 @@ export default function ResultScreen({ route, navigation }) {
                 </View>
               )}
 
-              {route.params?.topSuggestions?.length > 0 && (
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 8 }}>
-                  {route.params.topSuggestions.map((suggestion, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={{ backgroundColor: '#f0f0f0', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#1F9B39' }}
-                      onPress={async () => {
-                        const corrected = await searchFood(suggestion.name);
-                        if (!corrected) return;
-                        navigation.replace('Result', {
-                          food: { product_name: corrected.name, image_url: food.image_url, nutriments: { 'energy-kcal_100g': corrected.nutrients['energy-kcal'] || 0, proteins_100g: corrected.nutrients.proteins || 0, carbohydrates_100g: corrected.nutrients.carbohydrates || 0, fat_100g: corrected.nutrients.fat || 0 }, serving_quantity: 100, detected_by_ai: false },
-                          fromMode: 'photo',
-                          topSuggestions: route.params.topSuggestions,
-                        });
-                      }}
-                    >
-                      <Text style={{ color: '#1F9B39', fontSize: 13 }}>{suggestion.name} ({suggestion.confidence}%)</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-
               {route.params?.fromMode === 'photo' && (
                 <TouchableOpacity onPress={() => setShowWrongFoodModal(true)} style={{ marginTop: 6 }}>
                   <Text style={{ color: '#4CAF50', fontWeight: '600', textAlign: 'center' }}>
@@ -1003,23 +991,38 @@ export default function ResultScreen({ route, navigation }) {
 
                     <Text style={styles.resultTitle}>{food.product_name}</Text>
 
-                    {route.params?.topSuggestions?.length > 0 && (
-                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 8 }}>
-                        {route.params.topSuggestions.map((suggestion, index) => (
+                    {individualFoods && individualFoods.length > 1 && (
+                      <View style={{ flexDirection: 'row', marginTop: 8, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: '#1F9B39' }}>
+                        <TouchableOpacity
+                          style={{ flex: 1, paddingVertical: 6, backgroundColor: mealViewMode === 'whole' ? '#1F9B39' : 'transparent', alignItems: 'center' }}
+                          onPress={() => { setMealViewMode('whole'); setSelectedFood(null); }}
+                        >
+                          <Text style={{ color: mealViewMode === 'whole' ? '#fff' : '#1F9B39', fontSize: 12, fontWeight: '600' }}>
+                            {t('results.wholeMeal') || 'Whole Meal'}
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={{ flex: 1, paddingVertical: 6, backgroundColor: mealViewMode === 'individual' ? '#1F9B39' : 'transparent', alignItems: 'center' }}
+                          onPress={() => { setMealViewMode('individual'); setSelectedFood(individualFoods[0]); }}
+                        >
+                          <Text style={{ color: mealViewMode === 'individual' ? '#fff' : '#1F9B39', fontSize: 12, fontWeight: '600' }}>
+                            {t('results.individualFoods') || 'Individual'}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+
+                    {mealViewMode === 'individual' && individualFoods && (
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8, justifyContent: 'center' }}>
+                        {individualFoods.map((f, i) => (
                           <TouchableOpacity
-                            key={index}
-                            style={{ backgroundColor: '#f0f0f0', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#1F9B39' }}
-                            onPress={async () => {
-                              const corrected = await searchFood(suggestion.name);
-                              if (!corrected) return;
-                              navigation.replace('Result', {
-                                food: { product_name: corrected.name, image_url: food.image_url, nutriments: { 'energy-kcal_100g': corrected.nutrients['energy-kcal'] || 0, proteins_100g: corrected.nutrients.proteins || 0, carbohydrates_100g: corrected.nutrients.carbohydrates || 0, fat_100g: corrected.nutrients.fat || 0 }, serving_quantity: 100, detected_by_ai: false },
-                                fromMode: 'photo',
-                                topSuggestions: route.params.topSuggestions,
-                              });
-                            }}
+                            key={i}
+                            style={{ backgroundColor: selectedFood?.food_name === f.food_name ? '#1F9B39' : '#f0f0f0', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6 }}
+                            onPress={() => setSelectedFood(f)}
                           >
-                            <Text style={{ color: '#1F9B39', fontSize: 13 }}>{suggestion.name} ({suggestion.confidence}%)</Text>
+                            <Text style={{ color: selectedFood?.food_name === f.food_name ? '#fff' : '#333', fontSize: 13 }}>
+                              {f.food_name}
+                            </Text>
                           </TouchableOpacity>
                         ))}
                       </View>
@@ -1383,7 +1386,7 @@ export default function ResultScreen({ route, navigation }) {
                 navigation.replace('Result', {
                   food: convertedFood,
                   fromMode: 'photo',
-                  topSuggestions: analysisResult.topSuggestions,
+                  topSuggestions: route.params?.topSuggestions || [],
                 });
               }}
             >
@@ -1425,6 +1428,22 @@ export default function ResultScreen({ route, navigation }) {
         onClose={() => setGuestSheetVisible(false)}
         message={t('guest.signUpToLog')}
       />
+
+      {savingMeal && (
+        <View style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999,
+        }}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, alignItems: 'center' }}>
+            <ActivityIndicator size="large" color="#1F9B39" />
+            <Text style={{ marginTop: 12, fontSize: 15, color: '#333' }}>{t('results.savingMeal') || 'Saving meal...'}</Text>
+          </View>
+        </View>
+      )}
         </SafeAreaView>
   );
 }
