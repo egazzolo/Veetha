@@ -22,7 +22,7 @@ import { analyzePhotoOpenAI } from '../utils/openaiVision';
 import VeethaModal from '../components/VeethaModal';
 import GuestUpsellSheet from '../components/GuestUpsellSheet';
 
-const DAILY_PHOTO_LIMIT = 50;
+const DAILY_PHOTO_LIMIT = 2;
 
 export default function ScannerScreen({ navigation }) {
   const { theme } = useTheme();
