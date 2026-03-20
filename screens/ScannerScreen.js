@@ -22,7 +22,7 @@ import { analyzePhotoOpenAI } from '../utils/openaiVision';
 import VeethaModal from '../components/VeethaModal';
 import GuestUpsellSheet from '../components/GuestUpsellSheet';
 
-const DAILY_PHOTO_LIMIT = 2;
+const dailyPhotoLimit = 2;
 
 export default function ScannerScreen({ navigation }) {
   const { theme } = useTheme();
@@ -33,6 +33,7 @@ export default function ScannerScreen({ navigation }) {
   const [showArrowToBack, setShowArrowToBack] = useState(false);
   const [backButtonCoords, setBackButtonCoords] = useState(null); 
   const [photosUsedToday, setPhotosUsedToday] = useState(0);
+  const [dailyPhotoLimit, setDailyPhotoLimit] = useState(2);
   const cameraRef = useRef(null);
   const lastPhotoTime = useRef(0);
 
@@ -62,79 +63,6 @@ export default function ScannerScreen({ navigation }) {
   const photoTipsOpacity = useRef(new Animated.Value(0)).current;
   // 🎨 ANIMATION: Instruction text fades out after 5 seconds
   const instructionOpacity = useRef(new Animated.Value(1)).current;
-
-  // Check number of Google Vision calls per month
-  const checkMonthlyPhotoLimit = async (user) => {
-    const now = new Date();
-    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    firstDayOfMonth.setHours(0, 0, 0, 0);
-
-    const apiName = 'google_vision';
-    const monthlyLimit = 950;
-
-    /*const { data: monthlyPhotos, error } = await supabase
-      .from('api_tracking')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('service', apiName)  // ← Dynamic API name
-      .gte('created_at', today + 'T00:00:00')
-      .lte('created_at', today + 'T23:59:59');
-
-    if (error) {
-      console.error('Error checking photo limit:', error);
-    } else {
-      const photosUsed = monthlyPhotos?.length || 0;
-
-      // Check if limit reached
-      if (photosUsed >= monthlyLimit) {
-        Alert.alert(
-          t('scanner.monthlyLimitReached'),
-          t('scanner.monthlyLimitMessage').replace('{limit}', monthlyLimit).replace('{date}', '')
-        );
-        return;
-      }
-
-      // ⚠️ WARNING when near limit
-      if (photosUsed >= monthlyLimit - 50) {
-        setLowScansRemaining(monthlyLimit - photosUsed);
-        setLowScansModalVisible(true);
-        return;
-      }
-    }
-
-    if (error) {
-      console.error('Error checking photo limit:', error);
-      return true; // Allow on error
-    }
-
-    const photosUsedThisMonth = monthlyPhotos?.length || 0;
-    const MONTHLY_LIMIT = 900; // Leave buffer under 1000
-
-    console.log(`📸 Photo usage: ${photosUsedThisMonth}/${MONTHLY_LIMIT} this month`);
-
-    if (photosUsedThisMonth >= MONTHLY_LIMIT) {
-      const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-      const resetDate = nextMonth.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
-      
-      Alert.alert(
-        t('scanner.monthlyLimitReached'),
-        t('scanner.monthlyLimitMessage').replace('{limit}', MONTHLY_LIMIT).replace('{date}', resetDate),
-        [{ text: t('common.ok') }]
-      );
-      return false;
-    }*/
-
-    // Warn at 850 uses (50 left)
-    if (photosUsedThisMonth >= 850) {
-      Alert.alert(
-        t('scanner.lowOnScans'),
-        t('scanner.lowOnScansMessage').replace('{remaining}', MONTHLY_LIMIT - photosUsedThisMonth),
-        [{ text: t('common.ok') }]
-      );
-    }
-
-    return true;
-  };
 
   // Measure back button for arrow
   const measureBackButton = () => {
@@ -296,6 +224,14 @@ export default function ScannerScreen({ navigation }) {
     const loadPhotoCount = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_vip')
+        .eq('id', user.id)
+        .single();
+
+      setDailyPhotoLimit(profile?.is_vip ? 999 : 2);
       const today = new Date().toISOString().split('T')[0];
       const { data } = await supabase
         .from('api_tracking')
@@ -691,16 +627,16 @@ export default function ScannerScreen({ navigation }) {
           const photosUsed = todayPhotos?.length || 0;
 
           // Check if limit reached
-          if (photosUsed >= DAILY_PHOTO_LIMIT) {
+          if (photosUsed >= dailyPhotoLimit) {
             Alert.alert(
               t('scanner.dailyLimitReached'),
-              t('scanner.dailyLimitMessage').replace('{limit}', DAILY_PHOTO_LIMIT)
+              t('scanner.dailyLimitMessage').replace('{limit}', dailyPhotoLimit)
             );
             return;
           }
 
           // ⚠️ WARNING when 1 request left
-          if (photosUsed === DAILY_PHOTO_LIMIT - 1) {
+          if (photosUsed === dailyPhotoLimit - 1) {
             setLastRequestModalVisible(true);
             return;
           }
@@ -846,7 +782,7 @@ export default function ScannerScreen({ navigation }) {
             ) : (
               <View style={styles.photoCounter}>
                 <Text style={styles.photoCounterText}>
-                  {DAILY_PHOTO_LIMIT - photosUsedToday}/{DAILY_PHOTO_LIMIT} {t('scanner.photosLeft')}
+                  {dailyPhotoLimit - photosUsedToday}/{dailyPhotoLimit} {t('scanner.photosLeft')}
                 </Text>
               </View>
             )}
