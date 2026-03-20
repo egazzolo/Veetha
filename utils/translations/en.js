@@ -732,7 +732,7 @@ export default {
     protein: 'Prot.',
     carbs: 'Carbs',
     fat: 'Fat',
-    wrongfood: 'Wrong Food?',
+    wrongFood: 'Wrong Food?',
     wholeMeal: 'Whole Meal',
     individualFoods: 'Individual',
     savingMeal: 'Saving meal...',

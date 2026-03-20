@@ -1,4 +1,4 @@
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+import { OPENAI_API_KEY } from '@env';
 
 export async function analyzePhotoOpenAI(photoUri) {
   try {
@@ -14,7 +14,11 @@ export async function analyzePhotoOpenAI(photoUri) {
       reader.readAsDataURL(blob);
     });
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     const apiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      signal: controller.signal,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -60,14 +64,16 @@ Be specific — say broccoli not vegetable, tangerine not citrus. If no food det
     });
 
     const data = await apiResponse.json();
-    console.log('✅ GPT-4o response:', JSON.stringify(data).slice(0, 300));
+    clearTimeout(timeoutId);
+    console.log('✅ GPT-4o response:', JSON.stringify(data).slice(0, 800));
 
     if (!apiResponse.ok) {
       throw new Error(data.error?.message || 'OpenAI API error');
     }
 
     const content = data.choices[0]?.message?.content;
-    const parsed = JSON.parse(content);
+    const cleaned = content.replace(/```json\n?|\n?```/g, '').trim();
+    const parsed = JSON.parse(cleaned);
 
     if (parsed.error) throw new Error(parsed.error);
 
@@ -76,7 +82,7 @@ Be specific — say broccoli not vegetable, tangerine not citrus. If no food det
 
     const primary = foods[0];
     return {
-      foodName: parsed.whole_meal_name || primary.food_name,
+      foodName: foods.length === 1 ? primary.food_name : (parsed.whole_meal_name || primary.food_name),
       confidence: primary.confidence,
       calories: foods.reduce((sum, f) => sum + (f.calories_per_100g || 0), 0) / foods.length,
       protein: foods.reduce((sum, f) => sum + (f.protein_per_100g || 0), 0) / foods.length,

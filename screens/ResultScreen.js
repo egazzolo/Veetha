@@ -176,11 +176,11 @@ export default function ResultScreen({ route, navigation }) {
   const { refreshMeals } = useUser();
   const { user, isGuest } = useUser();
   const { isGuest: isGuestMode } = useUserMode();
+  const individualFoods = route.params?.individualFoods || null;
   const [mealViewMode, setMealViewMode] = useState('whole'); // 'whole' or 'individual'
   const [selectedFood, setSelectedFood] = useState(null);
-  const individualFoods = route.params?.individualFoods || null;
   const [servingGrams, setServingGrams] = useState(food.serving_quantity || route.params?.typicalServing || 100);
-  const [inputValue, setInputValue] = useState(String(food.serving_quantity || 100));
+  const [inputValue, setInputValue] = useState(String(food.serving_quantity || route.params?.typicalServing || 100));
   const [showDetails, setShowDetails] = useState(false);
   const [showNutrientModal, setShowNutrientModal] = useState(false);
   const [selectedNutrient, setSelectedNutrient] = useState(null);
@@ -194,6 +194,7 @@ export default function ResultScreen({ route, navigation }) {
   const [searchingFood, setSearchingFood] = useState(false);
   const [loading, setLoading] = useState(false);
   const [guestSheetVisible, setGuestSheetVisible] = useState(false);
+  const [foodsExpanded, setFoodsExpanded] = useState(true);
 
   const [viewMode, setViewMode] = useState(
     route.params?.fromMode === 'photo' ? 'photo' : 'detailed'
@@ -686,7 +687,7 @@ export default function ResultScreen({ route, navigation }) {
             useNativeDriver: true,
           }),
         ]).start(() => {
-          navigation.goBack();
+          navigation.navigate('Home');
         });
       } else {
         // Snap back
@@ -784,7 +785,7 @@ export default function ResultScreen({ route, navigation }) {
               useNativeDriver: true,
             }),
           ]).start(() => {
-            navigation.goBack();
+            navigation.navigate('Home');
           });
         } else {
           // Snap back
@@ -856,7 +857,7 @@ export default function ResultScreen({ route, navigation }) {
               {route.params?.fromMode === 'photo' && (
                 <TouchableOpacity onPress={() => setShowWrongFoodModal(true)} style={{ marginTop: 6 }}>
                   <Text style={{ color: '#4CAF50', fontWeight: '600', textAlign: 'center' }}>
-                    ✏️ {t('results.wrongfood')}
+                    ✏️ {t('results.wrongFood')}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -918,14 +919,89 @@ export default function ResultScreen({ route, navigation }) {
               <Text style={styles.swipeHintText}>← {t('results.swipeLeftDelete')}</Text>
               <Text style={styles.swipeHintText}>{t('results.swipeRightSave')} →</Text>
             </View>
+            
+            {/* Foods Detected Panel */}
+            {individualFoods && individualFoods.length > 1 ? (
+              <View style={{
+                position: 'absolute',
+                bottom: 0, left: 0, right: 0,
+                backgroundColor: 'rgba(15,15,15,0.92)',
+                borderTopLeftRadius: 24,
+                borderTopRightRadius: 24,
+                paddingHorizontal: 16,
+                paddingTop: 12,
+                paddingBottom: 24,
+              }}>
+                {/* Drag handle + toggle */}
+                <TouchableOpacity
+                  onPress={() => setFoodsExpanded(prev => !prev)}
+                  style={{ alignItems: 'center', marginBottom: 8 }}
+                >
+                  <View style={{ width: 36, height: 4, backgroundColor: '#555', borderRadius: 2, marginBottom: 8 }} />
+                  <Text style={{ color: '#888', fontSize: 11, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase' }}>
+                    {foodsExpanded ? '▼ Foods detected' : '▲ Foods detected'}
+                  </Text>
+                </TouchableOpacity>
 
-            {/* Switch to Detailed Button */}
-            <TouchableOpacity 
-              style={styles.switchViewButton}
-              onPress={() => setViewMode('detailed')}
-            >
-              <Text style={styles.switchViewButtonText}>📊 {t('results.detailedView')}</Text>
-            </TouchableOpacity>
+                {foodsExpanded ? (
+                  <>
+                    {individualFoods.map((f, i) => {
+                      const isSelected = mealViewMode === 'individual' && selectedFood?.food_name === f.food_name;
+                      const estKcal = Math.round((f.calories_per_100g * (f.typical_serving_grams || 100)) / 100);
+                      return (
+                        <TouchableOpacity
+                          key={i}
+                          onPress={() => { setMealViewMode('individual'); setSelectedFood(f); }}
+                          style={{
+                            flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+                            paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12, marginBottom: 6,
+                            backgroundColor: isSelected ? '#1F9B39' : 'rgba(255,255,255,0.07)',
+                            borderWidth: 1, borderColor: isSelected ? '#1F9B39' : 'rgba(255,255,255,0.1)',
+                          }}
+                        >
+                          <Text style={{ color: '#fff', fontSize: 14, fontWeight: '500', textTransform: 'capitalize', flex: 1 }}>
+                            {f.food_name}
+                          </Text>
+                          <Text style={{ color: isSelected ? '#d4f5dc' : '#777', fontSize: 13 }}>
+                            ~{estKcal} kcal
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+
+                    <TouchableOpacity
+                      onPress={() => { setMealViewMode('whole'); setSelectedFood(null); }}
+                      style={{
+                        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+                        paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12, marginBottom: 10,
+                        backgroundColor: mealViewMode === 'whole' ? '#1F9B39' : 'rgba(255,255,255,0.07)',
+                        borderWidth: 1, borderColor: mealViewMode === 'whole' ? '#1F9B39' : 'rgba(255,255,255,0.1)',
+                      }}
+                    >
+                      <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>🍽️ Entire meal</Text>
+                      <Text style={{ color: mealViewMode === 'whole' ? '#d4f5dc' : '#777', fontSize: 13 }}>
+                        {nutritionValues.calories} kcal
+                      </Text>
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <TouchableOpacity
+                    style={{ alignSelf: 'center', backgroundColor: '#1F9B39', paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, marginTop: 4 }}
+                    onPress={() => setViewMode('detailed')}
+                  >
+                    <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>📊 {t('results.detailedView')}</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            ) : (
+              /* No individual foods — just show Detailed View button */
+              <TouchableOpacity
+                style={styles.switchViewButton}
+                onPress={() => setViewMode('detailed')}
+              >
+                <Text style={styles.switchViewButtonText}>📊 {t('results.detailedView')}</Text>
+              </TouchableOpacity>
+            )}
           </Animated.View>
         </GestureDetector>
       </GestureHandlerRootView>
@@ -1057,7 +1133,7 @@ export default function ResultScreen({ route, navigation }) {
                         onPress={() => setShowWrongFoodModal(true)}  // ✅ Correct
                       >
                         <Text style={{ color: '#2196F3', fontWeight: '600' }}>
-                          ✏️ {t('results.wrongfood')}
+                          ✏️ {t('results.wrongFood')}
                         </Text>
                       </TouchableOpacity>
                     )}
@@ -1097,7 +1173,7 @@ export default function ResultScreen({ route, navigation }) {
                             setShowWrongFoodModal(true);
                           }}
                         >
-                          <Text>✏️ {t('results.wrongfood')}</Text>
+                          <Text>✏️ {t('results.wrongFood')}</Text>
                         </TouchableOpacity>
                         
                         <TouchableOpacity 
@@ -1111,7 +1187,7 @@ export default function ResultScreen({ route, navigation }) {
 
                         <TouchableOpacity 
                           style={[styles.navButton, { backgroundColor: '#666' }]}
-                          onPress={() => navigation.goBack()}
+                          onPress={() => navigation.navigate('Home')}
                         >
                           <Text style={styles.navButtonText}>← {route.params?.fromMode === 'photo' ? t('scanner.takeAnotherPhoto') : t('scanner.scanAgain')}: </Text>
                         </TouchableOpacity>
@@ -1339,7 +1415,7 @@ export default function ResultScreen({ route, navigation }) {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.nutrientModalContent}>
-            <Text style={styles.modalTitle}>{t('results.wrongfood')}</Text>
+            <Text style={styles.modalTitle}>{t('results.wrongFood')}</Text>
 
             <TextInput
               style={styles.servingInput}

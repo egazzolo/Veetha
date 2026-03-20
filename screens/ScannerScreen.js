@@ -22,7 +22,7 @@ import { analyzePhotoOpenAI } from '../utils/openaiVision';
 import VeethaModal from '../components/VeethaModal';
 import GuestUpsellSheet from '../components/GuestUpsellSheet';
 
-const DAILY_PHOTO_LIMIT = 2;
+const DAILY_PHOTO_LIMIT = 50;
 
 export default function ScannerScreen({ navigation }) {
   const { theme } = useTheme();
@@ -156,7 +156,6 @@ export default function ScannerScreen({ navigation }) {
       console.log('📷 Scanner focused - resetting state');
       setScanned(false);
       setLoading(false);
-      setMode('barcode');
       lastPhotoTime.current = 0;
     }, [])
   );
@@ -467,7 +466,7 @@ export default function ScannerScreen({ navigation }) {
       }
 
       // Every 5th call uses GPT-4o, rest use GCV
-      const useGPT = (todayCount + 1) % 5 === 0;
+      const useGPT = (todayCount + 1) % 3 === 0;
 
       let result;
       if (useGPT) {
@@ -487,12 +486,15 @@ export default function ScannerScreen({ navigation }) {
       }
 
       if (photoUser) {
-        await supabase.from('api_tracking').insert({
+        const { error: trackError } = await supabase.from('api_tracking').insert({
           user_id: photoUser.id,
           service: useGPT ? 'openai' : 'google_vision',
           type: 'food_recognition',
           status: 'SUCCESS',
+          success: true,
         });
+        if (trackError) console.error('❌ api_tracking insert failed:', trackError);
+        else console.log('✅ api_tracking recorded:', useGPT ? 'openai' : 'google_vision');
       }
       
       const foodName = result.foodName;
