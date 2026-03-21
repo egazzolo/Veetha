@@ -53,6 +53,7 @@ import ExerciseActivityScreen from './screens/ExerciseFlow/ExerciseActivityScree
 import ExerciseIntensityScreen from './screens/ExerciseFlow/ExerciseIntensityScreen';
 import ExerciseLogModal from './screens/ExerciseFlow/ExerciseLogModal';
 import ReportViewerScreen from './screens/ReportViewerScreen';
+import ForgotPasswordScreen from './screens/auth/ForgotPasswordScreen';
 
 // Import contexts and utilities
 import { OnboardingProvider } from './utils/OnboardingContext';
@@ -326,6 +327,7 @@ function AppNavigator() {
           <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} options={{ title: 'Terms of Service', headerShown: true, headerStyle: { backgroundColor: '#4CAF50' }, headerTintColor: '#fff', headerTitleStyle: { fontWeight: 'bold' }, }} />
           <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={{ title: 'Privacy Policy', headerShown: true, headerStyle: { backgroundColor: '#4CAF50' }, headerTintColor: '#fff', headerTitleStyle: { fontWeight: 'bold' }, }} />
           <Stack.Screen name="ReportViewer" component={ReportViewerScreen}/>
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         </Stack.Navigator>
         {/* <GlobalTutorialOverlay /> */}
       </NavigationContainer>
