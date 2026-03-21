@@ -795,16 +795,21 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 12,
     alignItems: 'center',
+    overflow: 'hidden',
   },
   statValue: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#4CAF50',
     marginBottom: 5,
+    textAlign: 'center',
+    flexShrink: 1,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#999',
+    textAlign: 'center',
+    flexShrink: 1,
   },
   settingItem: {
     flexDirection: 'row',
