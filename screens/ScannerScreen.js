@@ -33,7 +33,7 @@ export default function ScannerScreen({ navigation }) {
   const [showArrowToBack, setShowArrowToBack] = useState(false);
   const [backButtonCoords, setBackButtonCoords] = useState(null); 
   const [photosUsedToday, setPhotosUsedToday] = useState(0);
-  const [dailyPhotoLimit, setDailyPhotoLimit] = useState(2);
+  const [dailyPhotoLimit, setDailyPhotoLimit] = useState(3);
   const cameraRef = useRef(null);
   const lastPhotoTime = useRef(0);
 
@@ -231,7 +231,7 @@ export default function ScannerScreen({ navigation }) {
         .eq('id', user.id)
         .single();
 
-      setDailyPhotoLimit(profile?.is_vip ? 999 : 2);
+      setDailyPhotoLimit(profile?.is_vip ? 999 : 3);
       const today = new Date().toISOString().split('T')[0];
       const { data } = await supabase
         .from('api_tracking')
@@ -257,13 +257,16 @@ export default function ScannerScreen({ navigation }) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
+        const paddedBarcode = barcode.length === 12 ? '0' + barcode : barcode;
+        const shortBarcode = barcode.length === 13 && barcode.startsWith('0') ? barcode.slice(1) : barcode;
         const response = await fetch(
-          `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`,
+          `https://world.openfoodfacts.org/api/v0/product/${paddedBarcode}.json`,
           { signal: controller.signal }
         );
         clearTimeout(timeoutId);
 
         const data = await response.json();
+        console.log('🔍 OFF response status:', data.status, 'product:', data.product?.product_name);
 
         if (data.status === 1 && data.product) {
           const p = data.product;
