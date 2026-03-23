@@ -8,8 +8,8 @@ const AVAILABLE_LANGUAGES = [
   { code: 'es', name: 'Español', flag: '🇪🇸' },
   { code: 'fr', name: 'Français', flag: '🇫🇷' },
   { code: 'tl', name: 'Filipino', flag: '🇵🇭' },
+  { code: 'pt', name: 'Português', flag: '🇵🇹' },
   // Ready for future additions:
-  // { code: 'pt', name: 'Português', flag: '🇵🇹' },
   // { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
   // { code: 'it', name: 'Italiano', flag: '🇮🇹' },
   // { code: 'ja', name: '日本語', flag: '🇯🇵' },

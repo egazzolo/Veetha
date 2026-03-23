@@ -164,6 +164,7 @@ export default function OnboardingComplete({ navigation }) {
             activity_level: onboardingData.activityLevel,
             dietary_restrictions: onboardingData.dietaryRestrictions || [],
             daily_calorie_goal: dailyCalorieGoal,
+            date_of_birth: onboardingData.dateOfBirth || null,
             referral_source: onboardingData.referralSource || null,
           };
           
@@ -290,6 +291,7 @@ export default function OnboardingComplete({ navigation }) {
         activity_level: onboardingData.activityLevel,
         dietary_restrictions: onboardingData.dietaryRestrictions || [],
         daily_calorie_goal: dailyCalorieGoal,
+        date_of_birth: onboardingData.dateOfBirth || null,
         referral_source: onboardingData.referralSource || null,
         created_at: new Date().toISOString(),
       };

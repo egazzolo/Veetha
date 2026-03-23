@@ -1127,7 +1127,7 @@ export default {
     section2_1NutritionTitle: 'Données nutritionnelles:',
     section2_1Nutrition: '• Objectifs caloriques quotidiens\n• Objectifs macro (protéines, glucides, lipides)\n• Poids cible (optionnel)\n• Journaux de repas (noms d\'aliments, calories, macros, portions)\n• Horodatages des repas enregistrés\n• Données de série quotidienne',
     section2_3Title: '2.3 Informations que nous NE collectons PAS',
-    section2_3Content: 'Nous ne collectons pas:\n❌ Données de localisation (GPS)\n❌ Contacts téléphoniques\n❌ Photos ou accès à la caméra\n❌ Informations de paiement\n❌ Profils de réseaux sociaux\n❌ Données biométriques\n❌ Historique médical',
+    section2_3Content: 'Nous ne collectons pas:\n❌ Contacts téléphoniques\n❌ Photos ou accès à la caméra\n❌ Informations de paiement\n❌ Profils de réseaux sociaux\n❌ Données biométriques\n❌ Historique médical',
     
     // Section 3
     section3Title: '3. COMMENT NOUS UTILISONS VOS INFORMATIONS',

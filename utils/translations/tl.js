@@ -1127,7 +1127,7 @@ export default {
     section2_1NutritionTitle: 'Nutrition Data:',
     section2_1Nutrition: '• Arawang calorie goals\n• Macro targets (protina, carbs, fats)\n• Target weight (opsyonal)\n• Mga log ng pagkain (pangalan ng pagkain, calories, macros, serving sizes)\n• Timestamps ng mga naka-log na pagkain\n• Daily streak data',
     section2_3Title: '2.3 Impormasyon na HINDI Namin Kinokolekta',
-    section2_3Content: 'Hindi namin kinokolekta:\n❌ Location data (GPS)\n❌ Phone contacts\n❌ Mga larawan o camera access\n❌ Impormasyon sa pagbabayad\n❌ Social media profiles\n❌ Biometric data\n❌ Medical history',
+    section2_3Content: 'Hindi namin kinokolekta:\n❌ Phone contacts\n❌ Mga larawan o camera access\n❌ Impormasyon sa pagbabayad\n❌ Social media profiles\n❌ Biometric data\n❌ Medical history',
     
     // Section 3
     section3Title: '3. PAANO NAMIN GINAGAMIT ANG IYONG IMPORMASYON',

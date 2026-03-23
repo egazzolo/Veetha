@@ -5,6 +5,7 @@ import en from './translations/en';
 import es from './translations/es';
 import fr from './translations/fr';
 import tl from './translations/tl';
+import pt from './translations/pt';
 
 const LanguageContext = createContext();
 
@@ -13,6 +14,7 @@ const TRANSLATIONS = {
   es,
   fr,
   tl,
+  pt,
 };
 
 export function LanguageProvider({ children }) {

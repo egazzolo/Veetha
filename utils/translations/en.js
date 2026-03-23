@@ -1127,7 +1127,7 @@ export default {
     section2_1NutritionTitle: 'Nutrition Data:',
     section2_1Nutrition: '• Daily calorie goals\n• Macro targets (protein, carbs, fat)\n• Target weight (optional)\n• Meal logs (food names, calories, macros, serving sizes)\n• Timestamps of meals logged\n• Daily streak data',
     section2_3Title: '2.3 Information We DO NOT Collect',
-    section2_3Content: 'We do not collect:\n❌ Location data (GPS)\n❌ Phone contacts\n❌ Photos or camera access\n❌ Payment information\n❌ Social media profiles\n❌ Biometric data\n❌ Medical history',
+    section2_3Content: 'We do not collect:\n❌ Phone contacts\n❌ Photos or camera access\n❌ Payment information\n❌ Social media profiles\n❌ Biometric data\n❌ Medical history',
     
     // Section 3
     section3Title: '3. HOW WE USE YOUR INFORMATION',

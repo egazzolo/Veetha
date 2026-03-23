@@ -1127,7 +1127,7 @@ export default {
     section2_1NutritionTitle: 'Datos de Nutrición:',
     section2_1Nutrition: '• Objetivos calóricos diarios\n• Objetivos de macros (proteína, carbohidratos, grasa)\n• Peso objetivo (opcional)\n• Registro de comidas (nombres, calorías, macros, porciones)\n• Marcas de tiempo de comidas registradas\n• Datos de racha diaria',
     section2_3Title: '2.3 Información que NO Recopilamos',
-    section2_3Content: 'No recopilamos:\n❌ Datos de ubicación (GPS)\n❌ Contactos del teléfono\n❌ Fotos o acceso a cámara\n❌ Información de pago\n❌ Perfiles de redes sociales\n❌ Datos biométricos\n❌ Historia médica',
+    section2_3Content: 'No recopilamos:\n❌ Contactos del teléfono\n❌ Fotos o acceso a cámara\n❌ Información de pago\n❌ Perfiles de redes sociales\n❌ Datos biométricos\n❌ Historia médica',
     
     // Section 3
     section3Title: '3. CÓMO USAMOS TU INFORMACIÓN',
