@@ -1,3 +1,23 @@
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'https://a7cb9cc40e73b8aaf47a0db71cca59ec@o4511091850215424.ingest.us.sentry.io/4511091971457024',
+
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
+  // Enable Logs
+  enableLogs: true,
+
+  // Configure Session Replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
 //import * as Updates from 'expo-updates';
 import React, { useState, useEffect, useRef } from 'react';
 //import Purchases from 'react-native-purchases';
@@ -336,7 +356,7 @@ function AppNavigator() {
   );
 }
 
-export default function App() {
+function App() {
     //useEffect(() => {
     //  // Initialize RevenueCat
     //  Purchases.configure({
@@ -366,3 +386,4 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
+export default Sentry.wrap(App);

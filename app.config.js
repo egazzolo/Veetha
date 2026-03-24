@@ -18,6 +18,14 @@ module.exports = {
         {
           "locationAlwaysAndWhenInUsePermission": "Allow Veetha to suggest local foods based on your location."
         }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "veetha",
+          "organization": "togotol"
+        }
       ]
     ],
     extra: {
