@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { useLanguage } from '../../utils/LanguageContext';
 import { supabase } from '../../utils/supabase';
 import { showToast } from '../../components/VeethaToast';
@@ -87,6 +87,7 @@ export default function ExerciseLogModal({ navigation, route }) {
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         {/* Header */}
         <View style={styles.header}>
@@ -103,7 +104,7 @@ export default function ExerciseLogModal({ navigation, route }) {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.content}>
+        <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
           {/* Activity Info */}
           <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
             <Text style={[styles.activityName, { color: theme.text }]}>
@@ -236,8 +237,9 @@ export default function ExerciseLogModal({ navigation, route }) {
               )}
             </TouchableOpacity>
           </View>
-        </View>
+        </ScrollView>
       </View>
+      </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
   );
 }

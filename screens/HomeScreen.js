@@ -22,7 +22,7 @@ import { blockIfGuest } from '../utils/guestBlock';
 import { useLayout } from '../utils/LayoutContext';
 import { supabase } from '../utils/supabase';
 import { logScreen, logEvent } from '../utils/analytics';
-import { getSuggestionsForMealTime, LOCAL_FOODS } from '../utils/localFoods';
+import { getSuggestionsForMealTime, LOCAL_FOODS, DEFAULT_FOODS } from '../utils/localFoods';
 import { Pedometer } from 'expo-sensors';
 import { Camera } from 'expo-camera';
 import AppTutorial from '../components/AppTutorial';

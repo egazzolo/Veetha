@@ -12,6 +12,7 @@ module.exports = {
       "**/*"
     ],
     plugins: [
+      "expo-apple-authentication",
       "expo-localization",
       [
         "expo-location",
@@ -69,8 +70,11 @@ module.exports = {
       icon: "./assets/LogoD.png",
       infoPlist: {
         "NSLocationWhenInUseUsageDescription": "We use your location to suggest common foods in your area.",
-      "ITSAppUsesNonExemptEncryption": false
-      }
+        "NSCameraUsageDescription": "Veetha uses your camera to scan food barcodes for instant nutrition lookup, and to take photos of meals for AI-powered food recognition and calorie tracking.",
+        "NSPhotoLibraryUsageDescription": "Veetha accesses your photo library to let you upload meal photos for AI-powered food recognition and calorie tracking.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      usesAppleSignIn: true,
     }
   }
 };

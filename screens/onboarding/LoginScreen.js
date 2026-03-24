@@ -6,6 +6,7 @@ import { Svg, Path } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { useGreeting } from '../../utils/GreetingContext';
 import { useLanguage } from '../../utils/LanguageContext';
 import { useUserMode } from '../../utils/UserModeContext';
@@ -193,6 +194,36 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
+  const handleAppleLogin = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      const { data, error: signInError } = await supabase.auth.signInWithIdToken({
+        provider: 'apple',
+        token: credential.identityToken,
+      });
+
+      if (signInError) throw signInError;
+
+      await setUserMode('authenticated');
+      await handlePostLogin(data.user);
+    } catch (err) {
+      if (err.code !== 'ERR_REQUEST_CANCELED') {
+        console.error('Apple login error:', err);
+        setError(err.message || t('login.loginFailed'));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
@@ -299,6 +330,17 @@ export default function LoginScreen({ navigation }) {
                 <Text style={styles.googleButtonText}>{t('login.continueWithGoogle')}</Text>
               </View>
             </TouchableOpacity>
+
+            {/* Apple Button - iOS only */}
+            {Platform.OS === 'ios' && (
+              <AppleAuthentication.AppleAuthenticationButton
+                buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                cornerRadius={4}
+                style={{ width: '100%', height: 44, marginBottom: 12 }}
+                onPress={handleAppleLogin}
+              />
+            )}
 
             {/* Sign Up Link */}
             <View style={styles.footer}>
