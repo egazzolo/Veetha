@@ -40,4 +40,3 @@ yarn-error.*
 #   R e m o v e   i o s   a n d   a n d r o i d   f r o m   g i t i g n o r e 
  
 .env
-android/
