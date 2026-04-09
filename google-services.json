@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1059945551618",
+    "project_id": "veetha-29475",
+    "storage_bucket": "veetha-29475.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1059945551618:android:aff6b4c1cf8a3dedac941b",
+        "android_client_info": {
+          "package_name": "Veetha.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBmKKDN8X2_e8tNr5r08CbXHSmKjtdlXTA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

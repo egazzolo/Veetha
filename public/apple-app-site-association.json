@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "9644MW274P.com.yourname.veetha",
+        "paths": ["/auth/*"]
+      }
+    ]
+  }
+}

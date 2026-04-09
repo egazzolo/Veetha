@@ -1,0 +1,9 @@
+Your Custom Graphics
+Drawing them yourself is great. After drawing:
+
+Scan/photograph them
+Save as PNG with transparent background (use a tool like remove.bg)
+Put files in your ./assets/ folder
+Import in code: <Image source={require('./assets/protein-icon.png')} />
+
+Or trace them as SVG paths (cleaner, scalable) - I can help convert simple shapes to SVG code if you describe/show them.

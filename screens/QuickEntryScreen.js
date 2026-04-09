@@ -1,0 +1,645 @@
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, KeyboardAvoidingView, Platform, ActivityIndicator, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Location from 'expo-location';
+import { supabase } from '../utils/supabase';
+import { useUser } from '../utils/UserContext';
+import { useTheme } from '../utils/ThemeContext';
+import { useLanguage } from '../utils/LanguageContext';
+import { getSuggestionsForMealTime, LOCAL_FOODS, DEFAULT_FOODS } from '../utils/localFoods';
+import { showToast } from '../components/VeethaToast';
+import { OPENAI_API_KEY } from '@env';
+
+export default function QuickEntryScreen({ navigation }) {
+  const { refreshMeals } = useUser();
+  const { theme } = useTheme();
+  const { t } = useLanguage();
+  
+  const [mealName, setMealName] = useState('');
+  const [servingGrams, setServingGrams] = useState('100');
+  const [calories, setCalories] = useState('');
+  const [protein, setProtein] = useState('');
+  const [carbs, setCarbs] = useState('');
+  const [fat, setFat] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [quickSuggestions, setQuickSuggestions] = useState([]);
+  const [userCountry, setUserCountry] = useState(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(true);
+  const [searchingNutrition, setSearchingNutrition] = useState(false);
+
+  // Load suggestions on mount
+  useEffect(() => {
+    loadQuickSuggestions();
+  }, []);
+
+  const loadQuickSuggestions = async () => {
+    setLoadingSuggestions(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      
+      if (status === 'granted') {
+        const location = await Location.getCurrentPositionAsync({});
+        const [geocode] = await Location.reverseGeocodeAsync({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+        
+        const countryCode = geocode.isoCountryCode;
+        setUserCountry(countryCode);
+        
+        const { suggestions, mealType, country } = getSuggestionsForMealTime(countryCode);
+        setQuickSuggestions(suggestions);
+        setLoadingSuggestions(false);
+        
+        console.log(`🌍 Showing ${mealType} suggestions for ${country}`);
+      } else {
+        // Use default suggestions
+        const hour = new Date().getHours();
+        const mealType = hour < 11 ? 'breakfast' : hour < 16 ? 'lunch' : 'dinner';
+        setQuickSuggestions(DEFAULT_FOODS[mealType] || []);
+        setLoadingSuggestions(false);
+
+      }
+    } catch (error) {
+      console.log('📍 Location unavailable — using default suggestions');
+
+      const hour = new Date().getHours();
+      const mealType = hour < 11 ? 'breakfast' : hour < 16 ? 'lunch' : 'dinner';
+
+      setQuickSuggestions(DEFAULT_FOODS[mealType] || []);
+      setLoadingSuggestions(false);
+    }
+  };
+
+  const handleGPTNutrition = async () => {
+    if (!mealName.trim()) {
+      Alert.alert('Enter a meal description first', 'Type what you ate before searching');
+      return;
+    }
+    setSearchingNutrition(true);
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          max_tokens: 150,
+          messages: [
+            {
+              role: 'user',
+              content: `Estimate nutrition for: "${mealName.trim()}". Use average homemade/standard portions. A standard pizza slice = 250-280 kcal, medium banana = 105 kcal. Return ONLY JSON, no markdown:
+{"calories": number, "protein": number, "carbs": number, "fat": number, "serving_grams": number}
+Values are for the total amount described. Be accurate, not inflated.`
+            }
+          ]
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error?.message || 'OpenAI error');
+
+      const content = data.choices[0]?.message?.content;
+      const cleaned = content.replace(/```json\n?|\n?```/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+
+      setCalories(parsed.calories?.toString() || '');
+      setProtein(parsed.protein?.toString() || '');
+      setCarbs(parsed.carbs?.toString() || '');
+      setFat(parsed.fat?.toString() || '');
+      if (parsed.serving_grams) setServingGrams(parsed.serving_grams.toString());
+
+      showToast('success', 'Nutrition Estimated!', 'Review and adjust if needed.');
+    } catch (error) {
+      console.error('GPT nutrition error:', error);
+      Alert.alert('Error', 'Could not estimate nutrition. Please enter manually.');
+    } finally {
+      setSearchingNutrition(false);
+    }
+  };
+
+  const handleQuickLog = async (food) => {
+    try {
+
+      setSaving(true); // loading indicator
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Check if product exists
+      const { data: existingProduct } = await supabase
+        .from('food_database')
+        .select('id')
+        .eq('name', food.name)
+        .maybeSingle();
+
+      let productId;
+
+      if (existingProduct) {
+        // UPDATE IMAGE IF MISSING
+        await supabase
+          .from('food_database')
+          .update({
+            image_url: food.image_url || null
+          })
+          .eq('id', existingProduct.id)
+          .is('image_url', null);
+        productId = existingProduct.id;
+      } else {
+        const { data: newProduct } = await supabase
+          .from('food_database')
+          .insert({
+            name: food.name,
+            calories: food.calories,
+            protein: food.protein,
+            carbs: food.carbs,
+            fat: food.fat,
+            image_url: food.image_url || null,
+            source: 'local_suggestion',
+          })
+          .select('id')
+          .single();
+
+        productId = newProduct.id;
+      }
+
+      // ✅ THIS WAS MISSING — actually log meal
+      await supabase
+        .from('meals')
+        .insert({
+          user_id: user.id,
+          product_id: productId,
+          serving_grams: 100,
+          serving_unit: 'g',
+        });
+
+      // refresh context meals
+      await refreshMeals();
+
+      showToast('success', t('stats.quickEntry.loggedTitle'), t('stats.quickEntry.loggedMessage', { meal: food.name }));
+      navigation.navigate('Home');
+
+    } catch (error) {
+      console.error('Error quick logging:', error);
+      Alert.alert(
+        t('common.error'),
+        t('stats.quickEntry.failedLog')
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!mealName.trim()) {
+      Alert.alert(
+        t('stats.quickEntry.missingInfo'),
+        t('stats.quickEntry.enterMealName')
+      )
+      return;
+    }
+    if (!calories || parseFloat(calories) <= 0) {
+      Alert.alert(
+        t('stats.quickEntry.missingInfo'),
+        t('stats.quickEntry.enterCalories')
+      )
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+      Alert.alert(
+        t('common.error'),
+        t('stats.quickEntry.pleaseLogin')
+      );
+        navigation.navigate('Login');
+        return;
+      }
+
+      // Create product in food_database
+      const { data: newProduct, error: productError } = await supabase
+        .from('food_database')
+        .insert({
+          name: mealName.trim(),
+          calories: parseFloat(calories),
+          protein: parseFloat(protein) || 0,
+          carbs: parseFloat(carbs) || 0,
+          fat: parseFloat(fat) || 0,
+          fiber: 0,
+          sugar: 0,
+          sodium: 0,
+          source: 'manual_entry',
+          added_by_user_id: user.id,
+          serving_unit: 'g',
+        })
+        .select('id')
+        .single();
+
+      if (productError) throw productError;
+
+      // Log meal with product_id
+      const { error } = await supabase.from('meals').insert({
+        user_id: user.id,
+        product_id: newProduct.id,
+        serving_grams: parseFloat(servingGrams) || 100,
+        serving_unit: 'g',
+      });
+
+      if (error) throw error;
+
+      await refreshMeals();
+
+      showToast('success', t('stats.quickEntry.successTitle'), t('stats.quickEntry.successMessage'));
+      navigation.navigate('Home');
+
+    } catch (error) {
+      console.error('Error saving meal:', error);
+      Alert.alert(
+        t('common.error'),
+        t('stats.quickEntry.failedSave') + ': ' + error.message
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: theme.cardBackground, borderBottomColor: theme.border }]}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={[styles.backArrow, { color: theme.text }]}>←</Text>
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>
+          {t('stats.quickEntry.title')}
+        </Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={{
+            ...styles.scrollContent,
+            flexGrow: 1,
+            paddingBottom: 120,
+          }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={[styles.suggestionsCard, { backgroundColor: theme.cardBackground }]}>
+
+            <TouchableOpacity
+              style={styles.suggestionsHeader}
+              onPress={() => setShowSuggestions(!showSuggestions)}
+            >
+              <View>
+                <Text style={[styles.suggestionsTitle, { color: theme.text }]}>
+                  {t('stats.quickEntry.quickAdd')}
+                </Text>
+                <Text style={[styles.suggestionsSubtitle, { color: theme.textSecondary }]}>
+                  {userCountry
+                    ? t('stats.quickEntry.popularIn', { country: LOCAL_FOODS[userCountry]?.name })
+                    : t('stats.quickEntry.commonFoods')}
+                </Text>
+              </View>
+              {loadingSuggestions ? (
+                <ActivityIndicator color={theme.primary} />
+              ) : (
+                <Text style={[styles.dropdownArrow, { color: theme.text }]}>
+                  {showSuggestions ? '▲' : '▼'}
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            {showSuggestions && quickSuggestions.length > 0 && (
+
+              <View style={styles.suggestionsList}>
+                {quickSuggestions.map((food, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={[styles.suggestionItem, { borderBottomColor: theme.border }]}
+                    onPress={() => handleQuickLog(food)}
+                  >
+                    {food.image_url ? (
+                      <Image
+                        source={{ uri: food.image_url }}
+                        style={styles.suggestionImage}
+                      />
+                    ) : (
+                      <Text style={styles.suggestionEmoji}>{food.emoji}</Text>
+                    )}
+
+                    <View style={styles.suggestionInfo}>
+                      <Text style={[styles.suggestionName, { color: theme.text }]}>
+                        {food.name}
+                      </Text>
+                      <Text style={[styles.suggestionCals, { color: theme.textSecondary }]}>
+                        {food.calories} {t('common.kcal')} • {food.protein}g {t('stats.quickEntry.protein')}
+                      </Text>
+                    </View>
+
+                    <Text style={[styles.addButton, { color: theme.primary }]}>
+                      {t('stats.quickEntry.add')}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+            )}
+
+          </View>
+
+          {/* Manual Entry Form */}
+          <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              {t('stats.quickEntry.mealDetails')}
+            </Text>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>
+                {t('stats.quickEntry.mealName')}
+              </Text>
+              <TextInput
+                style={[styles.input, { 
+                  backgroundColor: theme.background, 
+                  color: theme.text,
+                  borderColor: theme.border 
+                }]}
+                placeholder={t('stats.quickEntry.mealNamePlaceholder')}
+                placeholderTextColor={theme.textTertiary}
+                value={mealName}
+                onChangeText={setMealName}
+              />
+            </View>
+
+            <TouchableOpacity
+              style={[styles.saveButton, { backgroundColor: theme.primary, marginTop: 8, marginBottom: 0 }, (!mealName.trim() || searchingNutrition) && { opacity: 0.5 }]}
+              onPress={handleGPTNutrition}
+              disabled={!mealName.trim() || searchingNutrition}
+            >
+              {searchingNutrition ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.saveButtonText}>🔍 Find Nutrition Info</Text>
+              )}
+            </TouchableOpacity>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>
+                {t('stats.quickEntry.servingSize')}
+              </Text>
+              <TextInput
+                style={[styles.input, { 
+                  backgroundColor: theme.background, 
+                  color: theme.text,
+                  borderColor: theme.border 
+                }]}
+                placeholder="100"
+                placeholderTextColor={theme.textTertiary}
+                keyboardType="numeric"
+                value={servingGrams}
+                onChangeText={setServingGrams}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>
+                {t('stats.quickEntry.calories')}
+              </Text>
+              <TextInput
+                style={[styles.input, { 
+                  backgroundColor: theme.background, 
+                  color: theme.text,
+                  borderColor: theme.border 
+                }]}
+                placeholder="0"
+                placeholderTextColor={theme.textTertiary}
+                keyboardType="numeric"
+                value={calories}
+                onChangeText={setCalories}
+              />
+            </View>
+
+            <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 20 }]}>
+              {t('stats.quickEntry.macros')}
+            </Text>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>
+                {t('stats.quickEntry.protein')}
+              </Text>
+              <TextInput
+                style={[styles.input, { 
+                  backgroundColor: theme.background, 
+                  color: theme.text,
+                  borderColor: theme.border 
+                }]}
+                placeholder="0"
+                placeholderTextColor={theme.textTertiary}
+                keyboardType="numeric"
+                value={protein}
+                onChangeText={setProtein}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>
+                {t('stats.quickEntry.carbs')}
+              </Text>
+              <TextInput
+                style={[styles.input, { 
+                  backgroundColor: theme.background, 
+                  color: theme.text,
+                  borderColor: theme.border 
+                }]}
+                placeholder="0"
+                placeholderTextColor={theme.textTertiary}
+                keyboardType="numeric"
+                value={carbs}
+                onChangeText={setCarbs}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>
+                {t('stats.quickEntry.fat')}
+              </Text>
+              <TextInput
+                style={[styles.input, { 
+                  backgroundColor: theme.background, 
+                  color: theme.text,
+                  borderColor: theme.border 
+                }]}
+                placeholder="0"
+                placeholderTextColor={theme.textTertiary}
+                keyboardType="numeric"
+                value={fat}
+                onChangeText={setFat}
+              />
+            </View>
+
+            <TouchableOpacity 
+              style={[styles.saveButton, { backgroundColor: theme.primary }, saving && { opacity: 0.6 }]}
+              onPress={handleSave}
+              disabled={saving}
+            >
+              {saving ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.saveButtonText}>
+                  {t('stats.quickEntry.saveMeal')}
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            <Text style={[styles.hint, { color: theme.textTertiary }]}>
+              {t('stats.quickEntry.tip')}
+            </Text>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backArrow: {
+    fontSize: 24,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  content: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 20,
+  },
+  suggestionsCard: {
+    borderRadius: 16,
+    padding: 15,
+    marginBottom: 20,
+  },
+  suggestionsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  suggestionsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  suggestionsSubtitle: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  dropdownArrow: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  suggestionsList: {
+    marginTop: 15,
+  },
+  suggestionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  suggestionEmoji: {
+    fontSize: 28,
+    marginRight: 12,
+  },
+  suggestionImage: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    marginRight: 12,
+  },
+  suggestionInfo: {
+    flex: 1,
+  },
+  suggestionName: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  suggestionCals: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  addButton: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  card: {
+    borderRadius: 16,
+    padding: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 15,
+    fontSize: 16,
+  },
+  saveButton: {
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 15,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  hint: {
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+});

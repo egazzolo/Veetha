@@ -1,0 +1,80 @@
+﻿camerabarcodedemo
+├── .expo
+├── web
+└── cache
+└── production
+└── images
+└── favicon
+└── favicon-24272cdaeff82cc5facdaccd982a6f05b60c4504704bbf94c19a6388659880bb-contain-transparent
+└── favicon-48.png
+├── devices.json
+└── settings.json
+├── assets
+├── icons
+├── app icons
+├── icon group B.png
+└── icon group.png
+└── Social Media icons
+├── facebookicon.png
+├── googleIcon.png
+├── instagramIcon.png
+├── tiktokIcon.png
+└── youtubeIcon.png
+├── adaptive-icon.png
+├── favicon.png
+├── icon.png
+├── iconB.png
+├── retro design.png
+├── splash B.png
+├── splash.png
+├── splash-icon.png
+├── components
+├── AllergenWarningModal.js
+├── AnimatedThemeWrapper.js
+├── BarsLayout.js
+├── CardsLayout.js
+├── CircularProgress.js
+├── FloatingLanguageButton.js
+├── GreetingBanner.js
+├── LanguageSwitcher.js
+└── NutrientModal.js
+├── dist
+├── _expo
+└── static
+└── js
+├── android
+├── ios
+└── web
+├── index-2851e43fd4210700237d07c52d50961c.js
+├── assets
+├── assets
+└── icons
+└── Social Media icons
+├── facebookicon.f3b29b631e3f6030f43735c69443b934.png
+├── googleIcon.60be6853186bb52edca433f629a026f9.png
+├── instagramIcon.dc2872a91221b5e14e8312913a8464c3.png
+├── tiktokIcon.c28071fcea9742f039d0ae44468caf22.png
+└── youtubeIcon.43039b18de043e86f324fddf43edf7f5.png
+├── node_modules
+└── @react-navigation
+└── elements
+└── lib
+└── module
+└── assets
+├── back-icon.35ba0eaec5a4f5ed12ca16fabeae451d.png
+├── back-icon-mask.0a328cd9c1afd0afe8e3b1ec5165b1b4.png
+├── clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55.png
+├── clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@2x.png
+├── clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@3x.png
+├── clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55@4x.png
+├── close-icon.808e1b1b9b53114ec2838071a7e6daa7.png
+├── close-icon.808e1b1b9b53114ec2838071a7e6daa7@2x.png
+├── close-icon.808e1b1b9b53114ec2838071a7e6daa7@3x.png
+├── close-icon.808e1b1b9b53114ec2838071a7e6daa7@4x.png
+└── search-icon.286d67d3f74808a60a78d3ebf1a5fb57.png
+├── assetmap.json
+├── favicon.ico
+└── metadata.json
+├── node_modules
+├── .bin
+├── @0no-co
