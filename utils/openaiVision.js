@@ -40,7 +40,9 @@ export async function analyzePhotoOpenAI(photoUri) {
               },
               {
                 type: 'text',
-                text: `Identify all foods in this image. Return ONLY a JSON object with no markdown or backticks:
+                text: `Look carefully at the actual colors, textures, and appearance of the food in this image before identifying it. A dark brown food is NOT angel food cake (which is white). Be accurate based on what you actually see.
+
+Identify all foods in this image. Return ONLY a JSON object with no markdown or backticks:
 {
   "foods": [
     {
@@ -55,7 +57,7 @@ export async function analyzePhotoOpenAI(photoUri) {
   ],
   "whole_meal_name": "descriptive name for the whole meal e.g. mixed vegetables"
 }
-Be specific — say broccoli not vegetable, tangerine not citrus. If no food detected return {"error": "no food detected"}.`
+Be specific based on visual appearance — dark brown baked goods are chocolate cake or brownies, not angel food cake. If no food detected return {"error": "no food detected"}.`
               }
             ]
           }

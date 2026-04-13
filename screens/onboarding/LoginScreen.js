@@ -23,15 +23,6 @@ export default function LoginScreen({ navigation }) {
   const { t } = useLanguage();
   const { setUserMode } = useUserMode();
 
-  useEffect(() => {
-    if (email.trim() && password.trim() && !loading) {
-      const timer = setTimeout(() => {
-        handleLogin();
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [email, password]);
-
   const handleLogin = async () => {
     // Clear previous errors
     setError('');
