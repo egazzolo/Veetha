@@ -2,7 +2,7 @@ module.exports = {
   expo: {
     name: "Veetha",
     slug: "Veetha",
-    version: "1.0.3",
+    version: "1.0.4",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
@@ -54,7 +54,7 @@ module.exports = {
     },
     ios: {
       bundleIdentifier: "com.yourname.veetha",
-      buildNumber: "33",
+      buildNumber: "34",
       usesAppleSignIn: true,
       associatedDomains: ["applinks:nonotenb.com"],
       infoPlist: {
