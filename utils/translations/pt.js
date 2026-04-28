@@ -48,6 +48,18 @@ export default {
     loginFailed: 'Falha ao entrar. Tente novamente.',
     continueWithGoogle: 'Continuar com o Google',
     continueWithFacebook: 'Continuar com o Facebook',
+    invalidOrUnverified: 'Credenciais inválidas, ou seu e-mail ainda não foi verificado.',
+    resendConfirmation: 'Reenviar e-mail de confirmação',
+  },
+
+  forgotPassword: {
+    title: 'Redefinir senha',
+    subtitle: 'Digite seu e-mail e enviaremos um link para redefinir.',
+    successText: '✅ Verifique seu e-mail para o link de redefinição de senha.',
+    spamNote: '📬 Não encontrou? Verifique sua pasta de spam ou lixo eletrônico.',
+    backToLogin: 'Voltar ao login',
+    backToLoginLink: '← Voltar ao login',
+    sendResetLink: 'Enviar link',
   },
 
   // SignUp Screen
@@ -212,6 +224,13 @@ export default {
     verifyEmailMessage: 'Por favor, verifique sua caixa de entrada ({email}) e clique no link de verificação.\n\n⚠️ Atenção: Os links expiram após alguns minutos. Se o link expirou, toque em "Reenviar E-mail" para obter um novo.\n\nApós verificar, toque em OK.',
     resendEmail: 'Reenviar E-mail',
     emailNotVerified: 'E-mail Não Verificado',
+    emailNotVerifiedMessage: 'Verifique sua caixa de entrada e toque no link de verificação que enviamos. Lembre-se de verificar também sua pasta de spam ou lixo eletrônico.',
+    authFailed: 'Falha na autenticação.',
+    saveErrorMessage: 'Não foi possível salvar seu perfil: {error}. Tente novamente ou entre em contato com o suporte.',
+    tryAgain: 'Tentar novamente',
+    noEmailFound: 'E-mail não encontrado. Tente se cadastrar novamente.',
+    emailResentMessage: 'Um novo e-mail de confirmação foi enviado para {email}. Verifique sua caixa de entrada.',
+    processing: 'Processando...',
     stillNotVerified: 'Seu e-mail ainda não foi verificado. Por favor, verifique seu e-mail e então entre.',
     error: 'Erro',
     tryLoginManually: 'Por favor, tente entrar manualmente.',

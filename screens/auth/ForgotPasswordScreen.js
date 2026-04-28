@@ -40,18 +40,19 @@ export default function ForgotPasswordScreen({ navigation }) {
           <Image source={require('../../assets/LogoB.png')} style={styles.logo} />
         </View>
 
-        <Text style={styles.title}>Reset Password</Text>
+        <Text style={styles.title}>{t('forgotPassword.title')}</Text>
 
         {sent ? (
           <View style={styles.successContainer}>
-            <Text style={styles.successText}>✅ Check your email for a password reset link.</Text>
+            <Text style={styles.successText}>{t('forgotPassword.successText')}</Text>
+            <Text style={styles.spamNote}>{t('forgotPassword.spamNote')}</Text>
             <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.backButtonText}>Back to Login</Text>
+              <Text style={styles.backButtonText}>{t('forgotPassword.backToLogin')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <>
-            <Text style={styles.subtitle}>Enter your email and we'll send you a reset link.</Text>
+            <Text style={styles.subtitle}>{t('forgotPassword.subtitle')}</Text>
 
             {error ? (
               <View style={styles.errorContainer}>
@@ -82,12 +83,12 @@ export default function ForgotPasswordScreen({ navigation }) {
               {loading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.resetButtonText}>Send Reset Link</Text>
+                <Text style={styles.resetButtonText}>{t('forgotPassword.sendResetLink')}</Text>
               )}
             </TouchableOpacity>
 
             <TouchableOpacity style={{ marginTop: 20, alignItems: 'center' }} onPress={() => navigation.goBack()}>
-              <Text style={{ color: '#4CAF50', fontWeight: '600' }}>← Back to Login</Text>
+              <Text style={{ color: '#4CAF50', fontWeight: '600' }}>{t('forgotPassword.backToLoginLink')}</Text>
             </TouchableOpacity>
           </>
         )}
@@ -174,7 +175,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
     textAlign: 'center',
+    marginBottom: 15,
+  },
+  spamNote: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
     marginBottom: 30,
+    fontStyle: 'italic',
   },
   backButton: {
     backgroundColor: '#4CAF50',

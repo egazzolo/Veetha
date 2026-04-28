@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'; //E:
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Modal, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Modal, Image, StatusBar, Platform } from 'react-native';
 import { useLanguage } from '../utils/LanguageContext';
 import { useTutorial } from '../utils/TutorialContext';
 import { useTheme } from '../utils/ThemeContext';
@@ -140,6 +140,12 @@ export default function AppTutorial({
       if (tutorialRefs.caloriesCard?.current) {
         const coords = await measureComponent(tutorialRefs.caloriesCard.current);
         console.log('📏 caloriesCard coords:', coords);
+        console.log('🔍 DIAGNOSTIC:', {
+          statusBarHeight: StatusBar.currentHeight,
+          platform: Platform.OS,
+          windowHeight: height,
+          insetsTop: insets.top,
+        });
         if (coords) {
           steps.push({
             targetArea: coords,
@@ -420,7 +426,7 @@ export default function AppTutorial({
           if (goalsCoords) {
             
             const targetAfterScroll = {
-              top: 200,
+              top: goalsCoords.top,
               left: goalsCoords.left,
               width: goalsCoords.width,
               height: goalsCoords.height,
@@ -454,7 +460,7 @@ export default function AppTutorial({
           if (dietaryCoords) {
             steps.push({
               targetArea: {
-                top: 280,
+                top: dietaryCoords.top,
                 left: dietaryCoords.left,
                 width: dietaryCoords.width,
                 height: dietaryCoords.height,
@@ -483,7 +489,7 @@ export default function AppTutorial({
           if (displayCoords) {
             steps.push({
               targetArea: {
-                top: 358,  // ← Display Settings is below Dietary (280 + 78px height) 
+                top: displayCoords.top,
                 left: displayCoords.left,
                 width: displayCoords.width,
                 height: displayCoords.height,
@@ -696,65 +702,65 @@ export default function AppTutorial({
         {/* Gray overlay - everything except target */}
 
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          {/* Top gray area */}
-          {step.targetArea && (
-            <View 
-              style={[styles.grayArea, { height: step.targetArea.top }]} 
-              pointerEvents="none"
-            />
-          )}
-          
-          {/* Left gray area */}
-          {step.targetArea && (
-            <View 
-              style={[
-                styles.grayArea, 
-                { 
-                  top: step.targetArea.top,
-                  height: step.targetArea.height,
-                  width: step.targetArea.left 
-                }
-              ]} 
-              pointerEvents="none"
-            />
-          )}
-          
-          {/* Right gray area */}
-          {step.targetArea && (
-            <View 
-              style={[
-                styles.grayArea, 
-                { 
-                  top: step.targetArea.top,
-                  left: step.targetArea.left + step.targetArea.width,
-                  height: step.targetArea.height,
-                  width: width - (step.targetArea.left + step.targetArea.width)
-                }
-              ]} 
-              pointerEvents="none"
-            />
-          )}
-          
-          {/* Bottom gray area */}
-          {step.targetArea && (
-            <View 
-              style={[
-                styles.grayArea, 
-                { 
-                  top: step.targetArea.top + step.targetArea.height,
-                  height: height - (step.targetArea.top + step.targetArea.height)
-                }
-              ]} 
-              pointerEvents="none"
-            />
-          )}
+          {step.targetArea && (() => {
+            const sbOffset = Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0;
+            const adjTop = step.targetArea.top + sbOffset;
+            return (
+              <>
+                {/* Top gray area */}
+                <View 
+                  style={[styles.grayArea, { height: adjTop }]} 
+                  pointerEvents="none"
+                />
+                
+                {/* Left gray area */}
+                <View 
+                  style={[
+                    styles.grayArea, 
+                    { 
+                      top: adjTop,
+                      height: step.targetArea.height,
+                      width: step.targetArea.left 
+                    }
+                  ]} 
+                  pointerEvents="none"
+                />
+                
+                {/* Right gray area */}
+                <View 
+                  style={[
+                    styles.grayArea, 
+                    { 
+                      top: adjTop,
+                      left: step.targetArea.left + step.targetArea.width,
+                      height: step.targetArea.height,
+                      width: width - (step.targetArea.left + step.targetArea.width)
+                    }
+                  ]} 
+                  pointerEvents="none"
+                />
+                
+                {/* Bottom gray area */}
+                <View 
+                  style={[
+                    styles.grayArea, 
+                    { 
+                      top: adjTop + step.targetArea.height,
+                      height: height - (adjTop + step.targetArea.height)
+                    }
+                  ]} 
+                  pointerEvents="none"
+                />
+              </>
+            );
+          })()}
 
           {/* Highlight border around target */}
           {step.targetArea && (
             <View style={[
               styles.highlightBorder,
               {
-                top: step.targetArea.top - 3,
+                top: step.targetArea.top - 3 + (Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0),
                 left: step.targetArea.left - 3,
                 width: step.targetArea.width + 6,
                 height: step.targetArea.height + 6,
@@ -768,7 +774,7 @@ export default function AppTutorial({
             <View key={index} style={[
               styles.highlightBorder,
               {
-                top: highlight.top - 3,
+                top: highlight.top - 3 + (Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0),
                 left: highlight.left - 3,
                 width: highlight.width + 6,
                 height: highlight.height + 6,

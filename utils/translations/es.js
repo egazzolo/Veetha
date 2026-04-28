@@ -48,6 +48,18 @@ export default {
     loginFailed: 'Error al iniciar sesión. Por favor intenta de nuevo.',
     continueWithGoogle: 'Continuar con Google',
     continueWithFacebook: 'Continuar con Facebook',
+    invalidOrUnverified: 'Credenciales inválidas, o tu correo aún no está verificado.',
+    resendConfirmation: 'Reenviar correo de confirmación',
+  },
+
+  forgotPassword: {
+    title: 'Restablecer contraseña',
+    subtitle: 'Ingresa tu correo y te enviaremos un enlace para restablecerla.',
+    successText: '✅ Revisa tu correo para restablecer tu contraseña.',
+    spamNote: '📬 ¿No lo ves? Revisa tu carpeta de spam o correo no deseado.',
+    backToLogin: 'Volver al inicio de sesión',
+    backToLoginLink: '← Volver al inicio de sesión',
+    sendResetLink: 'Enviar enlace',
   },
 
   // SignUp Screen
@@ -212,6 +224,13 @@ export default {
     verifyEmailMessage: 'Por favor revisa tu bandeja de entrada ({email}) y haz clic en el enlace de verificación.\n\n⚠️ Nota: Los enlaces expiran después de unos minutos. Si tu enlace expiró, toca "Reenviar Correo" para obtener uno nuevo.\n\nUna vez verificado, toca OK abajo.',
     resendEmail: 'Reenviar Correo',
     emailNotVerified: 'Correo No Verificado',
+    emailNotVerifiedMessage: 'Revisa tu bandeja de entrada y toca el enlace de verificación que te enviamos. No olvides revisar también tu carpeta de spam o correo no deseado.',
+    authFailed: 'Falló la autenticación.',
+    saveErrorMessage: 'No se pudo guardar tu perfil: {error}. Intenta de nuevo o contacta con soporte.',
+    tryAgain: 'Intentar de nuevo',
+    noEmailFound: 'No se encontró el correo. Intenta registrarte de nuevo.',
+    emailResentMessage: 'Se envió un nuevo correo de confirmación a {email}. Revisa tu bandeja de entrada.',
+    processing: 'Procesando...',
     stillNotVerified: 'Tu correo aún no está verificado. Por favor verifica tu correo, luego inicia sesión.',
     error: 'Error',
     tryLoginManually: 'Por favor intenta iniciar sesión manualmente.',

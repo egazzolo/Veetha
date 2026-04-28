@@ -37,6 +37,11 @@ yarn-error.*
 *.tsbuildinfo
 
 # generated native folders
-#   R e m o v e   i o s   a n d   a n d r o i d   f r o m   g i t i g n o r e 
- 
+# Remove ios and android from gitignore
+
+# Local env files
 .env
+
+# Build artifacts and scratch files
+build-error.log
+emoji_list.txt

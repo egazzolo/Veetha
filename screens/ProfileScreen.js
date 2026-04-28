@@ -517,6 +517,10 @@ export default function ProfileScreen({ navigation }) {
                       const { x, y, width, height } = event.nativeEvent.layout;
                       if (displaySettingsButtonRef?.current?.measureInWindow) {
                         displaySettingsButtonRef.current.measureInWindow((wx, wy, w, h) => {
+                          console.log('🟢 DISPLAY SETTINGS ACTUAL POSITION:', {
+                            measureInWindow: { wx, wy, w, h },
+                            onLayoutLocal: { x, y, width, height },
+                          });
                           if (displaySettingsButtonRef.current) {
                             displaySettingsButtonRef.current.tutorialCoords = {
                               top: wy, left: wx, width: w, height: h, borderRadius: 16

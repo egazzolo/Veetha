@@ -48,6 +48,18 @@ export default {
     loginFailed: 'Échec de la connexion. Veuillez réessayer.',
     continueWithGoogle: 'Continuer avec Google',
     continueWithFacebook: 'Continuer avec Facebook',
+    invalidOrUnverified: "Identifiants invalides, ou votre e-mail n'est pas encore vérifié.",
+    resendConfirmation: "Renvoyer l'e-mail de confirmation",
+  },
+
+  forgotPassword: {
+    title: 'Réinitialiser le mot de passe',
+    subtitle: 'Entrez votre e-mail et nous vous enverrons un lien de réinitialisation.',
+    successText: '✅ Consultez votre e-mail pour le lien de réinitialisation.',
+    spamNote: '📬 Vous ne le voyez pas ? Vérifiez votre dossier spam ou courrier indésirable.',
+    backToLogin: 'Retour à la connexion',
+    backToLoginLink: '← Retour à la connexion',
+    sendResetLink: 'Envoyer le lien',
   },
 
   // SignUp Screen
@@ -212,6 +224,13 @@ export default {
     verifyEmailMessage: 'Veuillez consulter votre boîte de réception ({email}) et cliquer sur le lien de vérification.\n\n⚠️ Note: Les liens expirent après quelques minutes. Si votre lien a expiré, appuyez sur "Renvoyer l\'e-mail" pour en obtenir un nouveau.\n\nUne fois vérifié, appuyez sur OK ci-dessous.',
     resendEmail: 'Renvoyer l\'e-mail',
     emailNotVerified: 'E-mail non vérifié',
+    emailNotVerifiedMessage: "Veuillez consulter votre boîte de réception et toucher le lien de vérification que nous vous avons envoyé. N'oubliez pas de vérifier aussi votre dossier spam ou courrier indésirable.",
+    authFailed: "Échec de l'authentification.",
+    saveErrorMessage: "Impossible d'enregistrer votre profil : {error}. Veuillez réessayer ou contacter l'assistance.",
+    tryAgain: 'Réessayer',
+    noEmailFound: 'Aucun e-mail trouvé. Veuillez vous inscrire à nouveau.',
+    emailResentMessage: 'Un nouvel e-mail de confirmation a été envoyé à {email}. Veuillez consulter votre boîte de réception.',
+    processing: 'Traitement en cours...',
     stillNotVerified: 'Votre e-mail n\'est toujours pas vérifié. Veuillez vérifier votre e-mail, puis vous connecter.',
     error: 'Erreur',
     tryLoginManually: 'Veuillez essayer de vous connecter manuellement.',

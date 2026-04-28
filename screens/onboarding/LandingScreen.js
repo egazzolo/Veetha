@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
-import * as Crypto from 'expo-crypto';
 import { StyleSheet, Text, View, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
 import { useLanguage } from '../../utils/LanguageContext';
 import { useUserMode } from '../../utils/UserModeContext';
 import { supabase } from '../../utils/supabase';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LandingScreen({ navigation }) {
   const { t } = useLanguage();

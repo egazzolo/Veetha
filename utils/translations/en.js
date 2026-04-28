@@ -48,6 +48,18 @@ export default {
     loginFailed: 'Login failed. Please try again.',
     continueWithGoogle: 'Continue with Google',
     continueWithFacebook: 'Continue with Facebook',
+    invalidOrUnverified: 'Invalid credentials, or your email is not verified yet.',
+    resendConfirmation: 'Resend confirmation email',
+  },
+
+  forgotPassword: {
+    title: 'Reset password',
+    subtitle: "Enter your email and we'll send you a reset link.",
+    successText: '✅ Check your email for a password reset link.',
+    spamNote: "📬 Don't see it? Please check your spam or junk folder.",
+    backToLogin: 'Back to login',
+    backToLoginLink: '← Back to login',
+    sendResetLink: 'Send reset link',
   },
 
   // SignUp Screen
@@ -212,6 +224,13 @@ export default {
     verifyEmailMessage: 'Please check your inbox ({email}) and click the verification link.\n\n⚠️ Note: Links expire after a few minutes. If your link expired, tap "Resend Email" to get a fresh one.\n\nOnce verified, tap OK below.',
     resendEmail: 'Resend Email',
     emailNotVerified: 'Email Not Verified',
+    emailNotVerifiedMessage: 'Please check your inbox and tap the verification link we sent you. Remember to check your spam or junk folder too.',
+    authFailed: 'Authentication failed.',
+    saveErrorMessage: 'Failed to save your profile: {error}. Please try again or contact support.',
+    tryAgain: 'Try again',
+    noEmailFound: 'No email found. Please try signing up again.',
+    emailResentMessage: 'A new confirmation email has been sent to {email}. Please check your inbox.',
+    processing: 'Processing...',
     stillNotVerified: 'Your email is still not verified. Please verify your email, then log in.',
     error: 'Error',
     tryLoginManually: 'Please try logging in manually.',

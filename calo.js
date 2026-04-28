@@ -3,6 +3,12 @@ import * as Sentry from '@sentry/react-native';
 Sentry.init({
   dsn: 'https://a7cb9cc40e73b8aaf47a0db71cca59ec@o4511091850215424.ingest.us.sentry.io/4511091971457024',
 
+  // Log Sentry setup details to Metro console in development
+  debug: __DEV__,
+
+  // Performance monitoring — capture traces on 20% of sessions
+  tracesSampleRate: 0.2,
+
   // Adds more context data to events (IP address, cookies, user, etc.)
   // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
   sendDefaultPii: true,
@@ -18,6 +24,7 @@ Sentry.init({
   // uncomment the line below to enable Spotlight (https://spotlightjs.com)
   // spotlight: __DEV__,
 });
+
 //import * as Updates from 'expo-updates';
 import React, { useState, useEffect, useRef } from 'react';
 //import Purchases from 'react-native-purchases';

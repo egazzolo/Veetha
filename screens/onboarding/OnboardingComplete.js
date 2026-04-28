@@ -90,8 +90,8 @@ export default function OnboardingComplete({ navigation }) {
           console.log('❌ No saved credentials and no active session');
           Alert.alert(
             t('onboarding.error'),
-            'Session expired. Please log in again.',
-            [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+            t('onboarding.pleaseLogin'),
+            [{ text: t('common.ok'), onPress: () => navigation.navigate('Login') }]
           );
           return;
         }
@@ -122,7 +122,7 @@ export default function OnboardingComplete({ navigation }) {
 
       if (!authUser) {
         console.error('❌ No authenticated user found');
-        Alert.alert('Error', 'Authentication failed.');
+        Alert.alert(t('onboarding.error'), t('onboarding.authFailed'));
         return;
       }
 
@@ -208,7 +208,7 @@ export default function OnboardingComplete({ navigation }) {
 
     } catch (error) {
       console.error('❌ Error in handleStartTracking:', error);
-      Alert.alert('Error', error.message || 'Something went wrong');
+      Alert.alert(t('onboarding.error'), error.message || t('onboarding.authFailed'));
     } finally {
       setProcessing(false);
     }
@@ -228,12 +228,12 @@ export default function OnboardingComplete({ navigation }) {
         if (response.error.message.includes('Email not confirmed')) {
           console.log('❌ Still not verified');
           Alert.alert(
-            'Not Verified Yet',
-            'Your email is still not verified. Please check your inbox and click the verification link, then try again.',
-            [{ text: 'OK' }]
+            t('onboarding.emailNotVerified'),
+            t('onboarding.stillNotVerified'),
+            [{ text: t('common.ok') }]
           );
         } else {
-          Alert.alert('Error', response.error.message);
+          Alert.alert(t('onboarding.error'), response.error.message);
         }
         return;
       }
@@ -246,7 +246,7 @@ export default function OnboardingComplete({ navigation }) {
 
     } catch (error) {
       console.error('❌ Error rechecking verification:', error);
-      Alert.alert('Error', 'Something went wrong. Please try logging in manually.');
+      Alert.alert(t('onboarding.error'), t('onboarding.tryLoginManually'));
       navigation.navigate('Login');
     }
   };
@@ -339,11 +339,11 @@ export default function OnboardingComplete({ navigation }) {
     } catch (error) {
       console.error('❌ Error saving profile:', error);
       Alert.alert(
-        'Save Error',
-        `Failed to save your profile: ${error.message}. Please try again or contact support.`,
+        t('onboarding.saveError'),
+        t('onboarding.saveErrorMessage').replace('{error}', error.message),
         [
-          { text: 'Try Again', onPress: () => saveProfileAndNavigate(user) },
-          { text: 'Cancel' }
+          { text: t('onboarding.tryAgain'), onPress: () => saveProfileAndNavigate(user) },
+          { text: t('common.cancel') }
         ]
       );
     }
@@ -356,7 +356,7 @@ export default function OnboardingComplete({ navigation }) {
       const email = emailToResend || await AsyncStorage.getItem('pendingUserEmail');
       
       if (!email) {
-        Alert.alert('Error', 'No email found. Please try signing up again.');
+        Alert.alert(t('onboarding.error'), t('onboarding.noEmailFound'));
         return;
       }
 
@@ -369,14 +369,14 @@ export default function OnboardingComplete({ navigation }) {
 
       console.log('✅ Email resent successfully');
       Alert.alert(
-        'Email Sent! 📧',
-        `A new confirmation email has been sent to ${email}. Please check your inbox.`,
-        [{ text: 'OK' }]
+        t('onboarding.emailSent'),
+        t('onboarding.emailResentMessage').replace('{email}', email),
+        [{ text: t('common.ok') }]
       );
 
     } catch (error) {
       console.error('Error resending confirmation:', error);
-      Alert.alert('Error', error.message || 'Failed to resend email. Please try again.');
+      Alert.alert(t('onboarding.error'), error.message || t('onboarding.failedToResendEmail'));
     }
   };
 
@@ -441,7 +441,7 @@ export default function OnboardingComplete({ navigation }) {
             disabled={processing}
           >
             <Text style={styles.startButtonText}>
-              {processing ? 'Processing...' : t('onboarding.startTracking')}
+              {processing ? t('onboarding.processing') : t('onboarding.startTracking')}
             </Text>
           </TouchableOpacity>
 

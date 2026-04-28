@@ -48,6 +48,18 @@ export default {
     loginFailed: 'Nabigo ang pag-login. Subukan ulit.',
     continueWithGoogle: 'Magpatuloy sa Google',
     continueWithFacebook: 'Magpatuloy sa Facebook',
+    invalidOrUnverified: 'Mali ang credentials, o hindi pa na-verify ang email mo.',
+    resendConfirmation: 'Ipadala muli ang confirmation email',
+  },
+
+  forgotPassword: {
+    title: 'I-reset ang password',
+    subtitle: 'Ilagay ang iyong email at magpapadala kami ng reset link.',
+    successText: '✅ Tingnan ang iyong email para sa reset link ng password.',
+    spamNote: '📬 Hindi mo ba nakita? Tingnan din ang iyong spam o junk folder.',
+    backToLogin: 'Bumalik sa login',
+    backToLoginLink: '← Bumalik sa login',
+    sendResetLink: 'Ipadala ang link',
   },
 
   // SignUp Screen
@@ -212,6 +224,13 @@ export default {
     verifyEmailMessage: 'Pakiusap na suriin ang iyong inbox ({email}) at i-click ang verification link.\n\n⚠️ Paalala: Nag-e-expire ang mga link pagkalipas ng ilang minuto. Kung nag-expire ang iyong link, i-tap ang "Mag-resend ng Email" para makakuha ng bago.\n\nKapag na-verify na, i-tap ang OK sa ibaba.',
     resendEmail: 'Mag-resend ng Email',
     emailNotVerified: 'Hindi Pa Na-verify ang Email',
+    emailNotVerifiedMessage: 'Tingnan ang iyong inbox at i-tap ang verification link na ipinadala namin. Tingnan din ang iyong spam o junk folder.',
+    authFailed: 'Nabigo ang authentication.',
+    saveErrorMessage: 'Nabigo ang pag-save ng iyong profile: {error}. Subukan muli o makipag-ugnayan sa support.',
+    tryAgain: 'Subukan muli',
+    noEmailFound: 'Walang email na nahanap. Mag-sign up muli.',
+    emailResentMessage: 'Naipadala na ang bagong confirmation email sa {email}. Tingnan ang iyong inbox.',
+    processing: 'Pinoproseso...',
     stillNotVerified: 'Hindi pa rin na-verify ang iyong email. Pakiusap na i-verify ang iyong email, pagkatapos ay mag-log in.',
     error: 'Error',
     tryLoginManually: 'Pakiusap na subukang mag-log in nang manu-mano.',

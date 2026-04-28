@@ -19,6 +19,8 @@ export default function LoginScreen({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showResendButton, setShowResendButton] = useState(false);
+  const [resending, setResending] = useState(false);
   const { triggerGreeting } = useGreeting();
   const { t } = useLanguage();
   const { setUserMode } = useUserMode();
@@ -108,17 +110,52 @@ export default function LoginScreen({ navigation }) {
 
     } catch (err) {
       console.error('Login error:', err);
-      if (err.message.includes('Invalid login credentials')) {
-        setError(t('login.invalidCredentials'));
-      } else if (err.message.includes('Email not confirmed')) {
-        setError(t('login.verifyEmail'));
+      if (err.message.includes('Invalid login credentials') || err.message.includes('Email not confirmed')) {
+        // Supabase returns "Invalid login credentials" for BOTH wrong password and unconfirmed email
+        // (security feature since 2024). We show a message that covers both + a Resend option.
+        setError(t('login.invalidOrUnverified'));
+        setShowResendButton(true);
       } else {
         setError(err.message || t('login.loginFailed'));
+        setShowResendButton(false);
       }
     } finally {
       setLoading(false);
     }
   }
+
+  const handleResendConfirmation = async () => {
+    if (!email || !email.includes('@')) {
+      setError(t('login.validEmail'));
+      return;
+    }
+    setResending(true);
+    try {
+      const { error: resendError } = await supabase.auth.resend({
+        type: 'signup',
+        email: email.trim().toLowerCase(),
+      });
+      // Supabase silently succeeds for already-confirmed users (to prevent enumeration),
+      // so we show the same success message regardless.
+      if (resendError && !resendError.message.includes('already confirmed')) {
+        throw resendError;
+      }
+      setError('');
+      setShowResendButton(false);
+      // Show inline success using error state's styling but with a green message would be cleaner;
+      // simplest: use Alert since that's the app's existing pattern.
+      const { Alert } = require('react-native');
+      Alert.alert(
+        t('onboarding.emailSent'),
+        t('onboarding.emailResentMessage').replace('{email}', email.trim().toLowerCase()),
+        [{ text: t('common.ok') }]
+      );
+    } catch (err) {
+      setError(err.message || t('onboarding.failedToResendEmail'));
+    } finally {
+      setResending(false);
+    }
+  };
 
   const handlePostLogin = async (user) => {
     // Wait for profile trigger to complete
@@ -247,6 +284,19 @@ export default function LoginScreen({ navigation }) {
             {error ? (
               <View style={styles.errorContainer}>
                 <Text style={styles.errorText}>{error}</Text>
+                {showResendButton && (
+                  <TouchableOpacity
+                    style={styles.resendButton}
+                    onPress={handleResendConfirmation}
+                    disabled={resending}
+                  >
+                    {resending ? (
+                      <ActivityIndicator color="#c62828" size="small" />
+                    ) : (
+                      <Text style={styles.resendButtonText}>{t('login.resendConfirmation')}</Text>
+                    )}
+                  </TouchableOpacity>
+                )}
               </View>
             ) : null}
 
@@ -391,6 +441,16 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#c62828',
     textAlign: 'center',
+  },
+  resendButton: {
+    marginTop: 12,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  resendButtonText: {
+    color: '#c62828',
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   inputContainer: {
     marginBottom: 20,
