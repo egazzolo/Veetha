@@ -1223,4 +1223,15 @@ export default {
     dinnerTitle: 'Dinner Time!',
     dinnerBody: 'Time to wind down — log your dinner.',
   },
+  update: {
+    softTitle: 'Update available',
+    softMessage: 'A new version of Veetha is available. Would you like to update now?',
+    forcedTitle: 'Update required',
+    forcedMessage: 'This version of Veetha is no longer supported. Please update to continue.',
+    updateNow: 'Update',
+    later: 'Later',
+    otaReadyTitle: 'Update ready',
+    otaReadyMessage: 'A new version is ready. Restart the app to apply it.',
+    restart: 'Restart',
+  },
 }

@@ -1223,4 +1223,15 @@ export default {
     dinnerTitle: 'Oras na ng Hapunan!',
     dinnerBody: 'Oras na para magpahinga — i-log ang iyong hapunan.',
   },
+  update: {
+    softTitle: 'May update na available',
+    softMessage: 'May bagong bersyon ng Veetha. Gusto mo bang i-update ngayon?',
+    forcedTitle: 'Kailangang mag-update',
+    forcedMessage: 'Ang bersyong ito ng Veetha ay hindi na suportado. Mangyaring mag-update para magpatuloy.',
+    updateNow: 'I-update',
+    later: 'Mamaya',
+    otaReadyTitle: 'Handa na ang update',
+    otaReadyMessage: 'May bagong bersyon na handa. I-restart ang app para mailapat ito.',
+    restart: 'I-restart',
+  },
 }

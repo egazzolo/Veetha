@@ -1223,4 +1223,15 @@ export default {
     dinnerTitle: '¡Hora de la Cena!',
     dinnerBody: 'Es hora de relajarse — registra tu cena.',
   },
+  update: {
+    softTitle: 'Actualización disponible',
+    softMessage: 'Hay una nueva versión de Veetha disponible. ¿Quieres actualizar ahora?',
+    forcedTitle: 'Actualización requerida',
+    forcedMessage: 'Esta versión de Veetha ya no es compatible. Actualiza para continuar.',
+    updateNow: 'Actualizar',
+    later: 'Más tarde',
+    otaReadyTitle: 'Actualización lista',
+    otaReadyMessage: 'Hay una nueva versión lista. Reinicia la aplicación para aplicarla.',
+    restart: 'Reiniciar',
+  },
 }
