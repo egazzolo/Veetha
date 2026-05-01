@@ -334,6 +334,9 @@ export default function HomeScreen({ navigation }) {
   const [guestSheetMessage, setGuestSheetMessage] = useState('');
   const [mealActionModal, setMealActionModal] = useState({ visible: false, meal: null });
   const [deleteMealModal, setDeleteMealModal] = useState({ visible: false, meal: null });
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedMealIds, setSelectedMealIds] = useState(new Set());
+  const [bulkDeleteModalVisible, setBulkDeleteModalVisible] = useState(false);
 
   // Safe numeric helper
   const num = (v) => {
@@ -1281,7 +1284,50 @@ export default function HomeScreen({ navigation }) {
   };
 
   const handleDeleteMeal = (meal) => {
-    setDeleteMealModal({ visible: true, meal });
+    // Enter selection mode with the long-pressed meal already checked
+    setSelectedMealIds(new Set([meal.id]));
+    setSelectionMode(true);
+  };
+
+  const toggleMealSelection = (mealId) => {
+    setSelectedMealIds(prev => {
+      const next = new Set(prev);
+      if (next.has(mealId)) next.delete(mealId);
+      else next.add(mealId);
+      return next;
+    });
+  };
+
+  const cancelSelection = () => {
+    setSelectionMode(false);
+    setSelectedMealIds(new Set());
+  };
+
+  const confirmBulkDelete = async () => {
+    setBulkDeleteModalVisible(false);
+    const ids = Array.from(selectedMealIds);
+    if (ids.length === 0) return;
+    try {
+      if (!user) {
+        // GUEST DELETE
+        const existingMeals = JSON.parse(await AsyncStorage.getItem('guest_meals') || '[]');
+        const updatedMeals = existingMeals.filter(m => !ids.includes(m.id));
+        await AsyncStorage.setItem('guest_meals', JSON.stringify(updatedMeals));
+        setMeals(prev => prev.filter(m => !ids.includes(m.id)));
+      } else {
+        // SUPABASE DELETE
+        const { error } = await supabase.from('meals').delete().in('id', ids);
+        if (error) throw error;
+        await loadMealsForDate(selectedDate);
+        await calculateStreak();
+      }
+      showToast('success', t('home.success'), `${ids.length} ${t('home.mealsDeleted')}`);
+    } catch (err) {
+      console.error('Bulk delete error:', err);
+      Alert.alert(t('home.error'), t('home.failedToDelete'));
+    } finally {
+      cancelSelection();
+    }
   };
 
   const confirmDeleteMeal = async (meal) => {
@@ -1683,6 +1729,11 @@ export default function HomeScreen({ navigation }) {
                   navigation={navigation}
                   mealsListRef={mealsListRef}
                   isGuestMode={isGuestMode}
+                  selectionMode={selectionMode}
+                  selectedMealIds={selectedMealIds}
+                  onToggleSelection={toggleMealSelection}
+                  onCancelSelection={cancelSelection}
+                  onConfirmDelete={() => setBulkDeleteModalVisible(true)}
                 />
               </ScrollView>
 
@@ -1790,14 +1841,14 @@ export default function HomeScreen({ navigation }) {
 
               {/* Delete Meal Confirmation */}
               <VeethaModal
-                visible={deleteMealModal.visible}
-                title={t('home.deleteMeal')}
-                message={`${t('home.deleteMealConfirm')} "${deleteMealModal.meal?.product_name}"?`}
+                visible={bulkDeleteModalVisible}
+                title={`${t('home.delete')} (${selectedMealIds.size})`}
+                message={t('home.deleteMealsConfirm')}
                 confirmText={t('home.delete')}
                 cancelText={t('home.cancel')}
                 confirmStyle="destructive"
-                onConfirm={() => confirmDeleteMeal(deleteMealModal.meal)}
-                onCancel={() => setDeleteMealModal({ visible: false, meal: null })}
+                onConfirm={confirmBulkDelete}
+                onCancel={() => setBulkDeleteModalVisible(false)}
               />
             </AnimatedThemeWrapper>
 
