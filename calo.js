@@ -28,13 +28,14 @@ Sentry.init({
 //import * as Updates from 'expo-updates';
 import React, { useState, useEffect, useRef } from 'react';
 //import Purchases from 'react-native-purchases';
-import { View, ActivityIndicator, Platform, StatusBar } from 'react-native';
+import { View, ActivityIndicator, Platform, StatusBar, Alert } from 'react-native';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
+import * as Updates from 'expo-updates';
 import { useTheme } from './utils/ThemeContext';
 import { LayoutProvider } from './utils/LayoutContext';
 import { TutorialProvider } from './utils/TutorialContext';
@@ -86,11 +87,12 @@ import ResetPasswordScreen from './screens/onboarding/ResetPasswordScreen';
 // Import contexts and utilities
 import { OnboardingProvider } from './utils/OnboardingContext';
 import { ThemeProvider } from './utils/ThemeContext';
-import { LanguageProvider } from './utils/LanguageContext';
+import { LanguageProvider, useLanguage  } from './utils/LanguageContext';
 import { GreetingProvider } from './utils/GreetingContext';
 import { UserProvider } from './utils/UserContext';
 import { UserModeProvider, useUserMode } from './utils/UserModeContext';
 import { supabase, createSessionFromUrl } from './utils/supabase';
+import UpdateAlert from './components/UpdateAlert';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -100,6 +102,7 @@ const Stack = createNativeStackNavigator();
 function AppNavigator() {
   const { isDark } = useTheme();
   const { userMode, setUserMode } = useUserMode();
+  const { t } = useLanguage();
   const [initialRoute, setInitialRoute] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigationRef = useRef(null);
@@ -412,6 +415,7 @@ function AppNavigator() {
         </Stack.Navigator>
         {/* <GlobalTutorialOverlay /> */}
       </NavigationContainer>
+      <UpdateAlert />
       <VeethaToastRoot />
     </View>
   );

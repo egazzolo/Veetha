@@ -63,6 +63,15 @@ module.exports = {
         "NSCameraUsageDescription": "Veetha uses your camera to scan food barcodes for instant nutrition lookup and to photograph meals for AI-powered food recognition and calorie tracking.",
         "NSPhotoLibraryUsageDescription": "Veetha uses your photo library to let you select meal photos for AI-powered food recognition and calorie tracking."
       }
-    }
+    },
+    updates: {
+      enabled: true,
+      checkAutomatically: "ON_LOAD",
+      fallbackToCacheTimeout: 5000,
+      url: "https://u.expo.dev/3ea65199-c1c8-4c23-bcac-ae6b34aead78"
+    },
+    runtimeVersion: {
+      policy: "appVersion"
+    },
   }
 };
