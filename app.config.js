@@ -70,8 +70,6 @@ module.exports = {
       fallbackToCacheTimeout: 5000,
       url: "https://u.expo.dev/3ea65199-c1c8-4c23-bcac-ae6b34aead78"
     },
-    runtimeVersion: {
-      policy: "appVersion"
-    },
+    runtimeVersion: "1.0.5",
   }
 };
