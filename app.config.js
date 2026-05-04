@@ -28,7 +28,7 @@ module.exports = {
     },
     android: {
       package: "com.yourname.veetha",
-      versionCode: 19,
+      versionCode: 20,
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#ffffff"
@@ -60,6 +60,7 @@ module.exports = {
       usesAppleSignIn: true,
       associatedDomains: ["applinks:nonotenb.com"],
       infoPlist: {
+        "ITSAppUsesNonExemptEncryption": false,
         "NSLocationWhenInUseUsageDescription": "We use your location to suggest common foods in your area.",
         "NSCameraUsageDescription": "Veetha uses your camera to scan food barcodes for instant nutrition lookup and to photograph meals for AI-powered food recognition and calorie tracking.",
         "NSPhotoLibraryUsageDescription": "Veetha uses your photo library to let you select meal photos for AI-powered food recognition and calorie tracking."
