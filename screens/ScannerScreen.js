@@ -10,6 +10,7 @@ import { useTutorial } from '../utils/TutorialContext';
 import TutorialArrow from '../components/TutorialArrow';
 import AppTutorial from '../components/AppTutorial';
 import { logScreen, logEvent } from '../utils/analytics';
+import { posthog } from '../utils/posthog';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSwipeNavigation } from '../utils/useSwipeNavigation';
@@ -685,6 +686,7 @@ export default function ScannerScreen({ navigation }) {
       
       console.log("📸 Photo captured:", photo.uri);
       logEvent('photo_scanned');
+      posthog.capture('photo_taken_for_ai');
       await analyzeFoodPhoto(photo.uri);
       
     } catch (error) {
@@ -711,6 +713,7 @@ export default function ScannerScreen({ navigation }) {
     setLoading(true);
     console.log("📊 Barcode scanned:", data);
     logEvent('barcode_scanned', { barcode: data });
+    posthog.capture('barcode_scanned');
     fetchFoodInfo(data);
   };
 

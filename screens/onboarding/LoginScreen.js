@@ -10,6 +10,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { useGreeting } from '../../utils/GreetingContext';
 import { useLanguage } from '../../utils/LanguageContext';
 import { useUserMode } from '../../utils/UserModeContext';
+import { posthog } from '../../utils/posthog';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -68,6 +69,10 @@ export default function LoginScreen({ navigation }) {
         email: email.trim().toLowerCase(),
         password: password,
       });
+
+      if (!error) {
+        posthog.capture('login', { method: 'email' });
+      }
 
       console.log('📊 Login response:', data);
       console.log('❌ Login error:', error);
@@ -209,6 +214,7 @@ export default function LoginScreen({ navigation }) {
         if (sessionError) throw sessionError;
 
         if (sessionData?.session?.user) {
+          posthog.capture('login', { method: 'google' });
           await setUserMode('authenticated');
           await handlePostLogin(sessionData.session.user);
           return;
@@ -219,6 +225,7 @@ export default function LoginScreen({ navigation }) {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user && !session.user.is_anonymous) {
         console.log('✅ Session found after browser dismiss');
+        posthog.capture('login', { method: 'google' });
         await setUserMode('authenticated');
         await handlePostLogin(session.user);
         return;
@@ -247,7 +254,9 @@ export default function LoginScreen({ navigation }) {
         token: credential.identityToken,
       });
 
-      if (signInError) throw signInError;
+      if (!signInError) {
+        posthog.capture('login', { method: 'apple' });
+      }
 
       await setUserMode('authenticated');
       await handlePostLogin(data.user);

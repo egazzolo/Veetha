@@ -15,6 +15,7 @@ import { useLanguage } from '../utils/LanguageContext';
 import { useUserMode } from '../utils/UserModeContext';
 import { blockIfGuest } from '../utils/guestBlock';
 import { logMealLogged } from '../utils/analytics';
+import { posthog } from '../utils/posthog';
 import { searchFood } from '../utils/foodDatabase';
 
 const detectServingUnit = (productName = '', servingSize) => {
@@ -460,6 +461,7 @@ export default function ResultScreen({ route, navigation }) {
         );
 
         console.log('✅ GUEST MEAL SAVED');
+        posthog.capture('meal_logged', { source: route.params?.fromMode || 'unknown', mode: 'guest' });
 
         setSavingMeal(false);
         navigation.goBack();
@@ -600,6 +602,7 @@ export default function ResultScreen({ route, navigation }) {
       }
 
       console.log('✅ Meal logged successfully!');
+      posthog.capture('meal_logged', { source: route.params?.fromMode || 'unknown', mode: 'auth' });
 
       // Refresh meals list before navigating
       await refreshMeals();

@@ -25,6 +25,8 @@ import { logScreen, logEvent } from '../utils/analytics';
 import { getSuggestionsForMealTime, LOCAL_FOODS, DEFAULT_FOODS } from '../utils/localFoods';
 import { Pedometer } from 'expo-sensors';
 import { Camera } from 'expo-camera';
+import { posthog } from '../utils/posthog';
+
 import AppTutorial from '../components/AppTutorial';
 import AnimatedThemeWrapper from '../components/AnimatedThemeWrapper';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -591,6 +593,7 @@ export default function HomeScreen({ navigation }) {
 
       console.log('💧 handleAddWater success:', newAmount);
       setWaterIntake(newAmount);
+      posthog.capture('water_added');
 
     } catch (e) {
 
@@ -1321,6 +1324,7 @@ export default function HomeScreen({ navigation }) {
         await loadMealsForDate(selectedDate);
         await calculateStreak();
       }
+      posthog.capture('meals_deleted', { count: ids.length });
       showToast('success', t('home.success'), `${ids.length} ${t('home.mealsDeleted')}`);
     } catch (err) {
       console.error('Bulk delete error:', err);
@@ -1440,6 +1444,7 @@ export default function HomeScreen({ navigation }) {
           await loadMealsForDate(selectedDate);
           await calculateStreak();
 
+          posthog.capture('copied_yesterdays_meals', { count: yesterdayMeals.length });
           showToast('success', t('home.successCopy'), `${t('home.copiedMealsPrefix')} ${yesterdayMeals.length} ${t('home.copiedMeals')}`);
         } else {
           showToast('info', t('home.noMeals'), t('home.noMealsYesterday'));

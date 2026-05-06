@@ -9,6 +9,7 @@ import { useLanguage } from '../utils/LanguageContext';
 import { getSuggestionsForMealTime, LOCAL_FOODS, DEFAULT_FOODS } from '../utils/localFoods';
 import { showToast } from '../components/VeethaToast';
 import { OPENAI_API_KEY } from '@env';
+import { posthog } from '../utils/posthog';
 
 export default function QuickEntryScreen({ navigation }) {
   const { refreshMeals } = useUser();
@@ -112,6 +113,7 @@ Values are for the total amount described. Be accurate, not inflated.`
       setFat(parsed.fat?.toString() || '');
       if (parsed.serving_grams) setServingGrams(parsed.serving_grams.toString());
 
+      posthog.capture('ai_nutrition_estimated', { source: 'quick_entry' });
       showToast('success', 'Nutrition Estimated!', 'Review and adjust if needed.');
     } catch (error) {
       console.error('GPT nutrition error:', error);
@@ -179,6 +181,7 @@ Values are for the total amount described. Be accurate, not inflated.`
       // refresh context meals
       await refreshMeals();
 
+      posthog.capture('meal_logged', { source: 'quick_suggestion' });
       showToast('success', t('stats.quickEntry.loggedTitle'), t('stats.quickEntry.loggedMessage', { meal: food.name }));
       navigation.navigate('Home');
 
@@ -255,6 +258,7 @@ Values are for the total amount described. Be accurate, not inflated.`
 
       await refreshMeals();
 
+      posthog.capture('meal_logged', { source: 'quick_entry_manual' });
       showToast('success', t('stats.quickEntry.successTitle'), t('stats.quickEntry.successMessage'));
       navigation.navigate('Home');
 

@@ -92,6 +92,8 @@ import { GreetingProvider } from './utils/GreetingContext';
 import { UserProvider } from './utils/UserContext';
 import { UserModeProvider, useUserMode } from './utils/UserModeContext';
 import { supabase, createSessionFromUrl } from './utils/supabase';
+import { posthog } from './utils/posthog';
+import { PostHogProvider } from 'posthog-react-native';
 import UpdateAlert from './components/UpdateAlert';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -430,25 +432,27 @@ function App() {
     //}, []);
 
   return (
-    <SafeAreaProvider>
-      <LanguageProvider>
-        <TutorialProvider>
-          <GreetingProvider>
-            <ThemeProvider>
-              <LayoutProvider>
-                <UserModeProvider>
-                  <UserProvider>
-                    <OnboardingProvider>
-                      <AppNavigator />
-                    </OnboardingProvider>
-                  </UserProvider>
-                </UserModeProvider>
-              </LayoutProvider>
-            </ThemeProvider>
-          </GreetingProvider>
-        </TutorialProvider>
-      </LanguageProvider>
-    </SafeAreaProvider>
+    <PostHogProvider>
+      <SafeAreaProvider>
+        <LanguageProvider>
+          <TutorialProvider>
+            <GreetingProvider>
+              <ThemeProvider>
+                <LayoutProvider>
+                  <UserModeProvider>
+                    <UserProvider>
+                      <OnboardingProvider>
+                        <AppNavigator />
+                      </OnboardingProvider>
+                    </UserProvider>
+                  </UserModeProvider>
+                </LayoutProvider>
+              </ThemeProvider>
+            </GreetingProvider>
+          </TutorialProvider>
+        </LanguageProvider>
+      </SafeAreaProvider>
+    </PostHogProvider> 
   );
 }
 export default Sentry.wrap(App);

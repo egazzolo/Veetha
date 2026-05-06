@@ -5,6 +5,7 @@ import { supabase } from '../utils/supabase';
 import { useTheme } from '../utils/ThemeContext';
 import { showToast } from '../components/VeethaToast';
 import { OPENAI_API_KEY } from '@env';
+import { posthog } from '../utils/posthog';
 
 export default function ManualEntryScreen({ navigation }) {
   const { theme } = useTheme();
@@ -96,6 +97,7 @@ All values should be for the total amount described, not per 100g.`
       setFat(parsed.fat?.toString() || '');
       if (parsed.serving_grams) setServingSize(parsed.serving_grams.toString());
 
+      posthog.capture('ai_nutrition_estimated', { source: 'manual_entry' });
       showToast('success', 'Nutrition Estimated!', 'Review and adjust if needed.');
     } catch (error) {
       console.error('GPT nutrition error:', error);
@@ -145,6 +147,7 @@ All values should be for the total amount described, not per 100g.`
 
       if (error) throw error;
 
+      posthog.capture('meal_logged', { source: 'manual' });
       showToast('success', 'Meal Logged!', `${mealName} has been added to your meal log.`);
       navigation.navigate('Home');
 

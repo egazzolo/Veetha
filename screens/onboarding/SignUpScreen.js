@@ -9,6 +9,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { Svg, Path } from 'react-native-svg';
 import { useLanguage } from '../../utils/LanguageContext';
 import { useUserMode } from '../../utils/UserModeContext';
+import { posthog } from '../../utils/posthog';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -142,6 +143,10 @@ export default function SignUpScreen({ navigation }) {
           emailRedirectTo: undefined, // We'll handle verification in-app
         }
       });
+
+      if (!error) {
+        posthog.capture('signup', { method: 'email' });
+      }
 
       if (error) {
         // Check for rate limit
@@ -296,6 +301,7 @@ export default function SignUpScreen({ navigation }) {
         if (sessionError) throw sessionError;
 
         if (sessionData?.session?.user) {
+          posthog.capture('signup', { method: 'google' });
           await setUserMode('authenticated');
           await handlePostSignUp(sessionData.session.user);
           return;
@@ -306,6 +312,7 @@ export default function SignUpScreen({ navigation }) {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user && !session.user.is_anonymous) {
         console.log('✅ Session found after browser dismiss');
+        posthog.capture('signup', { method: 'google' });
         await setUserMode('authenticated');
         await handlePostSignUp(session.user);
         return;
@@ -336,6 +343,7 @@ export default function SignUpScreen({ navigation }) {
 
       if (signInError) throw signInError;
 
+      posthog.capture('signup', { method: 'apple' });
       await setUserMode('authenticated');
       await handlePostSignUp(data.user);
     } catch (err) {

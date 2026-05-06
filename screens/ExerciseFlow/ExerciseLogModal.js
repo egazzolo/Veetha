@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, TextInput, ActivityIndicator,
 import { useLanguage } from '../../utils/LanguageContext';
 import { supabase } from '../../utils/supabase';
 import { showToast } from '../../components/VeethaToast';
+import { posthog } from '../../utils/posthog';
 
 const DURATION_PRESETS = [15, 30, 45, 60];
 
@@ -71,6 +72,13 @@ export default function ExerciseLogModal({ navigation, route }) {
         });
 
       if (error) throw error;
+
+      posthog.capture('exercise_logged', { 
+        activity: activity, 
+        intensity: intensity, 
+        duration_minutes: duration,
+        calories: estimatedCalories 
+      });
 
       showToast('success', t('common.success'), t('exercise.loggedSuccess', { calories: estimatedCalories }));
       navigation.navigate('Home');

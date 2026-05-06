@@ -5,6 +5,7 @@ import LanguageSwitcher from '../../components/LanguageSwitcher';
 import { useLanguage } from '../../utils/LanguageContext';
 import { useUserMode } from '../../utils/UserModeContext';
 import { supabase } from '../../utils/supabase';
+import { posthog } from '../../utils/posthog';
 
 export default function LandingScreen({ navigation }) {
   const { t } = useLanguage();
@@ -67,6 +68,7 @@ export default function LandingScreen({ navigation }) {
               }
 
               console.log('✅ Anonymous user created:', data?.user?.id);
+              posthog.capture('guest_mode_started');
 
               // Set guest mode — go straight to Home, skip onboarding
               await setUserMode('guest')

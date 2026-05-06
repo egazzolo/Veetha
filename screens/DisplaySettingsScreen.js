@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../utils/ThemeContext';
 import { useLanguage } from '../utils/LanguageContext';
 import { useLayout } from '../utils/LayoutContext';
+import { posthog } from '../utils/posthog';
 import { Svg, Circle } from 'react-native-svg';
 
 // Mini Circular Progress for Preview
@@ -83,7 +84,7 @@ export default function DisplaySettingsScreen({ navigation }) {
                 layout === 'bars' && styles.segmentActive,
                 layout === 'bars' && { backgroundColor: '#4CAF50' }
               ]}
-              onPress={() => changeLayout('bars')}
+              onPress={() => { posthog.capture('layout_changed', { layout: 'bars' }); changeLayout('bars'); }}
             >
               <Text style={[
                 styles.segmentText,
@@ -99,7 +100,7 @@ export default function DisplaySettingsScreen({ navigation }) {
                 layout === 'cards' && styles.segmentActive,
                 layout === 'cards' && { backgroundColor: '#2196F3' }
               ]}
-              onPress={() => changeLayout('cards')}
+              onPress={() => { posthog.capture('layout_changed', { layout: 'cards' }); changeLayout('cards'); }}
             >
               <Text style={[
                 styles.segmentText,
