@@ -8,7 +8,6 @@ import { useTheme } from '../utils/ThemeContext';
 import { useLanguage } from '../utils/LanguageContext';
 import { getSuggestionsForMealTime, LOCAL_FOODS, DEFAULT_FOODS } from '../utils/localFoods';
 import { showToast } from '../components/VeethaToast';
-import { OPENAI_API_KEY } from '@env';
 import { posthog } from '../utils/posthog';
 
 export default function QuickEntryScreen({ navigation }) {
@@ -80,13 +79,8 @@ export default function QuickEntryScreen({ navigation }) {
     }
     setSearchingNutrition(true);
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('openai-proxy', {
+        body: {
           model: 'gpt-4o-mini',
           max_tokens: 150,
           messages: [
@@ -97,11 +91,11 @@ export default function QuickEntryScreen({ navigation }) {
 Values are for the total amount described. Be accurate, not inflated.`
             }
           ]
-        })
+        }
       });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error?.message || 'OpenAI error');
+      if (error) throw new Error(error.message || 'OpenAI proxy error');
+      if (data?.error) throw new Error(data.error?.message || 'OpenAI error');
 
       const content = data.choices[0]?.message?.content;
       const cleaned = content.replace(/```json\n?|\n?```/g, '').trim();

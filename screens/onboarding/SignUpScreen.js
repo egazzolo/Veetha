@@ -144,7 +144,8 @@ export default function SignUpScreen({ navigation }) {
         }
       });
 
-      if (!error) {
+      if (!error && data?.user) {
+        posthog.identify(data.user.id, { email: data.user.email, signup_date: new Date().toISOString() });
         posthog.capture('signup', { method: 'email' });
       }
 
@@ -301,6 +302,7 @@ export default function SignUpScreen({ navigation }) {
         if (sessionError) throw sessionError;
 
         if (sessionData?.session?.user) {
+          posthog.identify(sessionData.session.user.id, { email: sessionData.session.user.email, signup_date: new Date().toISOString() });
           posthog.capture('signup', { method: 'google' });
           await setUserMode('authenticated');
           await handlePostSignUp(sessionData.session.user);
@@ -312,6 +314,7 @@ export default function SignUpScreen({ navigation }) {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user && !session.user.is_anonymous) {
         console.log('✅ Session found after browser dismiss');
+        posthog.identify(session.user.id, { email: session.user.email, signup_date: new Date().toISOString() });
         posthog.capture('signup', { method: 'google' });
         await setUserMode('authenticated');
         await handlePostSignUp(session.user);
@@ -343,6 +346,7 @@ export default function SignUpScreen({ navigation }) {
 
       if (signInError) throw signInError;
 
+      posthog.identify(data.user.id, { email: data.user.email, signup_date: new Date().toISOString() });
       posthog.capture('signup', { method: 'apple' });
       await setUserMode('authenticated');
       await handlePostSignUp(data.user);

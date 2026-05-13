@@ -1,73 +1,58 @@
 // ============================================
-// GOOGLE CLOUD VISION API INTEGRATION
+// GOOGLE CLOUD VISION API INTEGRATION (via Edge Function)
 // Food Recognition using Google Cloud Vision
+// Key is server-side, never shipped to clients
 // ============================================
 
 import { supabase } from './supabase';
 
-const GOOGLE_VISION_API_KEY = 'AIzaSyCCW9sihgyJGcQdqENbX2viFRKIqBFDP2U'
-
-const GOOGLE_VISION_URL = `https://vision.googleapis.com/v1/images:annotate?key=${GOOGLE_VISION_API_KEY}`;
-
 /**
- * Analyze a photo using Google Cloud Vision
+ * Analyze a photo using Google Cloud Vision (via Supabase Edge Function)
  * @param {string} imageBase64 - Base64 encoded image data (without data:image prefix)
- * @returns {Promise<Object>} - { foodName, confidence } or throws error
+ * @returns {Promise<Object>} - { foodName, confidence, topSuggestions, allConcepts } or throws error
  */
 export async function analyzePhoto(imageBase64) {
   try {
-    console.log('📤 Sending photo to Google Vision for analysis...');
+    console.log('📤 Sending photo to vision-proxy for analysis...');
 
-    const response = await fetch(GOOGLE_VISION_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    const { data, error: invokeError } = await supabase.functions.invoke('vision-proxy', {
+      body: {
         requests: [
           {
             image: {
               content: imageBase64
             },
             features: [
-              {
-                type: 'LABEL_DETECTION',
-                maxResults: 20
-              },
-              {
-                type: 'WEB_DETECTION',
-                maxResults: 5
-              },
-              {
-                type: 'OBJECT_LOCALIZATION',
-                maxResults: 10
-              }
+              { type: 'LABEL_DETECTION', maxResults: 20 },
+              { type: 'WEB_DETECTION', maxResults: 5 },
+              { type: 'OBJECT_LOCALIZATION', maxResults: 10 }
             ]
           }
         ]
-      })
+      }
     });
 
-    const data = await response.json();
+    if (invokeError) {
+      console.error('❌ vision-proxy invoke error:', invokeError);
+      throw new Error(invokeError.message || 'Vision proxy failed');
+    }
 
-    // Check for API errors
-    if (!response.ok || data.responses?.[0]?.error) {
+    // Check for API errors inside the response
+    if (data?.responses?.[0]?.error) {
       console.error('❌ Google Vision API error:', data);
-      
-      const errorMsg = data.responses?.[0]?.error?.message || data.error?.message;
-      
-      if (response.status === 403) {
-        throw new Error('Google Vision API key invalid or quota exceeded');
-      }
-      
+      const errorMsg = data.responses[0].error.message;
       throw new Error(`Google Vision API error: ${errorMsg || 'Unknown error'}`);
     }
 
+    if (data?.error) {
+      throw new Error(`Vision proxy error: ${data.error}`);
+    }
+
     const result = data.responses[0];
-    
+
     // Get labels (food detection)
     const labels = result.labelAnnotations || [];
-    
+
     // Get web entities (better food names)
     const webEntities = result.webDetection?.webEntities || [];
 
@@ -135,7 +120,6 @@ export async function analyzePhoto(imageBase64) {
       }
 
       // For labels: keep if food-related keyword matches OR if confidence is high
-      // (Vision API labels for food images are usually food items)
       if (d.source === 'label') {
         return foodKeywords.some(kw => nameLower.includes(kw)) || d.confidence >= 80;
       }
@@ -197,7 +181,7 @@ export async function imageUriToBase64(uri) {
   try {
     const response = await fetch(uri);
     const blob = await response.blob();
-    
+
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onloadend = () => {

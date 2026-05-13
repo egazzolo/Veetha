@@ -1,8 +1,8 @@
-import { OPENAI_API_KEY } from '@env';
+import { supabase } from './supabase';
 
 export async function analyzePhotoOpenAI(photoUri) {
   try {
-    console.log('📤 Sending photo to GPT-4o Vision...');
+    console.log('📤 Sending photo to GPT-4o Vision (via openai-proxy)...');
 
     // Convert image to base64
     const response = await fetch(photoUri);
@@ -14,17 +14,8 @@ export async function analyzePhotoOpenAI(photoUri) {
       reader.readAsDataURL(blob);
     });
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-    const apiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      signal: controller.signal,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
+    const { data, error: invokeError } = await supabase.functions.invoke('openai-proxy', {
+      body: {
         model: 'gpt-4o',
         max_tokens: 300,
         messages: [
@@ -62,15 +53,17 @@ Be specific based on visual appearance — dark brown baked goods are chocolate 
             ]
           }
         ]
-      })
+      }
     });
 
-    const data = await apiResponse.json();
-    clearTimeout(timeoutId);
+    if (invokeError) {
+      throw new Error(invokeError.message || 'OpenAI proxy invoke failed');
+    }
+
     console.log('✅ GPT-4o response:', JSON.stringify(data).slice(0, 800));
 
-    if (!apiResponse.ok) {
-      throw new Error(data.error?.message || 'OpenAI API error');
+    if (data?.error) {
+      throw new Error(data.error?.message || data.error || 'OpenAI API error');
     }
 
     const content = data.choices[0]?.message?.content;

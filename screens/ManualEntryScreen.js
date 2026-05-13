@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../utils/supabase';
 import { useTheme } from '../utils/ThemeContext';
 import { showToast } from '../components/VeethaToast';
-import { OPENAI_API_KEY } from '@env';
 import { posthog } from '../utils/posthog';
 
 export default function ManualEntryScreen({ navigation }) {
@@ -64,13 +63,8 @@ export default function ManualEntryScreen({ navigation }) {
     }
     setSearchingNutrition(true);
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('openai-proxy', {
+        body: {
           model: 'gpt-4o-mini',
           max_tokens: 150,
           messages: [
@@ -81,11 +75,11 @@ export default function ManualEntryScreen({ navigation }) {
 All values should be for the total amount described, not per 100g.`
             }
           ]
-        })
+        }
       });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error?.message || 'OpenAI error');
+      if (error) throw new Error(error.message || 'OpenAI proxy error');
+      if (data?.error) throw new Error(data.error?.message || 'OpenAI error');
 
       const content = data.choices[0]?.message?.content;
       const cleaned = content.replace(/```json\n?|\n?```/g, '').trim();

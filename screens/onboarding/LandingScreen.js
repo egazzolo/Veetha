@@ -68,6 +68,9 @@ export default function LandingScreen({ navigation }) {
               }
 
               console.log('✅ Anonymous user created:', data?.user?.id);
+              if (data?.user?.id) {
+                posthog.identify(data.user.id, { user_type: 'guest' });
+              }
               posthog.capture('guest_mode_started');
 
               // Set guest mode — go straight to Home, skip onboarding

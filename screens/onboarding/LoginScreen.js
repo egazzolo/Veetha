@@ -70,7 +70,8 @@ export default function LoginScreen({ navigation }) {
         password: password,
       });
 
-      if (!error) {
+      if (!error && data?.user) {
+        posthog.identify(data.user.id, { email: data.user.email });
         posthog.capture('login', { method: 'email' });
       }
 
@@ -214,6 +215,7 @@ export default function LoginScreen({ navigation }) {
         if (sessionError) throw sessionError;
 
         if (sessionData?.session?.user) {
+          posthog.identify(sessionData.session.user.id, { email: sessionData.session.user.email });
           posthog.capture('login', { method: 'google' });
           await setUserMode('authenticated');
           await handlePostLogin(sessionData.session.user);
@@ -225,6 +227,7 @@ export default function LoginScreen({ navigation }) {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user && !session.user.is_anonymous) {
         console.log('✅ Session found after browser dismiss');
+        posthog.identify(sessionData.session.user.id, { email: sessionData.session.user.email });
         posthog.capture('login', { method: 'google' });
         await setUserMode('authenticated');
         await handlePostLogin(session.user);
@@ -254,9 +257,13 @@ export default function LoginScreen({ navigation }) {
         token: credential.identityToken,
       });
 
-      if (!signInError) {
+      if (!signInError && data?.user) {
+        posthog.identify(data.user.id, { email: data.user.email });
         posthog.capture('login', { method: 'apple' });
       }
+
+      if (signInError) throw signInError;
+
 
       await setUserMode('authenticated');
       await handlePostLogin(data.user);
