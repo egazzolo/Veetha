@@ -43,6 +43,7 @@ import MonthlyCalendar from '../components/MonthlyCalendar';
 import { useCameraPermissions } from 'expo-camera';
 import ExerciseButton from '../components/ExerciseButton';
 import WaterPitcher from '../components/WaterPitcher';
+import AppIcon from '../components/AppIcon';
 
 // Circular Progress Component
 function CircularProgress({ percentage, size = 100, strokeWidth = 8, color = '#4CAF50', children }) {

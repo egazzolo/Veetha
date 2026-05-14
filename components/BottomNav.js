@@ -1,5 +1,6 @@
 import React from 'react'; // X:
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import AppIcon from './AppIcon';
 
 export default function BottomNav({ 
   theme, 
@@ -40,7 +41,12 @@ export default function BottomNav({
         style={styles.navItem}
         onPress={() => navigateToScreen('Home')}
       >
-        <Text style={[styles.navIcon, activeScreen === 'Home' && styles.navIconActive]}>🏠</Text>
+        <AppIcon
+          name="home"
+          size={28}
+          tintColor={activeScreen === 'Home' ? theme.primary : theme.textSecondary}
+          style={styles.navIcon}
+        />
         <Text style={[
           styles.navLabel,
           activeScreen === 'Home' && styles.navLabelActive,
@@ -78,7 +84,11 @@ export default function BottomNav({
           }}
           style={[styles.scanButton, { backgroundColor: theme.primary }]}
         >
-          <Text style={styles.scanIcon}>📸</Text>
+          <AppIcon
+            name="scanner"
+            size={32}
+            tintColor="#fff"
+          />
         </View>
       </TouchableOpacity>
 
@@ -87,7 +97,12 @@ export default function BottomNav({
         style={styles.navItem}
         onPress={() => navigateToScreen('Stats')}
       >
-        <Text style={[styles.navIcon, activeScreen === 'Stats' && styles.navIconActive]}>📊</Text>
+        <AppIcon
+          name="stats"
+          size={28}
+          tintColor={activeScreen === 'Stats' ? theme.primary : theme.textSecondary}
+          style={styles.navIcon}
+        />
         <Text style={[
           styles.navLabel,
           activeScreen === 'Stats' && styles.navLabelActive,
@@ -122,7 +137,12 @@ export default function BottomNav({
         style={styles.navItem}
         onPress={() => navigateToScreen('Profile')}
       >
-        <Text style={[styles.navIcon, activeScreen === 'Profile' && styles.navIconActive]}>👤</Text>
+        <AppIcon
+          name="profile"
+          size={28}
+          tintColor={activeScreen === 'Profile' ? theme.primary : theme.textSecondary}
+          style={styles.navIcon}
+        />
         <Text style={[
           styles.navLabel,
           activeScreen === 'Profile' && styles.navLabelActive,

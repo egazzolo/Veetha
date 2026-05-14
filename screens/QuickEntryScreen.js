@@ -22,6 +22,12 @@ export default function QuickEntryScreen({ navigation }) {
   const [carbs, setCarbs] = useState('');
   const [fat, setFat] = useState('');
   const [saving, setSaving] = useState(false);
+    // Per-gram base values from AI estimation — used to recalculate macros when serving size changes
+  const [baseCaloriesPerGram, setBaseCaloriesPerGram] = useState(null);
+  const [baseProteinPerGram, setBaseProteinPerGram] = useState(null);
+  const [baseCarbsPerGram, setBaseCarbsPerGram] = useState(null);
+  const [baseFatPerGram, setBaseFatPerGram] = useState(null);
+
   const [quickSuggestions, setQuickSuggestions] = useState([]);
   const [userCountry, setUserCountry] = useState(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -101,11 +107,18 @@ Values are for the total amount described. Be accurate, not inflated.`
       const cleaned = content.replace(/```json\n?|\n?```/g, '').trim();
       const parsed = JSON.parse(cleaned);
 
+      const grams = parsed.serving_grams || 100;
+      // Store per-gram base values for future recalculations on serving change
+      setBaseCaloriesPerGram((parsed.calories || 0) / grams);
+      setBaseProteinPerGram((parsed.protein || 0) / grams);
+      setBaseCarbsPerGram((parsed.carbs || 0) / grams);
+      setBaseFatPerGram((parsed.fat || 0) / grams);
+
       setCalories(parsed.calories?.toString() || '');
       setProtein(parsed.protein?.toString() || '');
       setCarbs(parsed.carbs?.toString() || '');
       setFat(parsed.fat?.toString() || '');
-      if (parsed.serving_grams) setServingGrams(parsed.serving_grams.toString());
+      setServingGrams(grams.toString());
 
       posthog.capture('ai_nutrition_estimated', { source: 'quick_entry' });
       showToast('success', 'Nutrition Estimated!', 'Review and adjust if needed.');
@@ -409,7 +422,17 @@ Values are for the total amount described. Be accurate, not inflated.`
                 placeholderTextColor={theme.textTertiary}
                 keyboardType="numeric"
                 value={servingGrams}
-                onChangeText={setServingGrams}
+                onChangeText={(newValue) => {
+                  setServingGrams(newValue);
+                  // Recalculate macros only if AI has set base values
+                  if (baseCaloriesPerGram !== null) {
+                    const grams = parseFloat(newValue) || 0;
+                    setCalories(Math.round(baseCaloriesPerGram * grams).toString());
+                    setProtein((baseProteinPerGram * grams).toFixed(1));
+                    setCarbs((baseCarbsPerGram * grams).toFixed(1));
+                    setFat((baseFatPerGram * grams).toFixed(1));
+                  }
+                }}
               />
             </View>
 
