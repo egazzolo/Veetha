@@ -19,9 +19,7 @@
     "production": {
       "distribution": "store",
       "channel": "production",
-      "android": {
-        "prebuildCommand": "npx expo prebuild --platform android --clean"
-      }
+      "prebuildCommand": "npx expo prebuild --clean"
     }
   },
   "submit": {
