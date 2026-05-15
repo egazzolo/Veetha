@@ -3,7 +3,7 @@ module.exports = {
     name: "Veetha",
     slug: "Veetha",
     scheme: "veetha",
-    version: "1.0.6",
+    version: "1.0.7",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
@@ -28,7 +28,7 @@ module.exports = {
     },
     android: {
       package: "com.yourname.veetha",
-      versionCode: 20,
+      versionCode: 21,
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#ffffff"
@@ -56,7 +56,7 @@ module.exports = {
     },
     ios: {
       bundleIdentifier: "com.yourname.veetha",
-      buildNumber: "36",
+      buildNumber: "37",
       usesAppleSignIn: true,
       associatedDomains: ["applinks:nonotenb.com"],
       infoPlist: {
@@ -72,6 +72,6 @@ module.exports = {
       fallbackToCacheTimeout: 5000,
       url: "https://u.expo.dev/3ea65199-c1c8-4c23-bcac-ae6b34aead78"
     },
-    runtimeVersion: "1.0.6",
+    runtimeVersion: "1.0.7",
   }
 };
