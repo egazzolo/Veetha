@@ -404,7 +404,7 @@ Values are for the total amount described. Be accurate, not inflated.`
               {searchingNutrition ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.saveButtonText}>🔍 Find Nutrition Info</Text>
+                <Text style={styles.saveButtonText}>{t('home.findNutritionInfo')}</Text>
               )}
             </TouchableOpacity>
 

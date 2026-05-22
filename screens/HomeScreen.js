@@ -148,7 +148,7 @@ const handleQuickLog = async (food) => {
 function NutrientModal({ visible, nutrient, onClose, theme, currentIntake, dailyGoal, t }) {
   const nutrientInfo = {
     calories: {
-      icon: '🔥',
+      icon: 'calories',
       title: t('home.nutrientModal.calories.title'),
       color: '#4CAF50',
       benefits: [
@@ -161,7 +161,7 @@ function NutrientModal({ visible, nutrient, onClose, theme, currentIntake, daily
       unit: 'kcal'
     },
     protein: {
-      icon: '💪',
+      icon: 'protein',
       title: t('home.nutrientModal.protein.title'),
       color: '#2196F3',
       benefits: [
@@ -174,7 +174,7 @@ function NutrientModal({ visible, nutrient, onClose, theme, currentIntake, daily
       unit: 'g'
     },
     carbs: {
-      icon: '🌾',
+      icon: 'carbs',
       title: t('home.nutrientModal.carbs.title'),
       color: '#FF9800',
       benefits: [
@@ -187,7 +187,7 @@ function NutrientModal({ visible, nutrient, onClose, theme, currentIntake, daily
       unit: 'g'
     },
     fat: {
-      icon: '🥑',
+      icon: 'fat',
       title: t('home.nutrientModal.fat.title'),
       color: '#9C27B0',
       benefits: [
@@ -223,7 +223,7 @@ function NutrientModal({ visible, nutrient, onClose, theme, currentIntake, daily
           <View style={[styles.nutrientModalCard, { backgroundColor: theme.cardBackground }]}>
             {/* Header with colored banner */}
             <View style={[styles.nutrientModalHeader, { backgroundColor: info.color }]}>
-              <Text style={styles.nutrientModalIcon}>{info.icon}</Text>
+              <AppIcon name={info.icon} size={50} tintColor="#fff" />
               <Text style={styles.nutrientModalTitle}>{info.title}</Text>
             </View>
 
@@ -1550,7 +1550,7 @@ export default function HomeScreen({ navigation }) {
                 {/* Streak Badge - Always visible */}
                 <View style={styles.streakBadgeWrapper}>
                   <View style={[styles.streakBadge, { backgroundColor: '#FF6B35' }]}>
-                    <Text style={styles.streakEmoji}>🔥</Text>
+                    <AppIcon name="streak" size={24} tintColor="#fff" />
                     <Text style={styles.streakNumber}>{currentStreak}</Text>
                     <Text style={styles.streakLabel}>
                       {currentStreak === 1 ? t('home.dayStreak') : t('home.daysStreak')}

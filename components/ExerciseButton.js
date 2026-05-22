@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, Alert } from 'react-native';
 import { useLanguage } from '../utils/LanguageContext';
 import { supabase } from '../utils/supabase';
+import AppIcon from './AppIcon';
 
 export default function ExerciseButton({ theme, navigation, isGuestMode, onGuestPress }) {
   const { t } = useLanguage();
@@ -65,7 +66,7 @@ export default function ExerciseButton({ theme, navigation, isGuestMode, onGuest
         onPress={handleExercisePress}
         disabled={loading}
       >
-        <Text style={styles.emoji}>💪</Text>
+        <AppIcon name="exercise" size={80} style={{ marginBottom: 8 }} tintColor={theme.primary} />
         <Text style={[styles.buttonText, { color: theme.text }]}>
           {t('exercise.exercise')}
         </Text>
@@ -81,9 +82,12 @@ export default function ExerciseButton({ theme, navigation, isGuestMode, onGuest
       >
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
-            <Text style={[styles.modalTitle, { color: theme.text }]}>
-              ⚖️ {t('exercise.confirmWeight')}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 20 }}>
+              <AppIcon name="scale" size={24} tintColor={theme.text} />
+              <Text style={[styles.modalTitle, { color: theme.text, marginBottom: 0 }]}>
+                {t('exercise.confirmWeight')}
+              </Text>
+            </View>
             
             {weight ? (
               <>

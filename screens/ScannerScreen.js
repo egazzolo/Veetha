@@ -20,6 +20,7 @@ import { useUser, UserContext } from '../utils/UserContext';
 import { useUserMode } from '../utils/UserModeContext';
 import { analyzePhoto, imageUriToBase64 } from '../utils/visionApi';
 import { analyzePhotoOpenAI } from '../utils/openaiVision';
+import { analyzePhotoGemini } from '../utils/geminiVision';
 import VeethaModal from '../components/VeethaModal';
 import GuestUpsellSheet from '../components/GuestUpsellSheet';
 
@@ -86,6 +87,12 @@ export default function ScannerScreen({ navigation }) {
       setScanned(false);
       setLoading(false);
       lastPhotoTime.current = 0;
+
+      // Also reset on blur (when leaving), so returning is always clean
+      return () => {
+        setLoading(false);
+        setScanned(false);
+      };
     }, [])
   );
   
@@ -255,7 +262,7 @@ export default function ScannerScreen({ navigation }) {
         .from('api_tracking')
         .select('id')
         .eq('user_id', user.id)
-        .in('service', ['google_vision', 'logmeal', 'openai'])
+        .in('service', ['gemini', 'openai', 'google_vision'])
         .eq('type', 'food_recognition')
         .gte('created_at', today + 'T00:00:00')
         .lte('created_at', today + 'T23:59:59');
@@ -415,43 +422,37 @@ export default function ScannerScreen({ navigation }) {
           .from('api_tracking')
           .select('id')
           .eq('user_id', photoUser.id)
-          .in('service', ['google_vision', 'openai'])
+          .in('service', ['gemini', 'openai', 'google_vision'])
           .eq('type', 'food_recognition')
           .gte('created_at', today + 'T00:00:00')
           .lte('created_at', today + 'T23:59:59');
         todayCount = todayData?.length || 0;
       }
 
-      // Every 5th call uses GPT-4o, rest use GCV
-      const useGPT = (todayCount + 1) % 3 === 0;
-
+      // Gemini primary, GPT-4o-mini fallback
       let result;
-      if (useGPT) {
-        try {
-          console.log(`📸 Analyzing with GPT-4o Vision (call ${todayCount + 1})...`);
-          result = await analyzePhotoOpenAI(photoUri);
-          console.log('✅ OpenAI identified:', result.foodName);
-        } catch (openaiError) {
-          console.log('⚠️ OpenAI failed, falling back to GCV:', openaiError.message);
-          const base64 = await imageUriToBase64(photoUri);
-          result = await analyzePhoto(base64);
-        }
-      } else {
-        console.log(`📸 Analyzing with GCV (call ${todayCount + 1})...`);
-        const base64 = await imageUriToBase64(photoUri);
-        result = await analyzePhoto(base64);
+      let engineUsed = 'gemini';
+      try {
+        console.log(`📸 Analyzing with Gemini Vision (call ${todayCount + 1})...`);
+        result = await analyzePhotoGemini(photoUri);
+        console.log('✅ Gemini identified:', result.foodName);
+      } catch (geminiError) {
+        console.log('⚠️ Gemini failed, falling back to GPT-4o-mini:', geminiError.message);
+        engineUsed = 'openai';
+        result = await analyzePhotoOpenAI(photoUri);
+        console.log('✅ OpenAI fallback identified:', result.foodName);
       }
 
       if (photoUser) {
         const { error: trackError } = await supabase.from('api_tracking').insert({
           user_id: photoUser.id,
-          service: useGPT ? 'openai' : 'google_vision',
+          service: engineUsed === 'gemini' ? 'gemini' : 'openai',
           type: 'food_recognition',
           status: 'SUCCESS',
           success: true,
         });
         if (trackError) console.error('❌ api_tracking insert failed:', trackError);
-        else console.log('✅ api_tracking recorded:', useGPT ? 'openai' : 'google_vision');
+        else console.log('✅ api_tracking recorded:', engineUsed);
       }
       
       const foodName = result.foodName;
@@ -637,7 +638,7 @@ export default function ScannerScreen({ navigation }) {
           .from('api_tracking')
           .select('id')
           .eq('user_id', user.id)
-          .in('service', ['google_vision', 'openai'])
+          .in('service', ['gemini', 'openai', 'google_vision'])
           .eq('type', 'food_recognition')
           .gte('created_at', today + 'T00:00:00')
           .lte('created_at', today + 'T23:59:59');

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, Pressable } from 'react-native';
 import GuestUpsellSheet from './GuestUpsellSheet';
+import AppIcon from './AppIcon';
 
 export default function MealsList({
   theme,
@@ -137,7 +138,7 @@ export default function MealsList({
         <Text style={[styles.emptyText, { color: theme.textSecondary }]}>{t('home.loading')}</Text>
       ) : meals.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>🍽️</Text>
+          <AppIcon name="plate" size={48} tintColor={theme.textSecondary} style={{ marginBottom: 10 }} />
           <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
             {t('home.noMealsYet')}
           </Text>
@@ -232,30 +233,30 @@ export default function MealsList({
                 
                 <View style={styles.macrosContainer}>
                   <View style={styles.macroRow}>
-                    <Text style={styles.macroEmoji}>💪</Text>
+                    <AppIcon name="protein" size={11} />
                     <Text style={styles.proteinText}>{Math.round(actualProtein)}g</Text>
                   </View>
                   <View style={styles.macroRow}>
-                    <Text style={styles.macroEmoji}>🌾</Text>
+                    <AppIcon name="carbs" size={11} />
                     <Text style={styles.carbsText}>{Math.round(actualCarbs)}g</Text>
                   </View>
                   <View style={styles.macroRow}>
-                    <Text style={styles.macroEmoji}>🥑</Text>
+                    <AppIcon name="fat" size={11} />
                     <Text style={styles.fatText}>{Math.round(actualFat)}g</Text>
                   </View>
                 </View>
 
                 <View style={styles.macrosContainer}>
                   <View style={styles.macroRow}>
-                    <Text style={styles.macroEmoji}>🧂</Text>
+                    <AppIcon name="sodium" size={11} />
                     <Text style={styles.sodiumText}>{Math.round(actualSodium)}mg</Text>
                   </View>
                   <View style={styles.macroRow}>
-                    <Text style={styles.macroEmoji}>🍬</Text>
+                    <AppIcon name="sugar" size={11} />
                     <Text style={styles.sugarText}>{Math.round(actualSugar)}g</Text>
                   </View>
                   <View style={styles.macroRow}>
-                    <Text style={styles.macroEmoji}>🌿</Text>
+                    <AppIcon name="fiber" size={11} />
                     <Text style={styles.fiberText}>{Math.round(actualFiber)}g</Text>
                   </View>
                 </View>

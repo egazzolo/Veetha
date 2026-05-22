@@ -1,8 +1,8 @@
 import { supabase } from './supabase';
 
-export async function analyzePhotoOpenAI(photoUri) {
+export async function analyzePhotoGemini(photoUri, model = 'gemini-2.5-flash-lite') {
   try {
-    console.log('📤 Sending photo to GPT-4o Vision (via openai-proxy)...');
+    console.log('📤 Sending photo to Gemini Vision (via gemini-proxy)...');
 
     // Convert image to base64
     const response = await fetch(photoUri);
@@ -14,26 +14,9 @@ export async function analyzePhotoOpenAI(photoUri) {
       reader.readAsDataURL(blob);
     });
 
-    const { data, error: invokeError } = await supabase.functions.invoke('openai-proxy', {
-      body: {
-        model: 'gpt-4o-mini',
-        max_tokens: 300,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:image/jpeg;base64,${base64}`,
-                  detail: 'low'
-                }
-              },
-              {
-                type: 'text',
-                text: `Look carefully at the actual colors, textures, and appearance of the food in this image before identifying it. A dark brown food is NOT angel food cake (which is white). Be accurate based on what you actually see.
+    const prompt = `Look carefully at the actual colors, textures, and appearance of the food in this image before identifying it. A dark brown food is NOT angel food cake (which is white). Be accurate based on what you actually see.
 
-Identify all foods in this image. Return ONLY a JSON object with no markdown or backticks:
+Identify all foods in this image. Return ONLY a JSON object:
 {
   "foods": [
     {
@@ -48,25 +31,34 @@ Identify all foods in this image. Return ONLY a JSON object with no markdown or 
   ],
   "whole_meal_name": "descriptive name for the whole meal e.g. mixed vegetables"
 }
-Be specific based on visual appearance — dark brown baked goods are chocolate cake or brownies, not angel food cake. If no food detected return {"error": "no food detected"}.`
-              }
-            ]
-          }
-        ]
-      }
+Be specific based on visual appearance — dark brown baked goods are chocolate cake or brownies, not angel food cake. If no food detected return {"error": "no food detected"}.`;
+
+    const { data, error: invokeError } = await supabase.functions.invoke('gemini-proxy', {
+      body: {
+        model,
+        prompt,
+        imageBase64: base64,
+        max_tokens: 800,
+      },
     });
 
     if (invokeError) {
-      throw new Error(invokeError.message || 'OpenAI proxy invoke failed');
+      throw new Error(invokeError.message || 'Gemini proxy invoke failed');
     }
 
-    console.log('✅ GPT-4o response:', JSON.stringify(data).slice(0, 800));
+    console.log('✅ Gemini response:', JSON.stringify(data).slice(0, 800));
 
     if (data?.error) {
-      throw new Error(data.error?.message || data.error || 'OpenAI API error');
+      throw new Error(data.error?.message || data.error || 'Gemini API error');
     }
 
-    const content = data.choices[0]?.message?.content;
+    // Gemini response shape: candidates[0].content.parts[0].text
+    const content = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!content) {
+      throw new Error('Gemini returned no content');
+    }
+
+    // responseMimeType: application/json should give clean JSON, but strip just in case
     const cleaned = content.replace(/```json\n?|\n?```/g, '').trim();
     const parsed = JSON.parse(cleaned);
 
@@ -87,11 +79,11 @@ Be specific based on visual appearance — dark brown baked goods are chocolate 
       individualFoods: foods,
       topSuggestions: foods.map(f => ({ name: f.food_name, confidence: f.confidence })),
       allConcepts: foods.map(f => ({ name: f.food_name, confidence: f.confidence })),
-      source: 'openai',
+      source: 'gemini',
     };
 
   } catch (error) {
-    console.error('❌ OpenAI Vision error:', error);
+    console.error('❌ Gemini Vision error:', error);
     throw error;
   }
 }

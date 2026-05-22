@@ -9,14 +9,18 @@ const ICONS = {
   'profile': require('../assets/icons/icon_profile.png'),
   
   // Macros
-  'protein': require('../assets/icons/icon_muscle.png'),
+  'protein': require('../assets/icons/icon_flexing.png'),
   'carbs': require('../assets/icons/icon_wheat.png'),
   'fat': require('../assets/icons/icon_avocado.png'),
   'sodium': require('../assets/icons/icon_salt.png'),
   'sugar': require('../assets/icons/icon_candy.png'),
   'fiber': require('../assets/icons/icon_leaf.png'),
-  'calories': require('../assets/icons/icon_flame.png'),
+  'calories': require('../assets/icons/icon_battery.png'),
+  'streak': require('../assets/icons/icon_flame.png'),
   'water': require('../assets/icons/icon_drop.png'),
+  'exercise': require('../assets/icons/icon_muscle.png'),
+  'plate': require('../assets/icons/icon_plate.png'),
+  'scale': require('../assets/icons/icon_scale.png'),
 };
 
 export default function AppIcon({ name, size = 24, tintColor, style }) {
