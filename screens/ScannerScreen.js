@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StyleSheet, Text, View, TouchableOpacity, Alert, Modal, TextInput, ActivityIndicator, Animated, AppState } from 'react-native';
 import { CameraView } from 'expo-camera';
 import { useTheme } from '../utils/ThemeContext';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import { useLanguage } from '../utils/LanguageContext';
 import { supabase } from '../utils/supabase';
 import { useTutorial } from '../utils/TutorialContext';
@@ -46,6 +46,8 @@ export default function ScannerScreen({ navigation }) {
 
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [cameraActive, setCameraActive] = useState(true);
+  const isFocused = useIsFocused();
   const [showArrowToProfile, setShowArrowToProfile] = useState(false);
   const [showManualInput, setShowManualInput] = useState(false);
   const [manualBarcode, setManualBarcode] = useState('');
@@ -83,7 +85,7 @@ export default function ScannerScreen({ navigation }) {
   // Reset scanner state when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      console.log('📷 Scanner focused - resetting state');
+      console.log('Scanner focused - resetting state');
       setScanned(false);
       setLoading(false);
       lastPhotoTime.current = 0;
@@ -475,7 +477,7 @@ export default function ScannerScreen({ navigation }) {
             },
             {
               text: t('scanner.continueAnyway'),
-              onPress: () => proceedWithFood(foodName, confidence, photoUri, result.source === 'openai' ? result : null),
+              onPress: () => proceedWithFood(foodName, confidence, photoUri, result),
               style: 'cancel'
             }
           ]
@@ -483,7 +485,7 @@ export default function ScannerScreen({ navigation }) {
         return;
       }
 
-      await proceedWithFood(foodName, confidence, photoUri, result.source === 'openai' ? result : null);
+      await proceedWithFood(foodName, confidence, photoUri, result);
 
     } catch (error) {
       console.error('❌ Error analyzing photo:', error);
@@ -496,6 +498,9 @@ export default function ScannerScreen({ navigation }) {
             onPress: () => {
               setLoading(false);
               setScanned(false);
+              // Force camera to remount so it doesn't stay frozen behind the dismissed alert
+              setCameraActive(false);
+              setTimeout(() => setCameraActive(true), 400);
             },
           },
         ]
@@ -522,11 +527,17 @@ export default function ScannerScreen({ navigation }) {
             carbohydrates: openaiNutrition.carbs || 0,
             fat_100g: openaiNutrition.fat || 0,
             fat: openaiNutrition.fat || 0,
+            sodium_100g: openaiNutrition.sodium || 0,
+            sodium: openaiNutrition.sodium || 0,
+            sugars_100g: openaiNutrition.sugar || 0,
+            sugar: openaiNutrition.sugar || 0,
+            fiber_100g: openaiNutrition.fiber || 0,
+            fiber: openaiNutrition.fiber || 0,
           },
           detected_by_ai: true,
           ai_detected_name: foodName,
           confidence: confidence,
-          nutrition_source: 'openai',
+          nutrition_source: openaiNutrition.source || 'ai',
           ai_message: `${t('scanner.aiDetected')} "${foodName}" (${confidence}% ${t('scanner.confidence')}). ${t('scanner.pleaseVerify')}`
         };
         setLoading(false);
@@ -732,6 +743,9 @@ export default function ScannerScreen({ navigation }) {
     setMode(prev => prev === 'barcode' ? 'photo' : 'barcode');
     setScanned(false);
     setLoading(false);
+    // Remount camera cleanly on mode switch so it doesn't freeze
+    setCameraActive(false);
+    setTimeout(() => setCameraActive(true), 400);
   };
 
   return (
@@ -740,6 +754,7 @@ export default function ScannerScreen({ navigation }) {
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         <View style={styles.container}>
           {/* Camera View */}
+          {isFocused && cameraActive ? (
           <CameraView
             ref={cameraRef}
             style={styles.camera}
@@ -813,11 +828,19 @@ export default function ScannerScreen({ navigation }) {
                 <Text style={styles.modeToggleText}>📷</Text>
               </TouchableOpacity>
             ) : (
-              <View style={styles.photoCounter}>
-                <Text style={styles.photoCounterText}>
-                  {dailyPhotoLimit - photosUsedToday}/{dailyPhotoLimit} {t('scanner.photosLeft')}
-                </Text>
-              </View>
+              <>
+                <TouchableOpacity
+                  style={[styles.modeToggle, { backgroundColor: '#4CAF50' }]}
+                  onPress={toggleMode}
+                >
+                  <Text style={styles.modeToggleText}>🔢</Text>
+                </TouchableOpacity>
+                <View style={styles.photoCounter}>
+                  <Text style={styles.photoCounterText}>
+                    {dailyPhotoLimit - photosUsedToday}/{dailyPhotoLimit} {t('scanner.photosLeft')}
+                  </Text>
+                </View>
+              </>
             )}
 
             {/* Bottom Buttons */}
@@ -851,6 +874,9 @@ export default function ScannerScreen({ navigation }) {
               </View>
             )}
           </CameraView>
+          ) : (
+            <View style={[styles.camera, { backgroundColor: '#000' }]} />
+          )}
 
           {/* Manual Barcode Input Modal */}
           <Modal

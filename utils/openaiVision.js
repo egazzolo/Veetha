@@ -1,18 +1,17 @@
 import { supabase } from './supabase';
+import * as ImageManipulator from 'expo-image-manipulator';
 
 export async function analyzePhotoOpenAI(photoUri) {
   try {
     console.log('📤 Sending photo to GPT-4o Vision (via openai-proxy)...');
 
-    // Convert image to base64
-    const response = await fetch(photoUri);
-    const blob = await response.blob();
-    const base64 = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
+    // Resize image to reduce payload size
+    const manipulated = await ImageManipulator.manipulateAsync(
+      photoUri,
+      [{ resize: { width: 768 } }],
+      { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+    );
+    const base64 = manipulated.base64;
 
     const { data, error: invokeError } = await supabase.functions.invoke('openai-proxy', {
       body: {

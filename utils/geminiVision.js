@@ -1,18 +1,17 @@
 import { supabase } from './supabase';
+import * as ImageManipulator from 'expo-image-manipulator';
 
 export async function analyzePhotoGemini(photoUri, model = 'gemini-2.5-flash-lite') {
   try {
     console.log('📤 Sending photo to Gemini Vision (via gemini-proxy)...');
 
-    // Convert image to base64
-    const response = await fetch(photoUri);
-    const blob = await response.blob();
-    const base64 = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
+    // Resize image to reduce payload size (full-size photos crash the Edge Function)
+    const manipulated = await ImageManipulator.manipulateAsync(
+      photoUri,
+      [{ resize: { width: 768 } }],
+      { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+    );
+    const base64 = manipulated.base64;
 
     const prompt = `Look carefully at the actual colors, textures, and appearance of the food in this image before identifying it. A dark brown food is NOT angel food cake (which is white). Be accurate based on what you actually see.
 
