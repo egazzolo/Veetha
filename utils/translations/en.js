@@ -712,6 +712,15 @@ export default {
     thankYou: 'Thank You!',
     submitted: 'Product submitted for review. We\'ll add it to the database soon!',
     failedToSubmit: 'Failed to submit product. Please try again.',
+    photoSource: 'Add photo',
+    takePhoto: 'Take photo',
+    chooseFromGallery: 'Choose from gallery',
+    cameraUnavailable: 'Camera unavailable',
+    cameraPermissionDenied: 'Veetha needs camera access to take a photo. Please enable it in your device settings.',
+    cameraGenericError: "We couldn't open the camera. Please try again or choose from your gallery.",
+    galleryUnavailable: 'Gallery unavailable',
+    galleryPermissionDenied: 'Veetha needs gallery access to choose a photo. Please enable it in your device settings.',
+    galleryGenericError: "We couldn't open your gallery. Please try again or take a photo instead.",
   },
 
   //Results Screen

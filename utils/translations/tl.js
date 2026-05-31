@@ -712,6 +712,15 @@ export default {
     thankYou: 'Salamat!',
     submitted: 'Naisumite na ang produkto para sa pagsusuri. Idaragdag namin ito sa database sa lalong madaling panahon!',
     failedToSubmit: 'Hindi naisumite ang produkto. Pakisubukan muli.',
+    photoSource: 'Magdagdag ng larawan',
+    takePhoto: 'Kumuha ng larawan',
+    chooseFromGallery: 'Pumili mula sa gallery',
+    cameraUnavailable: 'Hindi available ang camera',
+    cameraPermissionDenied: 'Kailangan ng Veetha ng access sa camera para kumuha ng larawan. Paki-enable ito sa settings ng iyong device.',
+    cameraGenericError: 'Hindi namin nabuksan ang camera. Subukang muli o pumili mula sa gallery.',
+    galleryUnavailable: 'Hindi available ang gallery',
+    galleryPermissionDenied: 'Kailangan ng Veetha ng access sa gallery para pumili ng larawan. Paki-enable ito sa settings ng iyong device.',
+    galleryGenericError: 'Hindi namin nabuksan ang gallery. Subukang muli o kumuha na lang ng larawan.',
   },
 
   //Results Screen

@@ -20,6 +20,41 @@
     .positive{color:#4CAF50;font-weight:bold}
     .negative{color:#F44336;font-weight:bold}
     .error-box{background:#ffebee;padding:20px;border-radius:10px;border-left:4px solid #c62828}
+
+    /* Tabs */
+    .tabs{display:flex;gap:6px;margin:20px 0 0 0;border-bottom:2px solid #ddd}
+    .tab{background:#fff;color:#333;border:1px solid #ddd;border-bottom:none;padding:10px 20px;font-size:14px;font-weight:600;border-radius:8px 8px 0 0;cursor:pointer;margin:0}
+    .tab:hover{background:#f5f5f5}
+    .tab-active,.tab-active:hover{background:#4CAF50;color:white;border-color:#4CAF50}
+    .tab-panel{display:none;padding-top:20px}
+    .tab-panel.active{display:block}
+
+    /* Review portal */
+    .review-card{background:white;padding:20px;margin:15px 0;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,0.1);border-left:4px solid #FF9800}
+    .review-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:15px;gap:15px}
+    .review-head h3{margin:0;color:#333}
+    .review-head .meta{font-size:12px;color:#999;text-align:right;white-space:nowrap}
+    .review-images{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:15px}
+    .review-images figure{margin:0}
+    .review-images figcaption{font-size:11px;color:#666;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px}
+    .review-images img{max-width:200px;max-height:200px;border:1px solid #ddd;border-radius:6px;cursor:pointer;display:block;background:#fafafa}
+    .review-images img:hover{border-color:#4CAF50}
+    .review-form{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 12px;margin-bottom:15px}
+    .review-form label{display:flex;flex-direction:column;font-size:12px;color:#666;font-weight:600}
+    .review-form input{padding:8px 10px;border:1px solid #ccc;border-radius:6px;font-size:14px;margin-top:4px;font-weight:400;color:#333;background:#fff}
+    .review-form input:focus{outline:none;border-color:#4CAF50}
+    .review-actions{display:flex;gap:10px;flex-wrap:wrap}
+    .review-actions button{padding:10px 20px;font-size:14px;margin:0}
+    .btn-approve{background:#4CAF50}
+    .btn-approve:hover{background:#45a049}
+    .btn-reject{background:#F44336}
+    .btn-reject:hover{background:#d32f2f}
+    .btn-later{background:#9E9E9E}
+    .btn-later:hover{background:#757575}
+    .review-msg{margin-top:10px;font-size:13px;min-height:18px}
+    .review-msg.ok{color:#4CAF50}
+    .review-msg.err{color:#F44336}
+    .review-empty{text-align:center;padding:40px;color:#999;background:white;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
   </style>
 </head>
 <body>
@@ -45,19 +80,35 @@
   </div>
 
   <h1>📊 Veetha Dashboard</h1>
-  <div id="time"></div>
-  <button id="btn">🔄 Refresh Data</button>
-  <div id="dash"><p style="text-align:center;color:#999;">Click "Refresh Data" to load campaigns...</p></div>
 
-  <div style="margin:10px 0;">
-    <label>
-      From:
-      <input type="date" id="fromDate">
-    </label>
-    <label style="margin-left:10px;">
-      To:
-      <input type="date" id="toDate">
-    </label>
+  <div class="tabs">
+    <button class="tab tab-active" data-tab="campaigns">📈 Campaigns</button>
+    <button class="tab" data-tab="review">📝 Review Pending Products</button>
+  </div>
+
+  <!-- ===================== CAMPAIGNS TAB ===================== -->
+  <div id="panel-campaigns" class="tab-panel active">
+    <div id="time"></div>
+    <button id="btn">🔄 Refresh Data</button>
+    <div id="dash"><p style="text-align:center;color:#999;">Click "Refresh Data" to load campaigns...</p></div>
+
+    <div style="margin:10px 0;">
+      <label>
+        From:
+        <input type="date" id="fromDate">
+      </label>
+      <label style="margin-left:10px;">
+        To:
+        <input type="date" id="toDate">
+      </label>
+    </div>
+  </div>
+
+  <!-- ===================== REVIEW TAB ===================== -->
+  <div id="panel-review" class="tab-panel">
+    <button id="reviewLoadBtn">🔄 Load Pending Products</button>
+    <div id="reviewCount" style="margin:10px 0;color:#666;font-size:14px;"></div>
+    <div id="reviewList"><p style="text-align:center;color:#999;">Click "Load Pending Products" to start reviewing.</p></div>
   </div>
 
   <script>
@@ -82,6 +133,17 @@
       );
 
       console.log('5. Client created successfully!');
+      
+      // ============ TAB SWITCHING ============
+      document.querySelectorAll('.tab').forEach(function(t) {
+        t.addEventListener('click', function() {
+          document.querySelectorAll('.tab').forEach(function(x) { x.classList.remove('tab-active'); });
+          t.classList.add('tab-active');
+          const target = t.dataset.tab;
+          document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+          document.getElementById('panel-' + target).classList.add('active');
+        });
+      });
       
       async function loadData() {
         console.log('6. loadData() called');
@@ -196,8 +258,272 @@
       } else {
         console.error('Button element not found!');
       }
-      
-      console.log('12. Setup complete! Click "Refresh Data" to load campaigns.');
+
+      // ============ REVIEW PORTAL ============
+      const reviewLoadBtn = document.getElementById('reviewLoadBtn');
+      if (reviewLoadBtn) {
+        reviewLoadBtn.addEventListener('click', loadReview);
+      }
+
+      async function loadReview() {
+        const listDiv = document.getElementById('reviewList');
+        const countDiv = document.getElementById('reviewCount');
+        listDiv.innerHTML = '<p style="text-align:center;color:#999;">Loading pending products...</p>';
+        countDiv.textContent = '';
+
+        try {
+          const { data: sessionData } = await window.authSupabase.auth.getSession();
+          if (!sessionData?.session) {
+            listDiv.innerHTML = '<div class="error-box"><h3>🔒 Login required</h3><p>Please log in above.</p></div>';
+            return;
+          }
+
+          const myUid = sessionData.session.user.id;
+          window.myUid = myUid;
+          const staleCutoff = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+
+          const { data, error } = await window.authSupabase
+            .from('pending_products')
+            .select('*')
+            .eq('status', 'pending')
+            .or('reviewing_by.is.null,reviewing_by.eq.' + myUid + ',reviewing_at.lt.' + staleCutoff)
+            .order('created_at', { ascending: true });
+
+          if (error) {
+            console.error('Pending products fetch error:', error);
+            listDiv.innerHTML = '<div class="error-box"><h3>❌ Error</h3><p>' + error.message + '</p></div>';
+            return;
+          }
+
+          countDiv.textContent = (data?.length || 0) + ' pending product(s)';
+
+          if (!data || data.length === 0) {
+            listDiv.innerHTML = '<div class="review-empty">No pending products. Inbox zero. 🎉</div>';
+            return;
+          }
+
+          // Claim each visible row (silent — best-effort)
+          const nowIso = new Date().toISOString();
+          await Promise.all(data.map(function(row) {
+            return window.authSupabase
+              .from('pending_products')
+              .update({ reviewing_by: myUid, reviewing_at: nowIso })
+              .eq('id', row.id)
+              .or('reviewing_by.is.null,reviewing_by.eq.' + myUid + ',reviewing_at.lt.' + staleCutoff);
+          }));
+
+          listDiv.innerHTML = data.map(renderReviewRow).join('');
+
+          // Wire up buttons
+          data.forEach(function(row) {
+            document.getElementById('approve-' + row.id).addEventListener('click', function() { approveRow(row); });
+            document.getElementById('reject-' + row.id).addEventListener('click', function() { rejectRow(row.id); });
+            document.getElementById('later-' + row.id).addEventListener('click', function() { laterRow(row.id); });
+          });
+
+        } catch (err) {
+          console.error('Error in loadReview():', err);
+          listDiv.innerHTML = '<div class="error-box"><h3>Error</h3><p>' + err.message + '</p></div>';
+        }
+      }
+
+      function renderReviewRow(row) {
+        const imgs = [];
+        if (row.product_name_image) imgs.push({ label: 'Product', url: row.product_name_image });
+        if (row.nutrition_label_image) imgs.push({ label: 'Nutrition label', url: row.nutrition_label_image });
+        if (row.ingredients_image) imgs.push({ label: 'Ingredients', url: row.ingredients_image });
+
+        const imgHTML = imgs.length === 0
+          ? '<p style="color:#999;font-style:italic;margin:0;">No photos submitted</p>'
+          : imgs.map(function(i) {
+              return '<figure>' +
+                '<figcaption>' + escHTML(i.label) + '</figcaption>' +
+                '<a href="' + escAttr(i.url) + '" target="_blank" rel="noopener">' +
+                '<img src="' + escAttr(i.url) + '" alt="' + escAttr(i.label) + '" onerror="this.style.opacity=0.3;this.alt=\'Failed to load\';">' +
+                '</a></figure>';
+            }).join('');
+
+        const submitted = row.created_at ? new Date(row.created_at).toLocaleString() : '';
+        const submitter = row.user_id ? ('User: ' + row.user_id.slice(0, 8) + '…') : '';
+
+        return '' +
+          '<div class="review-card" id="card-' + row.id + '">' +
+            '<div class="review-head">' +
+              '<h3>' + escHTML(row.product_name || '(no name provided)') + '</h3>' +
+              '<div class="meta">' + escHTML(submitted) + '<br>' + escHTML(submitter) + '</div>' +
+            '</div>' +
+            '<div class="review-images">' + imgHTML + '</div>' +
+            '<div class="review-form">' +
+              field('name-' + row.id, 'Product name', 'text', row.product_name) +
+              field('barcode-' + row.id, 'Barcode', 'text', row.barcode) +
+              field('serving-' + row.id, 'Serving size', 'text', row.serving_size) +
+              field('calories-' + row.id, 'Calories', 'number', row.calories) +
+              field('protein-' + row.id, 'Protein (g)', 'number', row.protein) +
+              field('carbs-' + row.id, 'Carbs (g)', 'number', row.carbs) +
+              field('fat-' + row.id, 'Fat (g)', 'number', row.fat) +
+              field('sugar-' + row.id, 'Sugar (g)', 'number', row.sugar) +
+              field('sodium-' + row.id, 'Sodium (mg)', 'number', row.sodium) +
+            '</div>' +
+            '<div class="review-actions">' +
+              '<button class="btn-approve" id="approve-' + row.id + '">✅ Approve</button>' +
+              '<button class="btn-reject" id="reject-' + row.id + '">❌ Reject</button>' +
+              '<button class="btn-later" id="later-' + row.id + '">💾 Save for later</button>' +
+            '</div>' +
+            '<div class="review-msg" id="msg-' + row.id + '"></div>' +
+          '</div>';
+      }
+
+      function field(id, label, type, value) {
+        const step = type === 'number' ? ' step="0.1"' : '';
+        const val = (value === null || value === undefined) ? '' : value;
+        return '<label>' + escHTML(label) +
+          '<input id="' + id + '" type="' + type + '"' + step + ' value="' + escAttr(val) + '">' +
+          '</label>';
+      }
+
+      function escHTML(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+          return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+        });
+      }
+      function escAttr(s) {
+        return String(s == null ? '' : s).replace(/"/g, '&quot;').replace(/</g, '&lt;');
+      }
+
+      function numOrNull(elId) {
+        const el = document.getElementById(elId);
+        if (!el) return null;
+        const v = el.value;
+        if (v === '' || v === null) return null;
+        const n = parseFloat(v);
+        return isNaN(n) ? null : n;
+      }
+      function strOrNull(elId) {
+        const el = document.getElementById(elId);
+        if (!el) return null;
+        const v = (el.value || '').trim();
+        return v === '' ? null : v;
+      }
+
+      function setMsg(id, text, kind) {
+        const m = document.getElementById('msg-' + id);
+        if (!m) return;
+        m.className = 'review-msg ' + (kind || '');
+        m.textContent = text || '';
+      }
+
+      function disableCardButtons(id, disabled) {
+        ['approve', 'reject', 'later'].forEach(function(b) {
+          const el = document.getElementById(b + '-' + id);
+          if (el) el.disabled = disabled;
+        });
+      }
+
+      async function approveRow(row) {
+        const id = row.id;
+        const name = strOrNull('name-' + id);
+        if (!name) {
+          setMsg(id, 'Product name is required.', 'err');
+          return;
+        }
+
+        disableCardButtons(id, true);
+        setMsg(id, 'Approving...', 'ok');
+
+        const payload = {
+          name: name,
+          name_normalized: name.toLowerCase().trim(),
+          detected_by_ai: false,
+          source: 'user_submitted',
+          times_used: 0,
+          calories: numOrNull('calories-' + id),
+          protein: numOrNull('protein-' + id),
+          carbs: numOrNull('carbs-' + id),
+          fat: numOrNull('fat-' + id),
+          sugar: numOrNull('sugar-' + id),
+          sodium: numOrNull('sodium-' + id),
+          barcode: strOrNull('barcode-' + id),
+          serving_unit: strOrNull('serving-' + id),
+          added_by_user_id: row.user_id || null,
+          pending_product_id: id,
+          image_url: row.product_name_image || row.nutrition_label_image || row.ingredients_image || null,
+        };
+
+        // 1) Insert into food_database
+        const { error: insertErr } = await window.authSupabase
+          .from('food_database')
+          .insert(payload);
+
+        if (insertErr) {
+          console.error('food_database insert error:', insertErr);
+          if (insertErr.code === '23505' || /duplicate|unique/i.test(insertErr.message)) {
+            await window.authSupabase.from('pending_products').delete().eq('id', id);
+            setMsg(id, 'Already approved. Marking resolved.', 'err');
+            setTimeout(function() { removeCard(id); }, 1500);
+            return;
+          }
+          setMsg(id, 'Insert failed: ' + insertErr.message, 'err');
+          disableCardButtons(id, false);
+          return;
+        }
+
+        // 2) Delete pending row (product is now in food_database, no need to keep)
+        const { error: deleteErr } = await window.authSupabase
+          .from('pending_products')
+          .delete()
+          .eq('id', id);
+
+        if (deleteErr) {
+          console.error('pending_products delete error:', deleteErr);
+          setMsg(id, '⚠ Inserted, but failed to delete pending row: ' + deleteErr.message, 'err');
+          disableCardButtons(id, false);
+          return;
+        }
+
+        removeCard(id);
+      }
+
+      async function rejectRow(id) {
+        if (!confirm('Reject this submission? It will be deleted.')) return;
+
+        disableCardButtons(id, true);
+        setMsg(id, 'Rejecting...', 'ok');
+
+        const { error } = await window.authSupabase
+          .from('pending_products')
+          .delete()
+          .eq('id', id);
+
+        if (error) {
+          console.error('Reject error:', error);
+          setMsg(id, 'Reject failed: ' + error.message, 'err');
+          disableCardButtons(id, false);
+          return;
+        }
+
+        removeCard(id);
+      }
+
+      async function laterRow(id) {
+        // Clear claim so other reviewers (or future-me) can pick it up.
+        await window.authSupabase
+          .from('pending_products')
+          .update({ reviewing_by: null, reviewing_at: null })
+          .eq('id', id);
+        removeCard(id);
+      }
+
+      function removeCard(id) {
+        const card = document.getElementById('card-' + id);
+        if (card) card.remove();
+        const remaining = document.querySelectorAll('#reviewList .review-card').length;
+        document.getElementById('reviewCount').textContent = remaining + ' pending product(s)';
+        if (remaining === 0) {
+          document.getElementById('reviewList').innerHTML = '<div class="review-empty">No pending products. Inbox zero. 🎉</div>';
+        }
+      }
+
+      console.log('12. Setup complete! Tabs + review portal wired.');
     });
   </script>
   <script type="module">

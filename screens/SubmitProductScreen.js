@@ -31,15 +31,71 @@ export default function SubmitProductScreen({ route, navigation }) {
   const [submitting, setSubmitting] = useState(false);
 
   const pickImage = async (setter) => {
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'],
-      quality: 0.7,
-      allowsEditing: true,
-    });
-
-    if (!result.canceled && result.assets?.[0]) {
-      setter(result.assets[0].uri);
-    }
+    Alert.alert(
+      t('submitProduct.photoSource'),
+      undefined,
+      [
+        {
+          text: t('submitProduct.takePhoto'),
+          onPress: async () => {
+            try {
+              const perm = await ImagePicker.requestCameraPermissionsAsync();
+              if (!perm.granted) {
+                Alert.alert(
+                  t('submitProduct.cameraUnavailable'),
+                  t('submitProduct.cameraPermissionDenied')
+                );
+                return;
+              }
+              const result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ['images'],
+                quality: 0.7,
+                allowsEditing: true,
+              });
+              if (!result.canceled && result.assets?.[0]) {
+                setter(result.assets[0].uri);
+              }
+            } catch (err) {
+              console.error('Camera error:', err);
+              Alert.alert(
+                t('submitProduct.cameraUnavailable'),
+                t('submitProduct.cameraGenericError')
+              );
+            }
+          },
+        },
+        {
+          text: t('submitProduct.chooseFromGallery'),
+          onPress: async () => {
+            try {
+              const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+              if (!perm.granted) {
+                Alert.alert(
+                  t('submitProduct.galleryUnavailable'),
+                  t('submitProduct.galleryPermissionDenied')
+                );
+                return;
+              }
+              const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                quality: 0.7,
+                allowsEditing: true,
+              });
+              if (!result.canceled && result.assets?.[0]) {
+                setter(result.assets[0].uri);
+              }
+            } catch (err) {
+              console.error('Gallery error:', err);
+              Alert.alert(
+                t('submitProduct.galleryUnavailable'),
+                t('submitProduct.galleryGenericError')
+              );
+            }
+          },
+        },
+        { text: t('common.cancel'), style: 'cancel' },
+      ]
+    );
   };
 
   const uploadImage = async (uri, userId, label) => {
@@ -137,7 +193,7 @@ export default function SubmitProductScreen({ route, navigation }) {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
         style={{ flex: 1 }}
       >
         <ScrollView
@@ -292,7 +348,7 @@ export default function SubmitProductScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { padding: 20, paddingBottom: 40 },
+  scroll: { padding: 20, paddingBottom: 120 },
   header: { marginBottom: 10 },
   backButton: { fontSize: 16, fontWeight: '600' },
   card: { borderRadius: 16, padding: 20 },

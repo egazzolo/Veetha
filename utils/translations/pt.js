@@ -712,6 +712,15 @@ export default {
     thankYou: 'Obrigado!',
     submitted: 'Produto enviado para revisão. Vamos adicioná-lo ao banco de dados em breve!',
     failedToSubmit: 'Falha ao enviar produto. Tente novamente.',
+    photoSource: 'Adicionar foto',
+    takePhoto: 'Tirar foto',
+    chooseFromGallery: 'Escolher da galeria',
+    cameraUnavailable: 'Câmera indisponível',
+    cameraPermissionDenied: 'Veetha precisa de acesso à câmera para tirar uma foto. Ative nas configurações do seu dispositivo.',
+    cameraGenericError: 'Não foi possível abrir a câmera. Tente novamente ou escolha uma foto da galeria.',
+    galleryUnavailable: 'Galeria indisponível',
+    galleryPermissionDenied: 'Veetha precisa de acesso à galeria para escolher uma foto. Ative nas configurações do seu dispositivo.',
+    galleryGenericError: 'Não foi possível abrir sua galeria. Tente novamente ou tire uma foto.',
   },
 
   //Results Screen
