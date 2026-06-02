@@ -213,7 +213,7 @@ export default function ExerciseLogModal({ navigation, route }) {
           {/* Estimated Burn */}
           <View style={[styles.estimateCard, { backgroundColor: theme.primaryLight || '#E3F2FD' }]}>
             <Text style={[styles.estimateLabel, { color: theme.textSecondary }]}>
-              📊 {t('exercise.estimatedBurn')}
+              {t('exercise.estimatedBurn')}
             </Text>
             <Text style={[styles.estimateValue, { color: theme.primary }]}>
               {estimatedCalories} {t('common.kcal')}
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: 10,
     paddingBottom: 20
   },
   backButton: { padding: 8 },

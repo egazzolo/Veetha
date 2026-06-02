@@ -1178,15 +1178,6 @@ export default function ResultScreen({ route, navigation }) {
                         >
                           <Text>✏️ {t('results.wrongFood')}</Text>
                         </TouchableOpacity>
-                        
-                        <TouchableOpacity 
-                          style={[styles.logMealButton, { backgroundColor: '#2196F3' }]}
-                          onPress={() => {
-                            navigation.navigate('ManualEntry');
-                          }}
-                        >
-                          <Text style={styles.logMealButtonText}>✏️ {t('results.enterManually')}</Text>
-                        </TouchableOpacity>
 
                         <TouchableOpacity 
                           style={[styles.navButton, { backgroundColor: '#666' }]}

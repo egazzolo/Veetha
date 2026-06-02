@@ -1,12 +1,13 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useLanguage } from '../../utils/LanguageContext';
+import AppIcon from '../../components/AppIcon';
 
 const CATEGORIES = [
-  { id: 'cardio', icon: '🏃', key: 'cardio' },
-  { id: 'strength', icon: '💪', key: 'strength' },
-  { id: 'lifestyle', icon: '🧘', key: 'lifestyle' },
-  { id: 'sports', icon: '⚽', key: 'sports' }
+  { id: 'cardio', iconName: 'running_clr', key: 'cardio' },
+  { id: 'strength', iconName: 'strength_clr', key: 'strength' },
+  { id: 'lifestyle', iconName: 'yoga_clr', key: 'lifestyle' },
+  { id: 'sports', iconName: 'basketball_clr', key: 'sports' }
 ];
 
 export default function ExerciseCategoryScreen({ navigation, route }) {
@@ -43,7 +44,7 @@ export default function ExerciseCategoryScreen({ navigation, route }) {
               theme 
             })}
           >
-            <Text style={styles.categoryIcon}>{cat.icon}</Text>
+            <AppIcon name={cat.iconName} size={36} style={styles.categoryIcon} />
             <Text style={[styles.categoryName, { color: theme.text }]}>
               {t(`exercise.categories.${cat.key}`)}
             </Text>
@@ -78,7 +79,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 12
   },
-  categoryIcon: { fontSize: 28, marginRight: 16 },
+  categoryIcon: { marginRight: 16 },
   categoryName: { flex: 1, fontSize: 17, fontWeight: '500' },
   chevron: { fontSize: 24, color: '#C7C7CC' }
 });

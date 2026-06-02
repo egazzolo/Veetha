@@ -1,36 +1,38 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLanguage } from '../../utils/LanguageContext';
+import AppIcon from '../../components/AppIcon';
 
 const ACTIVITIES = {
   cardio: [
-    { id: 'walking', icon: '🚶', key: 'walking' },
-    { id: 'running', icon: '🏃', key: 'running' },
-    { id: 'cycling', icon: '🚴', key: 'cycling' },
-    { id: 'swimming', icon: '🏊', key: 'swimming' },
-    { id: 'stairs', icon: '🪜', key: 'stairClimbing' },
-    { id: 'jumprope', icon: '🪢', key: 'jumpRope' },
-    { id: 'elliptical', icon: '🌀', key: 'elliptical' },
-    { id: 'rowing', icon: '🚣', key: 'rowing' }
+    { id: 'walking', iconName: 'walking_clr', key: 'walking' },
+    { id: 'running', iconName: 'running_clr', key: 'running' },
+    { id: 'cycling', iconName: 'cycling_clr', key: 'cycling' },
+    { id: 'swimming', iconName: 'swimming_clr', key: 'swimming' },
+    { id: 'stairs', iconName: 'stairs_clr', key: 'stairClimbing' },
+    { id: 'jumprope', iconName: 'jumprope_clr', key: 'jumpRope' },
+    { id: 'elliptical', iconName: 'elliptical_clr', key: 'elliptical' },
+    { id: 'rowing', iconName: 'rowing_clr', key: 'rowing' }
   ],
   strength: [
-    { id: 'strength', icon: '🏋️', key: 'strengthTraining' },
-    { id: 'bodyweight', icon: '🤸', key: 'bodyweightWorkout' },
-    { id: 'hiit', icon: '⚡', key: 'hiit' },
-    { id: 'crosstrain', icon: '🔄', key: 'crossTraining' }
+    { id: 'strength', iconName: 'strength_clr', key: 'strengthTraining' },
+    { id: 'bodyweight', iconName: 'bodyweight_clr', key: 'bodyweightWorkout' },
+    { id: 'hiit', iconName: 'hiit_clr', key: 'hiit' },
+    { id: 'crosstrain', iconName: 'crosstrain_clr', key: 'crossTraining' }
   ],
   lifestyle: [
-    { id: 'yoga', icon: '🧘', key: 'yoga' },
-    { id: 'pilates', icon: '🤸', key: 'pilates' },
-    { id: 'stretching', icon: '🙆', key: 'stretching' },
-    { id: 'dancing', icon: '🕺', key: 'dancing' },
-    { id: 'housework', icon: '🏠', key: 'housework' }
+    { id: 'yoga', iconName: 'yoga_clr', key: 'yoga' },
+    { id: 'pilates', iconName: 'pilates_clr', key: 'pilates' },
+    { id: 'stretching', iconName: 'stretching_clr', key: 'stretching' },
+    { id: 'dancing', iconName: 'dancing_clr', key: 'dancing' },
+    { id: 'housework', iconName: 'housework_clr', key: 'housework' }
   ],
   sports: [
-    { id: 'basketball', icon: '🏀', key: 'basketball' },
-    { id: 'soccer', icon: '⚽', key: 'soccer' },
-    { id: 'tennis', icon: '🎾', key: 'tennis' },
-    { id: 'volleyball', icon: '🏐', key: 'volleyball' }
+    { id: 'basketball', iconName: 'basketball_clr', key: 'basketball' },
+    { id: 'soccer', iconName: 'soccer_clr', key: 'soccer' },
+    { id: 'tennis', iconName: 'tennis_clr', key: 'tennis' },
+    { id: 'volleyball', iconName: 'volleyball_clr', key: 'volleyball' }
   ]
 };
 
@@ -40,7 +42,7 @@ export default function ExerciseActivityScreen({ navigation, route }) {
   const activities = ACTIVITIES[category] || [];
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -69,7 +71,7 @@ export default function ExerciseActivityScreen({ navigation, route }) {
               theme
             })}
           >
-            <Text style={styles.activityIcon}>{activity.icon}</Text>
+            <AppIcon name={activity.iconName} size={36} style={styles.activityIcon} />
             <Text style={[styles.activityName, { color: theme.text }]}>
               {t(`exercise.activities.${activity.key}`)}
             </Text>
@@ -77,7 +79,7 @@ export default function ExerciseActivityScreen({ navigation, route }) {
           </TouchableOpacity>
         ))}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -88,7 +90,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: 10,
     paddingBottom: 20
   },
   backButton: { padding: 8 },
@@ -104,7 +106,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 12
   },
-  activityIcon: { fontSize: 28, marginRight: 16 },
+  activityIcon: { marginRight: 16 },
   activityName: { flex: 1, fontSize: 17, fontWeight: '500' },
   chevron: { fontSize: 24, color: '#C7C7CC' }
 });

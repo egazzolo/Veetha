@@ -59,7 +59,6 @@ import EditMealScreen from './screens/EditMealScreen';
 import ScannerScreen from './screens/ScannerScreen';
 import ResultScreen from './screens/ResultScreen';
 import SubmitProductScreen from './screens/SubmitProductScreen';
-import ManualEntryScreen from './screens/ManualEntryScreen';
 import StatsScreen from './screens/StatsScreen';
 import ExportReportScreen from './screens/ExportReportScreen';
 import ProfileScreen from './screens/ProfileScreen';
@@ -394,7 +393,6 @@ function AppNavigator() {
           <Stack.Screen name="ExerciseLogModal" component={ExerciseLogModal} options={{ headerShown: false }}/>
           <Stack.Screen name="Scanner" component={ScannerScreen} />
           <Stack.Screen name="Result" component={ResultScreen} />
-          <Stack.Screen name="ManualEntry" component={ManualEntryScreen} />
           <Stack.Screen name="EditMeal" component={EditMealScreen} />
           <Stack.Screen name="SubmitProduct" component={SubmitProductScreen} />
           <Stack.Screen name="Stats" component={StatsScreen} />

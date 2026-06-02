@@ -172,8 +172,8 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 10
+    paddingTop: 10,
+    paddingBottom: 20
   },
   backButton: { padding: 8 },
   backArrow: { fontSize: 28, color: '#007AFF' },

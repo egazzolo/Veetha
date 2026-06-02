@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../utils/supabase';
@@ -17,7 +17,38 @@ export default function EditMealScreen({ route, navigation }) {
   const [carbs, setCarbs] = useState(String(meal.carbs ?? ''));
   const [fat, setFat] = useState(String(meal.fat ?? ''));
   const [saving, setSaving] = useState(false);
-  const [servingGrams, setServingGrams] = useState(String(meal.serving_grams ?? ''));
+  const [servingGrams, setServingGrams] = useState(String(meal.serving_grams ?? '100'));
+  const [baseline, setBaseline] = useState(null); // per-100g values from food_database
+
+  // Fetch per-100g baseline from food_database on mount
+  useEffect(() => {
+    const fetchBaseline = async () => {
+      if (!meal.product_id) return;
+      const { data, error } = await supabase
+        .from('food_database')
+        .select('calories, protein, carbs, fat')
+        .eq('id', meal.product_id)
+        .single();
+      if (error) {
+        console.error('Failed to fetch baseline:', error);
+        return;
+      }
+      setBaseline(data);
+    };
+    fetchBaseline();
+  }, [meal.product_id]);
+
+  // Recalculate macros when servingGrams changes (after baseline loaded)
+  useEffect(() => {
+    if (!baseline) return;
+    const grams = parseFloat(servingGrams);
+    if (isNaN(grams) || grams <= 0) return;
+    const factor = grams / 100;
+    setCalories(String(Math.round((baseline.calories || 0) * factor * 10) / 10));
+    setProtein(String(Math.round((baseline.protein || 0) * factor * 10) / 10));
+    setCarbs(String(Math.round((baseline.carbs || 0) * factor * 10) / 10));
+    setFat(String(Math.round((baseline.fat || 0) * factor * 10) / 10));
+  }, [servingGrams, baseline]);
 
   const handleSave = async () => {
     if (!productName.trim() || !calories) {
@@ -28,14 +59,18 @@ export default function EditMealScreen({ route, navigation }) {
     setSaving(true);
 
     try {
+      const grams = parseFloat(servingGrams) || 100;
+      const factor = grams / 100;
+
+      // Back-calculate to per-100g for food_database storage
       const { error: foodError } = await supabase
         .from('food_database')
         .update({
           name: productName.trim(),
-          calories: parseFloat(calories) || 0,
-          protein: parseFloat(protein) || 0,
-          carbs: parseFloat(carbs) || 0,
-          fat: parseFloat(fat) || 0,
+          calories: factor > 0 ? (parseFloat(calories) || 0) / factor : 0,
+          protein: factor > 0 ? (parseFloat(protein) || 0) / factor : 0,
+          carbs: factor > 0 ? (parseFloat(carbs) || 0) / factor : 0,
+          fat: factor > 0 ? (parseFloat(fat) || 0) / factor : 0,
         })
         .eq('id', meal.product_id);
 
@@ -43,7 +78,7 @@ export default function EditMealScreen({ route, navigation }) {
 
       const { error: mealError } = await supabase
         .from('meals')
-        .update({ serving_grams: parseFloat(servingGrams) || 100 })
+        .update({ serving_grams: grams })
         .eq('id', meal.id);
 
       if (mealError) throw mealError;
