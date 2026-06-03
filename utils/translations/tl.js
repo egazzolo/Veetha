@@ -1249,4 +1249,22 @@ export default {
     otaReadyMessage: 'May bagong bersyon na handa. I-restart ang app para mailapat ito.',
     restart: 'I-restart',
   },
+  rateGate: {
+    title: 'Nag-eenjoy ka ba sa Veetha?',
+    yes: 'Oo',
+    no: 'Hindi',
+    thankYouMessages: [
+      'Masaya kaming marinig iyan! Sana ma-enjoy mo rin ang mga bagong feature na inihahanda namin.',
+      'Astig! Salamat sa pagmamahal — mas marami pang magagandang bagay na darating.',
+      'Pinasaya niyo ang araw namin! Nagtatrabaho kami ng husto para mas mapaganda pa ang Veetha.',
+      'Salamat! Manatiling nakatutok — may mga kapana-panabik na bagay kaming inihahanda.',
+      'Ikaw na ang pinakamagaling! Hindi kami makapaghintay ipakita ang susunod.'
+    ],
+    feedbackTitle: 'Pasensya na at hindi mo na-eenjoy ang Veetha.',
+    feedbackPrompt: 'Maaari mo bang ipaliwanag kung bakit?',
+    feedbackPlaceholder: 'Sabihin mo kung ano ang maaari naming pagbutihin...',
+    feedbackSubmit: 'Ipadala ang feedback',
+    feedbackCancel: 'Laktawan',
+    feedbackThankYou: 'Salamat sa iyong feedback! Binabasa namin ang bawat mensahe.',
+  },
 }

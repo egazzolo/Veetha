@@ -2,8 +2,9 @@ import StepsCard from '../components/StepsCard';
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import * as Notifications from 'expo-notifications';
+import * as StoreReview from 'expo-store-review';
 import * as Location from 'expo-location';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, RefreshControl, Alert, Modal, Platform, Animated, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, RefreshControl, Alert, Modal, Platform, Animated, ActivityIndicator, Linking, TextInput } from 'react-native';
 import { showToast } from '../components/VeethaToast';
 import VeethaModal from '../components/VeethaModal';
 import GuestUpsellSheet from '../components/GuestUpsellSheet';
@@ -340,6 +341,12 @@ export default function HomeScreen({ navigation }) {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedMealIds, setSelectedMealIds] = useState(new Set());
   const [bulkDeleteModalVisible, setBulkDeleteModalVisible] = useState(false);
+  const [rateGateVisible, setRateGateVisible] = useState(false);
+  const [feedbackModalVisible, setFeedbackModalVisible] = useState(false);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [thankYouMessage, setThankYouMessage] = useState('');
+  const [thankYouVisible, setThankYouVisible] = useState(false);
+  const [currentTriggerSource, setCurrentTriggerSource] = useState(null);
 
   // Safe numeric helper
   const num = (v) => {
@@ -1128,6 +1135,182 @@ export default function HomeScreen({ navigation }) {
       };
     }, [checkingTutorial]);
 
+  // Rate Us gate logic — triggers at meal 3, meal 10, post-update for existing users, and bi-monthly after meal 10
+  const initialMealCountRef = useRef(null);
+  const ratePromptFiringRef = useRef(false);
+  useEffect(() => {
+    const checkRatePrompts = async () => {
+      if (isGuestMode || !user) return;
+      if (ratePromptFiringRef.current) return;
+
+      const { count: totalMeals, error: countError } = await supabase
+        .from('meals')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (countError) return;
+
+      // On first mount, baseline and set up retroactive flags
+      if (initialMealCountRef.current === null) {
+        initialMealCountRef.current = totalMeals ?? 0;
+
+        const meal3Shown = await AsyncStorage.getItem('rate_meal3_shown');
+        const meal10Shown = await AsyncStorage.getItem('rate_meal10_shown');
+        const postUpdatePending = await AsyncStorage.getItem('rate_post_update_pending');
+        const postUpdateHandled = await AsyncStorage.getItem('rate_post_update_handled');
+
+        // Existing user with 10+ meals who hasn't been handled yet — queue post-update prompt
+        if (!meal10Shown && !postUpdateHandled && (totalMeals ?? 0) >= 10) {
+          if (!postUpdatePending) {
+            await AsyncStorage.setItem('rate_post_update_pending', 'true');
+          }
+          // Don't mark meal3/meal10 as retroactive yet — wait for the post-update gate to fire
+        } else if (!meal3Shown && (totalMeals ?? 0) >= 3) {
+          // Existing user with 3-9 meals — silently mark meal3 as past, let meal10 fire normally
+          await AsyncStorage.setItem('rate_meal3_shown', 'retroactive');
+        }
+
+        // Bi-monthly check (only fires if meal10 has been recorded with a real date)
+        const meal10Date = await AsyncStorage.getItem('rate_meal10_logged_at');
+        if (meal10Date) {
+          const meal10Time = new Date(meal10Date).getTime();
+          const now = Date.now();
+          const monthsSinceMeal10 = (now - meal10Time) / (1000 * 60 * 60 * 24 * 30.44);
+          const lastBiMonthlyStr = await AsyncStorage.getItem('rate_last_bimonthly');
+          const lastBiMonthly = lastBiMonthlyStr ? new Date(lastBiMonthlyStr).getTime() : meal10Time;
+          const monthsSinceLast = (now - lastBiMonthly) / (1000 * 60 * 60 * 24 * 30.44);
+
+          if (monthsSinceMeal10 >= 2 && monthsSinceLast >= 2) {
+            ratePromptFiringRef.current = true;
+            await AsyncStorage.setItem('rate_last_bimonthly', new Date().toISOString());
+            await supabase.from('feedback_signals').insert({
+              user_id: user.id,
+              signal_type: 'biMonthly_prompt_shown',
+            });
+            setCurrentTriggerSource('biMonthly');
+            setRateGateVisible(true);
+          }
+        }
+        return;
+      }
+
+      // Only fire meal-based triggers if user logged a meal this session
+      if (totalMeals <= initialMealCountRef.current) return;
+
+      // Trigger: post-update gate for existing power users (highest priority)
+      const postUpdatePending = await AsyncStorage.getItem('rate_post_update_pending');
+      if (postUpdatePending === 'true') {
+        ratePromptFiringRef.current = true;
+        const nowIso = new Date().toISOString();
+        await AsyncStorage.multiSet([
+          ['rate_post_update_pending', ''],
+          ['rate_post_update_handled', 'true'],
+          ['rate_meal3_shown', 'retroactive'],
+          ['rate_meal10_shown', nowIso],
+          ['rate_meal10_logged_at', nowIso],
+        ]);
+        await supabase.from('feedback_signals').insert({
+          user_id: user.id,
+          signal_type: 'postUpdate_prompt_shown',
+        });
+        setCurrentTriggerSource('postUpdate');
+        setRateGateVisible(true);
+        return;
+      }
+
+      // Trigger 1: meal 3
+      const meal3Shown = await AsyncStorage.getItem('rate_meal3_shown');
+      if (!meal3Shown && totalMeals >= 3) {
+        ratePromptFiringRef.current = true;
+        await AsyncStorage.setItem('rate_meal3_shown', new Date().toISOString());
+        await supabase.from('feedback_signals').insert({
+          user_id: user.id,
+          signal_type: 'meal3_prompt_shown',
+        });
+        setCurrentTriggerSource('meal3');
+        setRateGateVisible(true);
+        return;
+      }
+
+      // Trigger 2: meal 10
+      const meal10Shown = await AsyncStorage.getItem('rate_meal10_shown');
+      if (!meal10Shown && totalMeals >= 10) {
+        ratePromptFiringRef.current = true;
+        const nowIso = new Date().toISOString();
+        await AsyncStorage.setItem('rate_meal10_shown', nowIso);
+        await AsyncStorage.setItem('rate_meal10_logged_at', nowIso);
+        await supabase.from('feedback_signals').insert({
+          user_id: user.id,
+          signal_type: 'meal10_prompt_shown',
+        });
+        setCurrentTriggerSource('meal10');
+        setRateGateVisible(true);
+        return;
+      }
+    };
+
+    if (user) {
+      checkRatePrompts();
+    }
+  }, [user, meals.length, isGuestMode]);
+
+  // Gate "Yes" handler
+  const handleRateYes = async () => {
+    setRateGateVisible(false);
+    const thankYouArray = t('rateGate.thankYouMessages');
+    const messages = Array.isArray(thankYouArray) ? thankYouArray : [thankYouArray];
+    const randomMsg = messages[Math.floor(Math.random() * messages.length)];
+    setThankYouMessage(randomMsg);
+    setThankYouVisible(true);
+
+    try {
+      const available = await StoreReview.isAvailableAsync();
+      if (available) {
+        await StoreReview.requestReview();
+      } else {
+        const url = Platform.OS === 'ios'
+          ? 'https://apps.apple.com/app/id6760553556?action=write-review'
+          : 'market://details?id=com.yourname.veetha';
+        Linking.openURL(url).catch(() => {});
+      }
+    } catch (e) {
+      console.error('Rate review error:', e);
+    }
+  };
+
+  // Gate "No" handler
+  const handleRateNo = () => {
+    setRateGateVisible(false);
+    setFeedbackModalVisible(true);
+  };
+
+  // Feedback submission
+  const handleFeedbackSubmit = async () => {
+    if (!feedbackText.trim()) {
+      setFeedbackModalVisible(false);
+      setFeedbackText('');
+      return;
+    }
+    try {
+      await supabase.from('user_feedback').insert({
+        user_id: user.id,
+        feedback_text: feedbackText.trim(),
+        trigger_source: currentTriggerSource,
+      });
+    } catch (e) {
+      console.error('Feedback insert error:', e);
+    }
+    setFeedbackModalVisible(false);
+    setFeedbackText('');
+    setThankYouMessage(t('rateGate.feedbackThankYou'));
+    setThankYouVisible(true);
+  };
+
+  const handleFeedbackCancel = () => {
+    setFeedbackModalVisible(false);
+    setFeedbackText('');
+  };
+
   // Refresh meals when screen focuses
   useFocusEffect(
     React.useCallback(() => {
@@ -1856,6 +2039,105 @@ export default function HomeScreen({ navigation }) {
                 onConfirm={confirmBulkDelete}
                 onCancel={() => setBulkDeleteModalVisible(false)}
               />
+
+              {/* Rate Gate Modal */}
+              <Modal
+                visible={rateGateVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setRateGateVisible(false)}
+              >
+                <View style={styles.rateGateOverlay}>
+                  <View style={[styles.rateGateCard, { backgroundColor: theme.cardBackground }]}>
+                    <Text style={[styles.rateGateTitle, { color: theme.text }]}>
+                      {t('rateGate.title')}
+                    </Text>
+                    <View style={styles.rateGateButtons}>
+                      <TouchableOpacity
+                        style={[styles.rateGateButton, { backgroundColor: '#ccc' }]}
+                        onPress={handleRateNo}
+                      >
+                        <Text style={styles.rateGateButtonText}>{t('rateGate.no')}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.rateGateButton, { backgroundColor: theme.primary }]}
+                        onPress={handleRateYes}
+                      >
+                        <Text style={styles.rateGateButtonText}>{t('rateGate.yes')}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              </Modal>
+
+              {/* Feedback Modal */}
+              <Modal
+                visible={feedbackModalVisible}
+                transparent
+                animationType="slide"
+                onRequestClose={handleFeedbackCancel}
+              >
+                <View style={styles.rateGateOverlay}>
+                  <View style={[styles.feedbackCard, { backgroundColor: theme.cardBackground }]}>
+                    <Text style={[styles.feedbackTitle, { color: theme.text }]}>
+                      {t('rateGate.feedbackTitle')}
+                    </Text>
+                    <Text style={[styles.feedbackPrompt, { color: theme.textSecondary }]}>
+                      {t('rateGate.feedbackPrompt')}
+                    </Text>
+                    <TextInput
+                      style={[styles.feedbackInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+                      placeholder={t('rateGate.feedbackPlaceholder')}
+                      placeholderTextColor={theme.textTertiary}
+                      multiline
+                      numberOfLines={5}
+                      value={feedbackText}
+                      onChangeText={setFeedbackText}
+                      textAlignVertical="top"
+                    />
+                    <View style={styles.rateGateButtons}>
+                      <TouchableOpacity
+                        style={[styles.rateGateButton, { backgroundColor: '#ccc' }]}
+                        onPress={handleFeedbackCancel}
+                      >
+                        <Text style={styles.rateGateButtonText}>{t('rateGate.feedbackCancel')}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.rateGateButton, { backgroundColor: theme.primary }]}
+                        onPress={handleFeedbackSubmit}
+                      >
+                        <Text style={styles.rateGateButtonText}>{t('rateGate.feedbackSubmit')}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              </Modal>
+
+              {/* Thank You Modal */}
+              <Modal
+                visible={thankYouVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setThankYouVisible(false)}
+              >
+                <TouchableOpacity
+                  style={styles.rateGateOverlay}
+                  activeOpacity={1}
+                  onPress={() => setThankYouVisible(false)}
+                >
+                  <View style={[styles.thankYouCard, { backgroundColor: theme.cardBackground }]}>
+                    <Text style={[styles.thankYouText, { color: theme.text }]}>
+                      {thankYouMessage}
+                    </Text>
+                    <TouchableOpacity
+                      style={[styles.thankYouButton, { backgroundColor: theme.primary }]}
+                      onPress={() => setThankYouVisible(false)}
+                    >
+                      <Text style={styles.rateGateButtonText}>OK</Text>
+                    </TouchableOpacity>
+                  </View>
+                </TouchableOpacity>
+              </Modal>
             </AnimatedThemeWrapper>
 
             {/* Tutorial freeze overlay — MUST be last child to cover everything */}
@@ -2505,11 +2787,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  waterButtonText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
   centerContent: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -2556,28 +2833,92 @@ const styles = StyleSheet.create({
   quickEntryCals: {
     fontSize: 10,
   },
-  waterCard: {
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 15,
-    alignItems: 'center',
-    flex: 1,
-  },
-  waterButtonsContainer: {
-    flexDirection: 'row',
-    marginTop: 15,
-    gap: 10,
-  },
-  waterButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    flex: 1,
-  },
   waterButtonText: {
     color: '#fff',
     fontWeight: '600',
     textAlign: 'center',
     fontSize: 14,
+  },
+  rateGateOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  rateGateCard: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 20,
+    padding: 28,
+    alignItems: 'center',
+  },
+  rateGateTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  rateGateButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+    justifyContent: 'center',
+  },
+  rateGateButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rateGateButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  feedbackCard: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 20,
+    padding: 24,
+  },
+  feedbackTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  feedbackPrompt: {
+    fontSize: 14,
+    marginBottom: 16,
+  },
+  feedbackInput: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 15,
+    minHeight: 120,
+    marginBottom: 20,
+  },
+  thankYouCard: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 20,
+    padding: 28,
+    alignItems: 'center',
+  },
+  thankYouText: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  thankYouButton: {
+    paddingHorizontal: 50,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+    minWidth: 140,
   },
 });

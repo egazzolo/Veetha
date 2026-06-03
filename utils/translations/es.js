@@ -1249,4 +1249,22 @@ export default {
     otaReadyMessage: 'Hay una nueva versión lista. Reinicia la aplicación para aplicarla.',
     restart: 'Reiniciar',
   },
+  rateGate: {
+    title: '¿Estás disfrutando Veetha?',
+    yes: 'Sí',
+    no: 'No',
+    thankYouMessages: [
+      '¡Nos alegra escuchar eso! Esperamos que disfrutes las nuevas funciones que tenemos preparadas.',
+      '¡Genial! Gracias por el cariño — más cosas geniales en camino.',
+      '¡Eso nos alegra el día! Estamos trabajando duro para hacer Veetha aún mejor.',
+      '¡Gracias! Mantente atento — tenemos cosas emocionantes en marcha.',
+      '¡Eres lo máximo! No podemos esperar a compartir lo que viene.'
+    ],
+    feedbackTitle: 'Lamentamos que no estés disfrutando Veetha.',
+    feedbackPrompt: '¿Podrías ayudarnos a entender por qué?',
+    feedbackPlaceholder: 'Cuéntanos qué podemos mejorar...',
+    feedbackSubmit: 'Enviar comentarios',
+    feedbackCancel: 'Omitir',
+    feedbackThankYou: '¡Gracias por tus comentarios! Leemos cada mensaje.',
+  },
 }

@@ -1249,4 +1249,22 @@ export default {
     otaReadyMessage: 'A new version is ready. Restart the app to apply it.',
     restart: 'Restart',
   },
+  rateGate: {
+    title: 'Are you enjoying Veetha?',
+    yes: 'Yes',
+    no: 'No',
+    thankYouMessages: [
+      "We're happy to hear that! We hope you enjoy the new features we come up with.",
+      "Awesome! Thanks for the love — more cool stuff coming your way.",
+      "That makes our day! We're working hard to make Veetha even better.",
+      "Thank you! Stay tuned — we've got exciting things in the pipeline.",
+      "You're the best! We can't wait to share what's next."
+    ],
+    feedbackTitle: "We're sorry to hear you're not enjoying Veetha.",
+    feedbackPrompt: 'Could you please help us understand why?',
+    feedbackPlaceholder: 'Tell us what we can do better...',
+    feedbackSubmit: 'Send feedback',
+    feedbackCancel: 'Skip',
+    feedbackThankYou: 'Thank you for your feedback! We read every message.',
+  },
 }
