@@ -1157,10 +1157,8 @@ export default function HomeScreen({ navigation }) {
 
       // On first mount, baseline and set up retroactive flags
       if (initialMealCountRef.current === null) {
-        initialMealCountRef.current = totalMeals ?? 0;
-        ratePromptFiringRef.current = true;
-
-        const firstSeen = await AsyncStorage.getItem('rate_first_seen');
+          initialMealCountRef.current = totalMeals ?? 0;
+          const firstSeen = await AsyncStorage.getItem('rate_first_seen');
         if (!firstSeen && (totalMeals ?? 0) >= 3) {
           await AsyncStorage.setItem('rate_first_seen', new Date().toISOString());
         }
@@ -1238,10 +1236,11 @@ export default function HomeScreen({ navigation }) {
       if (!meal3Shown && totalMeals >= 3) {
         ratePromptFiringRef.current = true;
         await AsyncStorage.setItem('rate_meal3_shown', new Date().toISOString());
-        await supabase.from('feedback_signals').insert({
+        const { error: insErr } = await supabase.from('feedback_signals').insert({
           user_id: user.id,
           signal_type: 'meal3_prompt_shown',
         });
+        if (insErr) return; // Another parallel run already inserted; skip showing gate
         setCurrentTriggerSource('meal3');
         setRateGateVisible(true);
         return;
@@ -1254,10 +1253,11 @@ export default function HomeScreen({ navigation }) {
         const nowIso = new Date().toISOString();
         await AsyncStorage.setItem('rate_meal10_shown', nowIso);
         await AsyncStorage.setItem('rate_meal10_logged_at', nowIso);
-        await supabase.from('feedback_signals').insert({
+        const { error: insErr } = await supabase.from('feedback_signals').insert({
           user_id: user.id,
           signal_type: 'meal10_prompt_shown',
         });
+        if (insErr) return;
         setCurrentTriggerSource('meal10');
         setRateGateVisible(true);
         return;
@@ -1919,40 +1919,6 @@ export default function HomeScreen({ navigation }) {
                 </View>
 
                 {/*<StepsCard />*/}
-
-                <TouchableOpacity 
-                  onPress={async () => {
-                    await AsyncStorage.multiRemove([
-                      'rate_meal3_shown',
-                      'rate_meal10_shown',
-                      'rate_meal10_logged_at',
-                      'rate_post_update_pending',
-                      'rate_post_update_handled',
-                      'rate_last_bimonthly',
-                      'rate_first_seen'
-                    ]);
-                    Alert.alert('Wiped', 'Rate flags cleared.');
-                  }}
-                  style={{ padding: 10, backgroundColor: 'orange', margin: 10 }}
-                >
-                  <Text style={{ color: 'white' }}>WIPE RATE FLAGS</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity 
-                  onPress={async () => {
-                    const m3 = await AsyncStorage.getItem('rate_meal3_shown');
-                    const m10 = await AsyncStorage.getItem('rate_meal10_shown');
-                    const m10date = await AsyncStorage.getItem('rate_meal10_logged_at');
-                    const pu = await AsyncStorage.getItem('rate_post_update_pending');
-                    const puh = await AsyncStorage.getItem('rate_post_update_handled');
-                    const bm = await AsyncStorage.getItem('rate_last_bimonthly');
-                    const fs = await AsyncStorage.getItem('rate_first_seen');
-                    Alert.alert('Rate State', `meal3: ${m3}\nmeal10: ${m10}\nmeal10date: ${m10date}\npending: ${pu}\nhandled: ${puh}\nbimonthly: ${bm}\nfirstSeen: ${fs}`);
-                  }}
-                  style={{ padding: 10, backgroundColor: 'red', margin: 10 }}
-                >
-                  <Text style={{ color: 'white' }}>DEBUG RATE STATE</Text>
-                </TouchableOpacity>
 
                 {/* Meals List */}
                 <MealsList
