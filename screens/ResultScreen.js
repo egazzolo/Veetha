@@ -540,11 +540,28 @@ export default function ResultScreen({ route, navigation }) {
 
         console.log('🔍 Checking if food exists in database...');
 
-        const { data: existingProduct } = await supabase
-          .from('food_database')
-          .select('id')
-          .eq('name', food.product_name || food.name)
-          .maybeSingle();
+        const barcode = food.barcode || food.code;
+        let existingProduct = null;
+
+        // Check by barcode FIRST (more reliable than name)
+        if (barcode) {
+          const { data } = await supabase
+            .from('food_database')
+            .select('id')
+            .eq('barcode', barcode)
+            .maybeSingle();
+          existingProduct = data;
+        }
+
+        // Fallback to name lookup if barcode didn't match
+        if (!existingProduct && (food.product_name || food.name)) {
+          const { data } = await supabase
+            .from('food_database')
+            .select('id')
+            .eq('name', food.product_name || food.name)
+            .maybeSingle();
+          existingProduct = data;
+        }
 
         if (existingProduct) {
           productId = existingProduct.id;
