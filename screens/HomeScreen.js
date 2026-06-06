@@ -1209,9 +1209,13 @@ export default function HomeScreen({ navigation }) {
       // Trigger: post-update gate for existing power users (highest priority)
       const postUpdatePending = await AsyncStorage.getItem('rate_post_update_pending');
       if (postUpdatePending === 'true') {
+        const { error: insErr } = await supabase.from('feedback_signals').insert({
+          user_id: user.id,
+          signal_type: 'postUpdate_prompt_shown',
+        });
+        if (insErr) return;
         ratePromptFiringRef.current = true;
         const nowIso = new Date().toISOString();
-        // CRITICAL: clear pending flag FIRST so concurrent remounts don't re-fire
         await AsyncStorage.multiSet([
           ['rate_post_update_pending', ''],
           ['rate_post_update_handled', 'true'],
@@ -1219,13 +1223,6 @@ export default function HomeScreen({ navigation }) {
           ['rate_meal10_shown', nowIso],
           ['rate_meal10_logged_at', nowIso],
         ]);
-        // Re-check after the write — if another concurrent run already inserted, skip
-        const stillPending = await AsyncStorage.getItem('rate_post_update_pending');
-        if (stillPending === 'true') return;
-        await supabase.from('feedback_signals').insert({
-          user_id: user.id,
-          signal_type: 'postUpdate_prompt_shown',
-        });
         setCurrentTriggerSource('postUpdate');
         setRateGateVisible(true);
         return;
@@ -1234,13 +1231,14 @@ export default function HomeScreen({ navigation }) {
       // Trigger 1: meal 3
       const meal3Shown = await AsyncStorage.getItem('rate_meal3_shown');
       if (!meal3Shown && totalMeals >= 3) {
-        ratePromptFiringRef.current = true;
-        await AsyncStorage.setItem('rate_meal3_shown', new Date().toISOString());
+        // Insert first — DB unique constraint blocks duplicates
         const { error: insErr } = await supabase.from('feedback_signals').insert({
           user_id: user.id,
           signal_type: 'meal3_prompt_shown',
         });
-        if (insErr) return; // Another parallel run already inserted; skip showing gate
+        if (insErr) return;
+        ratePromptFiringRef.current = true;
+        await AsyncStorage.setItem('rate_meal3_shown', new Date().toISOString());
         setCurrentTriggerSource('meal3');
         setRateGateVisible(true);
         return;
@@ -1249,15 +1247,15 @@ export default function HomeScreen({ navigation }) {
       // Trigger 2: meal 10
       const meal10Shown = await AsyncStorage.getItem('rate_meal10_shown');
       if (!meal10Shown && totalMeals >= 10) {
-        ratePromptFiringRef.current = true;
-        const nowIso = new Date().toISOString();
-        await AsyncStorage.setItem('rate_meal10_shown', nowIso);
-        await AsyncStorage.setItem('rate_meal10_logged_at', nowIso);
         const { error: insErr } = await supabase.from('feedback_signals').insert({
           user_id: user.id,
           signal_type: 'meal10_prompt_shown',
         });
         if (insErr) return;
+        ratePromptFiringRef.current = true;
+        const nowIso = new Date().toISOString();
+        await AsyncStorage.setItem('rate_meal10_shown', nowIso);
+        await AsyncStorage.setItem('rate_meal10_logged_at', nowIso);
         setCurrentTriggerSource('meal10');
         setRateGateVisible(true);
         return;
@@ -1919,6 +1917,42 @@ export default function HomeScreen({ navigation }) {
                 </View>
 
                 {/*<StepsCard />*/}
+
+                <TouchableOpacity 
+                  onPress={async () => {
+                    await AsyncStorage.multiRemove([
+                      'rate_meal3_shown',
+                      'rate_meal10_shown',
+                      'rate_meal10_logged_at',
+                      'rate_post_update_pending',
+                      'rate_post_update_handled',
+                      'rate_last_bimonthly',
+                      'rate_first_seen',
+                      'rate_baseline_done'
+                    ]);
+                    Alert.alert('Wiped', 'Rate flags cleared.');
+                  }}
+                  style={{ padding: 10, backgroundColor: 'orange', margin: 10 }}
+                >
+                  <Text style={{ color: 'white' }}>WIPE RATE FLAGS</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  onPress={async () => {
+                    const m3 = await AsyncStorage.getItem('rate_meal3_shown');
+                    const m10 = await AsyncStorage.getItem('rate_meal10_shown');
+                    const m10date = await AsyncStorage.getItem('rate_meal10_logged_at');
+                    const pu = await AsyncStorage.getItem('rate_post_update_pending');
+                    const puh = await AsyncStorage.getItem('rate_post_update_handled');
+                    const bm = await AsyncStorage.getItem('rate_last_bimonthly');
+                    const fs = await AsyncStorage.getItem('rate_first_seen');
+                    const bd = await AsyncStorage.getItem('rate_baseline_done');
+                    Alert.alert('Rate State', `meal3: ${m3}\nmeal10: ${m10}\nmeal10date: ${m10date}\npending: ${pu}\nhandled: ${puh}\nbimonthly: ${bm}\nfirstSeen: ${fs}\nbaselineDone: ${bd}`);
+                  }}
+                  style={{ padding: 10, backgroundColor: 'red', margin: 10 }}
+                >
+                  <Text style={{ color: 'white' }}>DEBUG RATE STATE</Text>
+                </TouchableOpacity>
 
                 {/* Meals List */}
                 <MealsList
