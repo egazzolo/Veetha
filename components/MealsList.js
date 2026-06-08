@@ -7,6 +7,7 @@ export default function MealsList({
   theme,
   t,
   loading,
+  onImageUpload,
   meals,
   isToday,
   getDateLabel,
@@ -205,7 +206,15 @@ export default function MealsList({
               )}
 
               {/* Image Section */}
-              <View style={styles.imageSection}>
+              <TouchableOpacity 
+                style={styles.imageSection}
+                onPress={() => {
+                  if (!meal.image_url && !product.image_url && onImageUpload) {
+                    onImageUpload(meal);
+                  }
+                }}
+                activeOpacity={(meal.image_url || product.image_url) ? 1 : 0.6}
+              >
                 {(meal.image_url || product.image_url) ? (
                   <Image
                     source={{ uri: meal.image_url || product.image_url }}
@@ -213,9 +222,12 @@ export default function MealsList({
                     resizeMode="contain"
                   />
                 ) : (
-                  <Text style={styles.mealEmoji}>{product.emoji}</Text>
+                  <View style={styles.placeholderImage}>
+                    <Text style={styles.placeholderEmoji}>{product.emoji || '🍽️'}</Text>
+                    <Text style={styles.uploadHint}>+ Add Photo</Text>
+                  </View>
                 )}
-              </View>
+              </TouchableOpacity>
 
               {/* Product Name & Macros Section */}
               <View style={styles.infoSection}>
@@ -458,6 +470,11 @@ const styles = StyleSheet.create({
   },
   placeholderEmoji: { 
     fontSize: 40 
+  },
+  uploadHint: {
+    fontSize: 10,
+    color: '#888',
+    marginTop: 4,
   },
   infoSection: { 
     width: '42%', 

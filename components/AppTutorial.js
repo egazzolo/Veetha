@@ -404,7 +404,7 @@ export default function AppTutorial({
             steps.push({
               targetArea: editCoords,
               bubblePosition: {
-                top: editCoords.top + editCoords.height + 20,
+                top: editCoords.top + editCoords.height + 40,
                 left: 20,
                 maxWidth: width - 40,
               },
@@ -424,48 +424,52 @@ export default function AppTutorial({
           console.log('📏 goalsButton coords:', goalsCoords);
           
           if (goalsCoords) {
-            
-            const targetAfterScroll = {
-              top: goalsCoords.top,
-              left: goalsCoords.left,
-              width: goalsCoords.width,
-              height: goalsCoords.height,
-              borderRadius: 16,
-            };
-            
-            steps.push({
-              targetArea: targetAfterScroll,
-              bubblePosition: {
-                top: targetAfterScroll.top + targetAfterScroll.height + 20,  // BELOW the button
-                left: 20,
-                maxWidth: width - 40,
-              },
-              arrow: {
-                direction: 'up',  // Arrow points UP at button
-                position: (goalsCoords.left + goalsCoords.width / 2) - 20 - 15,
-              },
-              title: t('tutorial.profile.step3.title'),
-              content: t('tutorial.profile.step3.content'),
-              scrollTo: goalsCoords.top - 200,
-            });
-          }
+              const scrollAmount = goalsCoords.top - 200;
+              const targetAfterScroll = {
+                top: goalsCoords.top - scrollAmount,
+                left: goalsCoords.left,
+                width: goalsCoords.width,
+                height: goalsCoords.height,
+                borderRadius: 16,
+              };
+              
+              steps.push({
+                targetArea: targetAfterScroll,
+                bubblePosition: {
+                  top: targetAfterScroll.top + targetAfterScroll.height + 40,  // BELOW the button
+                  left: 20,
+                  maxWidth: width - 40,
+                },
+                arrow: {
+                  direction: 'up',  // Arrow points UP at button
+                  position: (goalsCoords.left + goalsCoords.width / 2) - 20 - 15,
+                },
+                title: t('tutorial.profile.step3.title'),
+                content: t('tutorial.profile.step3.content'),
+                scrollTo: scrollAmount,
+              });
+            }
         }
       
 
         // Step 4: Dietary Restrictions
-        if (tutorialRefs.dietaryButton?.current) {
-          const dietaryCoords = await measureComponent(tutorialRefs.dietaryButton.current);
-          console.log('📏 dietaryButton coords:', dietaryCoords);
-          
-          if (dietaryCoords) {
-            steps.push({
-              targetArea: {
-                top: dietaryCoords.top,
-                left: dietaryCoords.left,
-                width: dietaryCoords.width,
-                height: dietaryCoords.height,
-                borderRadius: 16,
-              },
+          if (tutorialRefs.dietaryButton?.current) {
+            const dietaryCoords = await measureComponent(tutorialRefs.dietaryButton.current);
+            console.log('📏 dietaryButton coords:', dietaryCoords);
+            
+            if (dietaryCoords) {
+              // Account for the scroll done in step 3
+              const goalsScrollAmount = tutorialRefs.goalsButton?.current 
+                ? (await measureComponent(tutorialRefs.goalsButton.current))?.top - 200 
+                : 0;
+              steps.push({
+                targetArea: {
+                  top: dietaryCoords.top - (goalsScrollAmount || 0),
+                  left: dietaryCoords.left,
+                  width: dietaryCoords.width,
+                  height: dietaryCoords.height,
+                  borderRadius: 16,
+                },
               bubblePosition: {
                 top: 40,  // ← Fixed position at top of screen
                 left: 20,
@@ -485,16 +489,20 @@ export default function AppTutorial({
         if (tutorialRefs.displaySettingsButton?.current) {
           const displayCoords = await measureComponent(tutorialRefs.displaySettingsButton.current);
           console.log('📏 displaySettingsButton coords:', displayCoords);
-          
-          if (displayCoords) {
-            steps.push({
-              targetArea: {
-                top: displayCoords.top,
-                left: displayCoords.left,
-                width: displayCoords.width,
-                height: displayCoords.height,
-                borderRadius: 16,
-              },
+            
+            if (displayCoords) {
+              // Account for the scroll done in step 3
+              const goalsScrollAmount = tutorialRefs.goalsButton?.current 
+                ? (await measureComponent(tutorialRefs.goalsButton.current))?.top - 200 
+                : 0;
+              steps.push({
+                targetArea: {
+                  top: displayCoords.top - (goalsScrollAmount || 0),
+                  left: displayCoords.left,
+                  width: displayCoords.width,
+                  height: displayCoords.height,
+                  borderRadius: 16,
+                },
               bubblePosition: {
                 top: 100,  // ← Fixed position at top of screen
                 left: 20,

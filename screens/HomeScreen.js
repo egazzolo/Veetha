@@ -1,6 +1,7 @@
 import StepsCard from '../components/StepsCard';
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Notifications from 'expo-notifications';
 import * as StoreReview from 'expo-store-review';
 import * as Location from 'expo-location';
@@ -27,6 +28,7 @@ import { getSuggestionsForMealTime, LOCAL_FOODS, DEFAULT_FOODS } from '../utils/
 import { Pedometer } from 'expo-sensors';
 import { Camera } from 'expo-camera';
 import { posthog } from '../utils/posthog';
+import { decode } from 'base64-arraybuffer';
 
 import AppTutorial from '../components/AppTutorial';
 import AnimatedThemeWrapper from '../components/AnimatedThemeWrapper';
@@ -1209,12 +1211,7 @@ export default function HomeScreen({ navigation }) {
       // Trigger: post-update gate for existing power users (highest priority)
       const postUpdatePending = await AsyncStorage.getItem('rate_post_update_pending');
       if (postUpdatePending === 'true') {
-        const { error: insErr } = await supabase.from('feedback_signals').insert({
-          user_id: user.id,
-          signal_type: 'postUpdate_prompt_shown',
-        });
-        if (insErr) return;
-        ratePromptFiringRef.current = true;
+        // Clear pending FIRST so it can't loop on subsequent runs
         const nowIso = new Date().toISOString();
         await AsyncStorage.multiSet([
           ['rate_post_update_pending', ''],
@@ -1223,6 +1220,12 @@ export default function HomeScreen({ navigation }) {
           ['rate_meal10_shown', nowIso],
           ['rate_meal10_logged_at', nowIso],
         ]);
+        const { error: insErr } = await supabase.from('feedback_signals').insert({
+          user_id: user.id,
+          signal_type: 'postUpdate_prompt_shown',
+        });
+        if (insErr) return; // Duplicate row from previous session, skip showing gate
+        ratePromptFiringRef.current = true;
         setCurrentTriggerSource('postUpdate');
         setRateGateVisible(true);
         return;
@@ -1266,7 +1269,10 @@ export default function HomeScreen({ navigation }) {
     };
 
     if (user) {
-      checkRatePrompts();
+      const timer = setTimeout(() => {
+        checkRatePrompts();
+      }, 500);
+      return () => clearTimeout(timer);
     }
   }, [user, meals.length, isGuestMode]);
 
@@ -1472,6 +1478,53 @@ export default function HomeScreen({ navigation }) {
   const handleMealLongPress = (meal) => {
     if (isGuestMode) { showGuestAlert(); return; }
     setMealActionModal({ visible: true, meal });
+  };
+
+  const handleMealImageUpload = async (meal) => {
+    if (isGuestMode) { showGuestAlert(); return; }
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+      if (result.canceled) return;
+      const localUri = result.assets[0].uri;
+
+      // Read file as base64 (RN's fetch+blob is unreliable for uploads)
+      const base64 = await FileSystem.readAsStringAsync(localUri, {
+        encoding: 'base64',
+      });
+
+      // Upload to Supabase Storage
+      const fileName = `${user.id}/${Date.now()}.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from('meal-images')
+        .upload(fileName, decode(base64), { contentType: 'image/jpeg' });
+      if (uploadError) {
+        Alert.alert('Upload failed', uploadError.message);
+        return;
+      }
+      const { data: publicUrlData } = supabase.storage
+        .from('meal-images')
+        .getPublicUrl(fileName);
+      const publicUrl = publicUrlData?.publicUrl;
+      if (!publicUrl) {
+        Alert.alert('Upload failed', 'Could not get public URL');
+        return;
+      }
+
+      // Save to meal row
+      await supabase
+        .from('meals')
+        .update({ image_url: publicUrl })
+        .eq('id', meal.id);
+
+      await loadMealsForDate(selectedDate);
+    } catch (err) {
+      Alert.alert('Error', err.message);
+    }
   };
 
   const handleMealToggle = (mealId) => {
@@ -1918,42 +1971,6 @@ export default function HomeScreen({ navigation }) {
 
                 {/*<StepsCard />*/}
 
-                <TouchableOpacity 
-                  onPress={async () => {
-                    await AsyncStorage.multiRemove([
-                      'rate_meal3_shown',
-                      'rate_meal10_shown',
-                      'rate_meal10_logged_at',
-                      'rate_post_update_pending',
-                      'rate_post_update_handled',
-                      'rate_last_bimonthly',
-                      'rate_first_seen',
-                      'rate_baseline_done'
-                    ]);
-                    Alert.alert('Wiped', 'Rate flags cleared.');
-                  }}
-                  style={{ padding: 10, backgroundColor: 'orange', margin: 10 }}
-                >
-                  <Text style={{ color: 'white' }}>WIPE RATE FLAGS</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity 
-                  onPress={async () => {
-                    const m3 = await AsyncStorage.getItem('rate_meal3_shown');
-                    const m10 = await AsyncStorage.getItem('rate_meal10_shown');
-                    const m10date = await AsyncStorage.getItem('rate_meal10_logged_at');
-                    const pu = await AsyncStorage.getItem('rate_post_update_pending');
-                    const puh = await AsyncStorage.getItem('rate_post_update_handled');
-                    const bm = await AsyncStorage.getItem('rate_last_bimonthly');
-                    const fs = await AsyncStorage.getItem('rate_first_seen');
-                    const bd = await AsyncStorage.getItem('rate_baseline_done');
-                    Alert.alert('Rate State', `meal3: ${m3}\nmeal10: ${m10}\nmeal10date: ${m10date}\npending: ${pu}\nhandled: ${puh}\nbimonthly: ${bm}\nfirstSeen: ${fs}\nbaselineDone: ${bd}`);
-                  }}
-                  style={{ padding: 10, backgroundColor: 'red', margin: 10 }}
-                >
-                  <Text style={{ color: 'white' }}>DEBUG RATE STATE</Text>
-                </TouchableOpacity>
-
                 {/* Meals List */}
                 <MealsList
                   theme={theme}
@@ -1975,6 +1992,7 @@ export default function HomeScreen({ navigation }) {
                   onToggleSelection={toggleMealSelection}
                   onCancelSelection={cancelSelection}
                   onConfirmDelete={() => setBulkDeleteModalVisible(true)}
+                  onImageUpload={handleMealImageUpload}
                 />
               </ScrollView>
 

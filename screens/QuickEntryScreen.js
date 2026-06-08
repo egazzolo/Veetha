@@ -239,6 +239,7 @@ Values are for the total amount described. Be accurate, not inflated.`
           name: mealName.trim(),
           calories: parseFloat(calories),
           protein: parseFloat(protein) || 0,
+          emoji: '🍽️',
           carbs: parseFloat(carbs) || 0,
           fat: parseFloat(fat) || 0,
           fiber: 0,

@@ -67,14 +67,24 @@ Be specific based on visual appearance — dark brown baked goods are chocolate 
     if (foods.length === 0) throw new Error('No food detected');
 
     const primary = foods[0];
+    // Calculate total meal macros by summing each food's actual contribution (per 100g × serving / 100)
+    const totalCalories = foods.reduce((sum, f) => sum + ((f.calories_per_100g || 0) * (f.typical_serving_grams || 100) / 100), 0);
+    const totalProtein = foods.reduce((sum, f) => sum + ((f.protein_per_100g || 0) * (f.typical_serving_grams || 100) / 100), 0);
+    const totalCarbs = foods.reduce((sum, f) => sum + ((f.carbs_per_100g || 0) * (f.typical_serving_grams || 100) / 100), 0);
+    const totalFat = foods.reduce((sum, f) => sum + ((f.fat_per_100g || 0) * (f.typical_serving_grams || 100) / 100), 0);
+    const totalServingGrams = foods.reduce((sum, f) => sum + (f.typical_serving_grams || 100), 0);
+    
+    // Normalize back to per-100g so the rest of the app's serving-size math still works
+    const ratio = totalServingGrams > 0 ? 100 / totalServingGrams : 1;
+    
     return {
       foodName: foods.length === 1 ? primary.food_name : (parsed.whole_meal_name || primary.food_name),
       confidence: primary.confidence,
-      calories: foods.reduce((sum, f) => sum + (f.calories_per_100g || 0), 0) / foods.length,
-      protein: foods.reduce((sum, f) => sum + (f.protein_per_100g || 0), 0) / foods.length,
-      carbs: foods.reduce((sum, f) => sum + (f.carbs_per_100g || 0), 0) / foods.length,
-      fat: foods.reduce((sum, f) => sum + (f.fat_per_100g || 0), 0) / foods.length,
-      typicalServing: primary.typical_serving_grams || 100,
+      calories: totalCalories * ratio,
+      protein: totalProtein * ratio,
+      carbs: totalCarbs * ratio,
+      fat: totalFat * ratio,
+      typicalServing: foods.length === 1 ? (primary.typical_serving_grams || 100) : totalServingGrams,
       individualFoods: foods,
       topSuggestions: foods.map(f => ({ name: f.food_name, confidence: f.confidence })),
       allConcepts: foods.map(f => ({ name: f.food_name, confidence: f.confidence })),
