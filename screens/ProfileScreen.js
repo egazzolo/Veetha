@@ -118,6 +118,13 @@ export default function ProfileScreen({ navigation }) {
             statsGridRef.current !== null &&
             editButtonRef.current !== null &&
             goalsButtonRef.current !== null;
+          
+          console.log('🔍 Tutorial refs check:', {
+            statsGrid: statsGridRef.current !== null,
+            editButton: editButtonRef.current !== null,
+            goalsButton: goalsButtonRef.current !== null,
+            checkCount,
+          });
 
           if (refsReady) {
             setCheckingTutorial(false);

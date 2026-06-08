@@ -6,6 +6,7 @@ import { useOnboarding } from '../../utils/OnboardingContext';
 import { supabase } from '../../utils/supabase';
 import { useLanguage } from '../../utils/LanguageContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTutorial } from '../../utils/TutorialContext';
 import { scale } from '../../utils/responsive';
 
 export default function OnboardingComplete({ navigation }) {
@@ -14,6 +15,7 @@ export default function OnboardingComplete({ navigation }) {
   const [calculatedCalories, setCalculatedCalories] = useState(null);
   const [processing, setProcessing] = useState(false);
   const { refreshProfile } = useUser();
+  const { resetTutorial } = useTutorial();
 
   useEffect(() => {
     console.log('📋 OnboardingComplete - Data received:', onboardingData);
@@ -183,10 +185,26 @@ export default function OnboardingComplete({ navigation }) {
         }
         
         // Clear temporary credentials
-        await AsyncStorage.removeItem('pendingUserEmail');
-        await AsyncStorage.removeItem('pendingUserPassword');
-        await AsyncStorage.removeItem('greeting_shown');
-        await AsyncStorage.removeItem('last_app_open');
+        await AsyncStorage.multiRemove([
+          'pendingUserEmail',
+          'pendingUserPassword',
+          'greeting_shown',
+          'last_app_open',
+          'tutorial_completed',
+          'home_tutorial_completed',
+          'profile_tutorial_completed',
+          'scanner_tutorial_completed',
+          'tutorial_ever_shown',
+          'rate_meal3_shown',
+          'rate_meal10_shown',
+          'rate_meal10_logged_at',
+          'rate_post_update_pending',
+          'rate_post_update_handled',
+          'rate_last_bimonthly',
+          'rate_first_seen',
+          'rate_baseline_done',
+        ]);
+        await resetTutorial();
         
         // Refresh UserContext
         await refreshProfile();
@@ -256,13 +274,28 @@ export default function OnboardingComplete({ navigation }) {
     try {
       console.log('💾 Saving profile for user:', user.email);
 
-      // Clear temporary credentials
-      await AsyncStorage.removeItem('pendingUserEmail');
-      await AsyncStorage.removeItem('pendingUserPassword');
+      // Clear temporary credentials AND tutorial/rate flags for fresh user
+      await AsyncStorage.multiRemove([
+        'pendingUserEmail',
+        'pendingUserPassword',
+        'greeting_shown',
+        'last_app_open',
+        'tutorial_completed',
+        'home_tutorial_completed',
+        'profile_tutorial_completed',
+        'scanner_tutorial_completed',
+        'tutorial_ever_shown',
+        'rate_meal3_shown',
+        'rate_meal10_shown',
+        'rate_meal10_logged_at',
+        'rate_post_update_pending',
+        'rate_post_update_handled',
+        'rate_last_bimonthly',
+        'rate_first_seen',
+        'rate_baseline_done',
+      ]);
 
-      // Clear greeting cache for new user
-      await AsyncStorage.removeItem('greeting_shown');
-      await AsyncStorage.removeItem('last_app_open');
+      await resetTutorial();
 
       // Calculate daily calorie goal
       const dailyCalorieGoal = calculateDailyCalories(onboardingData);

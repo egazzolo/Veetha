@@ -184,8 +184,21 @@ export const TutorialProvider = ({ children }) => {
 
       await supabase
         .from('profiles')
-        .update({ tutorial_completed: false })
+        .update({ 
+          tutorial_completed: false,
+          home_tutorial_completed: false,
+          scanner_tutorial_completed: false,
+          profile_tutorial_completed: false,
+        })
         .eq('id', user.id);
+
+      await AsyncStorage.multiRemove([
+        'tutorial_completed',
+        'home_tutorial_completed',
+        'profile_tutorial_completed',
+        'scanner_tutorial_completed',
+        'tutorial_ever_shown',
+      ]);
 
       setTutorialCompleted(false);
       setCurrentScreen(null);
