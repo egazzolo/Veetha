@@ -312,33 +312,33 @@ export default function MealsList({
               <View style={styles.postItDivider} />
               <View style={styles.postItMacros}>
                 <View style={styles.postItMacroRow}>
-                  <Text style={styles.postItMacroEmoji}>💪</Text>
-                  <Text style={styles.postItMacroLabel}>{t('home.mealsList.protein')}:</Text>
+                  <AppIcon name="protein" size={16} tintColor="#A0522D" style={{ marginRight: 4 }} />
+                    <Text style={styles.postItMacroLabel}>{t('home.mealsList.protein')}:</Text>
                   <Text style={styles.postItMacroValue}>{Math.round(selectedMeal?.protein || 0)}g</Text>
                 </View>
                 <View style={styles.postItMacroRow}>
-                  <Text style={styles.postItMacroEmoji}>🌾</Text>
-                  <Text style={styles.postItMacroLabel}>{t('home.mealsList.carbs')}:</Text>
+                  <AppIcon name="carbs" size={16} tintColor="#DAA520" style={{ marginRight: 4 }} />
+                    <Text style={styles.postItMacroLabel}>{t('home.mealsList.carbs')}:</Text>
                   <Text style={styles.postItMacroValue}>{Math.round(selectedMeal?.carbs || 0)}g</Text>
                 </View>
                 <View style={styles.postItMacroRow}>
-                  <Text style={styles.postItMacroEmoji}>🥑</Text>
-                  <Text style={styles.postItMacroLabel}>{t('home.mealsList.fat')}:</Text>
+                  <AppIcon name="fat" size={16} tintColor="#1F9B39" style={{ marginRight: 4 }} />
+                    <Text style={styles.postItMacroLabel}>{t('home.mealsList.fat')}:</Text>
                   <Text style={styles.postItMacroValue}>{Math.round(selectedMeal?.fat || 0)}g</Text>
                 </View>
                 <View style={styles.postItMacroRow}>
-                  <Text style={styles.postItMacroEmoji}>🧂</Text>
-                  <Text style={styles.postItMacroLabel}>{t('home.mealsList.sodium')}:</Text>
+                  <AppIcon name="sodium" size={16} tintColor="#607D8B" style={{ marginRight: 4 }} />
+                    <Text style={styles.postItMacroLabel}>{t('home.mealsList.sodium')}:</Text>
                   <Text style={styles.postItMacroValue}>{Math.round(selectedMeal?.sodium || 0)}mg</Text>
                 </View>
                 <View style={styles.postItMacroRow}>
-                  <Text style={styles.postItMacroEmoji}>🍬</Text>
-                  <Text style={styles.postItMacroLabel}>{t('home.mealsList.sugar')}:</Text>
+                  <AppIcon name="sugar" size={16} tintColor="#E91E63" style={{ marginRight: 4 }} />
+                    <Text style={styles.postItMacroLabel}>{t('home.mealsList.sugar')}:</Text>
                   <Text style={styles.postItMacroValue}>{Math.round(selectedMeal?.sugar || 0)}g</Text>
                 </View>
                 <View style={styles.postItMacroRow}>
-                  <Text style={styles.postItMacroEmoji}>🌿</Text>
-                  <Text style={styles.postItMacroLabel}>{t('home.mealsList.fiber')}:</Text>
+                  <AppIcon name="fiber" size={16} tintColor="#4CAF50" style={{ marginRight: 4 }} />
+                    <Text style={styles.postItMacroLabel}>{t('home.mealsList.fiber')}:</Text>
                   <Text style={styles.postItMacroValue}>{Math.round(selectedMeal?.fiber || 0)}g</Text>
                 </View>
               </View>

@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, TextInput, TouchableOpacity, ActivityIndicator,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase, createSessionFromUrl } from '../../utils/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getDeviceId, checkSignupAbuse, recordSignup } from '../../utils/trialAndAbuse';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import * as AppleAuthentication from 'expo-apple-authentication';
@@ -209,9 +210,31 @@ export default function SignUpScreen({ navigation }) {
           }
         }
 
-        // Save credentials temporarily for later verification
-        await AsyncStorage.setItem('pendingUserEmail', email.trim().toLowerCase());
-        await AsyncStorage.setItem('pendingUserPassword', password);
+        // Abuse check + record signup for trial gating
+          try {
+            const cleanEmail = email.trim().toLowerCase();
+            const deviceId = await getDeviceId();
+            const { grantTrial, abuseLevel, blocked } = await checkSignupAbuse(cleanEmail, deviceId);
+            await recordSignup(cleanEmail, deviceId, grantTrial, abuseLevel);
+
+            // Set trial_ends_at on profile
+            const trialEndsAt = grantTrial 
+              ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+              : new Date(0).toISOString();
+            await supabase
+              .from('profiles')
+              .update({ trial_ends_at: trialEndsAt, is_premium: false })
+              .eq('id', data.user.id);
+
+            console.log(`🎁 Trial granted: ${grantTrial}, abuse level: ${abuseLevel}, blocked: ${blocked}`);
+          } catch (abuseErr) {
+            console.error('Abuse check failed (non-fatal):', abuseErr);
+            // On error, don't block signup — user gets default free tier
+          }
+
+          // Save credentials temporarily for later verification
+          await AsyncStorage.setItem('pendingUserEmail', email.trim().toLowerCase());
+          await AsyncStorage.setItem('pendingUserPassword', password);
 
         console.log('💾 Credentials saved for verification step');
 

@@ -11,6 +11,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as XLSX from 'xlsx';
 import * as MediaLibrary from 'expo-media-library';
 import * as IntentLauncher from 'expo-intent-launcher';
+import AppIcon from '../components/AppIcon';
 
 export default function ExportReportScreen({ navigation }) {
   const { theme } = useTheme();
@@ -436,7 +437,7 @@ export default function ExportReportScreen({ navigation }) {
             <ActivityIndicator color="#fff" />
           ) : (
             <>
-              <Text style={styles.bigButtonIcon}>📥</Text>
+              <AppIcon name="export" size={48} style={{ marginBottom: 10 }} />
               <Text style={styles.bigButtonText}>
                 {t('stats.exportReport.startExport')}
               </Text>
@@ -479,18 +480,20 @@ export default function ExportReportScreen({ navigation }) {
                 style={[styles.modalButton, { backgroundColor: theme.primary }]}
                 onPress={() => handlePeriodSelect('weekly')}
               >
-                <Text style={styles.modalButtonText}>
-                  📅 {t('stats.exportReport.last7Days')}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                  <AppIcon name="chart" size={20} style={{ marginRight: 8 }} />
+                  <Text style={styles.modalButtonText}>{t('stats.exportReport.last7Days')}</Text>
+                </View>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: theme.primary }]}
                 onPress={() => handlePeriodSelect('monthly')}
               >
-                <Text style={styles.modalButtonText}>
-                  📆 {t('stats.exportReport.currentMonth')}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                  <AppIcon name="chart" size={20} style={{ marginRight: 8 }} />
+                  <Text style={styles.modalButtonText}>{t('stats.exportReport.currentMonth')}</Text>
+                </View>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -528,18 +531,20 @@ export default function ExportReportScreen({ navigation }) {
                 style={[styles.modalButton, { backgroundColor: '#E53935' }]}
                 onPress={() => handleFormatSelect('pdf')}
               >
-                <Text style={styles.modalButtonText}>
-                  📄 {t('stats.exportReport.pdfReport')}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                  <AppIcon name="document" size={20} style={{ marginRight: 8 }} />
+                  <Text style={styles.modalButtonText}>{t('stats.exportReport.pdfReport')}</Text>
+                </View>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: '#43A047' }]}
                 onPress={() => handleFormatSelect('excel')}
               >
-                <Text style={styles.modalButtonText}>
-                  📊 {t('stats.exportReport.excelSpreadsheet')}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                  <AppIcon name="chart" size={20} style={{ marginRight: 8 }} />
+                  <Text style={styles.modalButtonText}>{t('stats.exportReport.excelSpreadsheet')}</Text>
+                </View>
               </TouchableOpacity>
 
               <TouchableOpacity

@@ -194,7 +194,7 @@ export const TutorialProvider = ({ children }) => {
 
       await AsyncStorage.multiRemove([
         'tutorial_completed',
-        'home_tutorial_completed',
+        'tutorial_completed_home',
         'profile_tutorial_completed',
         'scanner_tutorial_completed',
         'tutorial_ever_shown',

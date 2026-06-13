@@ -22,6 +22,7 @@ import BottomNav from '../components/BottomNav';
 import { useTutorial } from '../utils/TutorialContext';
 import AppTutorial from '../components/AppTutorial';
 import * as ImagePicker from 'expo-image-picker';
+import AppIcon from '../components/AppIcon';
 
 export default function ProfileScreen({ navigation }) {
 
@@ -67,8 +68,9 @@ export default function ProfileScreen({ navigation }) {
     }
   }, [profile]);
 
-  // Start Profile tutorial on first visit
-  useEffect(() => {
+  // Start Profile tutorial on first visit to this screen
+  useFocusEffect(
+    React.useCallback(() => {
     // Guests never see tutorials
     if (isGuest) {
       setCheckingTutorial(false);
@@ -153,7 +155,9 @@ export default function ProfileScreen({ navigation }) {
       cancelled = true;
       if (timerId) clearTimeout(timerId);
     };
-  }, [isGuest]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isGuest])
+  );
 
   const userStats = React.useMemo(() => ({
     age: profile?.age || 0,
@@ -364,7 +368,7 @@ export default function ProfileScreen({ navigation }) {
                         <Text style={styles.avatarText}>
                           {userName.charAt(0).toUpperCase()}
                         </Text>
-                        <Text style={styles.avatarCameraIcon}>📷</Text>
+                        <AppIcon name="camera" size={20} />
                       </>
                     )}
                   </View>
@@ -450,7 +454,7 @@ export default function ProfileScreen({ navigation }) {
                 
                 <View style={[styles.settingItem, { backgroundColor: theme.cardBackground }]}>
                   <View style={styles.settingLeft}>
-                    <Text style={styles.settingIcon}>🌙</Text>
+                    <AppIcon name="moon" size={24} style={{ marginRight: 15 }} />
                     <Text style={[styles.settingLabel, { color: theme.text }]}>{t('profile.darkMode')}</Text>
                   </View>
                   <Switch
@@ -483,7 +487,7 @@ export default function ProfileScreen({ navigation }) {
                   onPress={() => navigation.navigate('GoalsPreferences')}
                 >
                   <View style={styles.settingLeft}>
-                    <Text style={styles.settingIcon}>🎯</Text>
+                    <AppIcon name="target" size={24} style={{ marginRight: 15 }} />
                     <Text style={[styles.settingLabel, { color: theme.text }]}>{t('profile.goalsPreferences')}</Text>
                   </View>
                   <Text style={styles.settingArrow}>›</Text>
@@ -511,7 +515,7 @@ export default function ProfileScreen({ navigation }) {
                   onPress={() => navigation.navigate('DietaryRestrictions')}
                 >
                   <View style={styles.settingLeft}>
-                    <Text style={styles.settingIcon}>🍽️</Text>
+                    <AppIcon name="fork_knife" size={24} style={{ marginRight: 15 }} />
                     <Text style={[styles.settingLabel, { color: theme.text }]}>{t('profile.dietaryRestrictions')}</Text>
                   </View>
                   <Text style={styles.settingArrow}>›</Text>
@@ -542,7 +546,7 @@ export default function ProfileScreen({ navigation }) {
                   style={[styles.menuItem, { backgroundColor: theme.cardBackground }]}
                   onPress={() => navigation.navigate('DisplaySettings')}
                 >
-                  <Text style={styles.menuIcon}>🎨</Text>
+                  <AppIcon name="palette" size={24} style={{ marginRight: 15 }} />
                   <View style={styles.menuContent}>
                     <Text style={[styles.menuLabel, { color: theme.text }]}>{t('profile.displaySettingsButton')}</Text>
                     <Text style={[styles.menuDescription, { color: theme.textSecondary }]}>
@@ -560,7 +564,7 @@ export default function ProfileScreen({ navigation }) {
                 
                 <TouchableOpacity style={[styles.settingItem, { backgroundColor: theme.cardBackground, display: 'none' }]} onPress={handleLearnMore}>
                   <View style={styles.settingLeft}>
-                    <Text style={styles.settingIcon}>📚</Text>
+                    <AppIcon name="book" size={24} style={{ marginRight: 15 }} />
                     <Text style={[styles.settingLabel, { color: theme.text }]}>{t('profile.learnMore')}</Text>
                   </View>
                   <Text style={styles.settingArrow}>›</Text>
@@ -568,7 +572,7 @@ export default function ProfileScreen({ navigation }) {
 
                 <TouchableOpacity style={[styles.settingItem, { backgroundColor: theme.cardBackground }]} onPress={handleSupport}>
                   <View style={styles.settingLeft}>
-                    <Text style={styles.settingIcon}>💬</Text>
+                    <AppIcon name="chat" size={24} style={{ marginRight: 15 }} />
                     <Text style={[styles.settingLabel, { color: theme.text }]}>{t('profile.helpSupport')}</Text>
                   </View>
                   <Text style={styles.settingArrow}>›</Text>
@@ -579,7 +583,7 @@ export default function ProfileScreen({ navigation }) {
                   onPress={() => navigation.navigate('PrivacyPolicy', { initialTab: 'privacy' })}
                 >
                   <View style={styles.settingLeft}>
-                    <Text style={styles.settingIcon}>🔒</Text>
+                    <AppIcon name="lock" size={24} style={{ marginRight: 15 }} />
                     <Text style={[styles.settingLabel, { color: theme.text }]}>{t('profile.privacyPolicy')}</Text>
                   </View>
                   <Text style={styles.settingArrow}>›</Text>
@@ -590,7 +594,7 @@ export default function ProfileScreen({ navigation }) {
                   onPress={() => navigation.navigate('PrivacyPolicy', { initialTab: 'terms' })} 
                 >
                   <View style={styles.settingLeft}>
-                    <Text style={styles.settingIcon}>📄</Text>
+                    <AppIcon name="document" size={24} style={{ marginRight: 15 }} />
                     <Text style={[styles.settingLabel, { color: theme.text }]}>{t('profile.termsOfService')}</Text>
                   </View>
                   <Text style={styles.settingArrow}>›</Text>
@@ -601,7 +605,7 @@ export default function ProfileScreen({ navigation }) {
               <View style={styles.section}>
                 <TouchableOpacity style={[styles.settingItem, { backgroundColor: theme.cardBackground }]}>
                   <View style={styles.settingLeft}>
-                    <Text style={styles.settingIcon}>ℹ️</Text>
+                    <AppIcon name="info" size={24} style={{ marginRight: 15 }} />
                     <Text style={[styles.settingLabel, { color: theme.text }]}>{t('profile.aboutVeetha')}</Text>
                   </View>
                   <Text style={styles.settingArrow}>›</Text>
@@ -625,7 +629,10 @@ export default function ProfileScreen({ navigation }) {
                   style={[styles.deleteButton, { backgroundColor: theme.error || '#ff3b30' }]}
                   onPress={handleDeleteAccount}
                 >
-                  <Text style={styles.deleteButtonText}>🗑️ Delete Account</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                    <AppIcon name="trash" size={18} />
+                    <Text style={[styles.deleteButtonText, { marginLeft: 8 }]}>Delete Account</Text>
+                  </View>
                 </TouchableOpacity>
               )}
 

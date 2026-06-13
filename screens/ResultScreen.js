@@ -17,6 +17,7 @@ import { blockIfGuest } from '../utils/guestBlock';
 import { logMealLogged } from '../utils/analytics';
 import { posthog } from '../utils/posthog';
 import { searchFood } from '../utils/foodDatabase';
+import AppIcon from '../components/AppIcon';
 
 const detectServingUnit = (productName = '', servingSize) => {
   const nameLower = String(productName || '').toLowerCase();
@@ -109,27 +110,27 @@ function AutoSizedText({ value, baseSize = 48, minSize = 12, style }) {
 function NutrientModal({ visible, nutrient, onClose, t }) {
   const nutrientInfo = {
     calories: {
-      icon: '🔥',
+      icon: 'streak',
       title: 'Calories',
       description: 'Unit of energy from food. Your body burns calories constantly - even while sleeping - to power your heart, lungs, brain, digestion, and movement.'
     },
     protein: {
-      icon: '💪',
+      icon: 'protein',
       title: 'Protein',
       description: 'Builds and repairs muscles, bones, and skin. Also makes enzymes and hormones. Helps you feel full longer after meals.'
     },
     carbs: {
-      icon: '🌾',
+      icon: 'carbs',
       title: 'Carbohydrates',
       description: 'Your body\'s preferred fuel source, especially for your brain and during exercise. Includes sugars (quick energy), starches (sustained energy), and fiber (aids digestion).'
     },
     fat: {
-      icon: '🥑',
+      icon: 'fat',
       title: 'Fat',
       description: 'Essential for absorbing vitamins A, D, E, and K. Makes hormones, protects organs, and insulates your body. Provides long-lasting energy.'
     },
     sugar: {
-      icon: '🍬',
+      icon: 'sugar',
       title: 'Sugars',
       description: 'A type of carbohydrate that gives quick energy. Natural sugars come from fruit and milk. Added sugars are put in during processing.'
     }
@@ -150,11 +151,22 @@ function NutrientModal({ visible, nutrient, onClose, t }) {
         onPress={onClose}
       >
         <TouchableOpacity 
+          style={styles.nutrientModalContent}
           activeOpacity={1}
           onPress={(e) => e.stopPropagation()}
         >
-          <View style={styles.nutrientModalContent}>
-            <Text style={styles.nutrientIcon}>{info.icon}</Text>
+          <AppIcon 
+            name={info.icon === 'fat' ? 'avocado_clr' : info.icon}
+            size={60} 
+            tintColor={info.icon === 'fat' ? undefined : ({
+              streak: '#FF6B35',
+              protein: '#A0522D',
+              carbs: '#DAA520',
+              sugar: '#E91E63',
+              sodium: '#607D8B',
+              fiber: '#4CAF50',
+            })[info.icon] || '#1F9B39'}
+          />
             <Text style={styles.modalTitle}>{info.title}</Text>
             <Text style={styles.modalText}>{info.description}</Text>
             <TouchableOpacity 
@@ -163,7 +175,6 @@ function NutrientModal({ visible, nutrient, onClose, t }) {
             >
               <Text style={styles.modalButtonText}>{t('results.gotIt')}</Text>
             </TouchableOpacity>
-          </View>
         </TouchableOpacity>
       </TouchableOpacity>
     </Modal>
@@ -876,9 +887,12 @@ export default function ResultScreen({ route, navigation }) {
 
               {route.params?.fromMode === 'photo' && (
                 <TouchableOpacity onPress={() => setShowWrongFoodModal(true)} style={{ marginTop: 6 }}>
-                  <Text style={{ color: '#4CAF50', fontWeight: '600', textAlign: 'center' }}>
-                    ✏️ {t('results.wrongFood')}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                    <AppIcon name="edit" size={16} style={{ marginRight: 6 }} />
+                    <Text style={{ color: '#4CAF50', fontWeight: '600', textAlign: 'center' }}>
+                      {t('results.wrongFood')}
+                    </Text>
+                  </View>
                 </TouchableOpacity>
               )}
             </View>
@@ -914,22 +928,34 @@ export default function ResultScreen({ route, navigation }) {
             {/* Macro Badges Overlay */}
             <View style={styles.macroBadgesContainer}>
               <View style={[styles.macroBadge, { backgroundColor: '#4CAF50' }]}>
-                <Text style={styles.macroBadgeLabel}>🔥{t('results.caloriesInfo')}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <AppIcon name="streak" size={16} tintColor="#FFFFFF" style={{ marginRight: 4 }} />
+                  <Text style={styles.macroBadgeLabel}>{t('results.caloriesInfo')}</Text>
+                </View>
                 <Text style={styles.macroBadgeValue}>{nutritionValues.calories}</Text>
               </View>
               
               <View style={[styles.macroBadge, { backgroundColor: '#2196F3' }]}>
-                <Text style={styles.macroBadgeLabel}>💪 {t('results.protein')}: </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <AppIcon name="protein" size={16} tintColor="#FFFFFF" style={{ marginRight: 4 }} />
+                  <Text style={styles.macroBadgeLabel}>{t('results.protein')}: </Text>
+                </View>
                 <Text style={styles.macroBadgeValue}>{nutritionValues.protein}g</Text>
               </View>
               
               <View style={[styles.macroBadge, { backgroundColor: '#FF9800' }]}>
-                <Text style={styles.macroBadgeLabel}>🌾 {t('results.carbs')}: </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <AppIcon name="carbs" size={16} tintColor="#FFFFFF" style={{ marginRight: 4 }} />
+                  <Text style={styles.macroBadgeLabel}>{t('results.carbs')}: </Text>
+                </View>
                 <Text style={styles.macroBadgeValue}>{nutritionValues.carbs}g</Text>
               </View>
               
               <View style={[styles.macroBadge, { backgroundColor: '#9C27B0' }]}>
-                <Text style={styles.macroBadgeLabel}>🥑 {t('results.fat')}: </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <AppIcon name="fat" size={16} tintColor="#FFFFFF" style={{ marginRight: 4 }} />
+                  <Text style={styles.macroBadgeLabel}>{t('results.fat')}: </Text>
+                </View>
                 <Text style={styles.macroBadgeValue}>{nutritionValues.fat}g</Text>
               </View>
             </View>
@@ -1152,9 +1178,12 @@ export default function ResultScreen({ route, navigation }) {
                         style={{ marginTop: 6 }}
                         onPress={() => setShowWrongFoodModal(true)}  // ✅ Correct
                       >
-                        <Text style={{ color: '#2196F3', fontWeight: '600' }}>
-                          ✏️ {t('results.wrongFood')}
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <AppIcon name="edit" size={16} style={{ marginRight: 6 }} />
+                          <Text style={{ color: '#2196F3', fontWeight: '600' }}>
+                            {t('results.wrongFood')}
+                          </Text>
+                        </View>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -1164,7 +1193,10 @@ export default function ResultScreen({ route, navigation }) {
                       style={styles.photoModeButton}
                       onPress={() => setViewMode('photo')}
                     >
-                      <Text style={styles.photoModeButtonText}>📸 {t('results.photoView')}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                        <AppIcon name="camera" size={16} tintColor="#FFFFFF" style={{ marginRight: 6 }} />
+                        <Text style={styles.photoModeButtonText}>{t('results.photoView')}</Text>
+                      </View>
                     </TouchableOpacity>
                   )}
                   
@@ -1185,7 +1217,10 @@ export default function ResultScreen({ route, navigation }) {
                             });
                           }}
                         >
-                          <Text style={styles.logMealButtonText}>📸 {t('results.submitProduct')}</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                            <AppIcon name="camera" size={18} tintColor="#FFFFFF" style={{ marginRight: 8 }} />
+                            <Text style={styles.logMealButtonText}>{t('results.submitProduct')}</Text>
+                          </View>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -1193,7 +1228,10 @@ export default function ResultScreen({ route, navigation }) {
                             setShowWrongFoodModal(true);
                           }}
                         >
-                          <Text>✏️ {t('results.wrongFood')}</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <AppIcon name="edit" size={16} style={{ marginRight: 6 }} />
+                            <Text>{t('results.wrongFood')}</Text>
+                          </View>
                         </TouchableOpacity>
 
                         <TouchableOpacity 
@@ -1355,13 +1393,25 @@ export default function ResultScreen({ route, navigation }) {
                       {/* Detailed Nutrition Facts */}
                       {showDetails && (
                         <View style={styles.detailsCard}>
-                          <Text style={styles.detailItem}>🍭 {t('results.sugar')}: {nutritionValues.sugar !== "N/A" ? nutritionValues.sugar + "g" : "N/A"}</Text>
-                          <Text style={styles.detailItem}>🌾 {t('results.fiber')}: {nutritionValues.fiber !== "N/A" ? nutritionValues.fiber + "g" : "N/A"}</Text>
-                          <Text style={styles.detailItem}>🧂 {t('results.sodium')}: {nutritionValues.sodium !== "N/A" ? nutritionValues.sodium + (nutritionValues.sodium.includes('mg') ? '' : 'g') : "N/A"}</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                            <AppIcon name="sugar" size={16} tintColor="#E91E63" style={{ marginRight: 6 }} />
+                            <Text style={styles.detailItem}>{t('results.sugar')}: {nutritionValues.sugar !== "N/A" ? nutritionValues.sugar + "g" : "N/A"}</Text>
+                          </View>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                            <AppIcon name="fiber" size={16} tintColor="#4CAF50" style={{ marginRight: 6 }} />
+                            <Text style={styles.detailItem}>{t('results.fiber')}: {nutritionValues.fiber !== "N/A" ? nutritionValues.fiber + "g" : "N/A"}</Text>
+                          </View>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                            <AppIcon name="sodium" size={16} tintColor="#607D8B" style={{ marginRight: 6 }} />
+                            <Text style={styles.detailItem}>{t('results.sodium')}: {nutritionValues.sodium !== "N/A" ? nutritionValues.sodium + (nutritionValues.sodium.includes('mg') ? '' : 'g') : "N/A"}</Text>
+                          </View>
                           <View style={styles.standardizedInfo}>
-                            <Text style={styles.standardizedText}>
-                              📏 {t('results.valuesShownPer').replace('{grams}', servingGrams)}
-                            </Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                              <AppIcon name="measuring_spoon" size={16} style={{ marginRight: 6 }} />
+                              <Text style={styles.standardizedText}>
+                                {t('results.valuesShownPer').replace('{grams}', servingGrams)}
+                              </Text>
+                            </View>
                           </View>
                         </View>
                       )}

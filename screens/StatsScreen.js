@@ -12,6 +12,7 @@ import { useUserMode } from '../utils/UserModeContext';
 import AnimatedThemeWrapper from '../components/AnimatedThemeWrapper';
 import BottomNav from '../components/BottomNav';
 import ExerciseHistoryScreen from './ExerciseHistoryScreen';
+import AppIcon from '../components/AppIcon';
 
 const { width } = Dimensions.get('window');
 
@@ -380,7 +381,10 @@ export default function StatsScreen({ navigation }) {
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
               {/* Header */}
               <View style={[styles.header, { backgroundColor: theme.cardBackground }]}>
-                <Text style={[styles.headerTitle, { color: theme.text }]}>{t('stats.title')}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={[styles.headerTitle, { color: theme.text }]}>{t('stats.title')}</Text>
+                    <AppIcon name="chart" size={24} style={{ marginLeft: 8 }} />
+                  </View>
                 <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
                   {t('stats.subtitle')}
                 </Text>
@@ -436,7 +440,10 @@ export default function StatsScreen({ navigation }) {
                 <View style={[styles.summaryCard, { backgroundColor: theme.cardBackground }]}>
                   <Text style={[styles.summaryValue, { color: theme.warning }]}>{currentStreak}</Text>
                   <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>{t('stats.streak')}</Text>
-                  <Text style={[styles.summaryUnit, { color: theme.textTertiary }]}>{t('stats.days')} {t('stats.fire')}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Text style={[styles.summaryUnit, { color: theme.textTertiary }]}>{t('stats.days')}</Text>
+                      <AppIcon name="streak" size={14} tintColor="#FF6B35" style={{ marginLeft: 4 }} />
+                    </View>
                 </View>
               </View>
 
@@ -718,9 +725,12 @@ export default function StatsScreen({ navigation }) {
                       <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
                         {t('stats.currentStreak')}
                       </Text>
-                      <Text style={[styles.detailValue, { color: theme.text }]}>
-                        {currentStreak} {currentStreak === 1 ? t('stats.day') : t('stats.days')} {t('stats.fire')}
-                      </Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Text style={[styles.detailValue, { color: theme.text }]}>
+                          {currentStreak} {currentStreak === 1 ? t('stats.day') : t('stats.days')}
+                        </Text>
+                        <AppIcon name="streak" size={14} tintColor="#FF6B35" style={{ marginLeft: 4 }} />
+                      </View>
                     </View>
 
                     <View style={styles.detailRow}>
@@ -769,7 +779,7 @@ export default function StatsScreen({ navigation }) {
                   onPress={() => navigation.navigate('ExportReport')}
                 >
                   <View style={styles.settingLeft}>
-                    <Text style={styles.settingIcon}>📄</Text>
+                    <AppIcon name="document" size={24} style={{ marginRight: 15 }} />
                     <Text style={[styles.settingLabel, { color: theme.text }]}>
                       {t('stats.reports')}
                     </Text>

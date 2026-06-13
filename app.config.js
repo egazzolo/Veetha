@@ -3,7 +3,7 @@ module.exports = {
     name: "Veetha",
     slug: "Veetha",
     scheme: "veetha",
-    version: "1.1.5",
+    version: "1.1.7",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
@@ -28,7 +28,7 @@ module.exports = {
     },
     android: {
       package: "com.yourname.veetha",
-      versionCode: 29,
+      versionCode: 31,
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#ffffff",
@@ -58,7 +58,7 @@ module.exports = {
     },
     ios: {
       bundleIdentifier: "com.yourname.veetha",
-      buildNumber: "45",
+      buildNumber: "47",
       usesAppleSignIn: true,
       associatedDomains: ["applinks:nonotenb.com"],
       infoPlist: {

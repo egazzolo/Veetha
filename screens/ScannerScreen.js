@@ -23,6 +23,7 @@ import { analyzePhotoOpenAI } from '../utils/openaiVision';
 import { analyzePhotoGemini } from '../utils/geminiVision';
 import VeethaModal from '../components/VeethaModal';
 import GuestUpsellSheet from '../components/GuestUpsellSheet';
+import AppIcon from '../components/AppIcon';
 
 const dailyPhotoLimit = 2;
 
@@ -825,7 +826,7 @@ export default function ScannerScreen({ navigation }) {
                 style={[styles.modeToggle, { backgroundColor: '#4CAF50' }]}
                 onPress={toggleMode}
               >
-                <Text style={styles.modeToggleText}>📷</Text>
+                <AppIcon name="camera" size={24} tintColor="#FFFFFF" />
               </TouchableOpacity>
             ) : (
               <>
@@ -833,7 +834,7 @@ export default function ScannerScreen({ navigation }) {
                   style={[styles.modeToggle, { backgroundColor: '#4CAF50' }]}
                   onPress={toggleMode}
                 >
-                  <Text style={styles.modeToggleText}>🔢</Text>
+                  <AppIcon name="barcode" size={24} tintColor="#FFFFFF" />
                 </TouchableOpacity>
                 <View style={styles.photoCounter}>
                   <Text style={styles.photoCounterText}>
@@ -850,7 +851,10 @@ export default function ScannerScreen({ navigation }) {
                   style={styles.manualButton}
                   onPress={() => setShowManualInput(true)}
                 >
-                  <Text style={styles.manualButtonText}>🔢 {t('scanner.typeBarcode')}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                    <AppIcon name="barcode" size={20} tintColor="#FFFFFF" style={{ marginRight: 8 }} />
+                    <Text style={styles.manualButtonText}>{t('scanner.typeBarcode')}</Text>
+                  </View>
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity
