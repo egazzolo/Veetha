@@ -41,7 +41,7 @@ export default function PrivacyPolicyScreen({ route }) {
             <View style={styles.divider} />
             <Text style={[styles.bodyText, { color: theme.text }]}>
 {`TERMS OF SERVICE
-Last updated December 01, 2025
+Last updated June 13, 2026
 
 
 
@@ -54,13 +54,13 @@ Ang mga Tuntunin ng Serbisyo ay ibinibigay sa Ingles lamang.
 
 
 AGREEMENT TO OUR LEGAL TERMS
-We are Enzo Gazzolo, doing business as Veetha ("Company," "we," "us," "our"), a company registered inTexas, United States  at 1350 SONNY DR, Leander, TX 78641.
+We are Enzo Gazzolo, doing business as Veetha ("Company," "we," "us," "our"), a company registered in Texas, United States.
 
 We operate the mobile application Veetha (the "App"), as well as any other related products and services that refer or link to these legal terms (the "Legal Terms") (collectively, the "Services").
 
 The app measures daily consumption of macro nutrients by scanning barcodes, taking pictures of meals or manual entry. The app also provides meal recommendations that align with the user's specifications in preference and restrictions.
 
-You can contact us by email at veetha.app@gmail.com, or by mail to 1350 SONNY DR, apt 12300, Leander, TX 78641, United States.
+You can contact us by email at veetha.app@gmail.com.
 
 These Legal Terms constitute a legally binding agreement made between you, whether personally or on behalf of an entity ("you"), and Enzo Gazzolo, concerning your access to and use of the Services. You agree that by accessing the Services, you have read, understood, and agreed to be bound by all of these Legal Terms. IF YOU DO NOT AGREE WITH ALL OF THESE LEGAL TERMS, THEN YOU ARE EXPRESSLY PROHIBITED FROM USING THE SERVICES AND YOU MUST DISCONTINUE USE IMMEDIATELY.
 
@@ -274,8 +274,7 @@ We reserve the right to change, modify, or remove the contents of the Services a
 We cannot guarantee the Services will be available at all times. We may experience hardware, software, or other problems or need to perform maintenance related to the Services, resulting in interruptions, delays, or errors. We reserve the right to change, revise, update, suspend, discontinue, or otherwise modify the Services at any time or for any reason without notice to you. You agree that we have no liability whatsoever for any loss, damage, or inconvenience caused by your inability to access or use the Services during any downtime or discontinuance of the Services. Nothing in these Legal Terms will be construed to obligate us to maintain and support the Services or to supply any corrections, updates, or releases in connection therewith.
 
 20. GOVERNING LAW
-These Legal Terms and your use of the Services are governed by and construed in accordance with the laws of the State of __________ applicable to agreements made and to be entirely performed within the State of __________, without regard to its conflict of law principles.
-
+These Legal Terms and your use of the Services are governed by and construed in accordance with the laws of the State of Texas applicable to agreements made and to be entirely performed within the State of Texas, without regard to its conflict of law principles.
 21. DISPUTE RESOLUTION
 Informal Negotiations
 To expedite resolution and control the cost of any dispute, controversy, or claim related to these Legal Terms (each a "Dispute" and collectively, the "Disputes") brought by either you or us (individually, a "Party" and collectively, the "Parties"), the Parties agree to first attempt to negotiate any Dispute (except those Disputes expressly provided below) informally for at least thirty (30) days before initiating arbitration. Such informal negotiations commence upon written notice from one Party to the other Party.
@@ -319,13 +318,21 @@ These Legal Terms and any policies or operating rules posted by us on the Servic
 Important: This app provides estimates and suggestions, not medical advice. For health concerns, please consult a healthcare professional. If you have diabetes, heart disease, kidney disease, food allergies, are pregnant/nursing, take medications, or have any other health conditions, consult your doctor before following any meal plan or nutrition recommendations. Calorie calculations are based on the Mifflin-St Jeor equation and are estimates only. Individual needs may vary based on metabolism, medical conditions, and other factors.
 
 31. AI PHOTO RECOGNITION ACCURACY
-Our AI-powered food recognition feature (Premium) uses machine learning to identify foods from photos. This technology is not 100% accurate and may: - Misidentify foods or ingredients - Provide incorrect nutritional information - Fail to recognize certain foods Users should verify AI-generated nutrition data and manually correct any inaccuracies. Veetha is not responsible for incorrect data resulting from AI recognition errors.
+Our AI-powered food recognition feature uses third-party AI services (OpenAI GPT-4o Vision and Google Gemini AI) to identify foods from photos. This technology is not 100% accurate and may: - Misidentify foods or ingredients - Provide incorrect nutritional information - Fail to recognize certain foods Users should verify AI-generated nutrition data and manually correct any inaccuracies using the "Wrong Food?" feature. Veetha is not responsible for incorrect data resulting from AI recognition errors.
 
 32. USER-GENERATED CONTENT AND PHOTO USAGE
 By uploading photos to Veetha, you grant us a non-exclusive, worldwide license to use, store, and process your images for the purpose of: - Providing AI food recognition features - Improving our machine learning models and services - Displaying images in your account You retain all ownership rights to your content. We will not use your photos for marketing purposes without your explicit consent. You may delete your photos at any time through the app.
 
 33. FREE AND PREMIUM FEATURES
-Veetha offers both free and premium features: FREE FEATURES (No subscription required): - Barcode scanning for packaged foods - Manual meal logging - Basic nutrition tracking - Access to all app screens and stats PREMIUM FEATURES ($3.99/month): - AI-powered photo food recognition - [Future features as you add them] Premium subscriptions are billed monthly through Google Play Store or Apple App Store. You can cancel anytime through your app store settings. No refunds for partial months unless required by applicable law or app store policy.
+Veetha offers both free and premium features.
+
+FREE FEATURES (No subscription required): Unlimited barcode scanning for packaged foods. Unlimited manual meal logging. AI-powered photo food recognition limited to 5 scans per month. Strength & Fitness exercise category logging. Daily and current-month nutrition statistics. Water and streak tracking. Step counter. Badge system for streaks and goals. Multi-language support and dark mode.
+
+PREMIUM FEATURES ($7.99/month, with a 7-day free trial): Unlimited AI-powered photo food recognition (5 scans per day). All exercise categories (Cardio, Strength & Fitness, Lifestyle & Low Impact, Sports). All meal recommendations in Quick Add. Historical monthly analytics. Custom meal photo uploads. Allergen warnings on scanned foods. Weight target tracking. Custom step goals and weekly step trend charts. PDF and Excel report exports. Exclusive premium badges.
+
+Free Trial: New users receive a 7-day free trial of all premium features. No payment method is required during the trial. After the trial ends, users automatically revert to free features unless they choose to subscribe. Repeated trial abuse (e.g., creating multiple accounts on the same device) may result in trial ineligibility.
+
+Premium subscriptions are billed monthly through Google Play Store or Apple App Store. You can cancel anytime through your app store settings. No refunds for partial months unless required by applicable law or app store policy.
 
 34. CONTACT US
 In order to resolve a complaint regarding the Services or to receive further information regarding use of the Services, please contact us at:
@@ -341,12 +348,12 @@ veetha.app@gmail.com
           <>
             <Text style={[styles.title, { color: theme.text }]}>Privacy Policy</Text>
             <Text style={[styles.lastUpdated, { color: theme.textSecondary }]}>
-              Last Updated: December 22, 2024
+              Last Updated: June 13, 2026
             </Text>
             <View style={styles.divider} />
             <Text style={[styles.bodyText, { color: theme.text }]}>
 {`PRIVACY POLICY
-Last updated December 23, 2025
+Last updated June 13, 2026
 
 
 
@@ -359,7 +366,7 @@ Ang mga Tuntunin ng Serbisyo ay ibinibigay sa Ingles lamang.
 
 This Privacy Notice for Enzo Gazzolo (doing business as Veetha) ("we," "us," or "our"), describes how and why we might access, collect, store, use, and/or share ("process") your personal information when you use our services ("Services"), including when you:
 -	Download and use our mobile application (Veetha), or any other application of ours that links to this Privacy Notice
--	Use Veetha. Veetha is a mobile nutrition tracking application that helps users monitor their daily food intake, track calories and macronutrients, and achieve their health and fitness goals. The app provides two main ways to log meals: 1. Barcode Scanning (Free): Users can scan product barcodes to quickly log packaged foods and retrieve nutritional information from our database. 2. AI Photo Recognition (Premium - $3.99/month): Users can take photos of their meals, and our artificial intelligence technology identifies the food items and estimates their nutritional content. Additional features include: - Personalized daily calorie and macro goals based on user profile (age, gender, height, weight, activity level, and health objectives) - Comprehensive nutrition tracking with detailed breakdowns of proteins, carbohydrates, fats, and micronutrients - Progress tracking with daily, weekly, and monthly statistics and charts - Streak tracking to maintain consistent logging habits - Dietary preference and restriction management (vegetarian, vegan, keto, allergies, etc.) - Multi-language support (English, Spanish, French, Filipino) - Meal history and logging features Veetha uses the Mifflin-St Jeor equation to calculate personalized calorie recommendations. The app is designed to provide nutritional estimates and tracking tools, not medical advice. Users with medical conditions, dietary restrictions, or health concerns should consult healthcare professionals before making dietary changes. The app is available on Android devices through the Google Play Store, with iOS support planned for future release.
+-	Use Veetha. Veetha is a mobile nutrition tracking application that helps users monitor their daily food intake, track calories and macronutrients, and achieve their health and fitness goals. The app provides two main ways to log meals: 1. Barcode Scanning (Free): Users can scan product barcodes to quickly log packaged foods and retrieve nutritional information from our database. 2. AI Photo Recognition (Premium - $3.99/month): Users can take photos of their meals, and our artificial intelligence technology identifies the food items and estimates their nutritional content. Additional features include: - Personalized daily calorie and macro goals based on user profile (age, gender, height, weight, activity level, and health objectives) - Comprehensive nutrition tracking with detailed breakdowns of proteins, carbohydrates, fats, and micronutrients - Progress tracking with daily, weekly, and monthly statistics and charts - Streak tracking to maintain consistent logging habits - Dietary preference and restriction management (vegetarian, vegan, keto, allergies, etc.) - Multi-language support (English, Spanish, French, Portuguese, Filipino) - Meal history and logging features Veetha uses the Mifflin-St Jeor equation to calculate personalized calorie recommendations. The app is designed to provide nutritional estimates and tracking tools, not medical advice. Users with medical conditions, dietary restrictions, or health concerns should consult healthcare professionals before making dietary changes. The app is available on both Android (Google Play Store) and iOS (Apple App Store).
 -	Engage with us in other related ways, including any marketing or events
 Questions or concerns? Reading this Privacy Notice will help you understand your privacy rights and choices. We are responsible for making decisions about how your personal information is processed. If you do not agree with our policies and practices, please do not use our Services. If you still have any questions or concerns, please contact us at veetha.app@gmail.com.
 
@@ -416,6 +423,8 @@ Personal Information Provided by You. The personal information that we collect d
 -	names
 -	email addresses
 -	passwords
+-	device identifiers (used for fraud prevention and to enforce trial eligibility)
+-	hashed email records (retained to prevent abuse of free trial offers; original emails are not stored after account deletion)
 Sensitive Information. We do not process sensitive information.
 
 Payment Data. We may collect data necessary to process your payment if you choose to make purchases, such as your payment instrument number, and the security code associated with your payment instrument. All payment data is handled and stored by Google Play Store / Google Payments, Apple App Store / Apple Pay and RevenueCat. You may find their privacy notice link(s) here: https://payments.google.com/payments/apis-secure/u/0/get_legal_document?ldo=0&ldt=privacynotice, https://www.apple.com/legal/privacy/ and https://www.revenuecat.com/privacy.
@@ -549,8 +558,7 @@ As part of our Services, we offer products, features, or tools powered by artifi
 
 Use of AI Technologies
 
-We provide the AI Products through third-party service providers ("AI Service Providers"), including Google Cloud Vision. As outlined in this Privacy Notice, your input, output, and personal information will be shared with and processed by these AI Service Providers to enable your use of our AI Products for purposes outlined in "WHAT LEGAL BASES DO WE RELY ON TO PROCESS YOUR PERSONAL INFORMATION?" You must not use the AI Products in any way that violates the terms or policies of any AI Service Provider.
-
+We provide the AI Products through third-party service providers ("AI Service Providers"), including OpenAI (GPT-4o Vision) and Google (Gemini AI). As outlined in this Privacy Notice, your input, output, and personal information will be shared with and processed by these AI Service Providers to enable your use of our AI Products for purposes outlined in "WHAT LEGAL BASES DO WE RELY ON TO PROCESS YOUR PERSONAL INFORMATION?" You must not use the AI Products in any way that violates the terms or policies of any AI Service Provider.
 Our AI Products
 
 Our AI Products are designed for the following functions:
@@ -567,8 +575,7 @@ We believe in giving you the power to decide how your data is used. To opt out, 
 -	Log in to your account settings and update your user account
 -	Log in to your account settings and update your user account
 -	Contact us using the contact information provided
--	Veetha offers AI-powered photo food recognition in both free and premium tiers: FREE USERS: Limited to 5 photo scans per day. Users can opt out by using the barcode scanning feature instead of taking photos. PREMIUM USERS ($3.99/month or $39.99/year): Increased limit of 50 photo scans per day. Users can opt out by canceling their premium subscription through their app store settings (Google Play Store or Apple App Store), or by using barcode scanning instead. Photos uploaded by users are analyzed by Google Cloud Vision's image recognition API and may be used in aggregate (anonymized) form to train and improve our custom food recognition database. Users can delete their photos at any time through the app.
-
+-	Veetha offers AI-powered photo food recognition in both free and premium tiers: FREE USERS: Limited to 5 photo scans per month. Users can opt out by using the barcode scanning feature instead of taking photos. PREMIUM USERS ($7.99/month with 7-day free trial): Limit of 5 photo scans per day. Users can opt out by canceling their premium subscription through their app store settings (Google Play Store or Apple App Store), or by using barcode scanning instead. Photos uploaded by users are analyzed by OpenAI GPT-4o Vision and Google Gemini AI. Users can delete their photos at any time through the app.
 7. HOW DO WE HANDLE YOUR SOCIAL LOGINS?
 In Short: If you choose to register or log in to our Services using a social media account, we may have access to certain information about you.
 
