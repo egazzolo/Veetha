@@ -1,5 +1,6 @@
 import React from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet, Pressable } from 'react-native';
+import { useTheme } from '../utils/ThemeContext';
 
 const COLORS = {
   green: '#1F9B39',
@@ -21,6 +22,9 @@ export default function VeethaModal({
   confirmStyle,
   buttons,
 }) {
+
+  const { isDark } = useTheme();
+
   return (
     <Modal
       visible={visible}
@@ -29,9 +33,12 @@ export default function VeethaModal({
       onRequestClose={onCancel}
     >
       <Pressable style={styles.backdrop} onPress={onCancel}>
-        <Pressable style={styles.card} onPress={(e) => e.stopPropagation()}>
-          {title ? <Text style={styles.title}>{title}</Text> : null}
-          {message ? <Text style={styles.message}>{message}</Text> : null}
+        <Pressable 
+          style={[styles.card, isDark && { backgroundColor: '#1c1c1e' }]} 
+          onPress={(e) => e.stopPropagation()}
+        >
+          {title ? <Text style={[styles.title, isDark && { color: '#F5E6A3' }]}>{title}</Text> : null}
+          {message ? <Text style={[styles.message, isDark && { color: '#B8B8B8' }]}>{message}</Text> : null}
 
           <View style={styles.buttonRow}>
             {buttons ? (
@@ -45,6 +52,7 @@ export default function VeethaModal({
                       : btn.style === 'cancel'
                       ? styles.cancelButton
                       : styles.confirmButton,
+                    btn.style === 'cancel' && isDark && { backgroundColor: '#3a3a3c' },
                   ]}
                   onPress={btn.onPress}
                 >
@@ -56,6 +64,7 @@ export default function VeethaModal({
                         : btn.style === 'cancel'
                         ? styles.cancelText
                         : styles.confirmText,
+                      btn.style === 'cancel' && isDark && { color: '#F5E6A3' },
                     ]}
                   >
                     {btn.text}
@@ -66,10 +75,18 @@ export default function VeethaModal({
               <>
                 {onCancel && (
                   <TouchableOpacity
-                    style={[styles.button, styles.cancelButton]}
+                    style={[
+                      styles.button, 
+                      styles.cancelButton,
+                      isDark && { backgroundColor: '#3a3a3c' },
+                    ]}
                     onPress={onCancel}
                   >
-                    <Text style={[styles.buttonText, styles.cancelText]}>
+                    <Text style={[
+                      styles.buttonText, 
+                      styles.cancelText,
+                      isDark && { color: '#F5E6A3' },
+                    ]}>
                       {cancelText}
                     </Text>
                   </TouchableOpacity>

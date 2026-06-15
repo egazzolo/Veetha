@@ -30,13 +30,6 @@ export default function ExerciseHistoryScreen({ route, nestedInScrollView }) {
         .eq('user_id', user.id)
         .order('logged_at', { ascending: false });
 
-      // Free users: only last 3 days
-      if (!isPremium) {
-        const threeDaysAgo = new Date();
-        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-        query = query.gte('logged_at', threeDaysAgo.toISOString());
-      }
-
       const { data, error } = await query;
       if (error) throw error;
 
@@ -137,13 +130,6 @@ export default function ExerciseHistoryScreen({ route, nestedInScrollView }) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {!isPremium && (
-        <View style={[styles.limitBanner, { backgroundColor: theme.warningLight || '#FFF3E0' }]}>
-          <Text style={[styles.limitText, { color: theme.warning || '#F57C00' }]}>
-            {t('exercise.freeUserLimit')}
-          </Text>
-        </View>
-      )}
       
       <FlatList
         data={exercises}

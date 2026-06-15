@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, Pressable } from 'react-native';
 import GuestUpsellSheet from './GuestUpsellSheet';
 import AppIcon from './AppIcon';
+import { useTheme } from '../utils/ThemeContext';
 
 export default function MealsList({
   theme,
@@ -28,6 +29,7 @@ export default function MealsList({
 }) {
   const [selectedMeal, setSelectedMeal] = useState(null);
   const [guestSheetVisible, setGuestSheetVisible] = useState(false);
+  const { isDark } = useTheme();
 
   const handleMealPress = (meal) => {
     // In selection mode, tap toggles checkbox instead of opening post-it
@@ -183,7 +185,7 @@ export default function MealsList({
                 serving_unit: product.serving_unit,
               })}
               onLongPress={() => {
-                if (selectionMode) return; // ignore long-press in selection mode
+                if (selectionMode) return;
                 handleMealLongPress({
                   ...meal,
                   product_name: meal.product?.name ?? meal.product_name,
@@ -195,88 +197,111 @@ export default function MealsList({
               }}
               activeOpacity={0.7}
             >
-              {/* Checkbox in selection mode */}
+              {/* Checkbox overlay in selection mode */}
               {selectionMode && (
                 <View style={[
-                  styles.checkbox,
+                  styles.checkboxOverlay,
                   isSelected && { backgroundColor: '#E53935', borderColor: '#E53935' },
                 ]}>
                   {isSelected && <Text style={styles.checkboxTick}>✓</Text>}
                 </View>
               )}
 
-              {/* Image Section */}
-              <TouchableOpacity 
-                style={styles.imageSection}
-                onPress={() => {
-                  if (!meal.image_url && !product.image_url && onImageUpload) {
-                    onImageUpload(meal);
-                  }
-                }}
-                activeOpacity={(meal.image_url || product.image_url) ? 1 : 0.6}
-              >
-                {(meal.image_url || product.image_url) ? (
-                  <Image
-                    source={{ uri: meal.image_url || product.image_url }}
-                    style={styles.mealImage}
-                    resizeMode="contain"
-                  />
-                ) : (
-                  <View style={styles.placeholderImage}>
-                    <Text style={styles.placeholderEmoji}>{product.emoji || '🍽️'}</Text>
-                    <Text style={styles.uploadHint}>+ Add Photo</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-
-              {/* Product Name & Macros Section */}
-              <View style={styles.infoSection}>
-                <Text 
-                  style={[styles.productName, { color: theme.text }]} 
+              {/* Title row */}
+              <View style={styles.titleRow}>
+                <Text
+                  style={[styles.productNameBig, { color: theme.text }]}
                   numberOfLines={2}
                   ellipsizeMode="tail"
                 >
                   {product.name}
                 </Text>
-                
-                <Text style={[styles.servingSize, { color: theme.textTertiary }]}>
-                  {meal.serving_grams}{product.serving_unit}
-                </Text>
-                
-                <View style={styles.macrosContainer}>
-                  <View style={styles.macroRow}>
-                    <AppIcon name="protein" size={11} />
-                    <Text style={styles.proteinText}>{Math.round(actualProtein)}g</Text>
-                  </View>
-                  <View style={styles.macroRow}>
-                    <AppIcon name="carbs" size={11} />
-                    <Text style={styles.carbsText}>{Math.round(actualCarbs)}g</Text>
-                  </View>
-                  <View style={styles.macroRow}>
-                    <AppIcon name="fat" size={11} />
-                    <Text style={styles.fatText}>{Math.round(actualFat)}g</Text>
-                  </View>
-                </View>
-
-                <View style={styles.macrosContainer}>
-                  <View style={styles.macroRow}>
-                    <AppIcon name="sodium" size={11} />
-                    <Text style={styles.sodiumText}>{Math.round(actualSodium)}mg</Text>
-                  </View>
-                  <View style={styles.macroRow}>
-                    <AppIcon name="sugar" size={11} />
-                    <Text style={styles.sugarText}>{Math.round(actualSugar)}g</Text>
-                  </View>
-                  <View style={styles.macroRow}>
-                    <AppIcon name="fiber" size={11} />
-                    <Text style={styles.fiberText}>{Math.round(actualFiber)}g</Text>
+                <View style={styles.titleRight}>
+                  <Text style={[styles.servingSizeBig, { color: theme.textTertiary }]}>
+                    {meal.serving_grams}{product.serving_unit}
+                  </Text>
+                  <View style={styles.caloriesInline}>
+                    <Text style={styles.caloriesNumberBig}>{Math.round(actualCalories)}</Text>
+                    <Text style={styles.caloriesLabelBig}>{t('home.kcal')}</Text>
                   </View>
                 </View>
               </View>
 
-              <View style={styles.caloriesSection}>
-                <Text style={styles.caloriesNumber}>{Math.round(actualCalories)}</Text>
-                <Text style={styles.caloriesLabel}>{t('home.kcal')}</Text>
+              {/* Big food photo */}
+              <TouchableOpacity
+                style={styles.imageSectionBig}
+                onPress={() => {
+                  // If no image, upload. If image exists, behave like the card (open post-it OR toggle selection)
+                  if (!meal.image_url && !product.image_url && onImageUpload) {
+                    onImageUpload(meal);
+                  } else {
+                    handleMealPress({
+                      ...meal,
+                      product_name: product.name,
+                      calories: actualCalories,
+                      protein: actualProtein,
+                      carbs: actualCarbs,
+                      fat: actualFat,
+                      sodium: actualSodium,
+                      sugar: actualSugar,
+                      fiber: actualFiber,
+                      serving_unit: product.serving_unit,
+                    });
+                  }
+                }}
+                onLongPress={() => {
+                  if (selectionMode) return;
+                  handleMealLongPress({
+                    ...meal,
+                    product_name: meal.product?.name ?? meal.product_name,
+                    calories: meal.product?.calories ?? meal.calories,
+                    protein: meal.product?.protein ?? meal.protein,
+                    carbs: meal.product?.carbs ?? meal.carbs,
+                    fat: meal.product?.fat ?? meal.fat,
+                  });
+                }}
+                activeOpacity={0.7}
+              >
+                {(meal.image_url || product.image_url) ? (
+                  <Image
+                    source={{ uri: meal.image_url || product.image_url }}
+                    style={styles.mealImageBig}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.placeholderImageBig}>
+                    <Text style={styles.placeholderEmojiBig}>{product.emoji || '🍽️'}</Text>
+                    <Text style={styles.uploadHintBig}>+ Add Photo</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              {/* Macros row at bottom */}
+              <View style={styles.macrosRowBottom}>
+                <View style={styles.macroChip}>
+                  <AppIcon name="protein" size={14} tintColor="#A0522D" style={{ marginRight: 3 }} />
+                  <Text style={[styles.macroChipText, { color: '#A0522D' }]}>{Math.round(actualProtein)}g</Text>
+                </View>
+                <View style={styles.macroChip}>
+                  <AppIcon name="carbs" size={14} tintColor="#DAA520" style={{ marginRight: 3 }} />
+                  <Text style={[styles.macroChipText, { color: '#DAA520' }]}>{Math.round(actualCarbs)}g</Text>
+                </View>
+                <View style={styles.macroChip}>
+                  <AppIcon name="fat" size={14} tintColor="#1F9B39" style={{ marginRight: 3 }} />
+                  <Text style={[styles.macroChipText, { color: '#1F9B39' }]}>{Math.round(actualFat)}g</Text>
+                </View>
+                <View style={styles.macroChip}>
+                  <AppIcon name="sodium" size={14} tintColor="#607D8B" style={{ marginRight: 3 }} />
+                  <Text style={[styles.macroChipText, { color: '#607D8B' }]}>{Math.round(actualSodium)}mg</Text>
+                </View>
+                <View style={styles.macroChip}>
+                  <AppIcon name="sugar" size={14} tintColor="#E91E63" style={{ marginRight: 3 }} />
+                  <Text style={[styles.macroChipText, { color: '#E91E63' }]}>{Math.round(actualSugar)}g</Text>
+                </View>
+                <View style={styles.macroChip}>
+                  <AppIcon name="fiber" size={14} tintColor="#4CAF50" style={{ marginRight: 3 }} />
+                  <Text style={[styles.macroChipText, { color: '#4CAF50' }]}>{Math.round(actualFiber)}g</Text>
+                </View>
               </View>
             </TouchableOpacity>
           );
@@ -298,14 +323,26 @@ export default function MealsList({
       >
         <Pressable style={styles.modalOverlay} onPress={closePostIt}>
           <Pressable style={styles.postItContainer} onPress={(e) => e.stopPropagation()}>
-            <View style={styles.postIt}>
+            <View style={[
+              styles.postIt,
+              isDark && {
+                backgroundColor: '#3D2E00',
+                borderTopColor: '#5C4400',
+              }
+            ]}>
               <View style={styles.postItHeader}>
-                <Text style={styles.postItTitle} numberOfLines={2}>
+                <Text style={[
+                  styles.postItTitle,
+                  isDark && { color: '#F5E6A3' }
+                ]} numberOfLines={2}>
                   {selectedMeal?.product_name}
                 </Text>
               </View>
               <View style={styles.postItCalories}>
-                <Text style={styles.postItCaloriesText}>
+                <Text style={[
+                  styles.postItCaloriesText,
+                  isDark && { color: '#7BC97F' }
+                ]}>
                   {Math.round(selectedMeal?.calories || 0)} kcal
                 </Text>
               </View>
@@ -313,37 +350,37 @@ export default function MealsList({
               <View style={styles.postItMacros}>
                 <View style={styles.postItMacroRow}>
                   <AppIcon name="protein" size={16} tintColor="#A0522D" style={{ marginRight: 4 }} />
-                    <Text style={styles.postItMacroLabel}>{t('home.mealsList.protein')}:</Text>
-                  <Text style={styles.postItMacroValue}>{Math.round(selectedMeal?.protein || 0)}g</Text>
+                    <Text style={[styles.postItMacroLabel, isDark && { color: '#F5E6A3' }]}>{t('home.mealsList.protein')}:</Text>
+                  <Text style={[styles.postItMacroValue, isDark && { color: '#F5E6A3' }]}>{Math.round(selectedMeal?.protein || 0)}g</Text>
                 </View>
                 <View style={styles.postItMacroRow}>
                   <AppIcon name="carbs" size={16} tintColor="#DAA520" style={{ marginRight: 4 }} />
-                    <Text style={styles.postItMacroLabel}>{t('home.mealsList.carbs')}:</Text>
-                  <Text style={styles.postItMacroValue}>{Math.round(selectedMeal?.carbs || 0)}g</Text>
+                    <Text style={[styles.postItMacroLabel, isDark && { color: '#F5E6A3' }]}>{t('home.mealsList.carbs')}:</Text>
+                  <Text style={[styles.postItMacroValue, isDark && { color: '#F5E6A3' }]}>{Math.round(selectedMeal?.carbs || 0)}g</Text>
                 </View>
                 <View style={styles.postItMacroRow}>
                   <AppIcon name="fat" size={16} tintColor="#1F9B39" style={{ marginRight: 4 }} />
-                    <Text style={styles.postItMacroLabel}>{t('home.mealsList.fat')}:</Text>
-                  <Text style={styles.postItMacroValue}>{Math.round(selectedMeal?.fat || 0)}g</Text>
+                    <Text style={[styles.postItMacroLabel, isDark && { color: '#F5E6A3' }]}>{t('home.mealsList.fat')}:</Text>
+                  <Text style={[styles.postItMacroValue, isDark && { color: '#F5E6A3' }]}>{Math.round(selectedMeal?.fat || 0)}g</Text>
                 </View>
                 <View style={styles.postItMacroRow}>
                   <AppIcon name="sodium" size={16} tintColor="#607D8B" style={{ marginRight: 4 }} />
-                    <Text style={styles.postItMacroLabel}>{t('home.mealsList.sodium')}:</Text>
-                  <Text style={styles.postItMacroValue}>{Math.round(selectedMeal?.sodium || 0)}mg</Text>
+                    <Text style={[styles.postItMacroLabel, isDark && { color: '#F5E6A3' }]}>{t('home.mealsList.sodium')}:</Text>
+                  <Text style={[styles.postItMacroValue, isDark && { color: '#F5E6A3' }]}>{Math.round(selectedMeal?.sodium || 0)}mg</Text>
                 </View>
                 <View style={styles.postItMacroRow}>
                   <AppIcon name="sugar" size={16} tintColor="#E91E63" style={{ marginRight: 4 }} />
-                    <Text style={styles.postItMacroLabel}>{t('home.mealsList.sugar')}:</Text>
-                  <Text style={styles.postItMacroValue}>{Math.round(selectedMeal?.sugar || 0)}g</Text>
+                    <Text style={[styles.postItMacroLabel, isDark && { color: '#F5E6A3' }]}>{t('home.mealsList.sugar')}:</Text>
+                  <Text style={[styles.postItMacroValue, isDark && { color: '#F5E6A3' }]}>{Math.round(selectedMeal?.sugar || 0)}g</Text>
                 </View>
                 <View style={styles.postItMacroRow}>
                   <AppIcon name="fiber" size={16} tintColor="#4CAF50" style={{ marginRight: 4 }} />
-                    <Text style={styles.postItMacroLabel}>{t('home.mealsList.fiber')}:</Text>
-                  <Text style={styles.postItMacroValue}>{Math.round(selectedMeal?.fiber || 0)}g</Text>
+                    <Text style={[styles.postItMacroLabel, isDark && { color: '#F5E6A3' }]}>{t('home.mealsList.fiber')}:</Text>
+                  <Text style={[styles.postItMacroValue, isDark && { color: '#F5E6A3' }]}>{Math.round(selectedMeal?.fiber || 0)}g</Text>
                 </View>
               </View>
               <View style={styles.postItFooter}>
-                <Text style={styles.postItServingText}>
+                <Text style={[styles.postItServingText, isDark && { color: '#C9A961' }]}>
                   {t('home.mealsList.serving')}: {selectedMeal?.serving_grams}{selectedMeal?.serving_unit || 'g'}
                 </Text>
               </View>
@@ -419,31 +456,112 @@ const styles = StyleSheet.create({
     marginBottom: 10 
   },
   mealCard: { 
-    flexDirection: 'row', 
-    padding: 8, 
-    marginBottom: 12, 
-    borderRadius: 12, 
+    padding: 12, 
+    marginBottom: 14, 
+    borderRadius: 16, 
     shadowColor: '#000', 
-    shadowOffset: { 
-      width: 0, 
-      height: 2 
-    }, 
+    shadowOffset: { width: 0, height: 2 }, 
     shadowOpacity: 0.1, 
     shadowRadius: 4, 
     elevation: 3, 
-    alignItems: 'center', 
-    paddingLeft: 4 
+    position: 'relative',
   },
-  checkbox: { 
-    width: 24, 
-    height: 24, 
-    borderRadius: 12, 
+  checkboxOverlay: { 
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    width: 28, 
+    height: 28, 
+    borderRadius: 14, 
     borderWidth: 2, 
     borderColor: '#999', 
     justifyContent: 'center', 
     alignItems: 'center', 
-    marginRight: 8, 
-    backgroundColor: 'transparent' 
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    zIndex: 10,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 10,
+    gap: 8,
+  },
+  productNameBig: {
+    fontSize: 17,
+    fontWeight: '700',
+    flex: 1,
+    lineHeight: 21,
+  },
+  titleRight: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 10,
+  },
+  servingSizeBig: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  caloriesInline: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 3,
+  },
+  caloriesNumberBig: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#4CAF50',
+  },
+  caloriesLabelBig: {
+    fontSize: 12,
+    color: '#999',
+    fontWeight: '600',
+  },
+  imageSectionBig: {
+    width: '100%',
+    minHeight: 220,
+    maxHeight: 320,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 10,
+    backgroundColor: '#f0f0f0',
+  },
+  mealImageBig: {
+    width: '100%',
+    height: '100%',
+    minHeight: 220,
+  },
+  placeholderImageBig: {
+    width: '100%',
+    height: 220,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 12,
+  },
+  placeholderEmojiBig: {
+    fontSize: 64,
+  },
+  uploadHintBig: {
+    fontSize: 13,
+    color: '#888',
+    marginTop: 8,
+    fontWeight: '500',
+  },
+  macrosRowBottom: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  macroChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  macroChipText: {
+    fontSize: 13,
+    fontWeight: '700',
   },
   checkboxTick: { 
     color: '#fff', 
