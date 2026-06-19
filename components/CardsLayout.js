@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Svg, Circle } from 'react-native-svg';
+import { useTheme } from '../utils/ThemeContext';
 
 // Circular Progress Component
 function CircularProgress({ percentage, size = 80, strokeWidth = 6, color = '#fff', children }) {
@@ -56,6 +57,10 @@ export default function CardsLayout({
   protein,
   carbs,
   fat,
+  totalCalories,
+  totalProtein,
+  totalCarbs,
+  totalFat,
   remaining,
   caloriePercent,
   proteinPercent,
@@ -68,6 +73,13 @@ export default function CardsLayout({
   tutorialCompleted,
   exerciseCaloriesBurned,
 }) {
+  const { isProMode } = useTheme();
+
+  // Card background colors switch to greyscale in Pro Mode
+  const caloriesBg = isProMode ? '#1B1B1B' : '#4CAF50';
+  const proteinBg  = isProMode ? '#3D3D3D' : '#2196F3';
+  const carbsBg    = isProMode ? '#555555' : '#FF9800';
+  const fatBg      = isProMode ? '#777777' : '#9C27B0';
   return (
     <View>
       {/* 2x2 Card Grid */}
@@ -110,7 +122,7 @@ export default function CardsLayout({
               });
             }
           }}
-          style={[styles.card, styles.caloriesCard]}
+          style={[styles.card, { backgroundColor: caloriesBg }]}
           onPress={() => {
             if (!loading && !refreshing) {
               setSelectedNutrient('calories');
@@ -127,9 +139,9 @@ export default function CardsLayout({
           >
             <Text style={[
               styles.cardValue, 
-              { fontSize: Math.round(consumed) >= 1000 ? 16 : 20 }
+              { fontSize: Math.round(consumed) >= 1000 || Math.round(totalCalories) >= 1000 ? 13 : 16 }
             ]}>
-              {Math.round(consumed)}
+              {Math.round(consumed)} / {Math.round(totalCalories)}
             </Text>
           </CircularProgress>
           <Text style={styles.cardLabel}>{t('home.calories')}</Text>
@@ -137,7 +149,7 @@ export default function CardsLayout({
 
         {/* Protein Card */}
         <TouchableOpacity
-          style={[styles.card, styles.proteinCard]}
+          style={[styles.card, { backgroundColor: proteinBg }]}
           onPress={() => {
             if (!loading && !refreshing) {
               setSelectedNutrient('protein');
@@ -154,9 +166,9 @@ export default function CardsLayout({
           >
             <Text style={[
               styles.cardValue, 
-              { fontSize: Math.round(protein) >= 100 ? 16 : 20 }
+              { fontSize: Math.round(protein) >= 100 || Math.round(totalProtein) >= 100 ? 13 : 16 }
             ]}>
-              {Math.round(protein)}g
+              {Math.round(protein)} / {Math.round(totalProtein)}g
             </Text>
           </CircularProgress>
           <Text style={styles.cardLabel}>{t('home.protein')}</Text>
@@ -164,7 +176,7 @@ export default function CardsLayout({
 
         {/* Carbs Card */}
         <TouchableOpacity
-          style={[styles.card, styles.carbsCard]}
+          style={[styles.card, { backgroundColor: carbsBg }]}
           onPress={() => {
             if (!loading && !refreshing) {
               setSelectedNutrient('carbs');
@@ -181,9 +193,9 @@ export default function CardsLayout({
           >
             <Text style={[
               styles.cardValue, 
-              { fontSize: Math.round(carbs) >= 100 ? 16 : 20 }
+              { fontSize: Math.round(carbs) >= 100 || Math.round(totalCarbs) >= 100 ? 13 : 16 }
             ]}>
-              {Math.round(carbs)}g
+              {Math.round(carbs)} / {Math.round(totalCarbs)}g
             </Text>
           </CircularProgress>
           <Text style={styles.cardLabel}>{t('home.carbs')}</Text>
@@ -191,7 +203,7 @@ export default function CardsLayout({
 
         {/* Fat Card */}
         <TouchableOpacity
-          style={[styles.card, styles.fatCard]}
+          style={[styles.card, { backgroundColor: fatBg }]}
           onPress={() => {
             if (!loading && !refreshing) {
               setSelectedNutrient('fat');
@@ -208,9 +220,9 @@ export default function CardsLayout({
           >
             <Text style={[
               styles.cardValue, 
-              { fontSize: Math.round(fat) >= 100 ? 16 : 20 }
+              { fontSize: Math.round(fat) >= 100 || Math.round(totalFat) >= 100 ? 13 : 16 }
             ]}>
-              {Math.round(fat)}g
+              {Math.round(fat)} / {Math.round(totalFat)}g
             </Text>
           </CircularProgress>
           <Text style={styles.cardLabel}>{t('home.fat')}</Text>

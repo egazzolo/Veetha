@@ -53,7 +53,7 @@ function MiniCircularProgress({ percentage, size = 40, strokeWidth = 4, color = 
 }
 
 export default function DisplaySettingsScreen({ navigation }) {
-  const { theme, isDark } = useTheme();
+  const { theme, isDark, currentTheme, changeTheme } = useTheme();
   const { t } = useLanguage();
   const { layout, changeLayout } = useLayout();
 
@@ -72,6 +72,62 @@ export default function DisplaySettingsScreen({ navigation }) {
       </View>
 
       <ScrollView style={styles.content}>
+
+        {/* Theme */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Theme</Text>
+
+          <View style={styles.themeRow}>
+            <TouchableOpacity
+              style={[
+                styles.themeOption,
+                { backgroundColor: theme.cardBackground, borderColor: theme.border },
+                currentTheme === 'modern-light' && styles.themeOptionActive,
+              ]}
+              onPress={() => { posthog.capture('theme_changed', { theme: 'modern-light' }); changeTheme('modern-light'); }}
+            >
+              <View style={[styles.themeSwatch, { backgroundColor: '#EAE0C8' }]}>
+                <View style={[styles.themeSwatchDot, { backgroundColor: '#1F9B39' }]} />
+              </View>
+              <Text style={[styles.themeOptionLabel, { color: theme.text }]}>Light</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.themeOption,
+                { backgroundColor: theme.cardBackground, borderColor: theme.border },
+                currentTheme === 'modern-dark' && styles.themeOptionActive,
+              ]}
+              onPress={() => { posthog.capture('theme_changed', { theme: 'modern-dark' }); changeTheme('modern-dark'); }}
+            >
+              <View style={[styles.themeSwatch, { backgroundColor: '#000000' }]}>
+                <View style={[styles.themeSwatchDot, { backgroundColor: '#66BB6A' }]} />
+              </View>
+              <Text style={[styles.themeOptionLabel, { color: theme.text }]}>Dark</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.themeOption,
+                { backgroundColor: theme.cardBackground, borderColor: theme.border },
+                currentTheme === 'pro-mode' && styles.themeOptionActive,
+              ]}
+              onPress={() => { posthog.capture('theme_changed', { theme: 'pro-mode' }); changeTheme('pro-mode'); }}
+            >
+              <View style={[styles.themeSwatch, { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E0E0E0' }]}>
+                <View style={[styles.themeSwatchDot, { backgroundColor: '#1F9B39' }]} />
+              </View>
+              <Text style={[styles.themeOptionLabel, { color: theme.text }]}>Pro Mode</Text>
+            </TouchableOpacity>
+          </View>
+
+          <Text style={[styles.layoutDescription, { color: theme.textSecondary }]}>
+            {currentTheme === 'modern-light' && 'Warm beige with green accents.'}
+            {currentTheme === 'modern-dark' && 'Pure black with green accents.'}
+            {currentTheme === 'pro-mode' && 'Minimal black, white, and grey with a single green accent.'}
+          </Text>
+        </View>
+
         {/* Home Screen Layout */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('displaySettings.homeScreenLayout')}</Text>
@@ -361,5 +417,37 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  themeRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 15,
+  },
+  themeOption: {
+    flex: 1,
+    borderWidth: 2,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+  },
+  themeOptionActive: {
+    borderColor: '#1F9B39',
+  },
+  themeSwatch: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  themeSwatchDot: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+  },
+  themeOptionLabel: {
+    fontSize: 13,
+    fontWeight: '600',
   },
 });

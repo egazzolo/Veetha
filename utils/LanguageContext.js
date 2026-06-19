@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Localization from 'expo-localization';
+import { supabase } from './supabase';
 import en from './translations/en';
 import es from './translations/es';
 import fr from './translations/fr';
@@ -56,6 +57,20 @@ export function LanguageProvider({ children }) {
       console.error('Error loading language:', error);
       setLanguageState('en'); // Default to English on error
     } finally {
+      // Sync resolved language to Supabase profile (if user is logged in)
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && !user.is_anonymous) {
+          const finalLang = await AsyncStorage.getItem('app_language') || 'en';
+          await supabase
+            .from('profiles')
+            .update({ language: finalLang })
+            .eq('id', user.id);
+          console.log('🌍 Language synced to Supabase:', finalLang);
+        }
+      } catch (syncError) {
+        console.log('Could not sync language to Supabase:', syncError.message);
+      }
       setLoading(false);
     }
   };
@@ -66,6 +81,20 @@ export function LanguageProvider({ children }) {
       await AsyncStorage.setItem('app_language', newLanguage);
       setLanguageState(newLanguage);  // ← Now calls the useState setter
       console.log('🌍 Language changed to:', newLanguage);
+      
+      // Sync to Supabase profile (if user is logged in)
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && !user.is_anonymous) {
+          await supabase
+            .from('profiles')
+            .update({ language: newLanguage })
+            .eq('id', user.id);
+          console.log('🌍 Language synced to Supabase:', newLanguage);
+        }
+      } catch (syncError) {
+        console.log('Could not sync language to Supabase:', syncError.message);
+      }
     } catch (error) {
       console.error('Error saving language:', error);
     }

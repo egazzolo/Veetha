@@ -527,32 +527,33 @@ export default function HomeScreen({ navigation }) {
           console.log('🔔 Notification permission denied');
         }
 
-        // Schedule daily meal reminders (once only)
+        // Schedule daily meal reminders (always cancel old ones first to prevent duplicates)
         if (notificationStatus === 'granted') {
-          const alreadyScheduled = await AsyncStorage.getItem('notifications_scheduled');
-          if (!alreadyScheduled) {
-            const meals = [
-              { hour: 8, minute: 0, titleKey: 'mealReminders.breakfastTitle', bodyKey: 'mealReminders.breakfastBody' },
-              { hour: 13, minute: 0, titleKey: 'mealReminders.lunchTitle', bodyKey: 'mealReminders.lunchBody' },
-              { hour: 19, minute: 0, titleKey: 'mealReminders.dinnerTitle', bodyKey: 'mealReminders.dinnerBody' },
-            ];
-            for (const meal of meals) {
-              await Notifications.scheduleNotificationAsync({
-                content: {
-                  title: t(meal.titleKey),
-                  body: t(meal.bodyKey),
-                },
-                trigger: {
-                  type: 'daily',
-                  hour: meal.hour,
-                  minute: meal.minute,
-                  repeats: true,
-                },
-              });
-            }
-            await AsyncStorage.setItem('notifications_scheduled', 'true');
-            console.log('🔔 Daily meal reminders scheduled');
+          // Cancel ALL existing scheduled notifications before scheduling fresh ones
+          await Notifications.cancelAllScheduledNotificationsAsync();
+          console.log('🔔 Cancelled all old scheduled notifications');
+
+          const meals = [
+            { hour: 8, minute: 0, titleKey: 'mealReminders.breakfastTitle', bodyKey: 'mealReminders.breakfastBody' },
+            { hour: 13, minute: 0, titleKey: 'mealReminders.lunchTitle', bodyKey: 'mealReminders.lunchBody' },
+            { hour: 19, minute: 0, titleKey: 'mealReminders.dinnerTitle', bodyKey: 'mealReminders.dinnerBody' },
+          ];
+          for (const meal of meals) {
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: t(meal.titleKey),
+                body: t(meal.bodyKey),
+              },
+              trigger: {
+                type: 'daily',
+                hour: meal.hour,
+                minute: meal.minute,
+                repeats: true,
+              },
+            });
           }
+          await AsyncStorage.setItem('notifications_scheduled', 'true');
+          console.log('🔔 Daily meal reminders scheduled (3 total: breakfast, lunch, dinner)');
         }
       } catch (err) {
         console.error('Permission request error:', err);
@@ -1901,6 +1902,10 @@ export default function HomeScreen({ navigation }) {
                     carbs={consumedCarbs}
                     fat={consumedFat}
                     dailyGoal={totalCalories}
+                    totalCalories={totalCalories}
+                    totalProtein={totalProtein}
+                    totalCarbs={totalCarbs}
+                    totalFat={totalFat}
                     remaining={remaining}
                     caloriePercent={(consumed / totalCalories) * 100}
                     proteinPercent={(consumedProtein / totalProtein) * 100}

@@ -10,8 +10,9 @@ Sentry.init({
   tracesSampleRate: 0.2,
 
   // Adds more context data to events (IP address, cookies, user, etc.)
+  // Disabled — caused "frozen object" crash with Sentry React Native 7.x
   // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
-  sendDefaultPii: true,
+  sendDefaultPii: false,
 
   // Enable Logs
   enableLogs: true,

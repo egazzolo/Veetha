@@ -451,19 +451,6 @@ export default function ProfileScreen({ navigation }) {
               {/* Settings Section */}
               <View style={styles.section}>
                 <Text style={[styles.sectionTitle, { color: theme.text }]}> {t('profile.settings')}</Text>
-                
-                <View style={[styles.settingItem, { backgroundColor: theme.cardBackground }]}>
-                  <View style={styles.settingLeft}>
-                    <AppIcon name="moon" size={24} style={{ marginRight: 15 }} />
-                    <Text style={[styles.settingLabel, { color: theme.text }]}>{t('profile.darkMode')}</Text>
-                  </View>
-                  <Switch
-                    value={isDark}
-                    onValueChange={handleToggleDarkMode}
-                    trackColor={{ false: '#ddd', true: '#81c784' }}
-                    thumbColor={isDark ? '#4CAF50' : '#f4f3f4'}
-                  />
-                </View>
 
                 <TouchableOpacity 
                   ref={goalsButtonRef}

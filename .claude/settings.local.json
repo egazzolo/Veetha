@@ -1,7 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Bash(node -e \"const pw = require\\('playwright'\\); console.log\\('playwright available'\\);\")",
+      "Bash(npx playwright *)",
+      "Bash(python -c \"from playwright.sync_api import sync_playwright; print\\('playwright-python available'\\)\")",
+      "Read(//c/Users/USUARIO/AppData/Local/Temp/**)",
+      "Bash(node -e ' *)",
+      "Bash(npx playwright@1.61.0 screenshot --browser=chromium --wait-for-timeout=100 \"http://localhost:8181\" \"veetha_before_anim.png\")",
+      "Bash(node -e \"require\\('@playwright/test'\\)\")",
+      "Bash(node -e \"const {chromium}=require\\('playwright'\\); console.log\\('ok'\\)\")"
     ]
   }
 }

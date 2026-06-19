@@ -306,6 +306,45 @@ export default function ScannerScreen({ navigation }) {
           }
           p.image_url = imageUrl;
 
+          // ── Parse serving size + package size from OFF fields ─────────────
+          // OFF stores serving_size as a string like "2.8 g" or "100ml"
+          // product_quantity is the total package weight (numeric, in grams)
+          const parseGrams = (str) => {
+            if (!str) return null;
+            const match = String(str).match(/([\d.]+)\s*(g|ml|kg|l)?/i);
+            if (!match) return null;
+            let value = parseFloat(match[1]);
+            const unit = (match[2] || 'g').toLowerCase();
+            if (unit === 'kg' || unit === 'l') value *= 1000;
+            return isNaN(value) ? null : value;
+          };
+
+          let servingGrams = parseGrams(p.serving_size);
+          const packageGrams = parseGrams(p.product_quantity) || parseGrams(p.quantity);
+
+          // OFF data quality check: if serving_size >= package size, it's wrong
+          // (a serving can't be bigger than the whole package). Discard it.
+          if (servingGrams && packageGrams && servingGrams >= packageGrams) {
+            console.log("⚠️ OFF serving_size invalid (>= package size). Discarding.");
+            servingGrams = null;
+          }
+
+          // Default the log entry to:
+          //   1. The valid per-serving size if present
+          //   2. Otherwise the package size (whole pack)
+          //   3. Otherwise 100g (last resort)
+          p.serving_quantity = servingGrams || packageGrams || 100;
+          p.package_quantity = packageGrams || null;
+          p.single_serving_grams = servingGrams || null;
+
+          console.log("📏 OFF serving info:", {
+            serving_size: p.serving_size,
+            parsed_serving_g: servingGrams,
+            product_quantity: p.product_quantity,
+            parsed_package_g: packageGrams,
+            default_used: p.serving_quantity
+          });
+
           navigation.navigate("Result", { 
             food: p, 
             fromMode: 'barcode' 

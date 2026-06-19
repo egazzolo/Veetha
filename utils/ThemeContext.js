@@ -32,9 +32,24 @@ const modernDarkTheme = {
   warning: '#FFB74D',
 };
 
+// Pro Mode — minimal black/white/grey with green accent
+const proModeTheme = {
+  background: '#FFFFFF',
+  cardBackground: '#F5F5F5',
+  text: '#1B1B1B',
+  textSecondary: '#666666',
+  textTertiary: '#999999',
+  primary: '#1F9B39',
+  border: '#E0E0E0',
+  error: '#1B1B1B',
+  success: '#1F9B39',
+  warning: '#555555',
+};
+
 const themes = {
   'modern-light': modernLightTheme,
   'modern-dark': modernDarkTheme,
+  'pro-mode': proModeTheme,
 };
 
 export function ThemeProvider({ children }) {
@@ -103,6 +118,7 @@ export function ThemeProvider({ children }) {
 
   const theme = themes[currentTheme];
   const isDark = currentTheme === 'modern-dark';
+  const isProMode = currentTheme === 'pro-mode';
 
   if (!loaded) return null;
 
@@ -111,6 +127,7 @@ export function ThemeProvider({ children }) {
       theme, 
       currentTheme, 
       isDark, 
+      isProMode,
       isTransitioning,
       toggleTheme,
       changeTheme,
