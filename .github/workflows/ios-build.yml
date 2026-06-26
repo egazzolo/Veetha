@@ -27,6 +27,8 @@ jobs:
         run: npm install
 
       - name: Build iOS
+        env:
+          NODE_ENV: production
         run: eas build --platform ios --profile production --non-interactive --local
 
       - name: Upload IPA
