@@ -20,9 +20,18 @@ jobs:
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
+          eas-cache: false
+          expo-cache: false
 
       - name: Install dependencies
         run: npm install
 
       - name: Build iOS
         run: eas build --platform ios --profile production --non-interactive --local
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Veetha-iOS
+          path: build-*.ipa
+          retention-days: 7
