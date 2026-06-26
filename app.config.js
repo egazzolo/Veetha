@@ -3,7 +3,7 @@ module.exports = {
     name: "Veetha",
     slug: "Veetha",
     scheme: "veetha",
-    version: "1.1.9",
+    version: "1.2.0",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
@@ -14,6 +14,7 @@ module.exports = {
     plugins: [
       "expo-apple-authentication",
       "expo-localization",
+      "react-native-iap",
       [
         "expo-location",
         {
@@ -28,7 +29,7 @@ module.exports = {
     },
     android: {
       package: "com.yourname.veetha",
-      versionCode: 33,
+      versionCode: 34,
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#ffffff",
@@ -58,7 +59,7 @@ module.exports = {
     },
     ios: {
       bundleIdentifier: "com.yourname.veetha",
-      buildNumber: "49",
+      buildNumber: "50",
       usesAppleSignIn: true,
       associatedDomains: ["applinks:nonotenb.com"],
       infoPlist: {
