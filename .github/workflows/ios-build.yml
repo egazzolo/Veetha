@@ -26,6 +26,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Debug expo config
+        run: node node_modules/expo/bin/cli config --json || true
+
       - name: Install Expo CLI
         run: npm install -g expo@latest
 
