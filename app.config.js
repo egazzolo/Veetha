@@ -14,7 +14,6 @@ module.exports = {
     plugins: [
       "expo-apple-authentication",
       "expo-localization",
-      "react-native-iap",
       [
         "expo-location",
         {
