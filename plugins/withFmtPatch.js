@@ -13,8 +13,9 @@ module.exports = function withFmtPatch(config) {
   # fmt_patch: fix Xcode 26 C++ incompatibility
   installer.pods_project.targets.each do |target|
     if target.name == 'fmt'
-      target.build_configurations.each do |config|
-        config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
+      target.build_configurations.each do |cfg|
+        cfg.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
+        cfg.build_settings['OTHER_CPLUSPLUSFLAGS'] = '$(inherited) -std=c++17'
       end
     end
   end
