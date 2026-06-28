@@ -22,10 +22,7 @@
     "production": {
       "distribution": "store",
       "channel": "production",
-      "prebuildCommand": "npx expo prebuild --clean",
-      "env": {
-        "CLANG_CXX_LANGUAGE_STANDARD": "c++17"
-      }
+      "prebuildCommand": "npx expo prebuild --clean && sed -i '' 's/CLANG_CXX_LANGUAGE_STANDARD = \"c++20\"/CLANG_CXX_LANGUAGE_STANDARD = \"c++17\"/g' ios/Pods/Pods.xcodeproj/project.pbxproj || true"
     }
   },
   "submit": {
