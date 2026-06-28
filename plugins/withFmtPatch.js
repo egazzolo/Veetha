@@ -9,9 +9,8 @@ module.exports = function withFmtPatch(config) {
       const podfilePath = path.join(config.modRequest.platformProjectRoot, 'Podfile');
       let podfile = fs.readFileSync(podfilePath, 'utf8');
       if (!podfile.includes('fmt_patch')) {
-        const patch = `
-# fmt_patch: fix Xcode 26 C++ incompatibility
-post_install do |installer|
+        const fmtPatch = `
+  # fmt_patch: fix Xcode 26 C++ incompatibility
   installer.pods_project.targets.each do |target|
     if target.name == 'fmt'
       target.build_configurations.each do |config|
@@ -19,9 +18,11 @@ post_install do |installer|
       end
     end
   end
-end
 `;
-        podfile = podfile + patch;
+        podfile = podfile.replace(
+          /post_install do \|installer\|/,
+          `post_install do |installer|\n${fmtPatch}`
+        );
         fs.writeFileSync(podfilePath, podfile);
       }
       return config;
