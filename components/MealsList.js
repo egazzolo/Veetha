@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, Pressable } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, Pressable, Alert } from 'react-native';
 import GuestUpsellSheet from './GuestUpsellSheet';
 import AppIcon from './AppIcon';
 import { useTheme } from '../utils/ThemeContext';
+import { usePremiumStatus } from '../utils/usePremiumStatus';
 
 export default function MealsList({
   theme,
@@ -29,7 +30,9 @@ export default function MealsList({
 }) {
   const [selectedMeal, setSelectedMeal] = useState(null);
   const [guestSheetVisible, setGuestSheetVisible] = useState(false);
+  const [postItView, setPostItView] = useState('whole'); // 'whole' or 'individual'
   const { isDark } = useTheme();
+  const { isPremium } = usePremiumStatus();
 
   const handleMealPress = (meal) => {
     // In selection mode, tap toggles checkbox instead of opening post-it
@@ -42,6 +45,7 @@ export default function MealsList({
 
   const closePostIt = () => {
     setSelectedMeal(null);
+    setPostItView('whole');
   };
 
   const selectedCount = selectedMealIds?.size || 0;
@@ -330,60 +334,156 @@ export default function MealsList({
                 borderTopColor: '#5C4400',
               }
             ]}>
-              <View style={styles.postItHeader}>
-                <Text style={[
-                  styles.postItTitle,
-                  isDark && { color: '#F5E6A3' }
-                ]} numberOfLines={2}>
-                  {selectedMeal?.product_name}
-                </Text>
-              </View>
-              <View style={styles.postItCalories}>
-                <Text style={[
-                  styles.postItCaloriesText,
-                  isDark && { color: '#7BC97F' }
-                ]}>
-                  {Math.round(selectedMeal?.calories || 0)} kcal
-                </Text>
-              </View>
-              <View style={styles.postItDivider} />
-              <View style={styles.postItMacros}>
-                <View style={styles.postItMacroRow}>
-                  <AppIcon name="protein" size={16} tintColor="#A0522D" style={{ marginRight: 4 }} />
-                    <Text style={[styles.postItMacroLabel, isDark && { color: '#F5E6A3' }]}>{t('home.mealsList.protein')}:</Text>
-                  <Text style={[styles.postItMacroValue, isDark && { color: '#F5E6A3' }]}>{Math.round(selectedMeal?.protein || 0)}g</Text>
+              {/* Toggle button — only shown when meal has 2+ individual foods */}
+              {selectedMeal?.individual_foods && selectedMeal.individual_foods.length > 1 && (
+                <View style={styles.postItToggleRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.postItToggleBtn,
+                      postItView === 'whole' && styles.postItToggleBtnActive,
+                    ]}
+                    onPress={() => setPostItView('whole')}
+                  >
+                    <Text style={[
+                      styles.postItToggleText,
+                      postItView === 'whole' && styles.postItToggleTextActive,
+                    ]}>
+                      Whole meal
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.postItToggleBtn,
+                      postItView === 'individual' && styles.postItToggleBtnActive,
+                      !isPremium && { opacity: 0.7 },
+                    ]}
+                    onPress={() => {
+                      if (!isPremium) {
+                        Alert.alert('Premium Feature', 'Individual food breakdown is available with Veetha Premium.');
+                        return;
+                      }
+                      setPostItView('individual');
+                    }}
+                  >
+                    <Text style={[
+                      styles.postItToggleText,
+                      postItView === 'individual' && styles.postItToggleTextActive,
+                    ]}>
+                      Individual foods{!isPremium ? ' 🔒' : ''}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
-                <View style={styles.postItMacroRow}>
-                  <AppIcon name="carbs" size={16} tintColor="#DAA520" style={{ marginRight: 4 }} />
-                    <Text style={[styles.postItMacroLabel, isDark && { color: '#F5E6A3' }]}>{t('home.mealsList.carbs')}:</Text>
-                  <Text style={[styles.postItMacroValue, isDark && { color: '#F5E6A3' }]}>{Math.round(selectedMeal?.carbs || 0)}g</Text>
+              )}
+
+              {/* WHOLE MEAL VIEW (default) */}
+              {postItView === 'whole' && (
+                <>
+                  <View style={styles.postItHeader}>
+                    <Text style={[
+                      styles.postItTitle,
+                      isDark && { color: '#F5E6A3' }
+                    ]} numberOfLines={2}>
+                      {selectedMeal?.product_name}
+                    </Text>
+                  </View>
+                  <View style={styles.postItCalories}>
+                    <Text style={[
+                      styles.postItCaloriesText,
+                      isDark && { color: '#7BC97F' }
+                    ]}>
+                      {Math.round(selectedMeal?.calories || 0)} kcal
+                    </Text>
+                  </View>
+                  <View style={styles.postItDivider} />
+                  <View style={styles.postItMacros}>
+                    <View style={styles.postItMacroRow}>
+                      <AppIcon name="protein" size={16} tintColor="#A0522D" style={{ marginRight: 4 }} />
+                        <Text style={[styles.postItMacroLabel, isDark && { color: '#F5E6A3' }]}>{t('home.mealsList.protein')}:</Text>
+                      <Text style={[styles.postItMacroValue, isDark && { color: '#F5E6A3' }]}>{Math.round(selectedMeal?.protein || 0)}g</Text>
+                    </View>
+                    <View style={styles.postItMacroRow}>
+                      <AppIcon name="carbs" size={16} tintColor="#DAA520" style={{ marginRight: 4 }} />
+                        <Text style={[styles.postItMacroLabel, isDark && { color: '#F5E6A3' }]}>{t('home.mealsList.carbs')}:</Text>
+                      <Text style={[styles.postItMacroValue, isDark && { color: '#F5E6A3' }]}>{Math.round(selectedMeal?.carbs || 0)}g</Text>
+                    </View>
+                    <View style={styles.postItMacroRow}>
+                      <AppIcon name="fat" size={16} tintColor="#1F9B39" style={{ marginRight: 4 }} />
+                        <Text style={[styles.postItMacroLabel, isDark && { color: '#F5E6A3' }]}>{t('home.mealsList.fat')}:</Text>
+                      <Text style={[styles.postItMacroValue, isDark && { color: '#F5E6A3' }]}>{Math.round(selectedMeal?.fat || 0)}g</Text>
+                    </View>
+                    <View style={styles.postItMacroRow}>
+                      <AppIcon name="sodium" size={16} tintColor="#607D8B" style={{ marginRight: 4 }} />
+                        <Text style={[styles.postItMacroLabel, isDark && { color: '#F5E6A3' }]}>{t('home.mealsList.sodium')}:</Text>
+                      <Text style={[styles.postItMacroValue, isDark && { color: '#F5E6A3' }]}>{Math.round(selectedMeal?.sodium || 0)}mg</Text>
+                    </View>
+                    <View style={styles.postItMacroRow}>
+                      <AppIcon name="sugar" size={16} tintColor="#E91E63" style={{ marginRight: 4 }} />
+                        <Text style={[styles.postItMacroLabel, isDark && { color: '#F5E6A3' }]}>{t('home.mealsList.sugar')}:</Text>
+                      <Text style={[styles.postItMacroValue, isDark && { color: '#F5E6A3' }]}>{Math.round(selectedMeal?.sugar || 0)}g</Text>
+                    </View>
+                    <View style={styles.postItMacroRow}>
+                      <AppIcon name="fiber" size={16} tintColor="#4CAF50" style={{ marginRight: 4 }} />
+                        <Text style={[styles.postItMacroLabel, isDark && { color: '#F5E6A3' }]}>{t('home.mealsList.fiber')}:</Text>
+                      <Text style={[styles.postItMacroValue, isDark && { color: '#F5E6A3' }]}>{Math.round(selectedMeal?.fiber || 0)}g</Text>
+                    </View>
+                  </View>
+                  <View style={styles.postItFooter}>
+                    <Text style={[styles.postItServingText, isDark && { color: '#C9A961' }]}>
+                      {t('home.mealsList.serving')}: {selectedMeal?.serving_grams}{selectedMeal?.serving_unit || 'g'}
+                    </Text>
+                  </View>
+                </>
+              )}
+
+              {/* INDIVIDUAL FOODS VIEW */}
+              {postItView === 'individual' && selectedMeal?.individual_foods && (
+                <View style={{ paddingTop: 4 }}>
+                  {selectedMeal.individual_foods.map((food, index) => {
+                    const grams = food.typical_serving_grams || 100;
+                    const fCals = Math.round((food.calories_per_100g || 0) * grams / 100);
+                    const fProt = Math.round((food.protein_per_100g || 0) * grams / 100);
+                    const fCarb = Math.round((food.carbs_per_100g || 0) * grams / 100);
+                    const fFat = Math.round((food.fat_per_100g || 0) * grams / 100);
+                    return (
+                      <View key={index} style={{
+                        marginBottom: 12,
+                        paddingBottom: 10,
+                        borderBottomWidth: index < selectedMeal.individual_foods.length - 1 ? 1 : 0,
+                        borderBottomColor: isDark ? '#5C4400' : '#D4C100',
+                      }}>
+                        <Text style={[
+                          styles.postItTitle,
+                          { fontSize: 15, marginBottom: 4, textTransform: 'capitalize' },
+                          isDark && { color: '#F5E6A3' }
+                        ]}>
+                          {food.food_name}
+                        </Text>
+                        <Text style={[
+                          styles.postItCaloriesText,
+                          { fontSize: 18, marginBottom: 6 },
+                          isDark && { color: '#7BC97F' }
+                        ]}>
+                          {fCals} kcal
+                        </Text>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                          <View style={styles.postItMacroRow}>
+                            <AppIcon name="protein" size={13} tintColor="#A0522D" style={{ marginRight: 3 }} />
+                            <Text style={[{ fontSize: 12, fontWeight: '600', fontFamily: 'Courier' }, isDark && { color: '#F5E6A3' }, !isDark && { color: '#1a1a1a' }]}>{fProt}g</Text>
+                          </View>
+                          <View style={styles.postItMacroRow}>
+                            <AppIcon name="carbs" size={13} tintColor="#DAA520" style={{ marginRight: 3 }} />
+                            <Text style={[{ fontSize: 12, fontWeight: '600', fontFamily: 'Courier' }, isDark && { color: '#F5E6A3' }, !isDark && { color: '#1a1a1a' }]}>{fCarb}g</Text>
+                          </View>
+                          <View style={styles.postItMacroRow}>
+                            <AppIcon name="fat" size={13} tintColor="#1F9B39" style={{ marginRight: 3 }} />
+                            <Text style={[{ fontSize: 12, fontWeight: '600', fontFamily: 'Courier' }, isDark && { color: '#F5E6A3' }, !isDark && { color: '#1a1a1a' }]}>{fFat}g</Text>
+                          </View>
+                        </View>
+                      </View>
+                    );
+                  })}
                 </View>
-                <View style={styles.postItMacroRow}>
-                  <AppIcon name="fat" size={16} tintColor="#1F9B39" style={{ marginRight: 4 }} />
-                    <Text style={[styles.postItMacroLabel, isDark && { color: '#F5E6A3' }]}>{t('home.mealsList.fat')}:</Text>
-                  <Text style={[styles.postItMacroValue, isDark && { color: '#F5E6A3' }]}>{Math.round(selectedMeal?.fat || 0)}g</Text>
-                </View>
-                <View style={styles.postItMacroRow}>
-                  <AppIcon name="sodium" size={16} tintColor="#607D8B" style={{ marginRight: 4 }} />
-                    <Text style={[styles.postItMacroLabel, isDark && { color: '#F5E6A3' }]}>{t('home.mealsList.sodium')}:</Text>
-                  <Text style={[styles.postItMacroValue, isDark && { color: '#F5E6A3' }]}>{Math.round(selectedMeal?.sodium || 0)}mg</Text>
-                </View>
-                <View style={styles.postItMacroRow}>
-                  <AppIcon name="sugar" size={16} tintColor="#E91E63" style={{ marginRight: 4 }} />
-                    <Text style={[styles.postItMacroLabel, isDark && { color: '#F5E6A3' }]}>{t('home.mealsList.sugar')}:</Text>
-                  <Text style={[styles.postItMacroValue, isDark && { color: '#F5E6A3' }]}>{Math.round(selectedMeal?.sugar || 0)}g</Text>
-                </View>
-                <View style={styles.postItMacroRow}>
-                  <AppIcon name="fiber" size={16} tintColor="#4CAF50" style={{ marginRight: 4 }} />
-                    <Text style={[styles.postItMacroLabel, isDark && { color: '#F5E6A3' }]}>{t('home.mealsList.fiber')}:</Text>
-                  <Text style={[styles.postItMacroValue, isDark && { color: '#F5E6A3' }]}>{Math.round(selectedMeal?.fiber || 0)}g</Text>
-                </View>
-              </View>
-              <View style={styles.postItFooter}>
-                <Text style={[styles.postItServingText, isDark && { color: '#C9A961' }]}>
-                  {t('home.mealsList.serving')}: {selectedMeal?.serving_grams}{selectedMeal?.serving_unit || 'g'}
-                </Text>
-              </View>
+              )}
             </View>
           </Pressable>
         </Pressable>
@@ -755,5 +855,34 @@ const styles = StyleSheet.create({
     color: '#4a4a4a', 
     fontStyle: 'italic', 
     fontFamily: 'Courier' 
+  },
+  postItToggleRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 12,
+    marginTop: -4,
+  },
+  postItToggleBtn: {
+    flex: 1,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#D4C100',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.3)',
+  },
+  postItToggleBtnActive: {
+    backgroundColor: '#1F9B39',
+    borderColor: '#1F9B39',
+  },
+  postItToggleText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    fontFamily: 'Courier',
+  },
+  postItToggleTextActive: {
+    color: '#fff',
   },
 });

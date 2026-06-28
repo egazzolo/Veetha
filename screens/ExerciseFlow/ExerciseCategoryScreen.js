@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useLanguage } from '../../utils/LanguageContext';
+import { usePremiumStatus } from '../../utils/usePremiumStatus';
 import AppIcon from '../../components/AppIcon';
 
 const CATEGORIES = [
@@ -14,6 +15,7 @@ export default function ExerciseCategoryScreen({ navigation, route }) {
   const { t } = useLanguage();
   const { weight } = route.params;
   const theme = route.params?.theme || {};
+  const { isPremium } = usePremiumStatus();
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -34,24 +36,29 @@ export default function ExerciseCategoryScreen({ navigation, route }) {
 
       {/* Categories */}
       <ScrollView style={styles.scrollView}>
-        {CATEGORIES.map(cat => (
-          <TouchableOpacity
-            key={cat.id}
-            style={[styles.categoryCard, { backgroundColor: theme.cardBackground }]}
-            onPress={() => navigation.navigate('ExerciseActivityScreen', { 
-              category: cat.id, 
-              weight,
-              theme 
-            })}
-          >
-            <AppIcon name={cat.iconName} size={36} style={styles.categoryIcon} />
-            <Text style={[styles.categoryName, { color: theme.text }]}>
-              {t(`exercise.categories.${cat.key}`)}
-            </Text>
-            <Text style={styles.chevron}>›</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+          {CATEGORIES.map(cat => {
+            const isPremiumLocked = !isPremium && cat.id !== 'strength';
+            return (
+              <TouchableOpacity
+                key={cat.id}
+                style={[styles.categoryCard, { backgroundColor: theme.cardBackground, opacity: isPremiumLocked ? 0.5 : 1 }]}
+                onPress={() => {
+                  if (isPremiumLocked) {
+                    navigation.navigate('Paywall', { highlightFeature: 'All exercise categories' });
+                  } else {
+                    navigation.navigate('ExerciseActivityScreen', { category: cat.id, weight, theme });
+                  }
+                }}
+              >
+                <AppIcon name={cat.iconName} size={36} style={styles.categoryIcon} />
+                <Text style={[styles.categoryName, { color: theme.text }]}>
+                  {t(`exercise.categories.${cat.key}`)}{isPremiumLocked ? ' 🔒' : ''}
+                </Text>
+                <Text style={styles.chevron}>›</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
     </View>
   );
 }

@@ -270,27 +270,31 @@ export default function ResultScreen({ route, navigation }) {
     sodium_100g: 0,
   } : food.nutriments;
 
+  const activeServingGrams = mealViewMode === 'individual' && selectedFood
+    ? (selectedFood.typical_serving_grams || 100)
+    : servingGrams;
+
   const nutritionValues = {
     calories: activeFoodNutriments?.['energy-kcal_100g'] !== undefined 
-      ? ((activeFoodNutriments['energy-kcal_100g'] * servingGrams) / 100).toFixed(1) 
+      ? ((activeFoodNutriments['energy-kcal_100g'] * activeServingGrams) / 100).toFixed(1) 
       : "N/A",
     protein: activeFoodNutriments?.proteins_100g !== undefined 
-      ? ((activeFoodNutriments.proteins_100g * servingGrams) / 100).toFixed(1) 
+      ? ((activeFoodNutriments.proteins_100g * activeServingGrams) / 100).toFixed(1) 
       : "N/A",
     carbs: activeFoodNutriments?.carbohydrates_100g !== undefined 
-      ? ((activeFoodNutriments.carbohydrates_100g * servingGrams) / 100).toFixed(1) 
+      ? ((activeFoodNutriments.carbohydrates_100g * activeServingGrams) / 100).toFixed(1) 
       : "N/A",
     fat: activeFoodNutriments?.fat_100g !== undefined 
-      ? ((activeFoodNutriments.fat_100g * servingGrams) / 100).toFixed(1) 
+      ? ((activeFoodNutriments.fat_100g * activeServingGrams) / 100).toFixed(1) 
       : "N/A",
     fiber: activeFoodNutriments?.fiber_100g !== undefined 
-      ? ((activeFoodNutriments.fiber_100g * servingGrams) / 100).toFixed(1) 
+      ? ((activeFoodNutriments.fiber_100g * activeServingGrams) / 100).toFixed(1) 
       : "N/A",
     sugar: activeFoodNutriments?.sugars_100g !== undefined 
-      ? ((activeFoodNutriments.sugars_100g * servingGrams) / 100).toFixed(1) 
+      ? ((activeFoodNutriments.sugars_100g * activeServingGrams) / 100).toFixed(1) 
       : "N/A",
     sodium: activeFoodNutriments?.sodium_100g !== undefined 
-      ? ((activeFoodNutriments.sodium_100g * servingGrams) / 100).toFixed(1) 
+      ? ((activeFoodNutriments.sodium_100g * activeServingGrams) / 100).toFixed(1) 
       : "N/A",
   };
 
@@ -329,14 +333,14 @@ export default function ResultScreen({ route, navigation }) {
       // Check allergies
       if (profile.allergies && profile.allergies.length > 0) {
         const allergenMap = {
-          'peanuts': { keywords: ['peanut', 'groundnut'], emoji: '🥜', label: 'Peanuts' },
-          'dairy': { keywords: ['milk', 'dairy', 'lactose', 'cheese', 'butter', 'cream', 'whey', 'casein'], emoji: '🥛', label: 'Dairy' },
-          'shellfish': { keywords: ['shrimp', 'crab', 'lobster', 'shellfish', 'prawn'], emoji: '🦐', label: 'Shellfish' },
-          'eggs': { keywords: ['egg', 'albumin'], emoji: '🥚', label: 'Eggs' },
-          'soy': { keywords: ['soy', 'soya'], emoji: '🫘', label: 'Soy' },
-          'wheat': { keywords: ['wheat', 'gluten'], emoji: '🌾', label: 'Wheat' },
-          'fish': { keywords: ['fish', 'salmon', 'tuna', 'cod'], emoji: '🐟', label: 'Fish' },
-          'tree_nuts': { keywords: ['almond', 'walnut', 'cashew', 'pistachio', 'pecan', 'hazelnut', 'macadamia'], emoji: '🌰', label: 'Tree Nuts' },
+          'peanuts': { keywords: ['peanut', 'groundnut'], emoji: '🥜', label: t('results.allergenWarning.allergens.peanuts') },
+          'dairy': { keywords: ['milk', 'dairy', 'lactose', 'cheese', 'butter', 'cream', 'whey', 'casein'], emoji: '🥛', label: t('results.allergenWarning.allergens.dairy') },
+          'shellfish': { keywords: ['shrimp', 'crab', 'lobster', 'shellfish', 'prawn'], emoji: '🦐', label: t('results.allergenWarning.allergens.shellfish') },
+          'eggs': { keywords: ['egg', 'albumin'], emoji: '🥚', label: t('results.allergenWarning.allergens.eggs') },
+          'soy': { keywords: ['soy', 'soya'], emoji: '🫘', label: t('results.allergenWarning.allergens.soy') },
+          'wheat': { keywords: ['wheat', 'gluten'], emoji: '🌾', label: t('results.allergenWarning.allergens.wheat') },
+          'fish': { keywords: ['fish', 'salmon', 'tuna', 'cod'], emoji: '🐟', label: t('results.allergenWarning.allergens.fish') },
+          'tree_nuts': { keywords: ['almond', 'walnut', 'cashew', 'pistachio', 'pecan', 'hazelnut', 'macadamia'], emoji: '🌰', label: t('results.allergenWarning.allergens.tree_nuts') },
         };
 
         profile.allergies.forEach(allergy => {
@@ -347,7 +351,7 @@ export default function ResultScreen({ route, navigation }) {
               warnings.push({
                 emoji: allergenInfo.emoji,
                 label: allergenInfo.label,
-                reason: 'Marked as allergen',
+                reason: t('results.allergenWarning.reasons.markedAsAllergen'),
               });
             }
           }
@@ -373,10 +377,15 @@ export default function ResultScreen({ route, navigation }) {
 
         const check = dietChecks[profile.diet_type];
         if (check && check()) {
+          const dietLabelMap = {
+            'vegan': t('results.allergenWarning.reasons.notVegan'),
+            'vegetarian': t('results.allergenWarning.reasons.notVegetarian'),
+            'pescatarian': t('results.allergenWarning.reasons.notPescatarian'),
+          };
           warnings.push({
             emoji: '🥗',
-            label: `Not ${profile.diet_type}`,
-            reason: `Your diet: ${profile.diet_type.charAt(0).toUpperCase() + profile.diet_type.slice(1)}`,
+            label: dietLabelMap[profile.diet_type] || `Not ${profile.diet_type}`,
+            reason: `${t('results.allergenWarning.reasons.dietPrefix')} ${profile.diet_type.charAt(0).toUpperCase() + profile.diet_type.slice(1)}`,
           });
         }
       }
@@ -384,39 +393,37 @@ export default function ResultScreen({ route, navigation }) {
       // Check preferences
       if (profile.dietary_preferences && profile.dietary_preferences.length > 0) {
         const preferenceMap = {
-          'gluten_free': { keywords: ['wheat', 'gluten', 'barley', 'rye'], emoji: '🌾', label: 'Contains Gluten' },
-          'lactose_free': { keywords: ['milk', 'lactose', 'dairy'], emoji: '🥛', label: 'Contains Lactose' },
-          'low_sodium': { keywords: [], emoji: '🧂', label: 'High Sodium', checkNutrition: true },
-          'sugar_free': { keywords: [], emoji: '🍬', label: 'Contains Sugar', checkNutrition: true },
+          'gluten_free': { keywords: ['wheat', 'gluten', 'barley', 'rye'], emoji: '🌾', label: t('results.allergenWarning.reasons.containsGluten') },
+          'lactose_free': { keywords: ['milk', 'lactose', 'dairy'], emoji: '🥛', label: t('results.allergenWarning.reasons.containsLactose') },
+          'low_sodium': { keywords: [], emoji: '🧂', label: t('results.allergenWarning.reasons.highSodium'), checkNutrition: true },
+          'sugar_free': { keywords: [], emoji: '🍬', label: t('results.allergenWarning.reasons.containsSugar'), checkNutrition: true },
         };
 
         profile.dietary_preferences.forEach(pref => {
           const prefInfo = preferenceMap[pref];
           if (prefInfo) {
             if (prefInfo.checkNutrition) {
-              // Check nutrition values
               if (pref === 'low_sodium' && food.nutriments?.sodium_100g > 0.3) {
                 warnings.push({
                   emoji: prefInfo.emoji,
                   label: prefInfo.label,
-                  reason: `Preference: Low sodium`,
+                  reason: `${t('results.allergenWarning.reasons.preferencePrefix')} ${t('results.allergenWarning.reasons.highSodium')}`,
                 });
               }
               if (pref === 'sugar_free' && food.nutriments?.sugars_100g > 5) {
                 warnings.push({
                   emoji: prefInfo.emoji,
                   label: prefInfo.label,
-                  reason: `Preference: Sugar-free`,
+                  reason: `${t('results.allergenWarning.reasons.preferencePrefix')} ${t('results.allergenWarning.reasons.containsSugar')}`,
                 });
               }
             } else {
-              // Check ingredients
               const found = prefInfo.keywords.some(keyword => ingredients.includes(keyword));
               if (found) {
                 warnings.push({
                   emoji: prefInfo.emoji,
                   label: prefInfo.label,
-                  reason: `Preference: ${pref.replace('_', ' ')}`,
+                  reason: `${t('results.allergenWarning.reasons.preferencePrefix')} ${pref.replace('_', ' ')}`,
                 });
               }
             }
@@ -612,6 +619,11 @@ export default function ResultScreen({ route, navigation }) {
 
         console.log('INSERTING MEAL WITH PRODUCT ID:', productId);
 
+        // Save individual foods breakdown if this was a photo recognition with 2+ foods
+        const individualFoodsToSave = (individualFoods && individualFoods.length > 1) 
+          ? individualFoods 
+          : null;
+
         const { error } = await supabase
           .from('meals')
           .insert({
@@ -622,10 +634,11 @@ export default function ResultScreen({ route, navigation }) {
             meal_type: null,
             image_url: imageUrl,
             logged_at: new Date().toISOString(),
+            individual_foods: individualFoodsToSave,
           });
 
         if (error) throw error;
-        console.log('✅ SUPABASE MEAL INSERT SUCCESS');
+        console.log('✅ SUPABASE MEAL INSERT SUCCESS', individualFoodsToSave ? `with ${individualFoodsToSave.length} individual foods` : '');
 
       }
 

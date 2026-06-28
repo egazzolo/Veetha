@@ -13,6 +13,7 @@ import { useSwipeNavigation } from '../utils/useSwipeNavigation';
 import { useTheme } from '../utils/ThemeContext';
 import { useLanguage } from '../utils/LanguageContext';
 import { useUser } from '../utils/UserContext';
+import { usePremiumStatus } from '../utils/usePremiumStatus';
 import { useUserMode } from '../utils/UserModeContext';
 import { RefreshControl } from 'react-native';
 import { logScreen, logEvent, logMealLogged } from '../utils/analytics';
@@ -34,6 +35,7 @@ export default function ProfileScreen({ navigation }) {
   const { profile, loading, refreshProfile, refreshMeals } = useUser();
   const { isGuest, setUserMode } = useUserMode();
   const { startTutorial } = useTutorial();
+  const { isPremium } = usePremiumStatus();
   const [guestSheetVisible, setGuestSheetVisible] = useState(false);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [deleteModalStep, setDeleteModalStep] = useState(0); // 0=hidden, 1=first confirm, 2=final confirm
@@ -448,10 +450,33 @@ export default function ProfileScreen({ navigation }) {
                 </View>
               </View>
 
+              {!isGuest && !isPremium && (
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: '#1F9B39',
+                    borderRadius: 12,
+                    padding: 20,
+                    marginHorizontal: 20,
+                    marginBottom: 16,
+                  }}
+                  onPress={() => navigation.navigate('Paywall')}
+                  activeOpacity={0.85}
+                >
+                  <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>
+                    Veetha Premium
+                  </Text>
+                  <Text style={{ color: '#fff', fontSize: 14, marginTop: 4 }}>
+                    Unlock all features with a 7-day free trial
+                  </Text>
+                  <Text style={{ color: '#fff', fontWeight: '600', marginTop: 12 }}>
+                    Go Premium →
+                  </Text>
+                </TouchableOpacity>
+              )}
+
               {/* Settings Section */}
               <View style={styles.section}>
                 <Text style={[styles.sectionTitle, { color: theme.text }]}> {t('profile.settings')}</Text>
-
                 <TouchableOpacity 
                   ref={goalsButtonRef}
                   onLayout={(event) => {

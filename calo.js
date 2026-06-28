@@ -83,6 +83,7 @@ import ExerciseLogModal from './screens/ExerciseFlow/ExerciseLogModal';
 import ReportViewerScreen from './screens/ReportViewerScreen';
 import ForgotPasswordScreen from './screens/auth/ForgotPasswordScreen';
 import ResetPasswordScreen from './screens/onboarding/ResetPasswordScreen';
+import PaywallScreen from './screens/PaywallScreen';
 
 // Import contexts and utilities
 import { OnboardingProvider } from './utils/OnboardingContext';
@@ -413,6 +414,7 @@ function AppNavigator() {
           <Stack.Screen name="ReportViewer" component={ReportViewerScreen}/>
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+          <Stack.Screen name="Paywall" component={PaywallScreen} options={{ presentation: 'modal', headerShown: false }} />
         </Stack.Navigator>
         {/* <GlobalTutorialOverlay /> */}
       </NavigationContainer>

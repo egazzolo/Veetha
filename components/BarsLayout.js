@@ -49,6 +49,17 @@ export default function BarsLayout({
               +{Math.round(exerciseCaloriesBurned)} {t('home.fromExercise')}
             </Text>
           )}
+          <View style={[styles.progressBar, { backgroundColor: theme.border, marginTop: 12 }]}>
+            <View
+              style={[
+                styles.progressFill,
+                {
+                  backgroundColor: '#4CAF50',
+                  width: `${Math.min((consumed / dailyGoal) * 100, 100)}%`,
+                }
+              ]}
+            />
+          </View>
         </TouchableOpacity>
       </View>
 

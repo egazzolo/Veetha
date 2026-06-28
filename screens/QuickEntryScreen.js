@@ -9,11 +9,13 @@ import { useLanguage } from '../utils/LanguageContext';
 import { getSuggestionsForMealTime, LOCAL_FOODS, DEFAULT_FOODS } from '../utils/localFoods';
 import { showToast } from '../components/VeethaToast';
 import { posthog } from '../utils/posthog';
+import { usePremiumStatus } from '../utils/usePremiumStatus';
 
 export default function QuickEntryScreen({ navigation }) {
   const { refreshMeals } = useUser();
   const { theme } = useTheme();
   const { t } = useLanguage();
+  const { isPremium } = usePremiumStatus();
   
   const [mealName, setMealName] = useState('');
   const [servingGrams, setServingGrams] = useState('100');
@@ -339,35 +341,44 @@ Values are for the total amount described. Be accurate, not inflated.`
             {showSuggestions && quickSuggestions.length > 0 && (
 
               <View style={styles.suggestionsList}>
-                {quickSuggestions.map((food, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={[styles.suggestionItem, { borderBottomColor: theme.border }]}
-                    onPress={() => handleQuickLog(food)}
-                  >
-                    {food.image_url ? (
-                      <Image
-                        source={{ uri: food.image_url }}
-                        style={styles.suggestionImage}
-                      />
-                    ) : (
-                      <Text style={styles.suggestionEmoji}>{food.emoji}</Text>
-                    )}
+                {quickSuggestions.map((food, index) => {
+                  const isLocked = !isPremium && index >= 2;
+                  return (
+                    <TouchableOpacity
+                      key={index}
+                      style={[styles.suggestionItem, { borderBottomColor: theme.border, opacity: isLocked ? 0.5 : 1 }]}
+                      onPress={() => {
+                        if (isLocked) {
+                          navigation.navigate('Paywall', { highlightFeature: 'All meal recommendations in Quick Add' });
+                        } else {
+                          handleQuickLog(food);
+                        }
+                      }}
+                    >
+                      {food.image_url ? (
+                        <Image
+                          source={{ uri: food.image_url }}
+                          style={styles.suggestionImage}
+                        />
+                      ) : (
+                        <Text style={styles.suggestionEmoji}>{food.emoji}</Text>
+                      )}
 
-                    <View style={styles.suggestionInfo}>
-                      <Text style={[styles.suggestionName, { color: theme.text }]}>
-                        {food.name}
-                      </Text>
-                      <Text style={[styles.suggestionCals, { color: theme.textSecondary }]}>
-                        {food.calories} {t('common.kcal')} • {food.protein}g {t('stats.quickEntry.protein')}
-                      </Text>
-                    </View>
+                      <View style={styles.suggestionInfo}>
+                        <Text style={[styles.suggestionName, { color: theme.text }]}>
+                          {food.name}{isLocked ? ' 🔒' : ''}
+                        </Text>
+                        <Text style={[styles.suggestionCals, { color: theme.textSecondary }]}>
+                          {food.calories} {t('common.kcal')} • {food.protein}g {t('stats.quickEntry.protein')}
+                        </Text>
+                      </View>
 
-                    <Text style={[styles.addButton, { color: theme.primary }]}>
-                      {t('stats.quickEntry.add')}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                      <Text style={[styles.addButton, { color: isLocked ? theme.textTertiary : theme.primary }]}>
+                        {isLocked ? '🔒' : t('stats.quickEntry.add')}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
 
             )}

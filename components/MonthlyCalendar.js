@@ -218,9 +218,10 @@ const styles = StyleSheet.create({
   calendarHeader: {
     flexDirection: 'row',
     marginBottom: 10,
+    width: '100%',
   },
   calendarHeaderText: {
-    flexBasis: '14.2857%',
+    width: '14.2857%',
     textAlign: 'center',
     fontSize: 12,
     fontWeight: '600',
@@ -228,11 +229,12 @@ const styles = StyleSheet.create({
   calendarGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    width: '100%',
   },
   calendarCell: {
-    flexBasis: '14.2857%',
+    width: '14.2857%',
     aspectRatio: 1,
-    padding: '1%',
+    padding: 2,
   },
   calendarCellInner: {
     flex: 1,

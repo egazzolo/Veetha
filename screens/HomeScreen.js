@@ -5,7 +5,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Notifications from 'expo-notifications';
 import * as StoreReview from 'expo-store-review';
 import * as Location from 'expo-location';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, RefreshControl, Alert, Modal, Platform, Animated, ActivityIndicator, Linking, TextInput } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, RefreshControl, Alert, Modal, Platform, Animated, ActivityIndicator, Linking, TextInput, Image } from 'react-native';
 import { showToast } from '../components/VeethaToast';
 import VeethaModal from '../components/VeethaModal';
 import GuestUpsellSheet from '../components/GuestUpsellSheet';
@@ -149,16 +149,27 @@ const handleQuickLog = async (food) => {
 
 // NUTRIENT MODAL COMPONENT
 function NutrientModal({ visible, nutrient, onClose, theme, currentIntake, dailyGoal, t }) {
+  const nutrientIcons = {
+    energy: require('../assets/icons/nutrients/energy.png'),
+    brain: require('../assets/icons/nutrients/brain.png'),
+    heart: require('../assets/icons/nutrients/heart.png'),
+    shoe: require('../assets/icons/nutrients/shoe.png'),
+    bread: require('../assets/icons/nutrients/bread.png'),
+    avocado: require('../assets/icons/nutrients/avocado.png'),
+    chicken: require('../assets/icons/nutrients/chicken.png'),
+    water: require('../assets/icons/nutrients/water.png'),
+  };
+
   const nutrientInfo = {
     calories: {
       icon: 'calories',
       title: t('home.nutrientModal.calories.title'),
       color: '#4CAF50',
       benefits: [
-        { icon: '⚡', text: t('home.nutrientModal.calories.benefits.b1') },
-        { icon: '🧠', text: t('home.nutrientModal.calories.benefits.b2') },
-        { icon: '💓', text: t('home.nutrientModal.calories.benefits.b3') },
-        { icon: '🏃', text: t('home.nutrientModal.calories.benefits.b4') },
+        { icon: nutrientIcons.energy, text: t('home.nutrientModal.calories.benefits.b1') },
+        { icon: nutrientIcons.brain, text: t('home.nutrientModal.calories.benefits.b2') },
+        { icon: nutrientIcons.heart, text: t('home.nutrientModal.calories.benefits.b3') },
+        { icon: nutrientIcons.shoe, text: t('home.nutrientModal.calories.benefits.b4') },
       ],
       foundIn: t('home.nutrientModal.calories.foundIn'),
       unit: 'kcal'
@@ -168,10 +179,10 @@ function NutrientModal({ visible, nutrient, onClose, theme, currentIntake, daily
       title: t('home.nutrientModal.protein.title'),
       color: '#2196F3',
       benefits: [
-        { icon: '🦴', text: t('home.nutrientModal.protein.benefits.b1') },
-        { icon: '🧬', text: t('home.nutrientModal.protein.benefits.b2') },
-        { icon: '🛡️', text: t('home.nutrientModal.protein.benefits.b3') },
-        { icon: '😊', text: t('home.nutrientModal.protein.benefits.b4') },
+        { icon: nutrientIcons.bread, text: t('home.nutrientModal.protein.benefits.b1') },
+        { icon: nutrientIcons.chicken, text: t('home.nutrientModal.protein.benefits.b2') },
+        { icon: nutrientIcons.heart, text: t('home.nutrientModal.protein.benefits.b3') },
+        { icon: nutrientIcons.brain, text: t('home.nutrientModal.protein.benefits.b4') },
       ],
       foundIn: t('home.nutrientModal.protein.foundIn'),
       unit: 'g'
@@ -181,10 +192,10 @@ function NutrientModal({ visible, nutrient, onClose, theme, currentIntake, daily
       title: t('home.nutrientModal.carbs.title'),
       color: '#FF9800',
       benefits: [
-        { icon: '⚡', text: t('home.nutrientModal.carbs.benefits.b1') },
-        { icon: '🧠', text: t('home.nutrientModal.carbs.benefits.b2') },
-        { icon: '🏋️', text: t('home.nutrientModal.carbs.benefits.b3') },
-        { icon: '🥬', text: t('home.nutrientModal.carbs.benefits.b4') },
+        { icon: nutrientIcons.energy, text: t('home.nutrientModal.carbs.benefits.b1') },
+        { icon: nutrientIcons.brain, text: t('home.nutrientModal.carbs.benefits.b2') },
+        { icon: nutrientIcons.shoe, text: t('home.nutrientModal.carbs.benefits.b3') },
+        { icon: nutrientIcons.bread, text: t('home.nutrientModal.carbs.benefits.b4') },
       ],
       foundIn: t('home.nutrientModal.carbs.foundIn'),
       unit: 'g'
@@ -194,10 +205,10 @@ function NutrientModal({ visible, nutrient, onClose, theme, currentIntake, daily
       title: t('home.nutrientModal.fat.title'),
       color: '#9C27B0',
       benefits: [
-        { icon: '💊', text: t('home.nutrientModal.fat.benefits.b1') },
-        { icon: '🛡️', text: t('home.nutrientModal.fat.benefits.b2') },
-        { icon: '🔋', text: t('home.nutrientModal.fat.benefits.b3') },
-        { icon: '🧬', text: t('home.nutrientModal.fat.benefits.b4') },
+        { icon: nutrientIcons.avocado, text: t('home.nutrientModal.fat.benefits.b1') },
+        { icon: nutrientIcons.heart, text: t('home.nutrientModal.fat.benefits.b2') },
+        { icon: nutrientIcons.energy, text: t('home.nutrientModal.fat.benefits.b3') },
+        { icon: nutrientIcons.chicken, text: t('home.nutrientModal.fat.benefits.b4') },
       ],
       foundIn: t('home.nutrientModal.fat.foundIn'),
       unit: 'g'
@@ -258,7 +269,7 @@ function NutrientModal({ visible, nutrient, onClose, theme, currentIntake, daily
               </Text>
               {info.benefits?.map((benefit, index) => (
                 <View key={index} style={styles.nutrientBenefitItem}>
-                  <Text style={styles.nutrientBenefitIcon}>{benefit.icon}</Text>
+                  <Image source={benefit.icon} style={styles.nutrientBenefitIcon} resizeMode="contain" />
                   <Text style={[styles.nutrientBenefitText, { color: theme.textSecondary }]}>
                     {benefit.text}
                   </Text>
@@ -315,7 +326,7 @@ export default function HomeScreen({ navigation }) {
   const [profileCoords, setProfileCoords] = useState(null);
   const profileArrowShownRef = useRef(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [monthlyData, setMonthlyData] = useState([]);
+  const [monthlyDataCache, setMonthlyDataCache] = useState({});
   const [waterIntake, setWaterIntake] = useState(0);
   const [updatingWater, setUpdatingWater] = useState(false);
   const [meals, setMeals] = useState([]);
@@ -837,6 +848,7 @@ export default function HomeScreen({ navigation }) {
   const loadMealsForDate = async (date) => {
     try {
       setLoading(true);
+      setMonthlyDataCache({});
       // ===== GUEST MODE LOAD =====
       if (isGuest) {
 
@@ -928,12 +940,18 @@ export default function HomeScreen({ navigation }) {
   // Fetch monthly data for calendar
   const fetchMonthlyData = async (targetYear, targetMonth) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Use provided year/month or default to current
       const year = targetYear ?? new Date().getFullYear();
       const month = targetMonth ?? new Date().getMonth();
+      const cacheKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+      // Skip fetch if this month is already cached
+      if (monthlyDataCache[cacheKey]) {
+        console.log('📅 Using cached data for', cacheKey);
+        return;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
       
       const firstDay = new Date(year, month, 1);
       firstDay.setHours(0, 0, 0, 0);
@@ -993,7 +1011,7 @@ export default function HomeScreen({ navigation }) {
         });
       }
 
-      setMonthlyData(monthData);
+      setMonthlyDataCache(prev => ({ ...prev, [cacheKey]: monthData }));
       console.log('📅 Loaded', monthData.length, 'days for', year, month);
     } catch (error) {
       console.error('Error fetching monthly data:', error);
@@ -1605,7 +1623,7 @@ export default function HomeScreen({ navigation }) {
         );
 
         setMeals(prev => prev.filter(m => m.id !== meal.id));
-
+        setMonthlyDataCache({});
         showToast('success', t('home.success'), t('home.mealDeleted'));
         return;
       }
@@ -1617,10 +1635,9 @@ export default function HomeScreen({ navigation }) {
         .eq('id', meal.id);
 
       if (error) throw error;
-
       await loadMealsForDate(selectedDate);
       await calculateStreak();
-
+      setMonthlyDataCache({});
       showToast('success', t('home.success'), t('home.mealDeleted'));
     } catch (error) {
       console.error('Error deleting meal:', error);
@@ -2030,7 +2047,7 @@ export default function HomeScreen({ navigation }) {
                     >
                       <View style={[styles.calendarModalContent, { backgroundColor: theme.cardBackground }]}>
                         <MonthlyCalendar
-                          monthlyData={monthlyData}
+                          monthlyData={monthlyDataCache[`${calendarMonth.year}-${String(calendarMonth.month + 1).padStart(2, '0')}`] || []}
                           theme={theme}
                           t={t}
                           language={language}
@@ -2765,9 +2782,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   nutrientBenefitIcon: {
-    fontSize: 20,
-    marginRight: 12,
     width: 28,
+    height: 28,
+    marginRight: 12,
   },
   nutrientBenefitText: {
     fontSize: 14,

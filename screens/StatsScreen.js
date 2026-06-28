@@ -13,6 +13,7 @@ import AnimatedThemeWrapper from '../components/AnimatedThemeWrapper';
 import BottomNav from '../components/BottomNav';
 import ExerciseHistoryScreen from './ExerciseHistoryScreen';
 import AppIcon from '../components/AppIcon';
+import { usePremiumStatus } from '../utils/usePremiumStatus';
 
 const { width } = Dimensions.get('window');
 
@@ -25,7 +26,7 @@ export default function StatsScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState(null);
   const [activeTab, setActiveTab] = useState('week');
-  const [isPremium, setIsPremium] = useState(false);
+  const { isPremium } = usePremiumStatus();
   const [currentStreak, setCurrentStreak] = useState(0);
   const MIN_DATE = new Date(2025, 10, 1); // November 1, 2025
 
@@ -48,25 +49,6 @@ export default function StatsScreen({ navigation }) {
       setProfile(data);
     } catch (error) {
       console.error('Error fetching profile:', error);
-    }
-  };
-
-  const checkPremiumStatus = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('ispremium')
-        .eq('id', user.id)
-        .single();
-
-      if (error) throw error;
-      return data?.ispremium || false;
-    } catch (error) {
-      console.error('Error checking premium status:', error);
-      return false;
     }
   };
 
@@ -316,7 +298,6 @@ export default function StatsScreen({ navigation }) {
 
   useEffect(() => {
     logScreen('Stats');
-    checkPremiumStatus().then(setIsPremium);
     calculateStreak();
   }, []);
 
@@ -575,175 +556,181 @@ export default function StatsScreen({ navigation }) {
               )}
 
               {activeTab === 'month' && (
-                <>
-                  {isGuestMode && (
-                    <View style={[styles.guestBanner, { backgroundColor: theme.cardBackground, borderColor: theme.primary }]}>
-                      <Text style={[styles.guestBannerText, { color: theme.text }]}>
-                        {t('guest.monthlyProgress')}
-                      </Text>
-                      <TouchableOpacity
-                        style={[styles.guestBannerBtn, { backgroundColor: theme.primary }]}
-                        onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Landing' }] })}
-                      >
-                        <Text style={styles.guestBannerBtnText}>{t('guest.signUpLogIn')}</Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                  {/* Monthly Calendar */}
-                  <View style={[styles.chartCard, { backgroundColor: theme.cardBackground }]}>
-                    <Text style={[styles.cardTitle, { color: theme.text }]}>{t('stats.monthlyActivity')}</Text>
-                    <Text style={[styles.cardSubtitle, { color: theme.textTertiary }]}>
-                      {t('stats.currentMonth')}
-                    </Text>
-                    
-                    {/* Weekday Headers */}
-                    <View style={styles.calendarHeader}>
-                      {t('stats.weekdays').map((day, index) => (
-                        <Text key={index} style={[styles.calendarHeaderText, { color: theme.textTertiary }]}>
-                          {day}
+                  <>
+                    {!isPremium ? (
+                      <View style={[styles.chartCard, { backgroundColor: theme.cardBackground, alignItems: 'center', paddingVertical: 40 }]}>
+                        <Text style={{ fontSize: 48, marginBottom: 16 }}>🔒</Text>
+                        <Text style={[styles.cardTitle, { color: theme.text, textAlign: 'center', marginBottom: 20 }]}>
+                          Monthly analytics is a Premium feature
                         </Text>
-                      ))}
-                    </View>
-
-                    {/* Calendar Grid */}
-                    <View style={styles.calendarGrid}>
-                      {(() => {
-                        // Get first day of current month
-                        const now = new Date();
-                        const year = now.getFullYear();
-                        const month = now.getMonth();
-                        const firstDay = new Date(year, month, 1);
-                        const lastDay = new Date(year, month + 1, 0);
-                        const daysInMonth = lastDay.getDate();
-                        
-                        // Get day of week (0 = Sunday, convert to 0 = Monday)
-                        let firstDayOfWeek = firstDay.getDay();
-                        firstDayOfWeek = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1; // Convert to Mon=0, Sun=6
-                        
-                        // Create array of all days
-                        const days = [];
-                        
-                        // Add empty cells for days before month starts
-                        for (let i = 0; i < firstDayOfWeek; i++) {
-                          days.push(null);
-                        }
-                        
-                        // Add actual days
-                        for (let day = 1; day <= daysInMonth; day++) {
-                          const dateStr = new Date(year, month, day).toISOString().split('T')[0];
-                          const dayData = monthlyData.find(d => d.date === dateStr);
-                          days.push({
-                            day,
-                            date: dateStr,
-                            mealsCount: dayData?.mealsCount || 0,
-                            hasData: dayData?.hasData || false,
-                          });
-                        }
-                        
-                        return days.map((dayData, index) => {
-                          if (!dayData) {
-                            // Empty cell
-                            return <View key={`empty-${index}`} style={styles.calendarCell} />;
-                          }
-                          
-                          // Calculate intensity
-                          let intensity = 0;
-                          if (dayData.mealsCount >= 3) intensity = 1;
-                          else if (dayData.mealsCount >= 1) intensity = 0.6;
-                          
-                          const bgColor = dayData.mealsCount > 0
-                            ? `${theme.primary}${Math.round(intensity * 255).toString(16).padStart(2, '0')}`
-                            : theme.border;
-                          
-                          // Check if it's today (LOCAL timezone)
-                          const today = new Date();
-                          today.setHours(0, 0, 0, 0);
-                          const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-                          const isToday = dayData.date === todayStr;
-                          
-                        return (
-                          <View
-                            key={dayData.date}
-                            style={styles.calendarCell}
-                          >
-                            <View
-                              style={[
-                                styles.calendarCellInner,
-                                { backgroundColor: bgColor },
-                                isToday && { borderWidth: 2, borderColor: theme.primary },
-                              ]}
+                        <TouchableOpacity
+                          style={{ backgroundColor: theme.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10 }}
+                          onPress={() => navigation.navigate('Paywall', { highlightFeature: 'Historical monthly stats' })}
+                        >
+                          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Go Premium</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ) : (
+                      <>
+                        {isGuestMode && (
+                          <View style={[styles.guestBanner, { backgroundColor: theme.cardBackground, borderColor: theme.primary }]}>
+                            <Text style={[styles.guestBannerText, { color: theme.text }]}>
+                              {t('guest.monthlyProgress')}
+                            </Text>
+                            <TouchableOpacity
+                              style={[styles.guestBannerBtn, { backgroundColor: theme.primary }]}
+                              onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Landing' }] })}
                             >
-                              <Text style={[
-                                styles.calendarDayNumber,
-                                { color: dayData.mealsCount > 0 ? '#fff' : theme.textTertiary }
-                              ]}>
-                                {dayData.day}
+                              <Text style={styles.guestBannerBtnText}>{t('guest.signUpLogIn')}</Text>
+                            </TouchableOpacity>
+                          </View>
+                        )}
+                        {/* Monthly Calendar */}
+                        <View style={[styles.chartCard, { backgroundColor: theme.cardBackground }]}>
+                          <Text style={[styles.cardTitle, { color: theme.text }]}>{t('stats.monthlyActivity')}</Text>
+                          <Text style={[styles.cardSubtitle, { color: theme.textTertiary }]}>
+                            {t('stats.currentMonth')}
+                          </Text>
+
+                          {/* Weekday Headers */}
+                          <View style={styles.calendarHeader}>
+                            {t('stats.weekdays').map((day, index) => (
+                              <Text key={index} style={[styles.calendarHeaderText, { color: theme.textTertiary }]}>
+                                {day}
+                              </Text>
+                            ))}
+                          </View>
+
+                          {/* Calendar Grid */}
+                          <View style={styles.calendarGrid}>
+                            {(() => {
+                              const now = new Date();
+                              const year = now.getFullYear();
+                              const month = now.getMonth();
+                              const firstDay = new Date(year, month, 1);
+                              const lastDay = new Date(year, month + 1, 0);
+                              const daysInMonth = lastDay.getDate();
+
+                              let firstDayOfWeek = firstDay.getDay();
+                              firstDayOfWeek = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+
+                              const days = [];
+
+                              for (let i = 0; i < firstDayOfWeek; i++) {
+                                days.push(null);
+                              }
+
+                              for (let day = 1; day <= daysInMonth; day++) {
+                                const dateStr = new Date(year, month, day).toISOString().split('T')[0];
+                                const dayData = monthlyData.find(d => d.date === dateStr);
+                                days.push({
+                                  day,
+                                  date: dateStr,
+                                  mealsCount: dayData?.mealsCount || 0,
+                                  hasData: dayData?.hasData || false,
+                                });
+                              }
+
+                              return days.map((dayData, index) => {
+                                if (!dayData) {
+                                  return <View key={`empty-${index}`} style={styles.calendarCell} />;
+                                }
+
+                                let intensity = 0;
+                                if (dayData.mealsCount >= 3) intensity = 1;
+                                else if (dayData.mealsCount >= 1) intensity = 0.6;
+
+                                const bgColor = dayData.mealsCount > 0
+                                  ? `${theme.primary}${Math.round(intensity * 255).toString(16).padStart(2, '0')}`
+                                  : theme.border;
+
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0);
+                                const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+                                const isToday = dayData.date === todayStr;
+
+                                return (
+                                  <View key={dayData.date} style={styles.calendarCell}>
+                                    <View
+                                      style={[
+                                        styles.calendarCellInner,
+                                        { backgroundColor: bgColor },
+                                        isToday && { borderWidth: 2, borderColor: theme.primary },
+                                      ]}
+                                    >
+                                      <Text style={[
+                                        styles.calendarDayNumber,
+                                        { color: dayData.mealsCount > 0 ? '#fff' : theme.textTertiary }
+                                      ]}>
+                                        {dayData.day}
+                                      </Text>
+                                    </View>
+                                  </View>
+                                );
+                              });
+                            })()}
+                          </View>
+
+                          <View style={styles.heatmapLegend}>
+                            <View style={styles.heatmapLegendItem}>
+                              <View style={[styles.heatmapLegendBox, { backgroundColor: theme.border }]} />
+                              <Text style={[styles.heatmapLegendText, { color: theme.textTertiary }]}>
+                                {t('stats.noMeals')}
+                              </Text>
+                            </View>
+                            <View style={styles.heatmapLegendItem}>
+                              <View style={[styles.heatmapLegendBox, { backgroundColor: `${theme.primary}99` }]} />
+                              <Text style={[styles.heatmapLegendText, { color: theme.textTertiary }]}>
+                                {t('stats.oneTwoMeals')}
+                              </Text>
+                            </View>
+                            <View style={styles.heatmapLegendItem}>
+                              <View style={[styles.heatmapLegendBox, { backgroundColor: theme.primary }]} />
+                              <Text style={[styles.heatmapLegendText, { color: theme.textTertiary }]}>
+                                {t('stats.threePlusMeals')}
                               </Text>
                             </View>
                           </View>
-                        );
-                        });
-                      })()}
-                    </View>
+                        </View>
 
-                    <View style={styles.heatmapLegend}>
-                      <View style={styles.heatmapLegendItem}>
-                        <View style={[styles.heatmapLegendBox, { backgroundColor: theme.border }]} />
-                        <Text style={[styles.heatmapLegendText, { color: theme.textTertiary }]}>
-                          {t('stats.noMeals')}
-                        </Text>
-                      </View>
-                      <View style={styles.heatmapLegendItem}>
-                        <View style={[styles.heatmapLegendBox, { backgroundColor: `${theme.primary}99` }]} />
-                        <Text style={[styles.heatmapLegendText, { color: theme.textTertiary }]}>
-                          {t('stats.oneTwoMeals')}
-                        </Text>
-                      </View>
-                      <View style={styles.heatmapLegendItem}>
-                        <View style={[styles.heatmapLegendBox, { backgroundColor: theme.primary }]} />
-                        <Text style={[styles.heatmapLegendText, { color: theme.textTertiary }]}>
-                          {t('stats.threePlusMeals')}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
+                        {/* Monthly Stats */}
+                        <View style={[styles.detailCard, { backgroundColor: theme.cardBackground }]}>
+                          <Text style={[styles.cardTitle, { color: theme.text }]}>{t('stats.thirtyDayStats')}</Text>
 
-                  {/* Monthly Stats */}
-                  <View style={[styles.detailCard, { backgroundColor: theme.cardBackground }]}>
-                    <Text style={[styles.cardTitle, { color: theme.text }]}>{t('stats.thirtyDayStats')}</Text>
-                    
-                    <View style={styles.detailRow}>
-                      <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
-                        {t('stats.daysWithMeals')}
-                      </Text>
-                      <Text style={[styles.detailValue, { color: theme.text }]}>
-                        {monthlyData.filter(d => d.hasData).length} / {monthlyData.length}
-                      </Text>
-                    </View>
+                          <View style={styles.detailRow}>
+                            <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
+                              {t('stats.daysWithMeals')}
+                            </Text>
+                            <Text style={[styles.detailValue, { color: theme.text }]}>
+                              {monthlyData.filter(d => d.hasData).length} / {monthlyData.length}
+                            </Text>
+                          </View>
 
-                    <View style={styles.detailRow}>
-                      <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
-                        {t('stats.currentStreak')}
-                      </Text>
-                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <Text style={[styles.detailValue, { color: theme.text }]}>
-                          {currentStreak} {currentStreak === 1 ? t('stats.day') : t('stats.days')}
-                        </Text>
-                        <AppIcon name="streak" size={14} tintColor="#FF6B35" style={{ marginLeft: 4 }} />
-                      </View>
-                    </View>
+                          <View style={styles.detailRow}>
+                            <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
+                              {t('stats.currentStreak')}
+                            </Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                              <Text style={[styles.detailValue, { color: theme.text }]}>
+                                {currentStreak} {currentStreak === 1 ? t('stats.day') : t('stats.days')}
+                              </Text>
+                              <AppIcon name="streak" size={14} tintColor="#FF6B35" style={{ marginLeft: 4 }} />
+                            </View>
+                          </View>
 
-                    <View style={styles.detailRow}>
-                      <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
-                        {t('stats.consistency')}
-                      </Text>
-                      <Text style={[styles.detailValue, { color: theme.primary }]}>
-                        {monthlyData.length > 0 ? Math.round((monthlyData.filter(d => d.hasData).length / monthlyData.length) * 100) : 0}%
-                      </Text>
-                    </View>
-                  </View>
-                </>
-              )}
+                          <View style={styles.detailRow}>
+                            <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
+                              {t('stats.consistency')}
+                            </Text>
+                            <Text style={[styles.detailValue, { color: theme.primary }]}>
+                              {monthlyData.length > 0 ? Math.round((monthlyData.filter(d => d.hasData).length / monthlyData.length) * 100) : 0}%
+                            </Text>
+                          </View>
+                        </View>
+                      </>
+                    )}
+                  </>
+                )}
 
               {activeTab === 'exercise' && (
                 <>
@@ -776,7 +763,10 @@ export default function StatsScreen({ navigation }) {
 
                 <TouchableOpacity
                   style={[styles.settingItem, { backgroundColor: theme.cardBackground }]}
-                  onPress={() => navigation.navigate('ExportReport')}
+                  onPress={() => isPremium
+                    ? navigation.navigate('ExportReport')
+                    : navigation.navigate('Paywall', { highlightFeature: 'PDF & Excel exports' })
+                  }
                 >
                   <View style={styles.settingLeft}>
                     <AppIcon name="document" size={24} style={{ marginRight: 15 }} />

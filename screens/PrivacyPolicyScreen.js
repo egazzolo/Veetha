@@ -36,12 +36,12 @@ export default function PrivacyPolicyScreen({ route }) {
           <>
             <Text style={[styles.title, { color: theme.text }]}>Terms of Service</Text>
             <Text style={[styles.lastUpdated, { color: theme.textSecondary }]}>
-              Last Updated: December 22, 2024
+              Last Updated: June 2026
             </Text>
             <View style={styles.divider} />
             <Text style={[styles.bodyText, { color: theme.text }]}>
 {`TERMS OF SERVICE
-Last updated June 13, 2026
+Last updated June 22, 2026
 
 
 
@@ -154,11 +154,8 @@ You may be required to register to use the Services. You agree to keep your pass
 5. PURCHASES AND PAYMENT
 We accept the following forms of payment:
 
--  Visa
--  Mastercard
--  American Express
--  Discover
--  PayPal
+-  Apple App Store (iOS)
+-  Google Play Store (Android)
 
 You agree to provide current, complete, and accurate purchase and account information for all purchases made via the Services. You further agree to promptly update account and payment information, including email address, payment method, and payment card expiration date, so that we can complete your transactions and contact you as needed. Sales tax will be added to the price of purchases as deemed required by us. We may change prices at any time. All payments shall be in US dollars.
 
@@ -255,7 +252,7 @@ As part of the functionality of the Services, you may link your account with onl
 The Services may contain (or you may be sent via the App) links to other websites ("Third-Party Websites") as well as articles, photographs, text, graphics, pictures, designs, music, sound, video, information, applications, software, and other content or items belonging to or originating from third parties ("Third-Party Content"). Such Third-Party Websites and Third-Party Content are not investigated, monitored, or checked for accuracy, appropriateness, or completeness by us, and we are not responsible for any Third-Party Websites accessed through the Services or any Third-Party Content posted on, available through, or installed from the Services, including the content, accuracy, offensiveness, opinions, reliability, privacy practices, or other policies of or contained in the Third-Party Websites or the Third-Party Content. Inclusion of, linking to, or permitting the use or installation of any Third-Party Websites or any Third-Party Content does not imply approval or endorsement thereof by us. If you decide to leave the Services and access the Third-Party Websites or to use or install any Third-Party Content, you do so at your own risk, and you should be aware these Legal Terms no longer govern. You should review the applicable terms and policies, including privacy and data gathering practices, of any website to which you navigate from the Services or relating to any applications you use or install from the Services. Any purchases you make through Third-Party Websites will be through other websites and from other companies, and we take no responsibility whatsoever in relation to such purchases which are exclusively between you and the applicable third party. You agree and acknowledge that we do not endorse the products or services offered on Third-Party Websites and you shall hold us blameless from any harm caused by your purchase of such products or services. Additionally, you shall hold us blameless from any losses sustained by you or harm caused to you relating to or resulting in any way from any Third-Party Content or any contact with Third-Party Websites.
 
 15. ADVERTISERS
-We allow advertisers to display their advertisements and other information in certain areas of the Services, such as sidebar advertisements or banner advertisements. We simply provide the space to place such advertisements, and we have no other relationship with advertisers.
+Veetha does not display advertisements. We do not have relationships with advertisers and do not sell advertising space within the Services.
 
 16. SERVICES MANAGEMENT
 We reserve the right, but not the obligation, to: (1) monitor the Services for violations of these Legal Terms; (2) take appropriate legal action against anyone who, in our sole discretion, violates the law or these Legal Terms, including without limitation, reporting such user to law enforcement authorities; (3) in our sole discretion and without limitation, refuse, restrict access to, limit the availability of, or disable (to the extent technologically feasible) any of your Contributions or any portion thereof; (4) in our sole discretion and without limitation, notice, or liability, to remove from the Services or otherwise disable all files and content that are excessive in size or are in any way burdensome to our systems; and (5) otherwise manage the Services in a manner designed to protect our rights and property and to facilitate the proper functioning of the Services.
@@ -326,9 +323,9 @@ By uploading photos to Veetha, you grant us a non-exclusive, worldwide license t
 33. FREE AND PREMIUM FEATURES
 Veetha offers both free and premium features.
 
-FREE FEATURES (No subscription required): Unlimited barcode scanning for packaged foods. Unlimited manual meal logging. AI-powered photo food recognition limited to 5 scans per month. Strength & Fitness exercise category logging. Daily and current-month nutrition statistics. Water and streak tracking. Step counter. Badge system for streaks and goals. Multi-language support and dark mode.
+FREE FEATURES (No subscription required): Unlimited barcode scanning for packaged foods. Unlimited manual meal logging. AI-powered photo food recognition limited to 5 scans per month. Strength & Fitness exercise category logging. Daily and current-month nutrition statistics. Water and streak tracking. Allergen warnings on scanned foods. Badge system for streaks and goals. Multi-language support and dark mode.
 
-PREMIUM FEATURES ($7.99/month, with a 7-day free trial): Unlimited AI-powered photo food recognition (5 scans per day). All exercise categories (Cardio, Strength & Fitness, Lifestyle & Low Impact, Sports). All meal recommendations in Quick Add. Historical monthly analytics. Custom meal photo uploads. Allergen warnings on scanned foods. Weight target tracking. Custom step goals and weekly step trend charts. PDF and Excel report exports. Exclusive premium badges.
+PREMIUM FEATURES ($7.99/month or $59.99/year, with a 7-day free trial): Unlimited AI-powered photo food recognition (5 scans per day). All exercise categories (Cardio, Strength & Fitness, Lifestyle & Low Impact, Sports). All meal recommendations in Quick Add. Historical monthly analytics. Custom meal photo uploads. Individual food breakdown in post-its. Weight target tracking. Custom step goals and weekly step trend charts. PDF and Excel report exports. Pro Mode minimal theme. Exclusive premium badges.
 
 Free Trial: New users receive a 7-day free trial of all premium features. No payment method is required during the trial. After the trial ends, users automatically revert to free features unless they choose to subscribe. Repeated trial abuse (e.g., creating multiple accounts on the same device) may result in trial ineligibility.
 
@@ -348,16 +345,16 @@ veetha.app@gmail.com
           <>
             <Text style={[styles.title, { color: theme.text }]}>Privacy Policy</Text>
             <Text style={[styles.lastUpdated, { color: theme.textSecondary }]}>
-              Last Updated: June 13, 2026
+              Last updated June 22, 2026
             </Text>
             <View style={styles.divider} />
             <Text style={[styles.bodyText, { color: theme.text }]}>
 {`PRIVACY POLICY
-Last updated June 13, 2026
+Last updated June 22, 2026
 
 
 
-These Terms of Service are provided in English only. 
+This Privacy Policy is provided in English only.
 By using this app, you agree to these terms in English.
 
 Estos Términos de Servicio se proporcionan solo en inglés.
@@ -366,7 +363,7 @@ Ang mga Tuntunin ng Serbisyo ay ibinibigay sa Ingles lamang.
 
 This Privacy Notice for Enzo Gazzolo (doing business as Veetha) ("we," "us," or "our"), describes how and why we might access, collect, store, use, and/or share ("process") your personal information when you use our services ("Services"), including when you:
 -	Download and use our mobile application (Veetha), or any other application of ours that links to this Privacy Notice
--	Use Veetha. Veetha is a mobile nutrition tracking application that helps users monitor their daily food intake, track calories and macronutrients, and achieve their health and fitness goals. The app provides two main ways to log meals: 1. Barcode Scanning (Free): Users can scan product barcodes to quickly log packaged foods and retrieve nutritional information from our database. 2. AI Photo Recognition (Premium - $3.99/month): Users can take photos of their meals, and our artificial intelligence technology identifies the food items and estimates their nutritional content. Additional features include: - Personalized daily calorie and macro goals based on user profile (age, gender, height, weight, activity level, and health objectives) - Comprehensive nutrition tracking with detailed breakdowns of proteins, carbohydrates, fats, and micronutrients - Progress tracking with daily, weekly, and monthly statistics and charts - Streak tracking to maintain consistent logging habits - Dietary preference and restriction management (vegetarian, vegan, keto, allergies, etc.) - Multi-language support (English, Spanish, French, Portuguese, Filipino) - Meal history and logging features Veetha uses the Mifflin-St Jeor equation to calculate personalized calorie recommendations. The app is designed to provide nutritional estimates and tracking tools, not medical advice. Users with medical conditions, dietary restrictions, or health concerns should consult healthcare professionals before making dietary changes. The app is available on both Android (Google Play Store) and iOS (Apple App Store).
+-	Use Veetha. Veetha is a mobile nutrition tracking application that helps users monitor their daily food intake, track calories and macronutrients, and achieve their health and fitness goals. The app provides two main ways to log meals: 1. Barcode Scanning (Free): Users can scan product barcodes to quickly log packaged foods and retrieve nutritional information from our database. 2. AI Photo Recognition (Premium - $7.99/month or $59.99/year): Users can take photos of their meals, and our artificial intelligence technology identifies the food items and estimates their nutritional content. Additional features include: - Personalized daily calorie and macro goals based on user profile (age, gender, height, weight, activity level, and health objectives) - Comprehensive nutrition tracking with detailed breakdowns of proteins, carbohydrates, fats, and micronutrients - Progress tracking with daily, weekly, and monthly statistics and charts - Streak tracking to maintain consistent logging habits - Dietary preference and restriction management (vegetarian, vegan, keto, allergies, etc.) - Multi-language support (English, Spanish, French, Portuguese, Filipino) - Meal history and logging features Veetha uses the Mifflin-St Jeor equation to calculate personalized calorie recommendations. The app is designed to provide nutritional estimates and tracking tools, not medical advice. Users with medical conditions, dietary restrictions, or health concerns should consult healthcare professionals before making dietary changes. The app is available on both Android (Google Play Store) and iOS (Apple App Store).
 -	Engage with us in other related ways, including any marketing or events
 Questions or concerns? Reading this Privacy Notice will help you understand your privacy rights and choices. We are responsible for making decisions about how your personal information is processed. If you do not agree with our policies and practices, please do not use our Services. If you still have any questions or concerns, please contact us at veetha.app@gmail.com.
 
@@ -427,9 +424,9 @@ Personal Information Provided by You. The personal information that we collect d
 -	hashed email records (retained to prevent abuse of free trial offers; original emails are not stored after account deletion)
 Sensitive Information. We do not process sensitive information.
 
-Payment Data. We may collect data necessary to process your payment if you choose to make purchases, such as your payment instrument number, and the security code associated with your payment instrument. All payment data is handled and stored by Google Play Store / Google Payments, Apple App Store / Apple Pay and RevenueCat. You may find their privacy notice link(s) here: https://payments.google.com/payments/apis-secure/u/0/get_legal_document?ldo=0&ldt=privacynotice, https://www.apple.com/legal/privacy/ and https://www.revenuecat.com/privacy.
+Payment Data. We may collect data necessary to process your payment if you choose to make purchases, such as your payment instrument number, and the security code associated with your payment instrument. All payment data is handled and stored by Google Play Store / Google Payments and Apple App Store / Apple Pay. You may find their privacy notice link(s) here: https://payments.google.com/payments/apis-secure/u/0/get_legal_document?ldo=0&ldt=privacynotice and https://www.apple.com/legal/privacy/.
 
-Veetha does not directly collect, store, or process any payment card information. All subscription payments are processed securely through: - Google Play Store (for Android users) - Handles payment processing, subscription billing, and refunds according to Google Play's terms - Apple App Store (for iOS users) - Handles payment processing, subscription billing, and refunds according to Apple's terms - RevenueCat - Manages subscription verification and status tracking but does not process actual payments Users' payment information (credit cards, debit cards, billing addresses) is collected and stored only by Google and Apple. Veetha only receives confirmation of successful purchases and subscription status (active/expired) to enable premium features. For payment disputes, refunds, or billing questions, users must contact Google Play Store or Apple App Store directly through their respective support channels.
+Veetha does not directly collect, store, or process any payment card information. All subscription payments are processed securely through: - Google Play Store (for Android users) - Handles payment processing, subscription billing, and refunds according to Google Play's terms - Apple App Store (for iOS users) - Handles payment processing, subscription billing, and refunds according to Apple's terms. Users' payment information (credit cards, debit cards, billing addresses) is collected and stored only by Google and Apple. Veetha only receives confirmation of successful purchases and subscription status (active/expired) to enable premium features. For payment disputes, refunds, or billing questions, users must contact Google Play Store or Apple App Store directly through their respective support channels.
 
 Social Media Login Data. We may provide you with the option to register with us using your existing social media account details, like your Facebook, X, or other social media account. If you choose to register in this way, we will collect certain profile information about you from the social media provider, as described in the section called "HOW DO WE HANDLE YOUR SOCIAL LOGINS?" below.
 
@@ -527,11 +524,9 @@ Firebase Crash Reporting
 -	Website Testing
 Google Play Console and TestFlight
 -	Subscription Management
-RevenueCat - Manages premium subscriptions and in-app purchase processing
+Apple App Store and Google Play Store - Handle subscription billing and management directly
 -	Database and Backend Services
 Supabase - Cloud database hosting, user authentication, and data storage (US East - Ohio region)
--	Recipe and Meal Recommendations API
-Spoonacular - Provides recipe data and meal recommendations based on user dietary preferences (future feature)
 -	AI-Powered Food Recognition
 Machine learning model for identifying food items from photos and estimating nutritional content (Premium feature)
 
@@ -543,11 +538,7 @@ In Short: We may use cookies and other tracking technologies to collect and stor
 
 We may use cookies and similar tracking technologies (like web beacons and pixels) to gather information when you interact with our Services. Some online tracking technologies help us maintain the security of our Services and your account, prevent crashes, fix bugs, save your preferences, and assist with basic site functions.
 
-We also permit third parties and service providers to use online tracking technologies on our Services for analytics and advertising, including to help manage and display advertisements, to tailor advertisements to your interests, or to send abandoned shopping cart reminders (depending on your communication preferences). The third parties and service providers use their technology to provide advertising about products and services tailored to your interests which may appear either on our Services or on other websites.
-
-To the extent these online tracking technologies are deemed to be a "sale"/"sharing" (which includes targeted advertising, as defined under the applicable laws) under applicable US state laws, you can opt out of these online tracking technologies by submitting a request as described below under section "DO UNITED STATES RESIDENTS HAVE SPECIFIC PRIVACY RIGHTS?"
-
-Specific information about how we use such technologies and how you can refuse certain cookies is set out in our Cookie Notice.
+We use analytics tracking technologies solely to monitor app performance and improve our Services. We do not use tracking technologies for advertising purposes and do not serve ads within the app.
 Google Analytics
 We may share your information with Google Analytics to track and analyze the use of the Services. To opt out of being tracked by Google Analytics across the Services, visit https://tools.google.com/dlpage/gaoptout. For more information on the privacy practices of Google, please visit the Google Privacy & Terms page.
 
@@ -573,9 +564,7 @@ How to Opt Out
 We believe in giving you the power to decide how your data is used. To opt out, you can:
 -	Contact us using the contact information provided
 -	Log in to your account settings and update your user account
--	Log in to your account settings and update your user account
--	Contact us using the contact information provided
--	Veetha offers AI-powered photo food recognition in both free and premium tiers: FREE USERS: Limited to 5 photo scans per month. Users can opt out by using the barcode scanning feature instead of taking photos. PREMIUM USERS ($7.99/month with 7-day free trial): Limit of 5 photo scans per day. Users can opt out by canceling their premium subscription through their app store settings (Google Play Store or Apple App Store), or by using barcode scanning instead. Photos uploaded by users are analyzed by OpenAI GPT-4o Vision and Google Gemini AI. Users can delete their photos at any time through the app.
+-	Veetha offers AI-powered photo food recognition in both free and premium tiers: FREE USERS: Limited to 5 photo scans per month. Users can opt out by using the barcode scanning feature instead of taking photos. AI Photo Recognition (Premium - $7.99/month or $59.99/year). Users can opt out by canceling their premium subscription through their app store settings (Google Play Store or Apple App Store), or by using barcode scanning instead. Photos uploaded by users are analyzed by OpenAI GPT-4o Vision and Google Gemini AI. Users can delete their photos at any time through the app.
 7. HOW DO WE HANDLE YOUR SOCIAL LOGINS?
 In Short: If you choose to register or log in to our Services using a social media account, we may have access to certain information about you.
 

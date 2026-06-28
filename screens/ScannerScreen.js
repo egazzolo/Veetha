@@ -18,12 +18,12 @@ import { searchFood, searchLocalFoodDatabase } from '../utils/foodDatabase';
 import { searchUSDAFood, getBestUSDAMatch, parseUSDAFood } from '../utils/usdaApi';
 import { useUser, UserContext } from '../utils/UserContext';
 import { useUserMode } from '../utils/UserModeContext';
-import { analyzePhoto, imageUriToBase64 } from '../utils/visionApi';
 import { analyzePhotoOpenAI } from '../utils/openaiVision';
 import { analyzePhotoGemini } from '../utils/geminiVision';
 import VeethaModal from '../components/VeethaModal';
 import GuestUpsellSheet from '../components/GuestUpsellSheet';
 import AppIcon from '../components/AppIcon';
+import { usePremiumStatus } from '../utils/usePremiumStatus';
 
 const dailyPhotoLimit = 2;
 
@@ -33,6 +33,7 @@ export default function ScannerScreen({ navigation }) {
   const { tutorialCompleted, startTutorial } = useTutorial();
   const { refreshProfile } = useUser();
   const { isGuest } = useUserMode();
+  const { isPremium } = usePremiumStatus();
   const [showArrowToBack, setShowArrowToBack] = useState(false);
   const [backButtonCoords, setBackButtonCoords] = useState(null); 
   const [photosUsedToday, setPhotosUsedToday] = useState(0);
@@ -259,20 +260,47 @@ export default function ScannerScreen({ navigation }) {
         .eq('id', user.id)
         .single();
 
-      setDailyPhotoLimit(profile?.is_vip ? 999 : 3);
-      const today = new Date().toISOString().split('T')[0];
-      const { data } = await supabase
-        .from('api_tracking')
-        .select('id')
-        .eq('user_id', user.id)
-        .in('service', ['gemini', 'openai', 'google_vision'])
-        .eq('type', 'food_recognition')
-        .gte('created_at', today + 'T00:00:00')
-        .lte('created_at', today + 'T23:59:59');
-      setPhotosUsedToday(data?.length || 0);
+      if (profile?.is_vip) {
+        setDailyPhotoLimit(999);
+        const today = new Date().toISOString().split('T')[0];
+        const { data } = await supabase
+          .from('api_tracking')
+          .select('id')
+          .eq('user_id', user.id)
+          .in('service', ['gemini', 'openai'])
+          .eq('type', 'food_recognition')
+          .gte('created_at', today + 'T00:00:00')
+          .lte('created_at', today + 'T23:59:59');
+        setPhotosUsedToday(data?.length || 0);
+      } else if (isPremium) {
+        setDailyPhotoLimit(5);
+        const today = new Date().toISOString().split('T')[0];
+        const { data } = await supabase
+          .from('api_tracking')
+          .select('id')
+          .eq('user_id', user.id)
+          .in('service', ['gemini', 'openai'])
+          .eq('type', 'food_recognition')
+          .gte('created_at', today + 'T00:00:00')
+          .lte('created_at', today + 'T23:59:59');
+        setPhotosUsedToday(data?.length || 0);
+      } else {
+        setDailyPhotoLimit(5);
+        const firstOfMonth = new Date();
+        firstOfMonth.setDate(1);
+        firstOfMonth.setHours(0, 0, 0, 0);
+        const { data } = await supabase
+          .from('api_tracking')
+          .select('id')
+          .eq('user_id', user.id)
+          .in('service', ['gemini', 'openai'])
+          .eq('type', 'food_recognition')
+          .gte('created_at', firstOfMonth.toISOString());
+        setPhotosUsedToday(data?.length || 0);
+      }
     };
     loadPhotoCount();
-  }, [mode]);
+  }, [mode, isPremium]);
 
   // Fetch food info from OpenFoodFacts
   const fetchFoodInfo = async (barcode) => {
@@ -450,7 +478,7 @@ export default function ScannerScreen({ navigation }) {
     }
   };
 
-  // Analyze food photo with Google Vision
+  // Analyze food photo with Gemini (OpenAI fallback)
   const analyzeFoodPhoto = async (photoUri) => {
     try {
       setLoading(true);
@@ -464,7 +492,7 @@ export default function ScannerScreen({ navigation }) {
           .from('api_tracking')
           .select('id')
           .eq('user_id', photoUser.id)
-          .in('service', ['gemini', 'openai', 'google_vision'])
+          .in('service', ['gemini', 'openai'])
           .eq('type', 'food_recognition')
           .gte('created_at', today + 'T00:00:00')
           .lte('created_at', today + 'T23:59:59');
@@ -689,7 +717,7 @@ export default function ScannerScreen({ navigation }) {
           .from('api_tracking')
           .select('id')
           .eq('user_id', user.id)
-          .in('service', ['gemini', 'openai', 'google_vision'])
+          .in('service', ['gemini', 'openai'])
           .eq('type', 'food_recognition')
           .gte('created_at', today + 'T00:00:00')
           .lte('created_at', today + 'T23:59:59');
@@ -877,7 +905,7 @@ export default function ScannerScreen({ navigation }) {
                 </TouchableOpacity>
                 <View style={styles.photoCounter}>
                   <Text style={styles.photoCounterText}>
-                    {dailyPhotoLimit - photosUsedToday}/{dailyPhotoLimit} {t('scanner.photosLeft')}
+                    {`${dailyPhotoLimit - photosUsedToday}/${dailyPhotoLimit} photos left ${isPremium ? 'today' : 'this month'}`}
                   </Text>
                 </View>
               </>

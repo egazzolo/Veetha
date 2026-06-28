@@ -12,11 +12,13 @@ import * as XLSX from 'xlsx';
 import * as MediaLibrary from 'expo-media-library';
 import * as IntentLauncher from 'expo-intent-launcher';
 import AppIcon from '../components/AppIcon';
+import { usePremiumStatus } from '../utils/usePremiumStatus';
 
 export default function ExportReportScreen({ navigation }) {
   const { theme } = useTheme();
   const { t } = useLanguage();
   const { profile } = useUser();
+  const { isPremium } = usePremiumStatus();
 
   const [showPeriodModal, setShowPeriodModal] = useState(false);
   const [showFormatModal, setShowFormatModal] = useState(false);
@@ -410,6 +412,32 @@ export default function ExportReportScreen({ navigation }) {
     }
 
   };
+
+  if (!isPremium) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
+        <View style={[styles.header, { backgroundColor: theme.cardBackground }]}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Text style={[styles.backButtonText, { color: theme.primary }]}>
+              {t('stats.wreport.back')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 }}>
+          <Text style={{ fontSize: 64, marginBottom: 20 }}>🔒</Text>
+          <Text style={{ color: theme.text, fontSize: 18, fontWeight: '600', textAlign: 'center', marginBottom: 24 }}>
+            Export reports are a Premium feature
+          </Text>
+          <TouchableOpacity
+            style={{ backgroundColor: theme.primary, paddingHorizontal: 28, paddingVertical: 14, borderRadius: 12 }}
+            onPress={() => navigation.navigate('Paywall', { highlightFeature: 'PDF & Excel exports' })}
+          >
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Go Premium</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
