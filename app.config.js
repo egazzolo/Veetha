@@ -14,6 +14,7 @@ module.exports = {
     plugins: [
       "expo-apple-authentication",
       "expo-localization",
+      "./plugins/withFmtPatch",
       [
         "expo-location",
         {
