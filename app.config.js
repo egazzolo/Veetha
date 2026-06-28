@@ -29,7 +29,7 @@ module.exports = {
     },
     android: {
       package: "com.yourname.veetha",
-      versionCode: 35,
+      versionCode: 36,
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#ffffff",
