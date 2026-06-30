@@ -196,6 +196,27 @@ export default function EditProfileScreen({ navigation }) {
       // ADD THE logEvent RIGHT HERE (before Alert.alert)
       await logEvent('profile_updated');
 
+      // Recalculate TDEE if weight or height changed
+      if (weightKg && heightCmValue && profile?.age && profile?.gender && profile?.activity_level) {
+        const ACTIVITY_MULTIPLIERS = {
+          sedentary: 1.2,
+          lightly_active: 1.375,
+          moderately_active: 1.55,
+          active: 1.725,
+          very_active: 1.9,
+        };
+        let bmr;
+        if (profile.gender === 'male') {
+          bmr = (10 * weightKg) + (6.25 * heightCmValue) - (5 * profile.age) + 5;
+        } else {
+          bmr = (10 * weightKg) + (6.25 * heightCmValue) - (5 * profile.age) - 161;
+        }
+        const newTdee = Math.round(bmr * (ACTIVITY_MULTIPLIERS[profile.activity_level] || 1.55));
+        await supabase
+          .from('profiles')
+          .update({ daily_calorie_goal: newTdee })
+          .eq('id', user.id);
+      }
       // Refresh profile context
       await refreshProfile();
 
