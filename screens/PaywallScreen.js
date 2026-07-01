@@ -1,15 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-  import {
-    View,
-    Text,
-    TouchableOpacity,
-    ScrollView,
-    StyleSheet,
-    Animated,
-    ActivityIndicator,
-    Alert,
-    Platform,
-  } from 'react-native';
+  import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Linking, Animated, ActivityIndicator, Alert, Platform, } from 'react-native';
   import { SafeAreaView } from 'react-native-safe-area-context';
   import { useTheme } from '../utils/ThemeContext';
   import VeethaModal from '../components/VeethaModal';
@@ -217,7 +207,10 @@ import React, { useState, useRef, useEffect } from 'react';
 
           {/* Fine print */}
           <Text style={[styles.finePrint, { color: theme.textTertiary }]}>
-            By continuing, you agree to our Terms of Service and Privacy Policy.{'\n'}
+            By continuing, you agree to our{' '}
+            <Text style={styles.linkText} onPress={() => Linking.openURL('https://www.veetha.app/terms')}>Terms of Service</Text>
+            {' '}and{' '}
+            <Text style={styles.linkText} onPress={() => Linking.openURL('https://www.veetha.app/privacy')}>Privacy Policy</Text>.{'\n'}
             Subscriptions auto-renew unless cancelled at least 24 hours before the end of the current period.
           </Text>
 
@@ -358,6 +351,10 @@ import React, { useState, useRef, useEffect } from 'react';
       color: '#fff',
       fontSize: 12,
       fontWeight: '700',
+    },
+    linkText: {
+      color: '#4A90E2',
+      textDecorationLine: 'underline',
     },
     priceMain: {
       fontSize: 28,
