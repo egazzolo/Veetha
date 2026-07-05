@@ -25,6 +25,10 @@
       "prebuildCommand": "npx expo prebuild --clean"    }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "android": {
+        "track": "production"
+      }
+    }
   }
 }

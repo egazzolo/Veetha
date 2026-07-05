@@ -158,6 +158,16 @@ function NutrientModal({ visible, nutrient, onClose, theme, currentIntake, daily
     avocado: require('../assets/icons/nutrients/avocado.png'),
     chicken: require('../assets/icons/nutrients/chicken.png'),
     water: require('../assets/icons/nutrients/water.png'),
+    fruits: require('../assets/icons/nutrients/fruits.png'),
+    grains: require('../assets/icons/nutrients/grains.png'),
+    meats: require('../assets/icons/nutrients/meats.png'),
+    fats: require('../assets/icons/nutrients/fats.png'),
+    eggs: require('../assets/icons/nutrients/eggs.png'),
+    fish: require('../assets/icons/nutrients/fish.png'),
+    beans: require('../assets/icons/nutrients/beans.png'),
+    rice: require('../assets/icons/nutrients/rice.png'),
+    nuts: require('../assets/icons/nutrients/nuts.png'),
+    olive_oil: require('../assets/icons/nutrients/olive_oil.png'),
   };
 
   const nutrientInfo = {
@@ -171,7 +181,12 @@ function NutrientModal({ visible, nutrient, onClose, theme, currentIntake, daily
         { icon: nutrientIcons.heart, text: t('home.nutrientModal.calories.benefits.b3') },
         { icon: nutrientIcons.shoe, text: t('home.nutrientModal.calories.benefits.b4') },
       ],
-      foundIn: t('home.nutrientModal.calories.foundIn'),
+      foundIn: [
+        { icon: nutrientIcons.fruits, label: 'Fruits' },
+        { icon: nutrientIcons.grains, label: 'Grains' },
+        { icon: nutrientIcons.meats, label: 'Meats' },
+        { icon: nutrientIcons.fats, label: 'Fats' },
+      ],
       unit: 'kcal'
     },
     protein: {
@@ -184,7 +199,12 @@ function NutrientModal({ visible, nutrient, onClose, theme, currentIntake, daily
         { icon: nutrientIcons.heart, text: t('home.nutrientModal.protein.benefits.b3') },
         { icon: nutrientIcons.brain, text: t('home.nutrientModal.protein.benefits.b4') },
       ],
-      foundIn: t('home.nutrientModal.protein.foundIn'),
+      foundIn: [
+        { icon: nutrientIcons.chicken, label: 'Chicken' },
+        { icon: nutrientIcons.eggs, label: 'Eggs' },
+        { icon: nutrientIcons.fish, label: 'Fish' },
+        { icon: nutrientIcons.beans, label: 'Beans' },
+      ],
       unit: 'g'
     },
     carbs: {
@@ -197,7 +217,11 @@ function NutrientModal({ visible, nutrient, onClose, theme, currentIntake, daily
         { icon: nutrientIcons.shoe, text: t('home.nutrientModal.carbs.benefits.b3') },
         { icon: nutrientIcons.bread, text: t('home.nutrientModal.carbs.benefits.b4') },
       ],
-      foundIn: t('home.nutrientModal.carbs.foundIn'),
+      foundIn: [
+        { icon: nutrientIcons.rice, label: 'Rice' },
+        { icon: nutrientIcons.bread, label: 'Bread' },
+        { icon: nutrientIcons.fruits, label: 'Fruits' },
+      ],
       unit: 'g'
     },
     fat: {
@@ -210,7 +234,12 @@ function NutrientModal({ visible, nutrient, onClose, theme, currentIntake, daily
         { icon: nutrientIcons.energy, text: t('home.nutrientModal.fat.benefits.b3') },
         { icon: nutrientIcons.chicken, text: t('home.nutrientModal.fat.benefits.b4') },
       ],
-      foundIn: t('home.nutrientModal.fat.foundIn'),
+      foundIn: [
+        { icon: nutrientIcons.avocado, label: 'Avocado' },
+        { icon: nutrientIcons.nuts, label: 'Nuts' },
+        { icon: nutrientIcons.olive_oil, label: 'Olive Oil' },
+        { icon: nutrientIcons.fish, label: 'Fish' },
+      ],
       unit: 'g'
     }
   };
@@ -282,9 +311,14 @@ function NutrientModal({ visible, nutrient, onClose, theme, currentIntake, daily
               <Text style={[styles.nutrientSectionTitle, { color: theme.text }]}>
                 {t('home.nutrientModal.foundInLabel')}
               </Text>
-              <Text style={[styles.nutrientFoundInText, { color: theme.textSecondary }]}>
-                {info.foundIn}
-              </Text>
+              <View style={styles.nutrientFoundInIcons}>
+                {Array.isArray(info.foundIn) && info.foundIn.map((item, index) => (
+                  <View key={index} style={styles.nutrientFoundInItem}>
+                    <Image source={item.icon} style={styles.nutrientFoundInIcon} resizeMode="contain" />
+                    <Text style={[styles.nutrientFoundInItemText, { color: theme.textSecondary }]}>{item.label}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
 
             {/* Daily Goal */}
@@ -294,14 +328,13 @@ function NutrientModal({ visible, nutrient, onClose, theme, currentIntake, daily
               </Text>
             </View>
           </View>
-            {/* Close Button */}
-            <TouchableOpacity 
-              style={[styles.nutrientModalButton, { backgroundColor: info.color }]}
-              onPress={onClose}
-            >
-              <Text style={styles.nutrientModalButtonText}>{t('home.nutrientModal.gotIt')}</Text>
-            </TouchableOpacity>
-          
+          {/* Close Button */}
+          <TouchableOpacity 
+            style={[styles.nutrientModalButton, { backgroundColor: info.color }]}
+            onPress={onClose}
+          >
+            <Text style={styles.nutrientModalButtonText}>{t('home.nutrientModal.gotIt')}</Text>
+          </TouchableOpacity>
         </TouchableOpacity>
       </TouchableOpacity>
     </Modal>
@@ -2794,6 +2827,25 @@ const styles = StyleSheet.create({
   nutrientFoundInSection: {
     paddingHorizontal: 30,
     paddingVertical: 15,
+  },
+  nutrientFoundInIcons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 4,
+  },
+  nutrientFoundInItem: {
+    alignItems: 'center',
+    width: 60,
+  },
+  nutrientFoundInIcon: {
+    width: 36,
+    height: 36,
+  },
+  nutrientFoundInItemText: {
+    fontSize: 10,
+    textAlign: 'center',
+    marginTop: 2,
   },
   nutrientFoundInText: {
     fontSize: 14,
