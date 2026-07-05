@@ -31,8 +31,8 @@ export default function ProfileScreen({ navigation }) {
   const { t } = useLanguage();
   const [refreshing, setRefreshing] = useState(false);
   const [checkingTutorial, setCheckingTutorial] = useState(true);
-  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || null);
   const { profile, loading, refreshProfile, refreshMeals } = useUser();
+  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || null);
   const { isGuest, setUserMode } = useUserMode();
   const { startTutorial } = useTutorial();
   const { isPremium } = usePremiumStatus();
@@ -83,16 +83,22 @@ export default function ProfileScreen({ navigation }) {
     let timerId;
 
     const checkProfileTutorial = async () => {
+      // Safety net — never leave overlay up more than 5 seconds
+      const safetyTimer = setTimeout(() => {
+        setCheckingTutorial(false);
+      }, 5000);
       try {
         // Check local cache first
         const cached = await AsyncStorage.getItem('profile_tutorial_completed');
         if (cached === 'true') {
+          clearTimeout(safetyTimer);
           setCheckingTutorial(false);
           return;
         }
 
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
+          clearTimeout(safetyTimer);
           setCheckingTutorial(false);
           return;
         }
@@ -104,7 +110,7 @@ export default function ProfileScreen({ navigation }) {
           .single();
 
         if (profileData?.profile_tutorial_completed) {
-          // Cache it so we never query again
+          clearTimeout(safetyTimer);
           await AsyncStorage.setItem('profile_tutorial_completed', 'true');
           setCheckingTutorial(false);
           return;
@@ -139,7 +145,12 @@ export default function ProfileScreen({ navigation }) {
           } else if (checkCount < 10) {
             timerId = setTimeout(checkRefsReady, 300);
           } else {
+            // Hard fallback — never leave overlay up
             setCheckingTutorial(false);
+            timerId = setTimeout(() => {
+              if (cancelled) return;
+              startTutorial('Profile');
+            }, 300);
           }
         };
 
@@ -147,6 +158,7 @@ export default function ProfileScreen({ navigation }) {
 
       } catch (error) {
         console.error('Error checking profile tutorial:', error);
+        clearTimeout(safetyTimer);
         setCheckingTutorial(false);
       }
     };
