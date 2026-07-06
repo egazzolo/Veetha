@@ -106,7 +106,7 @@ export default function DisplaySettingsScreen({ navigation }) {
               <Text style={[styles.themeOptionLabel, { color: theme.text }]}>Dark</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={[
                 styles.themeOption,
                 { backgroundColor: theme.cardBackground, borderColor: theme.border },
@@ -118,13 +118,13 @@ export default function DisplaySettingsScreen({ navigation }) {
                 <View style={[styles.themeSwatchDot, { backgroundColor: '#1F9B39' }]} />
               </View>
               <Text style={[styles.themeOptionLabel, { color: theme.text }]}>Pro Mode</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
 
           <Text style={[styles.layoutDescription, { color: theme.textSecondary }]}>
             {currentTheme === 'modern-light' && 'Warm beige with green accents.'}
             {currentTheme === 'modern-dark' && 'Pure black with green accents.'}
-            {currentTheme === 'pro-mode' && 'Minimal black, white, and grey with a single green accent.'}
+            {/* {currentTheme === 'pro-mode' && 'Minimal black, white, and grey with a single green accent.'} */}
           </Text>
         </View>
 
