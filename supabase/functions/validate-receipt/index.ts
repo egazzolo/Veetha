@@ -176,6 +176,7 @@ async function validateGooglePurchase(
     is_premium: true,
     subscription_expires_at: expiresAt,
     subscription_product_id: activeItem.productId,
+    android_purchase_token: purchaseToken,
   }).eq('id', userId)
 
   return { valid: true, expiresAt, productId: activeItem.productId }
