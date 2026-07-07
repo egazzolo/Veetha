@@ -53,9 +53,17 @@ export async function fetchSubscriptions() {
 export async function purchaseSubscription(productId) {
   try {
     if (Platform.OS === 'android') {
+      const subs = await getSubscriptions({ skus: [productId] });
+      const sub = subs.find(s => s.productId === productId);
+      const offerId = productId === 'com.yourname.veetha.premium.plan' 
+        ? 'free-trial-7' 
+        : 'free-trial-7-annual';
+      const offerToken = sub?.subscriptionOfferDetails?.find(
+        (o) => o.offerId === offerId
+      )?.offerToken || sub?.subscriptionOfferDetails?.[0]?.offerToken || '';
       await requestSubscription({
         sku: productId,
-        subscriptionOffers: [{ sku: productId, offerToken: '' }],
+        subscriptionOffers: [{ sku: productId, offerToken }],
       });
     } else {
       await requestSubscription({ sku: productId });
