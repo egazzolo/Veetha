@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, ActivityIndicator, Image } from 'react-native';import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../utils/ThemeContext';
 import { supabase } from '../utils/supabase';
 import { useUser } from '../utils/UserContext';
@@ -11,14 +10,14 @@ import { showToast } from '../components/VeethaToast';
 import GuestUpsellSheet from '../components/GuestUpsellSheet';
 
 const ALLERGIES = [
-  { id: 'peanuts', emoji: '🥜' },
-  { id: 'dairy', emoji: '🥛' },
-  { id: 'shellfish', emoji: '🦐' },
-  { id: 'eggs', emoji: '🥚' },
-  { id: 'soy', emoji: '🫘' },
-  { id: 'wheat', emoji: '🌾' },
-  { id: 'fish', emoji: '🐟' },
-  { id: 'tree_nuts', emoji: '🌰' },
+  { id: 'peanuts', icon: require('../assets/icons/dietary/allergy_peanuts.png') },
+  { id: 'dairy', icon: require('../assets/icons/dietary/allergy_dairy.png') },
+  { id: 'shellfish', icon: require('../assets/icons/dietary/allergy_shellfish.png') },
+  { id: 'eggs', icon: require('../assets/icons/dietary/allergy_eggs.png') },
+  { id: 'soy', icon: require('../assets/icons/dietary/allergy_soy.png') },
+  { id: 'wheat', icon: require('../assets/icons/dietary/allergy_wheat.png') },
+  { id: 'fish', icon: require('../assets/icons/dietary/allergy_fish.png') },
+  { id: 'tree_nuts', icon: require('../assets/icons/dietary/allergy_tree_nuts.png') },
 ];
 
 const DIET_TYPES = [
@@ -33,11 +32,11 @@ const DIET_TYPES = [
 ];
 
 const PREFERENCES = [
-  { id: 'gluten_free', emoji: '🌾' },
-  { id: 'lactose_free', emoji: '🥛' },
-  { id: 'low_sodium', emoji: '🧂' },
-  { id: 'sugar_free', emoji: '🍬' },
-  { id: 'organic', emoji: '🌱' },
+  { id: 'gluten_free', icon: require('../assets/icons/dietary/gluten_free.png') },
+  { id: 'lactose_free', icon: require('../assets/icons/dietary/lactose_free.png') },
+  { id: 'low_sodium', icon: require('../assets/icons/dietary/low_sodium.png') },
+  { id: 'sugar_free', icon: require('../assets/icons/dietary/sugar_free.png') },
+  { id: 'organic', icon: require('../assets/icons/dietary/organic.png') },
 ];
 
 export default function DietaryRestrictionsScreen({ navigation }) {
@@ -198,16 +197,19 @@ export default function DietaryRestrictionsScreen({ navigation }) {
                   ]}
                   onPress={() => toggleAllergy(allergy.id)}
                 >
-                  <Text style={[
-                    styles.chipText,
-                    { 
-                      color: selectedAllergies.includes(allergy.id) 
-                        ? '#fff' 
-                        : theme.text 
-                    }
-                  ]}>
-                    {allergy.emoji} {t(`dietaryRestrictions.${allergy.id.replace('_', '')}`)}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Image source={allergy.icon} style={{ width: 22, height: 22 }} resizeMode="contain" />
+                    <Text style={[
+                      styles.chipText,
+                      {
+                        color: selectedAllergies.includes(allergy.id)
+                          ? '#fff'
+                          : theme.text
+                      }
+                    ]}>
+                      {t(`dietaryRestrictions.${allergy.id.replace('_', '')}`)}
+                    </Text>
+                  </View>
                 </TouchableOpacity>
               ))}
             </View>
@@ -272,15 +274,18 @@ export default function DietaryRestrictionsScreen({ navigation }) {
                   ]}
                   onPress={() => togglePreference(pref.id)}
                 >
-                  <Text style={[styles.chipText, { color: selectedPreferences.includes(pref.id) ? '#fff' : theme.text }]}>
-                    {pref.emoji} {t(`dietaryRestrictions.${
-                      pref.id === 'gluten_free' ? 'glutenFree' :
-                      pref.id === 'lactose_free' ? 'lactoseFree' :
-                      pref.id === 'low_sodium' ? 'lowSodium' :
-                      pref.id === 'sugar_free' ? 'sugarFree' :
-                      'organic'
-                    }`)}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Image source={pref.icon} style={{ width: 22, height: 22 }} resizeMode="contain" />
+                    <Text style={[styles.chipText, { color: selectedPreferences.includes(pref.id) ? '#fff' : theme.text }]}>
+                      {t(`dietaryRestrictions.${
+                        pref.id === 'gluten_free' ? 'glutenFree' :
+                        pref.id === 'lactose_free' ? 'lactoseFree' :
+                        pref.id === 'low_sodium' ? 'lowSodium' :
+                        pref.id === 'sugar_free' ? 'sugarFree' :
+                        'organic'
+                      }`)}
+                    </Text>
+                  </View>
                 </TouchableOpacity>
               ))}
             </View>
