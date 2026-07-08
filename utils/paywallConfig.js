@@ -1,4 +1,4 @@
-export const PAYWALL_ENABLED = false;
+export const PAYWALL_ENABLED = true;
   /*
   TESTING CHECKLIST:
   - PAYWALL_ENABLED = false → all users see premium features, Go Premium card hidden

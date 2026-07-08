@@ -96,6 +96,8 @@ import { supabase, createSessionFromUrl } from './utils/supabase';
 import { posthog } from './utils/posthog';
 import { PostHogProvider } from 'posthog-react-native';
 import UpdateAlert from './components/UpdateAlert';
+import * as Notifications from 'expo-notifications';
+import GracePeriodAlert from './components/GracePeriodAlert';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -111,6 +113,31 @@ function AppNavigator() {
   const navigationRef = useRef(null);
   const isInitialLoad = useRef(true);
   const oauthNavigating = useRef(false);
+
+  // Register push token
+  useEffect(() => {
+    (async () => {
+      try {
+        const { status: existing } = await Notifications.getPermissionsAsync();
+        let finalStatus = existing;
+        if (existing !== 'granted') {
+          const { status } = await Notifications.requestPermissionsAsync();
+          finalStatus = status;
+        }
+        if (finalStatus !== 'granted') return;
+        const tokenData = await Notifications.getExpoPushTokenAsync({
+          projectId: '3ea65199-c1c8-4c23-bcac-ae6b34aead78',
+        });
+        const token = tokenData.data;
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from('profiles').update({ push_token: token }).eq('id', user.id);
+        }
+      } catch (e) {
+        console.log('Push token error:', e);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     checkAuthState();
@@ -419,6 +446,7 @@ function AppNavigator() {
         {/* <GlobalTutorialOverlay /> */}
       </NavigationContainer>
       <UpdateAlert />
+      <GracePeriodAlert />
       <VeethaToastRoot />
     </View>
   );

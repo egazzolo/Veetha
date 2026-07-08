@@ -3,9 +3,9 @@ module.exports = {
     name: "Veetha",
     slug: "Veetha",
     scheme: "veetha",
-    version: "1.2.2",
+    version: "1.2.3",
     orientation: "portrait",
-    icon: "./assets/icon.png",
+    icon: "./assets/LogoAppStore.png",
     userInterfaceStyle: "light",
     newArchEnabled: false,
     assetBundlePatterns: [
@@ -29,10 +29,11 @@ module.exports = {
     },
     android: {
       package: "com.yourname.veetha",
-      versionCode: 38,
+      versionCode: 39,
+      icon: "./assets/adaptive-icon.png",
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
-        backgroundColor: "#ffffff",
+        backgroundColor: "#EAE0C8",
       },
       permissions: [
         "ACCESS_COARSE_LOCATION",
@@ -58,8 +59,9 @@ module.exports = {
       ]
     },
     ios: {
+      icon: "./assets/LogoAppStore.png",
       bundleIdentifier: "com.yourname.veetha",
-      buildNumber: "53",
+      buildNumber: "54",
       usesAppleSignIn: true,
       associatedDomains: ["applinks:nonotenb.com"],
       infoPlist: {
