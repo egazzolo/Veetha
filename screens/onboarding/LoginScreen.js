@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase, createSessionFromUrl } from '../../utils/supabase';
@@ -25,6 +25,11 @@ export default function LoginScreen({ navigation }) {
   const { triggerGreeting } = useGreeting();
   const { t } = useLanguage();
   const { setUserMode } = useUserMode();
+  const [appleAvailable, setAppleAvailable] = useState(false);
+
+  useEffect(() => {
+    AppleAuthentication.isAvailableAsync().then(setAppleAvailable);
+  }, []);
 
   const handleLogin = async () => {
     // Clear previous errors
@@ -393,7 +398,7 @@ export default function LoginScreen({ navigation }) {
             </TouchableOpacity>
 
             {/* Apple Button - iOS only */}
-            {Platform.OS === 'ios' && (
+            {Platform.OS === 'ios' && appleAvailable && (
               <AppleAuthentication.AppleAuthenticationButton
                 buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
                 buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}

@@ -27,6 +27,11 @@ export default function SignUpScreen({ navigation }) {
   const [checkingEmail, setCheckingEmail] = useState(false);
   const { t } = useLanguage();
   const { setUserMode } = useUserMode();
+  const [appleAvailable, setAppleAvailable] = useState(false);
+
+  useEffect(() => {
+    AppleAuthentication.isAvailableAsync().then(setAppleAvailable);
+  }, []);
 
   // Real-time email validation
   const checkEmailExists = async (emailToCheck) => {
@@ -553,7 +558,7 @@ export default function SignUpScreen({ navigation }) {
             </TouchableOpacity>
 
             {/* Apple Button - iOS only */}
-            {Platform.OS === 'ios' && (
+            {Platform.OS === 'ios' && appleAvailable && (
               <AppleAuthentication.AppleAuthenticationButton
                 buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP}
                 buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}

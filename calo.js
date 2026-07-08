@@ -444,9 +444,9 @@ function AppNavigator() {
           <Stack.Screen name="Paywall" component={PaywallScreen} options={{ presentation: 'modal', headerShown: false }} />
         </Stack.Navigator>
         {/* <GlobalTutorialOverlay /> */}
+        <GracePeriodAlert />
       </NavigationContainer>
       <UpdateAlert />
-      <GracePeriodAlert />
       <VeethaToastRoot />
     </View>
   );
