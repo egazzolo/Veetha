@@ -208,9 +208,9 @@ import React, { useState, useRef, useEffect } from 'react';
           {/* Fine print */}
           <Text style={[styles.finePrint, { color: theme.textTertiary }]}>
             By continuing, you agree to our{' '}
-            <Text style={styles.linkText} onPress={() => Linking.openURL('https://www.veetha.app/terms')}>Terms of Service</Text>
-            {' '}and{' '}
-            <Text style={styles.linkText} onPress={() => Linking.openURL('https://www.veetha.app/privacy')}>Privacy Policy</Text>.{'\n'}
+            <Text style={styles.linkText} onPress={() => Linking.openURL('https://nonotenb.com/veetha/terms')}>Terms of Service</Text>
+             {' '}and{' '}
+             <Text style={styles.linkText} onPress={() => Linking.openURL('https://nonotenb.com/veetha/privacy')}>Privacy Policy</Text>
             Subscriptions auto-renew unless cancelled at least 24 hours before the end of the current period.
           </Text>
 

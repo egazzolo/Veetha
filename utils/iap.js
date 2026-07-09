@@ -1,14 +1,13 @@
 import {
   initConnection,
   endConnection,
-  getSubscriptions,
-  requestSubscription,
+  fetchProducts,
+  requestPurchase,
   purchaseUpdatedListener,
   purchaseErrorListener,
   finishTransaction,
   getAvailablePurchases,
-} from 'react-native-iap';
-import { Platform } from 'react-native';
+} from 'react-native-iap';import { Platform } from 'react-native';
 import { supabase } from './supabase';
 
 export const PRODUCT_ID_MONTHLY = 'com.yourname.veetha.premium.plan';
@@ -40,7 +39,7 @@ export async function endIAP() {
 // ── Fetch subscription products ──────────────────────────────────
 export async function fetchSubscriptions() {
   try {
-    const subscriptions = await getSubscriptions({ skus: SUBSCRIPTION_SKUS });
+    const subscriptions = await fetchProducts({ productIds: SUBSCRIPTION_SKUS, productType: 'subs' });
     console.log('✅ Subscriptions fetched:', subscriptions.length);
     return subscriptions;
   } catch (error) {
@@ -53,7 +52,7 @@ export async function fetchSubscriptions() {
 export async function purchaseSubscription(productId) {
   try {
     if (Platform.OS === 'android') {
-      const subs = await getSubscriptions({ skus: [productId] });
+      const subs = await fetchProducts({ skus: [productId], productType: 'subs' });
       const sub = subs.find(s => s.productId === productId);
       const offerId = productId === 'com.yourname.veetha.premium.plan' 
         ? 'free-trial-7' 
@@ -61,12 +60,26 @@ export async function purchaseSubscription(productId) {
       const offerToken = sub?.subscriptionOfferDetails?.find(
         (o) => o.offerId === offerId
       )?.offerToken || sub?.subscriptionOfferDetails?.[0]?.offerToken || '';
-      await requestSubscription({
-        sku: productId,
-        subscriptionOffers: [{ sku: productId, offerToken }],
+      console.log('🛒 Android purchase attempt:', productId, 'skus:', [productId]);
+      await requestPurchase({
+        request: {
+          google: {
+            skus: [productId],
+            subscriptionOffers: offerToken ? [{ sku: productId, offerToken }] : undefined,
+          }
+        },
+        type: 'subs',
       });
     } else {
-      await requestSubscription({ sku: productId });
+      await requestPurchase({
+        request: {
+          apple: {
+            sku: productId,
+            andDangerouslyFinishTransactionAutomatically: false,
+          }
+        },
+        type: 'subs',
+      });
     }
   } catch (error) {
     console.error('❌ Purchase error:', error);
