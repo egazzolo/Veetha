@@ -1,12 +1,13 @@
 // USDA FoodData Central API Integration
 // API Documentation: https://fdc.nal.usda.gov/api-guide.html
+import { supabase } from './supabase';
 
 const USDA_API_BASE = 'https://api.nal.usda.gov/fdc/v1';
 
 // ⚠️ IMPORTANT: USDA now requires API key (even DEMO_KEY works)
 // Get FREE key at: https://fdc.nal.usda.gov/api-key-signup.html
 // Takes 2 minutes - just enter your email!
-const USDA_API_KEY = 'xxf8tDI78gYGFPkmn6ORw5KNQ0gzgfbH9ar7X3aB'; // 30 requests/hour
+// Key removed from client — now lives server-side as a Supabase secret, called via usda-proxy
 
 /**
  * Search for food in USDA database
@@ -24,36 +25,18 @@ export async function searchUSDAFood(query, pageSize = 5) {
   try {
     console.log('🔍 Searching USDA for:', query);
     
-    if (!USDA_API_KEY || USDA_API_KEY === 'YOUR_API_KEY_HERE') {
-      console.error('❌ USDA API key not configured!');
-      throw new Error('USDA API key required. Get free key at https://fdc.nal.usda.gov/api-key-signup.html');
-    }
-    
-    // Build API URL with API key
-    const params = new URLSearchParams({
-      query: q,
-      pageSize: pageSize.toString(),
-      api_key: USDA_API_KEY,
+    const { data: proxyData, error: invokeError } = await supabase.functions.invoke('usda-proxy', {
+      body: { query: q, pageSize },
     });
 
-    const response = await fetch(`${USDA_API_BASE}/foods/search?${params}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      if (response.status === 403) {
-        throw new Error('USDA API access denied. Please get a free API key from https://fdc.nal.usda.gov/api-key-signup.html');
-      }
-      if (response.status === 429) {
-        throw new Error('USDA API rate limit exceeded. Please wait or get your own API key.');
-      }
-      throw new Error(`USDA API error: ${response.status}`);
+    if (invokeError) {
+      throw new Error(invokeError.message || 'USDA proxy invoke failed');
+    }
+    if (proxyData?.error) {
+      throw new Error(proxyData.error);
     }
 
-    const data = await response.json();
+    const data = proxyData;
     
     if (!data.foods || data.foods.length === 0) {
       console.log('❌ No foods found in USDA for:', query);
@@ -96,7 +79,10 @@ function parseUSDAFood(usdaFood) {
       } else if (name.includes('total lipid') || name.includes('fat, total')) {
         nutrients.fat = Math.round(value * 10) / 10;
       } else if (name.includes('sodium')) {
-        nutrients.sodium = Math.round(value);
+        // USDA reports sodium in mg; convert to grams to match OFF/app convention.
+        const unit = (nutrient.unitName || 'MG').toUpperCase();
+        const grams = unit === 'MG' ? value / 1000 : value;
+        nutrients.sodium = Math.round(grams * 10000) / 10000;
       } else if (name.includes('sugars, total')) {
         nutrients.sugar = Math.round(value * 10) / 10;
       } else if (name.includes('fiber')) {

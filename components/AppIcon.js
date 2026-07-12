@@ -122,6 +122,7 @@ const ICONS = {
   'volleyball_clr': require('../assets/icons/icon_volleyball_clr.png'),
   'avocado_clr': require('../assets/icons/icon_avocado_clr.png'),
   'measuring_spoon': require('../assets/icons/icon_measuring_spoon.png'),
+  'crop': require('../assets/icons/crop.png'),
 };
 
 export default function AppIcon({ name, size = 24, tintColor, style }) {

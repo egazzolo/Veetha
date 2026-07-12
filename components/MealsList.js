@@ -1,15 +1,21 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, Pressable, Alert } from 'react-native';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as ImageManipulator from 'expo-image-manipulator';
+import { decode } from 'base64-arraybuffer';
+import ImageCropPicker from 'react-native-image-crop-picker';
 import GuestUpsellSheet from './GuestUpsellSheet';
 import AppIcon from './AppIcon';
 import { useTheme } from '../utils/ThemeContext';
 import { usePremiumStatus } from '../utils/usePremiumStatus';
+import { supabase } from '../utils/supabase';
 
 export default function MealsList({
   theme,
   t,
   loading,
   onImageUpload,
+  onCropped,
   meals,
   isToday,
   getDateLabel,
@@ -34,6 +40,15 @@ export default function MealsList({
   const { isDark } = useTheme();
   const { isPremium } = usePremiumStatus();
 
+  const formatSmallMacro = (value) => {
+    const num = Number(value) || 0;
+    if (num === 0) return '0';
+    const abs = Math.abs(num);
+    if (abs < 0.1) return num.toFixed(4);
+    if (abs < 1) return num.toFixed(2);
+    return num.toFixed(1);
+  };
+
   const handleMealPress = (meal) => {
     // In selection mode, tap toggles checkbox instead of opening post-it
     if (selectionMode) {
@@ -41,6 +56,83 @@ export default function MealsList({
       return;
     }
     setSelectedMeal(meal);
+  };
+
+  const extractStoragePath = (url) => {
+    if (!url || typeof url !== 'string') return null;
+    const marker = '/meal-images/';
+    const idx = url.indexOf(marker);
+    if (idx === -1) return null;
+    return url.substring(idx + marker.length);
+  };
+
+  const handleCropPhoto = async (meal, currentImageUrl) => {
+    if (!isPremium) {
+      Alert.alert('Premium Feature', 'Cropping photos is available with Veetha Premium.');
+      return;
+    }
+    if (!currentImageUrl) return;
+
+    try {
+      // Download remote photo locally first — the cropper is unreliable pointed straight at a remote URL
+      const localUri = `${FileSystem.cacheDirectory}crop-source-${meal.id}.jpg`;
+      await FileSystem.downloadAsync(currentImageUrl, localUri);
+
+      // Downscale before handing to the cropper — full-res camera photos (12MP+) risk OOM
+      // on lower-memory devices; same discipline already applied before AI vision calls.
+      const resized = await ImageManipulator.manipulateAsync(
+        localUri,
+        [{ resize: { width: 1200 } }],
+        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+      );
+
+      const cropped = await ImageCropPicker.openCropper({
+        path: resized.uri,
+        width: 800,
+        height: 800,
+        freeStyleCropEnabled: true,
+        cropperToolbarTitle: 'Crop Photo',
+      });
+
+      const base64 = await FileSystem.readAsStringAsync(cropped.path, { encoding: 'base64' });
+      const fileName = `meal-${meal.id}-${Date.now()}.jpg`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('meal-images')
+        .upload(fileName, decode(base64), { contentType: 'image/jpeg' });
+
+      if (uploadError) {
+        Alert.alert('Upload failed', uploadError.message);
+        return;
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from('meal-images')
+        .getPublicUrl(fileName);
+      const newUrl = publicUrlData?.publicUrl;
+
+      const { error: updateError } = await supabase
+        .from('meals')
+        .update({ image_url: newUrl })
+        .eq('id', meal.id);
+
+      if (updateError) {
+        Alert.alert('Update failed', updateError.message);
+        return;
+      }
+
+      // Delete the old file now that the new one is confirmed uploaded and linked
+      const oldPath = extractStoragePath(currentImageUrl);
+      if (oldPath) {
+        await supabase.storage.from('meal-images').remove([oldPath]);
+      }
+
+      if (onCropped) onCropped();
+    } catch (err) {
+      if (err.code !== 'E_PICKER_CANCELLED') {
+        Alert.alert('Error', err.message || 'Cropping failed');
+      }
+    }
   };
 
   const closePostIt = () => {
@@ -278,6 +370,18 @@ export default function MealsList({
                     <Text style={styles.uploadHintBig}>+ Add Photo</Text>
                   </View>
                 )}
+
+                {false && !selectionMode && isPremium && (meal.image_url || product.image_url) && (
+                  <TouchableOpacity
+                    style={styles.cropIconButton}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      handleCropPhoto(meal, meal.image_url || product.image_url);
+                    }}
+                  >
+                    <AppIcon name="crop" size={18} tintColor="#fff" />
+                  </TouchableOpacity>
+                )}
               </TouchableOpacity>
 
               {/* Macros row at bottom */}
@@ -296,15 +400,15 @@ export default function MealsList({
                 </View>
                 <View style={styles.macroChip}>
                   <AppIcon name="sodium" size={14} tintColor="#607D8B" style={{ marginRight: 3 }} />
-                  <Text style={[styles.macroChipText, { color: '#607D8B' }]}>{Math.round(actualSodium)}mg</Text>
+                  <Text style={[styles.macroChipText, { color: '#607D8B' }]}>{formatSmallMacro(actualSodium)}g</Text>
                 </View>
                 <View style={styles.macroChip}>
                   <AppIcon name="sugar" size={14} tintColor="#E91E63" style={{ marginRight: 3 }} />
-                  <Text style={[styles.macroChipText, { color: '#E91E63' }]}>{Math.round(actualSugar)}g</Text>
+                  <Text style={[styles.macroChipText, { color: '#E91E63' }]}>{formatSmallMacro(actualSugar)}g</Text>
                 </View>
                 <View style={styles.macroChip}>
                   <AppIcon name="fiber" size={14} tintColor="#4CAF50" style={{ marginRight: 3 }} />
-                  <Text style={[styles.macroChipText, { color: '#4CAF50' }]}>{Math.round(actualFiber)}g</Text>
+                  <Text style={[styles.macroChipText, { color: '#4CAF50' }]}>{formatSmallMacro(actualFiber)}g</Text>
                 </View>
               </View>
             </TouchableOpacity>
@@ -414,17 +518,17 @@ export default function MealsList({
                     <View style={styles.postItMacroRow}>
                       <AppIcon name="sodium" size={16} tintColor="#607D8B" style={{ marginRight: 4 }} />
                         <Text style={[styles.postItMacroLabel, isDark && { color: '#F5E6A3' }]}>{t('home.mealsList.sodium')}:</Text>
-                      <Text style={[styles.postItMacroValue, isDark && { color: '#F5E6A3' }]}>{Math.round(selectedMeal?.sodium || 0)}mg</Text>
+                      <Text style={[styles.postItMacroValue, isDark && { color: '#F5E6A3' }]}>{formatSmallMacro(selectedMeal?.sodium || 0)}g</Text>
                     </View>
                     <View style={styles.postItMacroRow}>
                       <AppIcon name="sugar" size={16} tintColor="#E91E63" style={{ marginRight: 4 }} />
                         <Text style={[styles.postItMacroLabel, isDark && { color: '#F5E6A3' }]}>{t('home.mealsList.sugar')}:</Text>
-                      <Text style={[styles.postItMacroValue, isDark && { color: '#F5E6A3' }]}>{Math.round(selectedMeal?.sugar || 0)}g</Text>
+                      <Text style={[styles.postItMacroValue, isDark && { color: '#F5E6A3' }]}>{formatSmallMacro(selectedMeal?.sugar || 0)}g</Text>
                     </View>
                     <View style={styles.postItMacroRow}>
                       <AppIcon name="fiber" size={16} tintColor="#4CAF50" style={{ marginRight: 4 }} />
                         <Text style={[styles.postItMacroLabel, isDark && { color: '#F5E6A3' }]}>{t('home.mealsList.fiber')}:</Text>
-                      <Text style={[styles.postItMacroValue, isDark && { color: '#F5E6A3' }]}>{Math.round(selectedMeal?.fiber || 0)}g</Text>
+                      <Text style={[styles.postItMacroValue, isDark && { color: '#F5E6A3' }]}>{formatSmallMacro(selectedMeal?.fiber || 0)}g</Text>
                     </View>
                   </View>
                   <View style={styles.postItFooter}>
@@ -444,6 +548,9 @@ export default function MealsList({
                     const fProt = Math.round((food.protein_per_100g || 0) * grams / 100);
                     const fCarb = Math.round((food.carbs_per_100g || 0) * grams / 100);
                     const fFat = Math.round((food.fat_per_100g || 0) * grams / 100);
+                    const fSugar = formatSmallMacro((food.sugar_per_100g || 0) * grams / 100);
+                    const fFiber = formatSmallMacro((food.fiber_per_100g || 0) * grams / 100);
+                    const fSodium = formatSmallMacro((food.sodium_per_100g || 0) * grams / 100);
                     return (
                       <View key={index} style={{
                         marginBottom: 12,
@@ -477,6 +584,18 @@ export default function MealsList({
                           <View style={styles.postItMacroRow}>
                             <AppIcon name="fat" size={13} tintColor="#1F9B39" style={{ marginRight: 3 }} />
                             <Text style={[{ fontSize: 12, fontWeight: '600', fontFamily: 'Courier' }, isDark && { color: '#F5E6A3' }, !isDark && { color: '#1a1a1a' }]}>{fFat}g</Text>
+                          </View>
+                          <View style={styles.postItMacroRow}>
+                            <AppIcon name="sugar" size={13} tintColor="#E91E63" style={{ marginRight: 3 }} />
+                            <Text style={[{ fontSize: 12, fontWeight: '600', fontFamily: 'Courier' }, isDark && { color: '#F5E6A3' }, !isDark && { color: '#1a1a1a' }]}>{fSugar}g</Text>
+                          </View>
+                          <View style={styles.postItMacroRow}>
+                            <AppIcon name="fiber" size={13} tintColor="#4CAF50" style={{ marginRight: 3 }} />
+                            <Text style={[{ fontSize: 12, fontWeight: '600', fontFamily: 'Courier' }, isDark && { color: '#F5E6A3' }, !isDark && { color: '#1a1a1a' }]}>{fFiber}g</Text>
+                          </View>
+                          <View style={styles.postItMacroRow}>
+                            <AppIcon name="sodium" size={13} tintColor="#607D8B" style={{ marginRight: 3 }} />
+                            <Text style={[{ fontSize: 12, fontWeight: '600', fontFamily: 'Courier' }, isDark && { color: '#F5E6A3' }, !isDark && { color: '#1a1a1a' }]}>{fSodium}g</Text>
                           </View>
                         </View>
                       </View>
@@ -625,6 +744,18 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: 10,
     backgroundColor: '#f0f0f0',
+  },
+  cropIconButton: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 5,
   },
   mealImageBig: {
     width: '100%',

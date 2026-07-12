@@ -29,7 +29,7 @@ const dailyPhotoLimit = 2;
 
 export default function ScannerScreen({ navigation }) {
   const { theme } = useTheme();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { tutorialCompleted, startTutorial } = useTutorial();
   const { refreshProfile } = useUser();
   const { isGuest } = useUserMode();
@@ -327,6 +327,7 @@ export default function ScannerScreen({ navigation }) {
         if (data.status === 1 && data.product) {
           const p = data.product;
           console.log("✅ OFF: Product found:", p.product_name);
+          p.nutrition_source = 'off';
 
           let imageUrl = p.image_url || p.image_front_url || p.image_front_small_url;
           if (imageUrl && !imageUrl.startsWith('http')) {
@@ -504,12 +505,12 @@ export default function ScannerScreen({ navigation }) {
       let engineUsed = 'gemini';
       try {
         console.log(`📸 Analyzing with Gemini Vision (call ${todayCount + 1})...`);
-        result = await analyzePhotoGemini(photoUri);
+        result = await analyzePhotoGemini(photoUri, undefined, language);
         console.log('✅ Gemini identified:', result.foodName);
       } catch (geminiError) {
         console.log('⚠️ Gemini failed, falling back to GPT-4o-mini:', geminiError.message);
         engineUsed = 'openai';
-        result = await analyzePhotoOpenAI(photoUri);
+        result = await analyzePhotoOpenAI(photoUri, language);
         console.log('✅ OpenAI fallback identified:', result.foodName);
       }
 

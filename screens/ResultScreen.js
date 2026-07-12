@@ -38,6 +38,16 @@ const detectServingUnit = (productName = '', servingSize) => {
   return 'g'; // Default to grams for food
 };
 
+const formatSmallMacro = (value) => {
+  if (value === undefined || value === null || isNaN(value)) return "N/A";
+  const num = parseFloat(value);
+  if (num === 0) return "0";
+  const abs = Math.abs(num);
+  if (abs < 0.1) return num.toFixed(4);
+  if (abs < 1) return num.toFixed(2);
+  return num.toFixed(1);
+};
+
 // CIRCULAR PROGRESS COMPONENT
 function CircularProgress({ percentage, size = 100, strokeWidth = 8, color = '#4CAF50', children }) {
   const radius = (size - strokeWidth) / 2;
@@ -288,13 +298,13 @@ export default function ResultScreen({ route, navigation }) {
       ? ((activeFoodNutriments.fat_100g * activeServingGrams) / 100).toFixed(1) 
       : "N/A",
     fiber: activeFoodNutriments?.fiber_100g !== undefined 
-      ? ((activeFoodNutriments.fiber_100g * activeServingGrams) / 100).toFixed(1) 
+      ? formatSmallMacro((activeFoodNutriments.fiber_100g * activeServingGrams) / 100) 
       : "N/A",
     sugar: activeFoodNutriments?.sugars_100g !== undefined 
-      ? ((activeFoodNutriments.sugars_100g * activeServingGrams) / 100).toFixed(1) 
+      ? formatSmallMacro((activeFoodNutriments.sugars_100g * activeServingGrams) / 100) 
       : "N/A",
     sodium: activeFoodNutriments?.sodium_100g !== undefined 
-      ? ((activeFoodNutriments.sodium_100g * activeServingGrams) / 100).toFixed(1) 
+      ? formatSmallMacro((activeFoodNutriments.sodium_100g * activeServingGrams) / 100) 
       : "N/A",
   };
 
@@ -605,6 +615,7 @@ export default function ResultScreen({ route, navigation }) {
               fiber: food.nutriments?.fiber_100g || food.nutriments?.fiber || 0,
               sugar: food.nutriments?.sugars_100g || food.nutriments?.sugar || 0,
               sodium: food.nutriments?.sodium_100g || food.nutriments?.sodium || 0,
+              nutrition_source: food.nutrition_source || null,
               image_url: imageUrl,
               barcode: food.barcode || food.code || null,
             })
@@ -868,9 +879,9 @@ export default function ResultScreen({ route, navigation }) {
             ]}
           >
             <Image 
-              source={{ uri: food.image_url }} 
+              source={{ uri: food.image_url }}
               style={styles.photoViewImage}
-              resizeMode="cover"
+              resizeMode="contain"
             />
 
             <View style={styles.photoMealNameContainer}>
@@ -909,6 +920,47 @@ export default function ResultScreen({ route, navigation }) {
                 </TouchableOpacity>
               )}
             </View>
+
+            {/* Macro Badges Overlay */}
+            <View style={styles.macroBadgesContainer}>
+              <TouchableOpacity style={[styles.macroBadge, { backgroundColor: '#4CAF50' }]} onPress={() => { setSelectedNutrient('calories'); setShowNutrientModal(true); }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <AppIcon name="streak" size={16} tintColor="#FFFFFF" style={{ marginRight: 4 }} />
+                  <Text style={styles.macroBadgeLabel}>{t('results.caloriesInfo')}</Text>
+                </View>
+                <Text style={styles.macroBadgeValue}>{nutritionValues.calories}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={[styles.macroBadge, { backgroundColor: '#2196F3' }]} onPress={() => { setSelectedNutrient('protein'); setShowNutrientModal(true); }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <AppIcon name="protein" size={16} tintColor="#FFFFFF" style={{ marginRight: 4 }} />
+                  <Text style={styles.macroBadgeLabel}>{t('results.protein')}: </Text>
+                </View>
+                <Text style={styles.macroBadgeValue}>{nutritionValues.protein}g</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={[styles.macroBadge, { backgroundColor: '#FF9800' }]} onPress={() => { setSelectedNutrient('carbs'); setShowNutrientModal(true); }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <AppIcon name="carbs" size={16} tintColor="#FFFFFF" style={{ marginRight: 4 }} />
+                  <Text style={styles.macroBadgeLabel}>{t('results.carbs')}: </Text>
+                </View>
+                <Text style={styles.macroBadgeValue}>{nutritionValues.carbs}g</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={[styles.macroBadge, { backgroundColor: '#9C27B0' }]} onPress={() => { setSelectedNutrient('fat'); setShowNutrientModal(true); }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <AppIcon name="fat" size={16} tintColor="#FFFFFF" style={{ marginRight: 4 }} />
+                  <Text style={styles.macroBadgeLabel}>{t('results.fat')}: </Text>
+                </View>
+                <Text style={styles.macroBadgeValue}>{nutritionValues.fat}g</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Swipe Hints */}
+            <View style={styles.swipeHints}>
+              <Text style={styles.swipeHintText}>← {t('results.swipeLeftDelete')}</Text>
+              <Text style={styles.swipeHintText}>{t('results.swipeRightSave')} →</Text>
+            </View>
             
             {/* LEFT SWIPE INDICATOR (Delete) */}
             {swipeDirection === 'left' && (
@@ -937,47 +989,6 @@ export default function ResultScreen({ route, navigation }) {
                 <Text style={styles.swipeIndicatorLabel}>{t('results.save')}</Text>
               </Animated.View>
             )}
-            
-            {/* Macro Badges Overlay */}
-            <View style={styles.macroBadgesContainer}>
-              <View style={[styles.macroBadge, { backgroundColor: '#4CAF50' }]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <AppIcon name="streak" size={16} tintColor="#FFFFFF" style={{ marginRight: 4 }} />
-                  <Text style={styles.macroBadgeLabel}>{t('results.caloriesInfo')}</Text>
-                </View>
-                <Text style={styles.macroBadgeValue}>{nutritionValues.calories}</Text>
-              </View>
-              
-              <View style={[styles.macroBadge, { backgroundColor: '#2196F3' }]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <AppIcon name="protein" size={16} tintColor="#FFFFFF" style={{ marginRight: 4 }} />
-                  <Text style={styles.macroBadgeLabel}>{t('results.protein')}: </Text>
-                </View>
-                <Text style={styles.macroBadgeValue}>{nutritionValues.protein}g</Text>
-              </View>
-              
-              <View style={[styles.macroBadge, { backgroundColor: '#FF9800' }]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <AppIcon name="carbs" size={16} tintColor="#FFFFFF" style={{ marginRight: 4 }} />
-                  <Text style={styles.macroBadgeLabel}>{t('results.carbs')}: </Text>
-                </View>
-                <Text style={styles.macroBadgeValue}>{nutritionValues.carbs}g</Text>
-              </View>
-              
-              <View style={[styles.macroBadge, { backgroundColor: '#9C27B0' }]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <AppIcon name="fat" size={16} tintColor="#FFFFFF" style={{ marginRight: 4 }} />
-                  <Text style={styles.macroBadgeLabel}>{t('results.fat')}: </Text>
-                </View>
-                <Text style={styles.macroBadgeValue}>{nutritionValues.fat}g</Text>
-              </View>
-            </View>
-
-            {/* Swipe Hints */}
-            <View style={styles.swipeHints}>
-              <Text style={styles.swipeHintText}>← {t('results.swipeLeftDelete')}</Text>
-              <Text style={styles.swipeHintText}>{t('results.swipeRightSave')} →</Text>
-            </View>
             
             {/* Foods Detected Panel */}
             {individualFoods && individualFoods.length > 1 ? (
@@ -1043,24 +1054,9 @@ export default function ResultScreen({ route, navigation }) {
                       </Text>
                     </TouchableOpacity>
                   </>
-                ) : (
-                  <TouchableOpacity
-                    style={{ alignSelf: 'center', backgroundColor: '#1F9B39', paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, marginTop: 4 }}
-                    onPress={() => setViewMode('detailed')}
-                  >
-                    <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>📊 {t('results.detailedView')}</Text>
-                  </TouchableOpacity>
-                )}
+                ) : null}
               </View>
-            ) : (
-              /* No individual foods — just show Detailed View button */
-              <TouchableOpacity
-                style={styles.switchViewButton}
-                onPress={() => setViewMode('detailed')}
-              >
-                <Text style={styles.switchViewButtonText}>📊 {t('results.detailedView')}</Text>
-              </TouchableOpacity>
-            )}
+            ) : null}
           </Animated.View>
         </GestureDetector>
       </GestureHandlerRootView>
@@ -1200,18 +1196,6 @@ export default function ResultScreen({ route, navigation }) {
                       </TouchableOpacity>
                     )}
                   </View>
-
-                  {food.image_url && (
-                    <TouchableOpacity 
-                      style={styles.photoModeButton}
-                      onPress={() => setViewMode('photo')}
-                    >
-                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                        <AppIcon name="camera" size={16} tintColor="#FFFFFF" style={{ marginRight: 6 }} />
-                        <Text style={styles.photoModeButtonText}>{t('results.photoView')}</Text>
-                      </View>
-                    </TouchableOpacity>
-                  )}
                   
                   {/* Error Message or Nutrition Display */}
                   {food.error_message ? (
@@ -1416,7 +1400,7 @@ export default function ResultScreen({ route, navigation }) {
                           </View>
                           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
                             <AppIcon name="sodium" size={16} tintColor="#607D8B" style={{ marginRight: 6 }} />
-                            <Text style={styles.detailItem}>{t('results.sodium')}: {nutritionValues.sodium !== "N/A" ? nutritionValues.sodium + (nutritionValues.sodium.includes('mg') ? '' : 'g') : "N/A"}</Text>
+                            <Text style={styles.detailItem}>{t('results.sodium')}: {nutritionValues.sodium !== "N/A" ? nutritionValues.sodium + 'g' : "N/A"}</Text>
                           </View>
                           <View style={styles.standardizedInfo}>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -1828,22 +1812,25 @@ const styles = StyleSheet.create({
   photoViewImage: {
     width: '100%',
     height: '100%',
+    resizeMode: 'contain',
   },
   macroBadgesContainer: {
     position: 'absolute',
-    top: '25%',
-    alignSelf: 'center',
+    top: 95,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
+    flexWrap: 'nowrap',
+    gap: 6,
     justifyContent: 'center',
-    maxWidth: '90%',
+    paddingHorizontal: 8,
   },
   macroBadge: {
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderRadius: 20,
-    minWidth: 100,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    borderRadius: 16,
+    flex: 1,
+    maxWidth: '24%',
   },
   macroBadgeLabel: {
     color: '#fff',
@@ -1930,7 +1917,7 @@ const styles = StyleSheet.create({
   },
   photoMealNameContainer: {
   position: 'absolute',
-  top: 60,
+  top: 10,
   left: 20,
   right: 20,
   backgroundColor: 'rgba(0, 0, 0, 0.7)',

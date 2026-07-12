@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
   import { useTheme } from '../utils/ThemeContext';
   import VeethaModal from '../components/VeethaModal';
   import { showToast } from '../components/VeethaToast';
+  import { posthog } from '../utils/posthog';
   import {
     initIAP,
     endIAP,
@@ -44,6 +45,10 @@ import React, { useState, useRef, useEffect } from 'react';
       day: 'numeric',
       year: 'numeric',
     });
+
+    useEffect(() => {
+      posthog.capture('paywall_viewed', { highlight_feature: highlightFeature || null });
+    }, []);
 
     useEffect(() => {
       if (!highlightFeature) return;

@@ -2048,6 +2048,7 @@ export default function HomeScreen({ navigation }) {
                   onCancelSelection={cancelSelection}
                   onConfirmDelete={() => setBulkDeleteModalVisible(true)}
                   onImageUpload={handleMealImageUpload}
+                  onCropped={() => loadMealsForDate(selectedDate)}
                 />
               </ScrollView>
 

@@ -29,7 +29,7 @@ Sentry.init({
 //import * as Updates from 'expo-updates';
 import React, { useState, useEffect, useRef } from 'react';
 //import Purchases from 'react-native-purchases';
-import { View, ActivityIndicator, Platform, StatusBar, Alert } from 'react-native';
+import { View, ActivityIndicator, Platform, StatusBar, Alert, AppState } from 'react-native';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -459,6 +459,17 @@ function App() {
     //    apiKey: 'your_revenuecat_public_key_here'  // Get from RevenueCat dashboard
     //  });
     //}, []);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        supabase.auth.startAutoRefresh();
+      } else {
+        supabase.auth.stopAutoRefresh();
+      }
+    });
+    return () => subscription.remove();
+  }, []);
 
   return (
     <PostHogProvider>

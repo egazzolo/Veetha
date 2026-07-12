@@ -39,7 +39,7 @@ export async function endIAP() {
 // ── Fetch subscription products ──────────────────────────────────
 export async function fetchSubscriptions() {
   try {
-    const subscriptions = await fetchProducts({ productIds: SUBSCRIPTION_SKUS, productType: 'subs' });
+    const subscriptions = await fetchProducts({ skus: SUBSCRIPTION_SKUS, productType: 'subs' });
     console.log('✅ Subscriptions fetched:', subscriptions.length);
     return subscriptions;
   } catch (error) {
@@ -53,13 +53,15 @@ export async function purchaseSubscription(productId) {
   try {
     if (Platform.OS === 'android') {
       const subs = await fetchProducts({ skus: [productId], productType: 'subs' });
+      console.log('🛒 fetchProducts result:', JSON.stringify(subs));
+      console.log('🛒 productStatusAndroid values:', subs.map(s => ({ id: s.id, status: s.productStatusAndroid })));
       const sub = subs.find(s => s.productId === productId);
       const offerId = productId === 'com.yourname.veetha.premium.plan' 
         ? 'free-trial-7' 
         : 'free-trial-7-annual';
-      const offerToken = sub?.subscriptionOfferDetails?.find(
+      const offerToken = sub?.subscriptionOfferDetailsAndroid?.find(
         (o) => o.offerId === offerId
-      )?.offerToken || sub?.subscriptionOfferDetails?.[0]?.offerToken || '';
+      )?.offerToken || sub?.subscriptionOfferDetailsAndroid?.[0]?.offerToken || '';
       console.log('🛒 Android purchase attempt:', productId, 'skus:', [productId]);
       await requestPurchase({
         request: {

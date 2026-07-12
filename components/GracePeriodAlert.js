@@ -51,12 +51,14 @@ export default function GracePeriodAlert() {
       await AsyncStorage.setItem(key, today);
       setDaysLeft(daysRemaining);
       setVisible(true);
+      posthog.capture('grace_alert_shown', { days_left: daysRemaining, warning_day: warningDay });
     } catch (e) {
       console.log('GracePeriodAlert error:', e);
     }
   };
 
   const handleCompare = () => {
+    posthog.capture('grace_alert_compare_tapped', { days_left: daysLeft });
     setVisible(false);
     navigation.navigate('Paywall');
   };

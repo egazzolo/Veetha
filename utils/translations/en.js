@@ -455,7 +455,7 @@ export default {
       gotIt: 'Got it!',
     },
     mealsList: {
-      serving: 'Serving:',
+      serving: 'Serving',
       protein: 'Protein',
       carbs: 'Carbs',
       fat: 'Fat',
