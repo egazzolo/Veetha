@@ -7,6 +7,8 @@ import {
   purchaseErrorListener,
   finishTransaction,
   getAvailablePurchases,
+  syncIOS,
+  clearTransactionIOS,
 } from 'react-native-iap';import { Platform } from 'react-native';
 import { supabase } from './supabase';
 
@@ -19,6 +21,20 @@ export const SUBSCRIPTION_SKUS = [PRODUCT_ID_MONTHLY, PRODUCT_ID_ANNUAL];
 export async function initIAP() {
   try {
     await initConnection();
+    if (Platform.OS === 'ios') {
+      // App Store Connect's "Clear Purchase History" for a sandbox tester
+      // only resets Apple's server-side records — it does not touch the
+      // on-device StoreKit transaction queue (owned by the storekitd system
+      // daemon, independent of app install state). Any transaction left
+      // unfinished on this device from before the finishTransaction fix in
+      // setupPurchaseListeners will keep sitting in that local queue and
+      // make StoreKit report the product as already purchased. Flush it here.
+      try {
+        await clearTransactionIOS();
+      } catch (clearError) {
+        console.error('❌ Clear transaction error:', clearError);
+      }
+    }
     console.log('✅ IAP connection initialized');
     return true;
   } catch (error) {
@@ -51,6 +67,7 @@ export async function fetchSubscriptions() {
 // ── Purchase a subscription ──────────────────────────────────────
 export async function purchaseSubscription(productId) {
   try {
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
     if (Platform.OS === 'android') {
       const subs = await fetchProducts({ skus: [productId], productType: 'subs' });
       console.log('🛒 fetchProducts result:', JSON.stringify(subs));
@@ -78,6 +95,7 @@ export async function purchaseSubscription(productId) {
           apple: {
             sku: productId,
             andDangerouslyFinishTransactionAutomatically: false,
+            appAccountToken: currentUser?.id,
           }
         },
         type: 'subs',
@@ -100,7 +118,7 @@ export async function validateReceipt(purchase) {
     const body = platform === 'ios'
       ? {
           platform: 'ios',
-          receiptData: purchase.transactionReceipt,
+          transactionJws: purchase.purchaseToken,
         }
       : {
           platform: 'android',
@@ -124,6 +142,9 @@ export async function validateReceipt(purchase) {
 // ── Restore purchases ────────────────────────────────────────────
 export async function restorePurchases() {
   try {
+    if (Platform.OS === 'ios') {
+      await syncIOS();
+    }
     const purchases = await getAvailablePurchases();
     if (!purchases || purchases.length === 0) {
       return { restored: false };
@@ -142,16 +163,31 @@ export async function restorePurchases() {
 // ── Set up purchase listeners ────────────────────────────────────
 export function setupPurchaseListeners(onSuccess, onError) {
   const purchaseUpdateSubscription = purchaseUpdatedListener(async (purchase) => {
+    console.log('🛒 Purchase update:', purchase.productId);
+    let result;
+    let validationError;
     try {
-      console.log('🛒 Purchase update:', purchase.productId);
-      const result = await validateReceipt(purchase);
-      await finishTransaction({ purchase, isConsumable: false });
-      if (result?.valid) {
-        onSuccess && onSuccess(result);
-      }
+      result = await validateReceipt(purchase);
     } catch (error) {
-      console.error('❌ Purchase listener error:', error);
-      onError && onError(error);
+      validationError = error;
+    }
+    // Always finish the transaction, even when validation failed, so it
+    // doesn't stay stuck unfinished in the StoreKit queue — an unfinished
+    // transaction gets redelivered on every future connection init (to any
+    // sandbox tester on the device) and makes StoreKit report the product
+    // as already purchased on the next purchase attempt.
+    try {
+      await finishTransaction({ purchase, isConsumable: false });
+    } catch (finishError) {
+      console.error('❌ Finish transaction error:', finishError);
+    }
+    if (validationError) {
+      console.error('❌ Purchase listener error:', validationError);
+      onError && onError(validationError);
+      return;
+    }
+    if (result?.valid) {
+      onSuccess && onSuccess(result);
     }
   });
 

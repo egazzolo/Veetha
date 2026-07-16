@@ -5,6 +5,7 @@ import React, { useState, useRef, useEffect } from 'react';
   import VeethaModal from '../components/VeethaModal';
   import { showToast } from '../components/VeethaToast';
   import { posthog } from '../utils/posthog';
+  import { ErrorCode } from 'react-native-iap';
   import {
     initIAP,
     endIAP,
@@ -15,6 +16,23 @@ import React, { useState, useRef, useEffect } from 'react';
     PRODUCT_ID_MONTHLY,
     PRODUCT_ID_ANNUAL,
   } from '../utils/iap';
+
+  // requestPurchase() only resolves once StoreKit/Play *dispatches* the request —
+  // the actual result comes later via purchaseUpdatedListener/purchaseErrorListener.
+  // If the native purchase sheet gets stuck (e.g. "already subscribed" on iOS never
+  // calling back), neither listener ever fires, so this bounds how long the spinner
+  // can wait before we give up and let the user retry.
+  const PURCHASE_TIMEOUT_MS = 30_000;
+
+  function withTimeout(promise, ms, message) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error(message)), ms);
+      promise.then(
+        (value) => { clearTimeout(timer); resolve(value); },
+        (error) => { clearTimeout(timer); reject(error); }
+      );
+    });
+  }
 
   const TABLE_ROWS = [
     { label: 'Barcode scanning',          free: 'Unlimited', premium: 'Unlimited' },
@@ -37,6 +55,7 @@ import React, { useState, useRef, useEffect } from 'react';
     const [purchasing, setPurchasing] = useState(false);
     const [restoring, setRestoring] = useState(false);
     const pulseAnims = useRef(TABLE_ROWS.map(() => new Animated.Value(0))).current;
+    const purchaseResultRef = useRef(null);
 
     const trialEndDate = new Date();
     trialEndDate.setDate(trialEndDate.getDate() + 7);
@@ -69,12 +88,16 @@ import React, { useState, useRef, useEffect } from 'react';
           setPurchasing(false);
           showToast('success', 'Welcome to Premium! 🎉');
           navigation.goBack();
+          purchaseResultRef.current?.resolve(result);
+          purchaseResultRef.current = null;
         },
         (error) => {
           setPurchasing(false);
-          if (error?.code !== 'E_USER_CANCELLED') {
+          if (error?.code !== ErrorCode.UserCancelled) {
             Alert.alert('Purchase failed', error?.message || 'Please try again.');
           }
+          purchaseResultRef.current?.reject(error);
+          purchaseResultRef.current = null;
         }
       );
       return () => {
@@ -87,11 +110,26 @@ import React, { useState, useRef, useEffect } from 'react';
       setModalVisible(false);
       setPurchasing(true);
       try {
+        // Defensive re-init: a fast unmount/remount of this screen (e.g. the
+        // user dismissing an error and reopening the paywall) can race the
+        // previous instance's endIAP() cleanup against this instance's
+        // initIAP(), leaving the native connection torn down even though we
+        // think we're connected. initConnection() is safe to call again.
+        await initIAP();
         const productId = plan === 'yearly' ? PRODUCT_ID_ANNUAL : PRODUCT_ID_MONTHLY;
+        const purchaseOutcome = new Promise((resolve, reject) => {
+          purchaseResultRef.current = { resolve, reject };
+        });
         await purchaseSubscription(productId);
+        await withTimeout(
+          purchaseOutcome,
+          PURCHASE_TIMEOUT_MS,
+          'Purchase is taking longer than expected. Please check your connection and try again.'
+        );
       } catch (error) {
+        purchaseResultRef.current = null;
         setPurchasing(false);
-        if (error?.code !== 'E_USER_CANCELLED') {
+        if (error?.code !== ErrorCode.UserCancelled) {
           Alert.alert('Purchase failed', error?.message || 'Please try again.');
         }
       }
@@ -100,6 +138,7 @@ import React, { useState, useRef, useEffect } from 'react';
     const handleRestorePurchases = async () => {
       setRestoring(true);
       try {
+        await initIAP();
         const result = await restorePurchases();
         if (result?.restored) {
           showToast('success', 'Purchases restored! 🎉');
