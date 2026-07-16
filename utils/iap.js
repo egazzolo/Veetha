@@ -43,6 +43,25 @@ export async function initIAP() {
   }
 }
 
+// ── Reconnect without re-flushing the transaction queue ───────────
+// Safe to call right before a purchase attempt: unlike initIAP(), this
+// never calls clearTransactionIOS(). clearTransactionIOS() drains and
+// finishes every unfinished transaction in the on-device StoreKit queue,
+// which can take a long time and races with StoreKit delivering the
+// transaction for a purchase in progress — the drain loop can scoop up
+// and finish that transaction before purchaseUpdatedListener ever sees
+// it, so the request silently gets no response. It must only run once,
+// at session start (inside initIAP()), never right before requestPurchase().
+export async function ensureIAPConnection() {
+  try {
+    await initConnection();
+    return true;
+  } catch (error) {
+    console.error('❌ IAP reconnect error:', error);
+    return false;
+  }
+}
+
 // ── End IAP connection ───────────────────────────────────────────
 export async function endIAP() {
   try {

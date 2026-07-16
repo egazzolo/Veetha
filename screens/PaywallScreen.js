@@ -9,6 +9,7 @@ import React, { useState, useRef, useEffect } from 'react';
   import {
     initIAP,
     endIAP,
+    ensureIAPConnection,
     fetchSubscriptions,
     purchaseSubscription,
     setupPurchaseListeners,
@@ -115,7 +116,11 @@ import React, { useState, useRef, useEffect } from 'react';
         // previous instance's endIAP() cleanup against this instance's
         // initIAP(), leaving the native connection torn down even though we
         // think we're connected. initConnection() is safe to call again.
-        await initIAP();
+        // Use ensureIAPConnection() (not initIAP()) so this doesn't also
+        // re-run clearTransactionIOS() — doing that right before a purchase
+        // races with StoreKit delivering the new transaction and can eat it
+        // before purchaseUpdatedListener ever fires.
+        await ensureIAPConnection();
         const productId = plan === 'yearly' ? PRODUCT_ID_ANNUAL : PRODUCT_ID_MONTHLY;
         const purchaseOutcome = new Promise((resolve, reject) => {
           purchaseResultRef.current = { resolve, reject };
@@ -138,7 +143,7 @@ import React, { useState, useRef, useEffect } from 'react';
     const handleRestorePurchases = async () => {
       setRestoring(true);
       try {
-        await initIAP();
+        await ensureIAPConnection();
         const result = await restorePurchases();
         if (result?.restored) {
           showToast('success', 'Purchases restored! 🎉');
