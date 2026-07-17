@@ -207,6 +207,14 @@ export function setupPurchaseListeners(onSuccess, onError) {
     }
     if (result?.valid) {
       onSuccess && onSuccess(result);
+    } else {
+      // The edge function can resolve with { valid: false, error } instead of
+      // throwing (e.g. Apple's Get Transaction Info API not yet having the
+      // just-completed transaction indexed). Without this branch neither
+      // onSuccess nor onError ever fires, so the ref/promise this listener is
+      // meant to settle is left dangling until the caller's own timeout fires.
+      console.error('❌ Purchase validation returned invalid:', result?.error);
+      onError && onError(new Error(result?.error || 'Purchase could not be verified. Please try again.'));
     }
   });
 
