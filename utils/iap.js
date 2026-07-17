@@ -7,6 +7,7 @@ import {
   purchaseErrorListener,
   finishTransaction,
   getAvailablePurchases,
+  getPendingTransactionsIOS,
   syncIOS,
   clearTransactionIOS,
 } from 'react-native-iap';import { Platform } from 'react-native';
@@ -16,6 +17,35 @@ export const PRODUCT_ID_MONTHLY = 'com.yourname.veetha.premium.plan';
 export const PRODUCT_ID_ANNUAL = 'com.yourname.veetha.premium.annual';
 
 export const SUBSCRIPTION_SKUS = [PRODUCT_ID_MONTHLY, PRODUCT_ID_ANNUAL];
+
+// This specific transaction is stuck in the on-device StoreKit queue and gets
+// redelivered on every purchase attempt regardless of which sandbox tester is
+// signed in, always failing the appAccountToken check since it belongs to a
+// different user. clearTransactionIOS() should flush it but hasn't, so it's
+// force-finished by id as a targeted fallback. Safe to leave in even after
+// the queue clears — the id simply won't match anything in the pending list.
+const KNOWN_STUCK_TRANSACTION_IDS_IOS = ['2000001206453510'];
+
+// ── Force-finish known stuck iOS transactions ──────────────────────
+async function finishKnownStuckTransactionsIOS() {
+  if (Platform.OS !== 'ios') return;
+  try {
+    const pending = await getPendingTransactionsIOS();
+    const stuck = pending.filter((purchase) =>
+      KNOWN_STUCK_TRANSACTION_IDS_IOS.includes(purchase.transactionId)
+    );
+    for (const purchase of stuck) {
+      try {
+        await finishTransaction({ purchase, isConsumable: false });
+        console.log('✅ Force-finished stuck transaction:', purchase.transactionId);
+      } catch (finishError) {
+        console.error('❌ Force-finish stuck transaction error:', finishError);
+      }
+    }
+  } catch (error) {
+    console.error('❌ Get pending transactions error:', error);
+  }
+}
 
 // ── Initialize IAP connection ────────────────────────────────────
 export async function initIAP() {
@@ -34,6 +64,7 @@ export async function initIAP() {
       } catch (clearError) {
         console.error('❌ Clear transaction error:', clearError);
       }
+      await finishKnownStuckTransactionsIOS();
     }
     console.log('✅ IAP connection initialized');
     return true;
