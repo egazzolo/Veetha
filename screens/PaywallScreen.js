@@ -88,7 +88,7 @@ import React, { useState, useRef, useEffect } from 'react';
         (result) => {
           setPurchasing(false);
           showToast('success', 'Welcome to Premium! 🎉');
-          navigation.goBack();
+          navigation.navigate('Profile');
           purchaseResultRef.current?.resolve(result);
           purchaseResultRef.current = null;
         },
@@ -96,6 +96,7 @@ import React, { useState, useRef, useEffect } from 'react';
           setPurchasing(false);
           if (error?.code !== ErrorCode.UserCancelled) {
             Alert.alert('Purchase failed', error?.message || 'Please try again.');
+            navigation.navigate('Profile');
           }
           purchaseResultRef.current?.reject(error);
           purchaseResultRef.current = null;
@@ -136,6 +137,7 @@ import React, { useState, useRef, useEffect } from 'react';
         setPurchasing(false);
         if (error?.code !== ErrorCode.UserCancelled) {
           Alert.alert('Purchase failed', error?.message || 'Please try again.');
+          navigation.navigate('Profile');
         }
       }
     };
