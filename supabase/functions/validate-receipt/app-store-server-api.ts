@@ -86,7 +86,9 @@ export async function getTransactionInfo(transactionId: string): Promise<string>
   }
 
   if (!res.ok) {
-    throw new Error(`Apple Get Transaction Info failed: ${res.status}`)
+    const bodyText = await res.text().catch(() => '<failed to read response body>')
+    console.error(`Apple Get Transaction Info failed: ${res.status}`, bodyText)
+    throw new Error(`Apple Get Transaction Info failed: ${res.status} - ${bodyText}`)
   }
 
   const data = await res.json()

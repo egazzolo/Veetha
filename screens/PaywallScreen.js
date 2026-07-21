@@ -109,6 +109,7 @@ import React, { useState, useRef, useEffect } from 'react';
     }, []);
 
     const handleConfirmTrial = async () => {
+      if (purchasing) return;
       setModalVisible(false);
       setPurchasing(true);
       try {
