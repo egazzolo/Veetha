@@ -159,11 +159,15 @@ export async function purchaseSubscription(productId) {
 
 // ── Validate receipt with Supabase Edge Function ─────────────────
 export async function validateReceipt(purchase) {
+  console.log('🔍 [validateReceipt] enter, purchaseToken present:', !!purchase?.purchaseToken, 'productId:', purchase?.productId);
   try {
+    console.log('🔍 [validateReceipt] calling supabase.auth.getSession()...');
     const { data: { session } } = await supabase.auth.getSession();
+    console.log('🔍 [validateReceipt] getSession() resolved, session present:', !!session);
     if (!session) throw new Error('No session');
 
     const platform = Platform.OS === 'ios' ? 'ios' : 'android';
+    console.log('🔍 [validateReceipt] platform:', platform);
 
     const body = platform === 'ios'
       ? {
@@ -175,11 +179,13 @@ export async function validateReceipt(purchase) {
           productId: purchase.productId,
           purchaseToken: purchase.purchaseToken,
         };
+    console.log('🔍 [validateReceipt] body constructed, about to call supabase.functions.invoke()');
 
     const { data, error } = await supabase.functions.invoke('validate-receipt', {
       body,
       headers: { Authorization: `Bearer ${session.access_token}` },
     });
+    console.log('🔍 [validateReceipt] invoke() resolved, error:', !!error, 'data:', JSON.stringify(data));
 
     if (error) throw error;
     return data;
@@ -212,7 +218,9 @@ export async function restorePurchases() {
 
 // ── Set up purchase listeners ────────────────────────────────────
 export function setupPurchaseListeners(onSuccess, onError) {
+  console.log('🔔 [setupPurchaseListeners] registering listeners');
   const purchaseUpdateSubscription = purchaseUpdatedListener(async (purchase) => {
+    console.log('🔔 [purchaseUpdatedListener] fired');
     console.log('🛒 Purchase update:', purchase.productId);
     let result;
     let validationError;
