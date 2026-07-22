@@ -83,27 +83,40 @@ import React, { useState, useRef, useEffect } from 'react';
 
     // IAP setup
     useEffect(() => {
-      initIAP();
-      const cleanup = setupPurchaseListeners(
-        (result) => {
-          setPurchasing(false);
-          showToast('success', 'Welcome to Premium! 🎉');
-          navigation.navigate('Profile');
-          purchaseResultRef.current?.resolve(result);
-          purchaseResultRef.current = null;
-        },
-        (error) => {
-          setPurchasing(false);
-          if (error?.code !== ErrorCode.UserCancelled) {
-            Alert.alert('Purchase failed', error?.message || 'Please try again.');
+      let cancelled = false;
+      let cleanup;
+      // Wait for initIAP() (initConnection + clearTransactionIOS +
+      // finishKnownStuckTransactionsIOS) to fully finish before attaching
+      // purchaseUpdatedListener. Attaching it earlier races the native
+      // queue flush: any stale transaction left over from a different
+      // account on this device gets redelivered as soon as the connection
+      // opens, and if the listener is already live it gets reported to
+      // this user as a failed purchase before they've done anything.
+      (async () => {
+        await initIAP();
+        if (cancelled) return;
+        cleanup = setupPurchaseListeners(
+          (result) => {
+            setPurchasing(false);
+            showToast('success', 'Welcome to Premium! 🎉');
             navigation.navigate('Profile');
+            purchaseResultRef.current?.resolve(result);
+            purchaseResultRef.current = null;
+          },
+          (error) => {
+            setPurchasing(false);
+            if (error?.code !== ErrorCode.UserCancelled) {
+              Alert.alert('Purchase failed', error?.message || 'Please try again.');
+              navigation.navigate('Profile');
+            }
+            purchaseResultRef.current?.reject(error);
+            purchaseResultRef.current = null;
           }
-          purchaseResultRef.current?.reject(error);
-          purchaseResultRef.current = null;
-        }
-      );
+        );
+      })();
       return () => {
-        cleanup();
+        cancelled = true;
+        cleanup && cleanup();
         endIAP();
       };
     }, []);
