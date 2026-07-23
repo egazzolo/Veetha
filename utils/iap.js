@@ -1,16 +1,5 @@
-import {
-  initConnection,
-  endConnection,
-  fetchProducts,
-  requestPurchase,
-  purchaseUpdatedListener,
-  purchaseErrorListener,
-  finishTransaction,
-  getAvailablePurchases,
-  getPendingTransactionsIOS,
-  syncIOS,
-  clearTransactionIOS,
-} from 'react-native-iap';import { Platform } from 'react-native';
+import { initConnection, endConnection, fetchProducts, requestPurchase, purchaseUpdatedListener, purchaseErrorListener, finishTransaction, getAvailablePurchases, getPendingTransactionsIOS, syncIOS, clearTransactionIOS, } from 'react-native-iap';
+import { Platform, AppState } from 'react-native';
 import { supabase } from './supabase';
 
 export const PRODUCT_ID_MONTHLY = 'com.yourname.veetha.premium.plan';
@@ -65,6 +54,14 @@ export async function initIAP() {
         console.error('❌ Clear transaction error:', clearError);
       }
       await finishKnownStuckTransactionsIOS();
+      try {
+        const pendingAtReady = await getPendingTransactionsIOS();
+        console.log('🔍 [initIAP] pending StoreKit transactions:', JSON.stringify(
+          pendingAtReady.map((p) => ({ transactionId: p.transactionId, productId: p.productId }))
+        ));
+      } catch (pendingError) {
+        console.error('❌ Get pending transactions (post-init) error:', pendingError);
+      }
     }
     console.log('✅ IAP connection initialized');
     return true;
@@ -140,6 +137,7 @@ export async function purchaseSubscription(productId) {
         type: 'subs',
       });
     } else {
+      console.log('🛒 [purchaseSubscription] iOS AppState.currentState:', AppState.currentState, 'productId:', productId);
       await requestPurchase({
         request: {
           apple: {
@@ -259,6 +257,11 @@ export function setupPurchaseListeners(onSuccess, onError) {
 
   const purchaseErrorSubscription = purchaseErrorListener((error) => {
     console.error('❌ Purchase error listener:', error);
+    try {
+      console.error('❌ Purchase error listener (raw):', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    } catch (stringifyError) {
+      console.error('❌ Purchase error listener stringify failed:', stringifyError);
+    }
     onError && onError(error);
   });
 
