@@ -39,7 +39,9 @@ async function finishKnownStuckTransactionsIOS() {
 // ── Initialize IAP connection ────────────────────────────────────
 export async function initIAP() {
   try {
-    await initConnection();
+    console.log('🔍 [initIAP] BEFORE initConnection(), timestamp:', new Date().toISOString());
+    const initConnectionResult = await initConnection();
+    console.log('🔍 [initIAP] AFTER initConnection() resolved, timestamp:', new Date().toISOString(), 'return value:', JSON.stringify(initConnectionResult));
     if (Platform.OS === 'ios') {
       // App Store Connect's "Clear Purchase History" for a sandbox tester
       // only resets Apple's server-side records — it does not touch the
@@ -102,7 +104,22 @@ export async function endIAP() {
 // ── Fetch subscription products ──────────────────────────────────
 export async function fetchSubscriptions() {
   try {
-    const subscriptions = await fetchProducts({ skus: SUBSCRIPTION_SKUS, productType: 'subs' });
+    const fetchProductsRequest = { skus: SUBSCRIPTION_SKUS, productType: 'subs' };
+    console.log('🔍 [fetchSubscriptions] BEFORE fetchProducts(), timestamp:', new Date().toISOString(), 'request:', JSON.stringify(fetchProductsRequest));
+    let subscriptions;
+    try {
+      subscriptions = await fetchProducts(fetchProductsRequest);
+    } catch (fetchProductsError) {
+      console.error('❌ [fetchSubscriptions] fetchProducts() threw, full error:', JSON.stringify(fetchProductsError, Object.getOwnPropertyNames(fetchProductsError)));
+      throw fetchProductsError;
+    }
+    console.log(
+      '🔍 [fetchSubscriptions] AFTER fetchProducts() returned, timestamp:', new Date().toISOString(),
+      'isNull:', subscriptions === null,
+      'isUndefined:', subscriptions === undefined,
+      'isEmptyArray:', Array.isArray(subscriptions) && subscriptions.length === 0,
+      'raw:', JSON.stringify(subscriptions)
+    );
     console.log('✅ Subscriptions fetched:', subscriptions.length);
     return subscriptions;
   } catch (error) {
@@ -116,7 +133,22 @@ export async function purchaseSubscription(productId) {
   try {
     const { data: { user: currentUser } } = await supabase.auth.getUser();
     if (Platform.OS === 'android') {
-      const subs = await fetchProducts({ skus: [productId], productType: 'subs' });
+      const fetchProductsRequest = { skus: [productId], productType: 'subs' };
+      console.log('🔍 [purchaseSubscription] BEFORE fetchProducts(), timestamp:', new Date().toISOString(), 'request:', JSON.stringify(fetchProductsRequest));
+      let subs;
+      try {
+        subs = await fetchProducts(fetchProductsRequest);
+      } catch (fetchProductsError) {
+        console.error('❌ [purchaseSubscription] fetchProducts() threw, full error:', JSON.stringify(fetchProductsError, Object.getOwnPropertyNames(fetchProductsError)));
+        throw fetchProductsError;
+      }
+      console.log(
+        '🔍 [purchaseSubscription] AFTER fetchProducts() returned, timestamp:', new Date().toISOString(),
+        'isNull:', subs === null,
+        'isUndefined:', subs === undefined,
+        'isEmptyArray:', Array.isArray(subs) && subs.length === 0,
+        'raw:', JSON.stringify(subs)
+      );
       console.log('🛒 fetchProducts result:', JSON.stringify(subs));
       console.log('🛒 productStatusAndroid values:', subs.map(s => ({ id: s.id, status: s.productStatusAndroid })));
       const sub = subs.find(s => s.productId === productId);
