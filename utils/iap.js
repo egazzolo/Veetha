@@ -187,6 +187,25 @@ export async function purchaseSubscription(productId) {
   }
 }
 
+// ── TEMPORARY DIAGNOSTIC: isolate billing client vs. Play Console catalog ──
+// 'android.test.purchased' is Google's reserved static test product ID —
+// Play always resolves it regardless of what's configured in Play Console.
+// If this succeeds while real SKUs come back empty, the billing client and
+// connection are fine and the problem is catalog propagation, not app code.
+// Remove once the empty-SKU issue is diagnosed.
+export async function diagnosticFetchStaticTestProduct() {
+  const request = { skus: ['android.test.purchased'], productType: 'inapp' };
+  console.log('🧪 [diagnosticFetchStaticTestProduct] BEFORE fetchProducts(), request:', JSON.stringify(request));
+  try {
+    const result = await fetchProducts(request);
+    console.log('🧪 [diagnosticFetchStaticTestProduct] RESULT:', JSON.stringify(result));
+    return result;
+  } catch (error) {
+    console.error('🧪 [diagnosticFetchStaticTestProduct] THREW:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    throw error;
+  }
+}
+
 // ── Validate receipt with Supabase Edge Function ─────────────────
 export async function validateReceipt(purchase) {
   console.log('🔍 [validateReceipt] enter, purchaseToken present:', !!purchase?.purchaseToken, 'productId:', purchase?.productId);

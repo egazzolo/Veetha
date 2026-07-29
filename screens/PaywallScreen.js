@@ -14,6 +14,7 @@ import React, { useState, useRef, useEffect } from 'react';
     purchaseSubscription,
     setupPurchaseListeners,
     restorePurchases,
+    diagnosticFetchStaticTestProduct,
     PRODUCT_ID_MONTHLY,
     PRODUCT_ID_ANNUAL,
   } from '../utils/iap';
@@ -156,6 +157,17 @@ import React, { useState, useRef, useEffect } from 'react';
       }
     };
 
+    // TEMPORARY DIAGNOSTIC ONLY — not part of the real purchase flow.
+    // Remove this along with the button below once the empty-SKU issue is resolved.
+    const handleRunDiagnosticTest = async () => {
+      try {
+        await ensureIAPConnection();
+        await diagnosticFetchStaticTestProduct();
+      } catch (error) {
+        console.error('🧪 [handleRunDiagnosticTest] error:', error);
+      }
+    };
+
     const handleRestorePurchases = async () => {
       setRestoring(true);
       try {
@@ -285,6 +297,15 @@ import React, { useState, useRef, useEffect } from 'react';
               : <Text style={[styles.restoreText, { color: theme.textSecondary }]}>Restore Purchases</Text>
             }
           </TouchableOpacity>
+
+          {/* TEMPORARY DIAGNOSTIC ONLY — dev builds only, remove with handleRunDiagnosticTest */}
+          {__DEV__ && (
+            <TouchableOpacity onPress={handleRunDiagnosticTest}>
+              <Text style={[styles.restoreText, { color: theme.textSecondary }]}>
+                [DEV] Run static test SKU diagnostic
+              </Text>
+            </TouchableOpacity>
+          )}
         </ScrollView>
 
         <VeethaModal
