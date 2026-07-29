@@ -298,14 +298,12 @@ import React, { useState, useRef, useEffect } from 'react';
             }
           </TouchableOpacity>
 
-          {/* TEMPORARY DIAGNOSTIC ONLY — dev builds only, remove with handleRunDiagnosticTest */}
-          {__DEV__ && (
-            <TouchableOpacity onPress={handleRunDiagnosticTest}>
-              <Text style={[styles.restoreText, { color: theme.textSecondary }]}>
-                [DEV] Run static test SKU diagnostic
-              </Text>
-            </TouchableOpacity>
-          )}
+          {/* TEMPORARY DIAGNOSTIC ONLY — remove with handleRunDiagnosticTest */}
+          <TouchableOpacity onPress={handleRunDiagnosticTest}>
+            <Text style={[styles.restoreText, { color: theme.textSecondary }]}>
+              [DEV] Run static test SKU diagnostic
+            </Text>
+          </TouchableOpacity>
         </ScrollView>
 
         <VeethaModal
