@@ -15,6 +15,7 @@ module.exports = {
       "expo-apple-authentication",
       "expo-localization",
       "./plugins/withFmtPatch",
+      "./plugins/withGradleJvmArgs",
       [
         "expo-location",
         {
