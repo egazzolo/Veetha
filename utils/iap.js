@@ -5,7 +5,13 @@ import { supabase } from './supabase';
 export const PRODUCT_ID_MONTHLY = 'com.yourname.veetha.premium.plan';
 export const PRODUCT_ID_ANNUAL = 'com.yourname.veetha.premium.annual';
 
-export const SUBSCRIPTION_SKUS = [PRODUCT_ID_MONTHLY, PRODUCT_ID_ANNUAL];
+// TEMPORARY — test product IDs to isolate whether fetchProducts empty result
+// is specific to the original two products or affects any product on this app.
+// Remove once diagnosed.
+export const PRODUCT_ID_MONTHLY_TEST = 'com.yourname.veetha.premium.monthly2';
+export const PRODUCT_ID_ANNUAL_TEST = 'com.yourname.veetha.premium.annual2';
+
+export const SUBSCRIPTION_SKUS = [PRODUCT_ID_MONTHLY_TEST, PRODUCT_ID_ANNUAL_TEST];
 
 // This specific transaction is stuck in the on-device StoreKit queue and gets
 // redelivered on every purchase attempt regardless of which sandbox tester is
