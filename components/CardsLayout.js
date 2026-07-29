@@ -133,8 +133,8 @@ export default function CardsLayout({
         >
           <CircularProgress 
             percentage={caloriePercent} 
-            size={80} 
-            strokeWidth={6} 
+            size={110} 
+            strokeWidth={11} 
             color="#fff"
           >
             <Text style={[
@@ -160,8 +160,8 @@ export default function CardsLayout({
         >
           <CircularProgress 
             percentage={proteinPercent} 
-            size={80} 
-            strokeWidth={6} 
+            size={110} 
+            strokeWidth={11} 
             color="#fff"
           >
             <Text style={[
@@ -187,8 +187,8 @@ export default function CardsLayout({
         >
           <CircularProgress 
             percentage={carbsPercent} 
-            size={80} 
-            strokeWidth={6} 
+            size={110} 
+            strokeWidth={11} 
             color="#fff"
           >
             <Text style={[
@@ -214,8 +214,8 @@ export default function CardsLayout({
         >
           <CircularProgress 
             percentage={fatPercent} 
-            size={80} 
-            strokeWidth={6} 
+            size={110} 
+            strokeWidth={11} 
             color="#fff"
           >
             <Text style={[
@@ -256,7 +256,9 @@ const styles = StyleSheet.create({
     width: '47.5%',
     aspectRatio: 1,
     borderRadius: 16,
-    padding: 20,
+    paddingTop: 6,
+    paddingBottom: 2,
+    paddingHorizontal: 6,
     justifyContent: 'center',
     alignItems: 'center',
   },

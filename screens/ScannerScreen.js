@@ -845,7 +845,7 @@ export default function ScannerScreen({ navigation }) {
               </TouchableOpacity>
 
               <Text ref={titleRef} style={styles.title}>
-                {mode === 'barcode' ? t('scanner.scanBarcode') : t('scanner.scanFood')}
+                {mode === 'barcode' ? t('scanner.scanBarcode') : ''}
               </Text>
 
               {/* Spacer to balance header layout */}
@@ -1259,9 +1259,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   captureButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1272,9 +1272,9 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   captureButtonInner: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: '#2196F3',
   },
   loadingOverlay: {

@@ -37,6 +37,8 @@ export default function MealsList({
   const [selectedMeal, setSelectedMeal] = useState(null);
   const [guestSheetVisible, setGuestSheetVisible] = useState(false);
   const [postItView, setPostItView] = useState('whole'); // 'whole' or 'individual'
+  const [listViewMode, setListViewMode] = useState('grid'); // 'grid' or 'list'
+  const [enlargedImage, setEnlargedImage] = useState(null);
   const { isDark } = useTheme();
   const { isPremium } = usePremiumStatus();
 
@@ -227,6 +229,15 @@ export default function MealsList({
                     {t('home.quickEntry')}
                   </Text>
                 </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.quickEntryButton, { backgroundColor: theme.border }]}
+                  onPress={() => setListViewMode(listViewMode === 'grid' ? 'list' : 'grid')}
+                >
+                  <Text style={[styles.quickEntryButtonText, { color: theme.text }]}>
+                    {listViewMode === 'grid' ? '☰' : '▦'}
+                  </Text>
+                </TouchableOpacity>
               </View>
             )}
           </>
@@ -259,7 +270,90 @@ export default function MealsList({
           const actualFiber = (product.fiber * meal.serving_grams) / 100;
 
           const isSelected = selectionMode && selectedMealIds?.has(meal.id);
-          
+
+          if (listViewMode === 'list') {
+            return (
+              <TouchableOpacity
+                key={meal.id}
+                style={[
+                  styles.mealRowCompact,
+                  { backgroundColor: theme.cardBackground },
+                  isSelected && { borderWidth: 2, borderColor: '#E53935' },
+                ]}
+                onPress={() => handleMealPress({
+                  ...meal,
+                  product_name: product.name,
+                  calories: actualCalories,
+                  protein: actualProtein,
+                  carbs: actualCarbs,
+                  fat: actualFat,
+                  sodium: actualSodium,
+                  sugar: actualSugar,
+                  fiber: actualFiber,
+                  serving_unit: product.serving_unit,
+                })}
+                onLongPress={() => {
+                  if (selectionMode) return;
+                  handleMealLongPress({
+                    ...meal,
+                    product_name: meal.product?.name ?? meal.product_name,
+                    calories: meal.product?.calories ?? meal.calories,
+                    protein: meal.product?.protein ?? meal.protein,
+                    carbs: meal.product?.carbs ?? meal.carbs,
+                    fat: meal.product?.fat ?? meal.fat,
+                  });
+                }}
+                activeOpacity={0.7}
+              >
+                {selectionMode && (
+                  <View style={[
+                    styles.checkboxOverlayCompact,
+                    isSelected && { backgroundColor: '#E53935', borderColor: '#E53935' },
+                  ]}>
+                    {isSelected && <Text style={styles.checkboxTick}>✓</Text>}
+                  </View>
+                )}
+
+                <TouchableOpacity
+                  style={styles.thumbSectionCompact}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    if (!meal.image_url && !product.image_url) {
+                      if (onImageUpload) onImageUpload(meal);
+                    } else {
+                      setEnlargedImage(meal.image_url || product.image_url);
+                    }
+                  }}
+                >
+                  {(meal.image_url || product.image_url) ? (
+                    <Image
+                      source={{ uri: meal.image_url || product.image_url }}
+                      style={styles.thumbImageCompact}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={styles.thumbPlaceholderCompact}>
+                      <Text style={styles.thumbEmojiCompact}>{product.emoji || '🍽️'}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+
+                <Text
+                  style={[styles.productNameCompact, { color: theme.text }]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {product.name}
+                </Text>
+
+                <View style={styles.caloriesInlineCompact}>
+                  <Text style={styles.caloriesNumberCompact}>{Math.round(actualCalories)}</Text>
+                  <Text style={styles.caloriesLabelCompact}>{t('home.kcal')}</Text>
+                </View>
+              </TouchableOpacity>
+            );
+          }
+
           return (
             <TouchableOpacity
               key={meal.id}
@@ -605,6 +699,22 @@ export default function MealsList({
               )}
             </View>
           </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Enlarged photo modal — list mode thumbnail tap */}
+      <Modal
+        visible={enlargedImage !== null}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setEnlargedImage(null)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setEnlargedImage(null)}>
+          <Image
+            source={{ uri: enlargedImage }}
+            style={styles.enlargedImage}
+            resizeMode="contain"
+          />
         </Pressable>
       </Modal>
     </View>
@@ -1015,5 +1125,74 @@ const styles = StyleSheet.create({
   },
   postItToggleTextActive: {
     color: '#fff',
+  },
+  mealRowCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 8,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+    position: 'relative',
+    gap: 12,
+  },
+  checkboxOverlayCompact: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: '#999',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.9)',
+  },
+  thumbSectionCompact: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#f0f0f0',
+  },
+  thumbImageCompact: {
+    width: '100%',
+    height: '100%',
+  },
+  thumbPlaceholderCompact: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  thumbEmojiCompact: {
+    fontSize: 22,
+  },
+  productNameCompact: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  caloriesInlineCompact: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 3,
+  },
+  caloriesNumberCompact: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#4CAF50',
+  },
+  caloriesLabelCompact: {
+    fontSize: 11,
+    color: '#999',
+    fontWeight: '600',
+  },
+  enlargedImage: {
+    width: '90%',
+    height: '70%',
   },
 });
