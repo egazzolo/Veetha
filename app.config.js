@@ -31,7 +31,7 @@ module.exports = {
     android: {
       package: "com.yourname.veetha",
       googleServicesFile: "./google-services.json",
-      versionCode: 43,
+      versionCode: 44,
       icon: "./assets/adaptive-icon.png",
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
