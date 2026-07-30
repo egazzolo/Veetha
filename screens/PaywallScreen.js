@@ -17,7 +17,10 @@ import React, { useState, useRef, useEffect } from 'react';
     diagnosticFetchStaticTestProduct,
     PRODUCT_ID_MONTHLY,
     PRODUCT_ID_ANNUAL,
+    PRODUCT_ID_MONTHLY_TEST,
+    PRODUCT_ID_ANNUAL_TEST,
   } from '../utils/iap';
+  import { fetchProducts } from 'react-native-iap';
 
   // requestPurchase() only resolves once StoreKit/Play *dispatches* the request —
   // the actual result comes later via purchaseUpdatedListener/purchaseErrorListener.
@@ -160,13 +163,22 @@ import React, { useState, useRef, useEffect } from 'react';
     // TEMPORARY DIAGNOSTIC ONLY — not part of the real purchase flow.
     // Remove this along with the button below once the empty-SKU issue is resolved.
     const handleRunDiagnosticTest = async () => {
-      try {
-        await ensureIAPConnection();
-        await diagnosticFetchStaticTestProduct();
-      } catch (error) {
-        console.error('🧪 [handleRunDiagnosticTest] error:', error);
-      }
-    };
+    try {
+      await ensureIAPConnection();
+      await diagnosticFetchStaticTestProduct();
+    } catch (error) {
+      console.error('🧪 [handleRunDiagnosticTest] error:', error);
+    }
+    try {
+      const testResult = await fetchProducts({
+        skus: [PRODUCT_ID_MONTHLY_TEST, PRODUCT_ID_ANNUAL_TEST],
+        productType: 'subs',
+      });
+      console.log('🧪🧪 [NEW TEST PRODUCTS] RESULT:', JSON.stringify(testResult));
+    } catch (error) {
+      console.error('🧪🧪 [NEW TEST PRODUCTS] error:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    }
+  };
 
     const handleRestorePurchases = async () => {
       setRestoring(true);
