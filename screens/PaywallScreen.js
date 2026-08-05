@@ -210,6 +210,56 @@ import React, { useState, useRef, useEffect } from 'react';
             Cancel anytime. No charge until your trial ends.
           </Text>
 
+          {/* Plan toggle */}
+          <View style={styles.toggleRow}>
+            <TouchableOpacity
+              style={[styles.togglePill, plan === 'yearly' && styles.togglePillActive]}
+              onPress={() => setPlan('yearly')}
+            >
+              <Text style={[styles.toggleText, plan === 'yearly' && styles.toggleTextActive]}>
+                Yearly
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.togglePill, plan === 'monthly' && styles.togglePillActive]}
+              onPress={() => setPlan('monthly')}
+            >
+              <Text style={[styles.toggleText, plan === 'monthly' && styles.toggleTextActive]}>
+                Monthly
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Pricing card */}
+          <View style={[styles.pricingCard, { backgroundColor: theme.cardBackground }]}>
+            {plan === 'yearly' ? (
+              <>
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>Best Value — Save 37%</Text>
+                </View>
+                <Text style={[styles.priceMain, { color: theme.text }]}>$59.99/year</Text>
+                <Text style={[styles.priceSub, { color: theme.textSecondary }]}>$5/mo effective</Text>
+              </>
+            ) : (
+              <Text style={[styles.priceMain, { color: theme.text }]}>$7.99/month</Text>
+            )}
+            <Text style={[styles.trialTransitionText, { color: theme.textSecondary }]}>
+              7 days free, then {plan === 'yearly' ? '$59.99/year' : '$7.99/month'} — cancel anytime before {formattedDate}
+            </Text>
+          </View>
+
+          {/* CTA */}
+          <TouchableOpacity
+            style={[styles.ctaButton, purchasing && { opacity: 0.7 }]}
+            onPress={() => setModalVisible(true)}
+            disabled={purchasing}
+          >
+            {purchasing
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={styles.ctaText}>Try Free — Then {plan === 'yearly' ? '$59.99/year' : '$7.99/month'}</Text>
+            }
+          </TouchableOpacity>
+
           {/* Comparison table */}
           <View style={[styles.table, { backgroundColor: theme.cardBackground }]}>
             <View style={[styles.tableHeader, { borderBottomColor: theme.border }]}>
@@ -246,53 +296,6 @@ import React, { useState, useRef, useEffect } from 'react';
               );
             })}
           </View>
-
-          {/* Plan toggle */}
-          <View style={styles.toggleRow}>
-            <TouchableOpacity
-              style={[styles.togglePill, plan === 'yearly' && styles.togglePillActive]}
-              onPress={() => setPlan('yearly')}
-            >
-              <Text style={[styles.toggleText, plan === 'yearly' && styles.toggleTextActive]}>
-                Yearly
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.togglePill, plan === 'monthly' && styles.togglePillActive]}
-              onPress={() => setPlan('monthly')}
-            >
-              <Text style={[styles.toggleText, plan === 'monthly' && styles.toggleTextActive]}>
-                Monthly
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Pricing card */}
-          <View style={[styles.pricingCard, { backgroundColor: theme.cardBackground }]}>
-            {plan === 'yearly' ? (
-              <>
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>Best Value — Save 37%</Text>
-                </View>
-                <Text style={[styles.priceMain, { color: theme.text }]}>$59.99/year</Text>
-                <Text style={[styles.priceSub, { color: theme.textSecondary }]}>$5/mo effective</Text>
-              </>
-            ) : (
-              <Text style={[styles.priceMain, { color: theme.text }]}>$7.99/month</Text>
-            )}
-          </View>
-
-          {/* CTA */}
-          <TouchableOpacity
-            style={[styles.ctaButton, purchasing && { opacity: 0.7 }]}
-            onPress={() => setModalVisible(true)}
-            disabled={purchasing}
-          >
-            {purchasing
-              ? <ActivityIndicator color="#fff" />
-              : <Text style={styles.ctaText}>Start Free Trial</Text>
-            }
-          </TouchableOpacity>
 
           {/* Fine print */}
           <Text style={[styles.finePrint, { color: theme.textTertiary }]}>
@@ -483,5 +486,10 @@ import React, { useState, useRef, useEffect } from 'react';
       textAlign: 'center',
       textDecorationLine: 'underline',
       marginBottom: 8,
+    },
+    trialTransitionText: {
+      fontSize: 12,
+      textAlign: 'center',
+      marginTop: 10,
     },
   });
