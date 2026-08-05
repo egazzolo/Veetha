@@ -1,6 +1,12 @@
 import { initConnection, endConnection, fetchProducts, requestPurchase, purchaseUpdatedListener, purchaseErrorListener, finishTransaction, getAvailablePurchases, getPendingTransactionsIOS, syncIOS, clearTransactionIOS, } from 'react-native-iap';
-import { Platform, AppState } from 'react-native';
+import { Platform, AppState, NativeModules } from 'react-native';
 import { supabase } from './supabase';
+
+// Android goes straight through Play Billing Library (see
+// android/.../NativeBillingModule.kt) instead of react-native-iap, to rule
+// out react-native-iap's own wrapper as the source of the empty-SKU issue.
+// iOS is untouched and stays on react-native-iap.
+const { NativeBillingModule } = NativeModules;
 
 export const PRODUCT_ID_MONTHLY = 'com.yourname.veetha.premium.plan';
 export const PRODUCT_ID_ANNUAL = 'com.yourname.veetha.premium.annual';
@@ -110,6 +116,13 @@ export async function endIAP() {
 // ── Fetch subscription products ──────────────────────────────────
 export async function fetchSubscriptions() {
   try {
+    if (Platform.OS === 'android') {
+      console.log('🔍 [fetchSubscriptions] Android (native): calling NativeBillingModule.fetchSubscriptionProducts()');
+      const subscriptions = await NativeBillingModule.fetchSubscriptionProducts();
+      console.log('✅ Subscriptions fetched (native):', subscriptions.length, JSON.stringify(subscriptions));
+      return subscriptions;
+    }
+
     const fetchProductsRequest = { skus: SUBSCRIPTION_SKUS, productType: 'subs' };
     console.log('🔍 [fetchSubscriptions] BEFORE fetchProducts(), timestamp:', new Date().toISOString(), 'request:', JSON.stringify(fetchProductsRequest));
     let subscriptions;
@@ -139,41 +152,33 @@ export async function purchaseSubscription(productId) {
   try {
     const { data: { user: currentUser } } = await supabase.auth.getUser();
     if (Platform.OS === 'android') {
-      const fetchProductsRequest = { skus: [productId], productType: 'subs' };
-      console.log('🔍 [purchaseSubscription] BEFORE fetchProducts(), timestamp:', new Date().toISOString(), 'request:', JSON.stringify(fetchProductsRequest));
-      let subs;
-      try {
-        subs = await fetchProducts(fetchProductsRequest);
-      } catch (fetchProductsError) {
-        console.error('❌ [purchaseSubscription] fetchProducts() threw, full error:', JSON.stringify(fetchProductsError, Object.getOwnPropertyNames(fetchProductsError)));
-        throw fetchProductsError;
-      }
-      console.log(
-        '🔍 [purchaseSubscription] AFTER fetchProducts() returned, timestamp:', new Date().toISOString(),
-        'isNull:', subs === null,
-        'isUndefined:', subs === undefined,
-        'isEmptyArray:', Array.isArray(subs) && subs.length === 0,
-        'raw:', JSON.stringify(subs)
-      );
-      console.log('🛒 fetchProducts result:', JSON.stringify(subs));
-      console.log('🛒 productStatusAndroid values:', subs.map(s => ({ id: s.id, status: s.productStatusAndroid })));
-      const sub = subs.find(s => s.productId === productId);
-      const offerId = productId === 'com.yourname.veetha.premium.plan' 
-        ? 'free-trial-7' 
+      const offerId = productId === 'com.yourname.veetha.premium.plan'
+        ? 'free-trial-7'
         : 'free-trial-7-annual';
-      const offerToken = sub?.subscriptionOfferDetailsAndroid?.find(
-        (o) => o.offerId === offerId
-      )?.offerToken || sub?.subscriptionOfferDetailsAndroid?.[0]?.offerToken || '';
-      console.log('🛒 Android purchase attempt:', productId, 'skus:', [productId]);
-      await requestPurchase({
-        request: {
-          google: {
-            skus: [productId],
-            subscriptionOffers: offerToken ? [{ sku: productId, offerToken }] : undefined,
-          }
-        },
-        type: 'subs',
-      });
+
+      console.log('🛒 [purchaseSubscription] Android (native): fetching offers for', productId);
+      const offers = await NativeBillingModule.fetchSubscriptionProducts();
+      const matchingOffers = offers.filter((o) => o.productId === productId);
+      const offer = matchingOffers.find((o) => o.offerId === offerId) || matchingOffers[0];
+      const offerToken = offer?.offerToken || '';
+
+      console.log('🛒 [purchaseSubscription] Android (native): launching purchase', productId, 'offerToken present:', !!offerToken);
+      const purchase = await NativeBillingModule.purchaseSubscription(productId, offerToken);
+      console.log('🛒 [purchaseSubscription] Android (native): purchase resolved', JSON.stringify(purchase));
+
+      const result = await validateReceipt(purchase);
+
+      try {
+        await NativeBillingModule.acknowledgePurchase(purchase.purchaseToken);
+      } catch (acknowledgeError) {
+        console.error('❌ Acknowledge purchase error:', acknowledgeError);
+      }
+
+      if (!result?.valid) {
+        throw new Error(result?.error || 'Purchase could not be verified. Please try again.');
+      }
+
+      return result;
     } else {
       console.log('🛒 [purchaseSubscription] iOS AppState.currentState:', AppState.currentState, 'productId:', productId);
       await requestPurchase({

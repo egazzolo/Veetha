@@ -141,6 +141,21 @@ import React, { useState, useRef, useEffect } from 'react';
         // before purchaseUpdatedListener ever fires.
         await ensureIAPConnection();
         const productId = plan === 'yearly' ? PRODUCT_ID_ANNUAL : PRODUCT_ID_MONTHLY;
+
+        if (Platform.OS === 'android') {
+          // Android's purchaseSubscription() goes through NativeBillingModule's
+          // own BillingClient, not react-native-iap, so react-native-iap's
+          // purchaseUpdatedListener (wired below via setupPurchaseListeners)
+          // never fires for it. It resolves/rejects with the validated
+          // purchase result directly, so there's no purchaseResultRef/
+          // withTimeout indirection needed here like iOS still relies on.
+          await purchaseSubscription(productId);
+          setPurchasing(false);
+          showToast('success', 'Welcome to Premium! 🎉');
+          navigation.navigate('Profile');
+          return;
+        }
+
         const purchaseOutcome = new Promise((resolve, reject) => {
           purchaseResultRef.current = { resolve, reject };
         });
@@ -153,7 +168,10 @@ import React, { useState, useRef, useEffect } from 'react';
       } catch (error) {
         purchaseResultRef.current = null;
         setPurchasing(false);
-        if (error?.code !== ErrorCode.UserCancelled) {
+        const isUserCancelled = Platform.OS === 'android'
+          ? error?.code === 'USER_CANCELED'
+          : error?.code === ErrorCode.UserCancelled;
+        if (!isUserCancelled) {
           Alert.alert('Purchase failed', error?.message || 'Please try again.');
           navigation.navigate('Profile');
         }
