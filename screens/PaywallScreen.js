@@ -103,7 +103,7 @@ import React, { useState, useRef, useEffect } from 'react';
           (result) => {
             setPurchasing(false);
             showToast('success', 'Welcome to Premium! 🎉');
-            navigation.navigate('Profile');
+            navigation.goBack();
             purchaseResultRef.current?.resolve(result);
             purchaseResultRef.current = null;
           },
@@ -111,7 +111,7 @@ import React, { useState, useRef, useEffect } from 'react';
             setPurchasing(false);
             if (error?.code !== ErrorCode.UserCancelled) {
               Alert.alert('Purchase failed', error?.message || 'Please try again.');
-              navigation.navigate('Profile');
+              navigation.goBack();
             }
             purchaseResultRef.current?.reject(error);
             purchaseResultRef.current = null;
@@ -152,7 +152,7 @@ import React, { useState, useRef, useEffect } from 'react';
           await purchaseSubscription(productId);
           setPurchasing(false);
           showToast('success', 'Welcome to Premium! 🎉');
-          navigation.navigate('Profile');
+          navigation.goBack();
           return;
         }
 
@@ -173,7 +173,7 @@ import React, { useState, useRef, useEffect } from 'react';
           : error?.code === ErrorCode.UserCancelled;
         if (!isUserCancelled) {
           Alert.alert('Purchase failed', error?.message || 'Please try again.');
-          navigation.navigate('Profile');
+          navigation.goBack();
         }
       }
     };
