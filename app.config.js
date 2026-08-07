@@ -33,7 +33,7 @@ module.exports = {
     android: {
       package: "com.yourname.veetha",
       googleServicesFile: "./google-services.json",
-      versionCode: 46,
+      versionCode: 47,
       icon: "./assets/adaptive-icon.png",
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
@@ -65,7 +65,7 @@ module.exports = {
     ios: {
       icon: "./assets/LogoAppStore.png",
       bundleIdentifier: "com.yourname.veetha",
-      buildNumber: "73",
+      buildNumber: "72",
       usesAppleSignIn: true,
       associatedDomains: ["applinks:nonotenb.com"],
       infoPlist: {
