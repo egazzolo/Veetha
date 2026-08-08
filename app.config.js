@@ -18,6 +18,7 @@ module.exports = {
       "./plugins/withGradleJvmArgs",
       "./plugins/withNativeBillingTest",
       "./plugins/withNativeBillingModule",
+      "./plugins/withNativeStoreKitModule",
       [
         "expo-location",
         {
@@ -65,7 +66,7 @@ module.exports = {
     ios: {
       icon: "./assets/LogoAppStore.png",
       bundleIdentifier: "com.yourname.veetha",
-      buildNumber: "73",
+      buildNumber: "74",
       usesAppleSignIn: true,
       associatedDomains: ["applinks:nonotenb.com"],
       infoPlist: {
