@@ -34,18 +34,6 @@ import React
 @objc(NativeStoreKitModule)
 class NativeStoreKitModule: RCTEventEmitter {
 
-  // TEMPORARY DIAGNOSTIC -- genuine top-level executable statements are
-  // only legal in main.swift, so this is the closest valid equivalent: the
-  // Objective-C runtime calls NSObject's load() automatically at binary
-  // image load time (dyld's +load pass), before any instance of this class
-  // is created and independent of whether the JS/native bridge ever
-  // references it. Fires here, not in init(), specifically to distinguish
-  // "compiled into the binary but never referenced" from "not in the
-  // binary at all". Remove once confirmed.
-  override class func load() {
-    print("🔵 [NativeStoreKitModule] Swift module file loaded")
-  }
-
   private static let realSubscriptionIds: Set<String> = [
     "com.yourname.veetha.premium.plan",
     "com.yourname.veetha.premium.annual",
@@ -60,6 +48,9 @@ class NativeStoreKitModule: RCTEventEmitter {
   private var productCache: [String: Product] = [:]
 
   override init() {
+    // TEMPORARY DIAGNOSTIC -- confirms whether this class is ever
+    // instantiated at all. Remove once confirmed.
+    print("🔵 [NativeStoreKitModule] init() called")
     super.init()
     startTransactionListener()
   }
