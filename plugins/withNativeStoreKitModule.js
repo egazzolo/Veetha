@@ -70,6 +70,15 @@ module.exports = function withNativeStoreKitModule(config) {
     const project = config.modResults;
     const sourceDir = path.join(platformProjectRoot, projectName);
 
+    // TEMPORARY DIAGNOSTIC LOGGING -- prints during `expo prebuild` (which
+    // EAS Build runs before invoking xcodebuild, so this shows up in the
+    // EAS build log). Added to pin down why NativeStoreKitModule.swift still
+    // can't resolve RCTEventEmitter after the previous bridging-header fix,
+    // since the build workspace itself isn't inspectable after the fact.
+    // Remove once the actual cause is confirmed and fixed.
+    console.log(`[NativeStoreKitModule plugin] projectName resolved: "${projectName}" (expect "Veetha")`);
+    console.log(`[NativeStoreKitModule plugin] platformProjectRoot: "${platformProjectRoot}"`);
+
     fs.mkdirSync(sourceDir, { recursive: true });
     for (const fileName of TEMPLATE_FILES) {
       const templatePath = path.join(__dirname, 'templates', fileName);
@@ -120,7 +129,16 @@ module.exports = function withNativeStoreKitModule(config) {
       ? resolved.absolutePath
       : path.join(sourceDir, `${projectName}-Bridging-Header.h`);
 
+    // TEMPORARY DIAGNOSTIC LOGGING -- see note above.
+    console.log(`[NativeStoreKitModule plugin] rawSetting read from SWIFT_OBJC_BRIDGING_HEADER (Debug): ${JSON.stringify(rawSetting)}`);
+    console.log(`[NativeStoreKitModule plugin] resolved headerRelativePath: "${headerRelativePath}"`);
+    console.log(`[NativeStoreKitModule plugin] resolved headerPathOnDisk: "${headerPathOnDisk}"`);
+
     ensureBridgingHeaderImports(headerPathOnDisk);
+
+    // TEMPORARY DIAGNOSTIC LOGGING -- see note above.
+    const headerContentsAfterWrite = fs.readFileSync(headerPathOnDisk, 'utf8');
+    console.log(`[NativeStoreKitModule plugin] bridging header contents after ensureBridgingHeaderImports() (${headerPathOnDisk}):\n----- BEGIN HEADER CONTENTS -----\n${headerContentsAfterWrite}----- END HEADER CONTENTS -----`);
 
     // Set unconditionally, not just when missing: if the existing setting
     // already pointed at headerPathOnDisk this is a no-op rewrite of the
@@ -132,6 +150,14 @@ module.exports = function withNativeStoreKitModule(config) {
       undefined,
       projectName
     );
+
+    // TEMPORARY DIAGNOSTIC LOGGING -- read back immediately via the same
+    // getBuildProperty accessor used earlier, for both configs, to confirm
+    // the write actually stuck on the in-memory project model before it's
+    // serialized back to project.pbxproj.
+    const debugReadback = project.getBuildProperty('SWIFT_OBJC_BRIDGING_HEADER', 'Debug', projectName);
+    const releaseReadback = project.getBuildProperty('SWIFT_OBJC_BRIDGING_HEADER', 'Release', projectName);
+    console.log(`[NativeStoreKitModule plugin] SWIFT_OBJC_BRIDGING_HEADER readback after updateBuildProperty -- Debug: ${JSON.stringify(debugReadback)}, Release: ${JSON.stringify(releaseReadback)}`);
 
     return config;
   });

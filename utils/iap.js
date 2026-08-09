@@ -1,12 +1,19 @@
 import { initConnection, endConnection, fetchProducts, requestPurchase, purchaseUpdatedListener, purchaseErrorListener, finishTransaction, getAvailablePurchases, getPendingTransactionsIOS, syncIOS, clearTransactionIOS, } from 'react-native-iap';
-import { Platform, AppState, NativeModules } from 'react-native';
+import { Platform, AppState, NativeModules, NativeEventEmitter } from 'react-native';
 import { supabase } from './supabase';
 
 // Android goes straight through Play Billing Library (see
 // android/.../NativeBillingModule.kt) instead of react-native-iap, to rule
 // out react-native-iap's own wrapper as the source of the empty-SKU issue.
-// iOS is untouched and stays on react-native-iap.
-const { NativeBillingModule } = NativeModules;
+// iOS purchase *initiation* still goes through react-native-iap (see
+// purchaseSubscription() below) -- only transaction *delivery/listening*
+// also runs through NativeStoreKitModule, a direct StoreKit 2 bridge (see
+// ios/NativeStoreKitModule.swift, generated from plugins/templates/), as a
+// second independent path. react-native-iap's purchaseUpdatedListener has
+// been confirmed to sometimes never fire in JS even though StoreKit
+// completes the transaction on-device, so relying on it alone silently
+// loses purchases.
+const { NativeBillingModule, NativeStoreKitModule } = NativeModules;
 
 export const PRODUCT_ID_MONTHLY = 'com.yourname.veetha.premium.plan';
 export const PRODUCT_ID_ANNUAL = 'com.yourname.veetha.premium.annual';
@@ -276,12 +283,72 @@ export async function restorePurchases() {
   }
 }
 
+// ── NativeStoreKitModule transaction listener (iOS only) ──────────
+// Second, independent delivery path for the exact same transaction
+// react-native-iap's purchaseUpdatedListener is supposed to deliver below.
+// NativeStoreKitModule finishes the transaction on the native side itself
+// once it has handed the event to JS (see NativeStoreKitModule.swift), so
+// this only needs to validate -- there's no finishTransaction() call here.
+function setupNativeStoreKitListener(onSuccess, onError, handledTransactionIds) {
+  if (Platform.OS !== 'ios' || !NativeStoreKitModule) {
+    return () => {};
+  }
+
+  const emitter = new NativeEventEmitter(NativeStoreKitModule);
+  const subscription = emitter.addListener('onTransactionUpdate', async (event) => {
+    const { transactionId, productId, jwsRepresentation } = event || {};
+    console.log('🔔 [NativeStoreKitModule] onTransactionUpdate fired:', transactionId, productId);
+    if (!transactionId || !jwsRepresentation) {
+      console.error('❌ [NativeStoreKitModule] onTransactionUpdate missing transactionId/jwsRepresentation');
+      return;
+    }
+    if (handledTransactionIds.has(transactionId)) {
+      console.log('🔔 [NativeStoreKitModule] transaction already handled via react-native-iap, skipping:', transactionId);
+      return;
+    }
+    handledTransactionIds.add(transactionId);
+
+    try {
+      const result = await validateReceipt({ purchaseToken: jwsRepresentation, productId });
+      if (result?.valid) {
+        onSuccess && onSuccess(result);
+      } else {
+        console.error('❌ [NativeStoreKitModule] Purchase validation returned invalid:', result?.error);
+        onError && onError(new Error(result?.error || 'Purchase could not be verified. Please try again.'));
+      }
+    } catch (error) {
+      console.error('❌ [NativeStoreKitModule] Validate receipt error:', error);
+      onError && onError(error);
+    }
+  });
+
+  return () => subscription.remove();
+}
+
 // ── Set up purchase listeners ────────────────────────────────────
 export function setupPurchaseListeners(onSuccess, onError) {
   console.log('🔔 [setupPurchaseListeners] registering listeners');
+  // Shared between both listener paths below so that whichever of
+  // react-native-iap's purchaseUpdatedListener / NativeStoreKitModule's
+  // onTransactionUpdate delivers a given transaction first "wins" --
+  // without this, a transaction either path can independently deliver
+  // would otherwise get validated and reported to the caller twice.
+  const handledTransactionIds = new Set();
+
   const purchaseUpdateSubscription = purchaseUpdatedListener(async (purchase) => {
     console.log('🔔 [purchaseUpdatedListener] fired');
     console.log('🛒 Purchase update:', purchase.productId);
+    if (purchase.transactionId && handledTransactionIds.has(purchase.transactionId)) {
+      console.log('🔔 [purchaseUpdatedListener] transaction already handled via NativeStoreKitModule, finishing to clear the queue:', purchase.transactionId);
+      try {
+        await finishTransaction({ purchase, isConsumable: false });
+      } catch (finishError) {
+        console.error('❌ Finish transaction error:', finishError);
+      }
+      return;
+    }
+    if (purchase.transactionId) handledTransactionIds.add(purchase.transactionId);
+
     let result;
     let validationError;
     try {
@@ -317,6 +384,8 @@ export function setupPurchaseListeners(onSuccess, onError) {
     }
   });
 
+  const removeNativeStoreKitListener = setupNativeStoreKitListener(onSuccess, onError, handledTransactionIds);
+
   const purchaseErrorSubscription = purchaseErrorListener((error) => {
     console.error('❌ Purchase error listener:', error);
     try {
@@ -330,5 +399,6 @@ export function setupPurchaseListeners(onSuccess, onError) {
   return () => {
     purchaseUpdateSubscription.remove();
     purchaseErrorSubscription.remove();
+    removeNativeStoreKitListener();
   };
 }

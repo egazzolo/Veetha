@@ -53,3 +53,13 @@ entrypoint = "./functions/grace-period-notifications/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/grace-period-notifications/*.html" ]
+
+[functions.apple-notifications]
+enabled = true
+# Apple's App Store Server Notifications V2 calls this URL directly and
+# sends no Supabase-issued bearer token — verify_jwt must stay false or
+# every notification is rejected with 401 before the function ever runs.
+# Authenticity is instead established inside the function by verifying the
+# notification's own JWS signature against Apple's certificate chain.
+verify_jwt = false
+entrypoint = "./functions/apple-notifications/index.ts"
