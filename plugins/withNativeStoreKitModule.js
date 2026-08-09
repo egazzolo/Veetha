@@ -1,5 +1,4 @@
 const { withXcodeProject, IOSConfig } = require('@expo/config-plugins');
-const { mergeContents } = require('@expo/config-plugins/build/utils/generateCode');
 const fs = require('fs');
 const path = require('path');
 
@@ -16,51 +15,22 @@ const path = require('path');
 // transaction *delivery* gains this second, independent path.
 // Written as a config plugin (like withFmtPatch / withNativeBillingModule)
 // so it survives `expo prebuild --clean`.
+//
+// No bridging header setup here: NativeStoreKitModule.swift sees
+// RCTEventEmitter via a plain `import React` instead. An earlier version of
+// this plugin patched SWIFT_OBJC_BRIDGING_HEADER, which is how classic
+// (pre-CocoaPods-module) React Native tutorials expose RN's Objective-C
+// classes to Swift -- verified against three real EAS builds to reliably
+// fail to compile in this project. Expo's own generated AppDelegate.swift
+// (node_modules/expo/template.tgz) imports RCTBridge/RCTLinkingManager the
+// same `import React` way and ships with a completely empty bridging
+// header, confirming this project's React Native is exposed to Swift as a
+// CocoaPods module (react-native/React.podspec, depends on React-Core,
+// which sets DEFINES_MODULE => YES), not via bridging-header textual
+// #import. See NativeStoreKitModule.swift's header comment for the full
+// evidence chain.
 
 const TEMPLATE_FILES = ['NativeStoreKitModule.swift', 'NativeStoreKitModule.m'];
-const BRIDGING_HEADER_IMPORTS = [
-  '#import <React/RCTBridgeModule.h>',
-  '#import <React/RCTEventEmitter.h>',
-];
-
-function unquote(value) {
-  if (typeof value !== 'string') return value;
-  const match = value.match(/^"(.*)"$/);
-  return match ? match[1] : value;
-}
-
-// SWIFT_OBJC_BRIDGING_HEADER values seen in the wild are typically a bare
-// "<Target>/<Target>-Bridging-Header.h" or "$(SRCROOT)/..."/"$(PROJECT_DIR)/..."
-// prefixed path -- both of the latter point at platformProjectRoot (the
-// `ios/` folder). Any other build variable in the value isn't confidently
-// resolvable here, so it's treated as absent rather than risk patching (or
-// losing track of) the wrong file.
-function resolveBridgingHeaderPath(rawValue, platformProjectRoot) {
-  if (!rawValue) return null;
-  let value = rawValue;
-  if (value.startsWith('$(SRCROOT)/')) {
-    value = value.slice('$(SRCROOT)/'.length);
-  } else if (value.startsWith('$(PROJECT_DIR)/')) {
-    value = value.slice('$(PROJECT_DIR)/'.length);
-  } else if (value.includes('$(')) {
-    return null;
-  }
-  return { relativePath: value, absolutePath: path.join(platformProjectRoot, value) };
-}
-
-function ensureBridgingHeaderImports(headerPath) {
-  fs.mkdirSync(path.dirname(headerPath), { recursive: true });
-  const existing = fs.existsSync(headerPath) ? fs.readFileSync(headerPath, 'utf8') : '';
-  const merged = mergeContents({
-    src: existing,
-    newSrc: BRIDGING_HEADER_IMPORTS.join('\n'),
-    tag: 'native-storekit-module-bridging-imports',
-    anchor: /^/,
-    offset: 0,
-    comment: '//',
-  });
-  fs.writeFileSync(headerPath, merged.contents);
-}
 
 module.exports = function withNativeStoreKitModule(config) {
   return withXcodeProject(config, (config) => {
@@ -69,15 +39,6 @@ module.exports = function withNativeStoreKitModule(config) {
     const projectName = IOSConfig.XcodeUtils.getProjectName(projectRoot);
     const project = config.modResults;
     const sourceDir = path.join(platformProjectRoot, projectName);
-
-    // TEMPORARY DIAGNOSTIC LOGGING -- prints during `expo prebuild` (which
-    // EAS Build runs before invoking xcodebuild, so this shows up in the
-    // EAS build log). Added to pin down why NativeStoreKitModule.swift still
-    // can't resolve RCTEventEmitter after the previous bridging-header fix,
-    // since the build workspace itself isn't inspectable after the fact.
-    // Remove once the actual cause is confirmed and fixed.
-    console.log(`[NativeStoreKitModule plugin] projectName resolved: "${projectName}" (expect "Veetha")`);
-    console.log(`[NativeStoreKitModule plugin] platformProjectRoot: "${platformProjectRoot}"`);
 
     fs.mkdirSync(sourceDir, { recursive: true });
     for (const fileName of TEMPLATE_FILES) {
@@ -107,57 +68,6 @@ module.exports = function withNativeStoreKitModule(config) {
       projectName,
       framework: 'StoreKit.framework',
     });
-
-    // Ground truth, not a filesystem guess. A prior version of this plugin
-    // located the bridging header by globbing the source directory for any
-    // "*-Bridging-Header.h" filename and assumed that was the one Xcode
-    // actually uses -- on the real project that patched either the wrong
-    // file or one nothing referenced, so the #import lines below never
-    // reached the compiler and RCTEventEmitter came back unresolved
-    // (cascading into every override/@objc error in the same file). Reading
-    // the target's own SWIFT_OBJC_BRIDGING_HEADER setting directly removes
-    // that guess entirely.
-    const rawSetting = unquote(
-      project.getBuildProperty('SWIFT_OBJC_BRIDGING_HEADER', 'Debug', projectName)
-    );
-    const resolved = resolveBridgingHeaderPath(rawSetting, platformProjectRoot);
-
-    const headerRelativePath = resolved
-      ? resolved.relativePath
-      : `${projectName}/${projectName}-Bridging-Header.h`;
-    const headerPathOnDisk = resolved
-      ? resolved.absolutePath
-      : path.join(sourceDir, `${projectName}-Bridging-Header.h`);
-
-    // TEMPORARY DIAGNOSTIC LOGGING -- see note above.
-    console.log(`[NativeStoreKitModule plugin] rawSetting read from SWIFT_OBJC_BRIDGING_HEADER (Debug): ${JSON.stringify(rawSetting)}`);
-    console.log(`[NativeStoreKitModule plugin] resolved headerRelativePath: "${headerRelativePath}"`);
-    console.log(`[NativeStoreKitModule plugin] resolved headerPathOnDisk: "${headerPathOnDisk}"`);
-
-    ensureBridgingHeaderImports(headerPathOnDisk);
-
-    // TEMPORARY DIAGNOSTIC LOGGING -- see note above.
-    const headerContentsAfterWrite = fs.readFileSync(headerPathOnDisk, 'utf8');
-    console.log(`[NativeStoreKitModule plugin] bridging header contents after ensureBridgingHeaderImports() (${headerPathOnDisk}):\n----- BEGIN HEADER CONTENTS -----\n${headerContentsAfterWrite}----- END HEADER CONTENTS -----`);
-
-    // Set unconditionally, not just when missing: if the existing setting
-    // already pointed at headerPathOnDisk this is a no-op rewrite of the
-    // same value; if it was missing, unresolved, or pointed somewhere this
-    // plugin didn't actually patch, this is what makes the two agree.
-    project.updateBuildProperty(
-      'SWIFT_OBJC_BRIDGING_HEADER',
-      `"${headerRelativePath}"`,
-      undefined,
-      projectName
-    );
-
-    // TEMPORARY DIAGNOSTIC LOGGING -- read back immediately via the same
-    // getBuildProperty accessor used earlier, for both configs, to confirm
-    // the write actually stuck on the in-memory project model before it's
-    // serialized back to project.pbxproj.
-    const debugReadback = project.getBuildProperty('SWIFT_OBJC_BRIDGING_HEADER', 'Debug', projectName);
-    const releaseReadback = project.getBuildProperty('SWIFT_OBJC_BRIDGING_HEADER', 'Release', projectName);
-    console.log(`[NativeStoreKitModule plugin] SWIFT_OBJC_BRIDGING_HEADER readback after updateBuildProperty -- Debug: ${JSON.stringify(debugReadback)}, Release: ${JSON.stringify(releaseReadback)}`);
 
     return config;
   });

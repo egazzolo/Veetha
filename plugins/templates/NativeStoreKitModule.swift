@@ -1,5 +1,6 @@
 import Foundation
 import StoreKit
+import React
 
 // Native iOS StoreKit 2 bridge that replaces react-native-iap's purchase-
 // listening path specifically. react-native-iap's purchaseUpdatedListener
@@ -16,14 +17,20 @@ import StoreKit
 // shape (Play Billing vs. StoreKit 2 are unrelated SDKs).
 //
 // This subclasses RCTEventEmitter, an Objective-C class from React Native.
-// Swift sees it via the target's bridging header (see
-// withNativeStoreKitModule.js, which ensures that header imports
-// <React/RCTBridgeModule.h> and <React/RCTEventEmitter.h>) rather than a
-// Swift `import React`, since RN's Objective-C headers are not exposed as a
-// proper Swift module in this project. NativeStoreKitModule.m is the
-// companion RCT_EXTERN_MODULE file that exposes this class's @objc methods
-// to the bridge -- Swift classes are not auto-discovered by the RN bridge
-// the way Kotlin classes are auto-discovered by Gradle's source set.
+// `import React` (not a bridging header) is what makes it visible: the
+// "React" CocoaPods pod (react-native/React.podspec) depends on
+// "React-Core" (which declares RCTEventEmitter.h under header_dir "React"
+// and sets DEFINES_MODULE => YES), so CocoaPods exposes it as a genuine
+// Swift module even without `use_frameworks!` -- confirmed by Expo's own
+// generated AppDelegate.swift (node_modules/expo/template.tgz), which
+// imports RCTBridge/RCTLinkingManager/etc. the same way, and whose bundled
+// bridging header ships completely empty. A bridging-header-based
+// `#import <React/RCTEventEmitter.h>` was tried first and reliably failed
+// to compile (verified against three real EAS builds) -- this project's
+// React Native is not exposed to Swift that way. NativeStoreKitModule.m is
+// the companion RCT_EXTERN_MODULE file that exposes this class's @objc
+// methods to the bridge -- Swift classes are not auto-discovered by the RN
+// bridge the way Kotlin classes are auto-discovered by Gradle's source set.
 @objc(NativeStoreKitModule)
 class NativeStoreKitModule: RCTEventEmitter {
 
