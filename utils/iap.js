@@ -14,6 +14,13 @@ import { supabase } from './supabase';
 // completes the transaction on-device, so relying on it alone silently
 // loses purchases.
 const { NativeBillingModule, NativeStoreKitModule } = NativeModules;
+// TEMPORARY DIAGNOSTIC -- confirms two things at once: (1) that this module
+// (utils/iap.js) actually loaded at all this session -- if this line never
+// appears in logs, nothing below it ever ran, independent of any bug; (2)
+// if it does appear, whether the native module resolved to a real object
+// or came back undefined (e.g. registered-but-stripped in a Release/
+// TestFlight build vs. genuinely never linked). Remove once confirmed.
+console.log('🔵 [iap.js] NativeStoreKitModule resolved:', !!NativeStoreKitModule);
 
 export const PRODUCT_ID_MONTHLY = 'com.yourname.veetha.premium.plan';
 export const PRODUCT_ID_ANNUAL = 'com.yourname.veetha.premium.annual';
