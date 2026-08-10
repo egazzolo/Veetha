@@ -15,6 +15,7 @@ import React, { useState, useRef, useEffect } from 'react';
     setupPurchaseListeners,
     restorePurchases,
     diagnosticFetchStaticTestProduct,
+    appendIapDiagnosticLog,
     PRODUCT_ID_MONTHLY,
     PRODUCT_ID_ANNUAL,
     PRODUCT_ID_MONTHLY_TEST,
@@ -102,6 +103,7 @@ import React, { useState, useRef, useEffect } from 'react';
         cleanup = setupPurchaseListeners(
           (result) => {
             setPurchasing(false);
+            appendIapDiagnosticLog('SUCCESS UI SHOWN');
             showToast('success', 'Welcome to Premium! 🎉');
             navigation.goBack();
             purchaseResultRef.current?.resolve(result);
@@ -110,6 +112,7 @@ import React, { useState, useRef, useEffect } from 'react';
           (error) => {
             setPurchasing(false);
             if (error?.code !== ErrorCode.UserCancelled) {
+              appendIapDiagnosticLog(`ERROR UI SHOWN: ${error?.message || 'Please try again.'}`);
               Alert.alert('Purchase failed', error?.message || 'Please try again.');
               navigation.goBack();
             }
@@ -151,6 +154,7 @@ import React, { useState, useRef, useEffect } from 'react';
           // withTimeout indirection needed here like iOS still relies on.
           await purchaseSubscription(productId);
           setPurchasing(false);
+          appendIapDiagnosticLog('SUCCESS UI SHOWN');
           showToast('success', 'Welcome to Premium! 🎉');
           navigation.goBack();
           return;
@@ -172,6 +176,7 @@ import React, { useState, useRef, useEffect } from 'react';
           ? error?.code === 'USER_CANCELED'
           : error?.code === ErrorCode.UserCancelled;
         if (!isUserCancelled) {
+          appendIapDiagnosticLog(`ERROR UI SHOWN: ${error?.message || 'Please try again.'}`);
           Alert.alert('Purchase failed', error?.message || 'Please try again.');
           navigation.goBack();
         }
@@ -204,6 +209,7 @@ import React, { useState, useRef, useEffect } from 'react';
         await ensureIAPConnection();
         const result = await restorePurchases();
         if (result?.restored) {
+          appendIapDiagnosticLog('SUCCESS UI SHOWN');
           showToast('success', 'Purchases restored! 🎉');
           navigation.goBack();
         } else {

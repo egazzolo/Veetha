@@ -36,7 +36,7 @@ export const IAP_DIAGNOSTIC_LOG_PATH = `${FileSystem.documentDirectory}iap-diagn
 // Factored out (rather than inlined per call site) so every diagnostic
 // write below goes through the exact same read-modify-write path -- not
 // just structurally similar copies of it.
-function appendIapDiagnosticLog(message) {
+export function appendIapDiagnosticLog(message) {
   const line = `${new Date().toISOString()} ${message}\n`;
   FileSystem.readAsStringAsync(IAP_DIAGNOSTIC_LOG_PATH)
     .catch(() => '')
