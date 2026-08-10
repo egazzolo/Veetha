@@ -1,5 +1,6 @@
 import { initConnection, endConnection, fetchProducts, requestPurchase, purchaseUpdatedListener, purchaseErrorListener, finishTransaction, getAvailablePurchases, getPendingTransactionsIOS, syncIOS, clearTransactionIOS, } from 'react-native-iap';
 import { Platform, AppState, NativeModules, NativeEventEmitter } from 'react-native';
+import * as Sentry from '@sentry/react-native';
 import { supabase } from './supabase';
 
 // Android goes straight through Play Billing Library (see
@@ -16,11 +17,22 @@ import { supabase } from './supabase';
 const { NativeBillingModule, NativeStoreKitModule } = NativeModules;
 // TEMPORARY DIAGNOSTIC -- confirms two things at once: (1) that this module
 // (utils/iap.js) actually loaded at all this session -- if this line never
-// appears in logs, nothing below it ever ran, independent of any bug; (2)
+// appears in Sentry, nothing below it ever ran, independent of any bug; (2)
 // if it does appear, whether the native module resolved to a real object
 // or came back undefined (e.g. registered-but-stripped in a Release/
-// TestFlight build vs. genuinely never linked). Remove once confirmed.
-console.log('🔵 [iap.js] NativeStoreKitModule resolved:', !!NativeStoreKitModule);
+// TestFlight build vs. genuinely never linked). Uses Sentry.captureMessage,
+// not console.log/addBreadcrumb: console.log is silently discarded in
+// Release/TestFlight builds (RCT_DEBUG is 0 there and this project
+// registers no custom RCTLogFunction, so React Native's own native log
+// bridge drops every JS console.log unconditionally -- confirmed against
+// react-native/React/Base/RCTLog.mm). addBreadcrumb was considered instead
+// but breadcrumbs are only ever attached to a *later* captured event
+// (per @sentry/core's own Breadcrumb doc comment) -- iap.js has no other
+// Sentry calls anywhere in it for a bare breadcrumb to ever attach to, so
+// it would have been just as invisible as console.log, for a different
+// reason. captureMessage sends a real, standalone, immediately-visible
+// Sentry event regardless of build type. Remove once confirmed.
+Sentry.captureMessage(`[iap.js] NativeStoreKitModule resolved: ${!!NativeStoreKitModule}`);
 
 export const PRODUCT_ID_MONTHLY = 'com.yourname.veetha.premium.plan';
 export const PRODUCT_ID_ANNUAL = 'com.yourname.veetha.premium.annual';

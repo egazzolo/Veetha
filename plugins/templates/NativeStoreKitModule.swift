@@ -49,8 +49,13 @@ class NativeStoreKitModule: RCTEventEmitter {
 
   override init() {
     // TEMPORARY DIAGNOSTIC -- confirms whether this class is ever
-    // instantiated at all. Remove once confirmed.
-    print("🔵 [NativeStoreKitModule] init() called")
+    // instantiated at all. Uses NSLog, not print(): plain print() writes to
+    // stdout, which for a process not attached to a debugger (i.e. every
+    // TestFlight session) is not reliably captured into the unified logging
+    // system Console.app reads from. NSLog forwards to os_log directly and
+    // is captured regardless of build type or debugger attachment. Remove
+    // once confirmed.
+    NSLog("🔵 [NativeStoreKitModule] init() called")
     super.init()
     startTransactionListener()
   }
