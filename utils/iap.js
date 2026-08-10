@@ -376,7 +376,9 @@ function setupNativeStoreKitListener(onSuccess, onError, handledTransactionIds) 
   }
 
   const emitter = new NativeEventEmitter(NativeStoreKitModule);
+  appendIapDiagnosticLog('NativeStoreKitModule listener registered');
   const subscription = emitter.addListener('onTransactionUpdate', async (event) => {
+    appendIapDiagnosticLog(`onTransactionUpdate fired: ${JSON.stringify(event)}`);
     const { transactionId, productId, jwsRepresentation } = event || {};
     console.log('🔔 [NativeStoreKitModule] onTransactionUpdate fired:', transactionId, productId);
     if (!transactionId || !jwsRepresentation) {
