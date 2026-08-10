@@ -33,13 +33,17 @@ import * as FileSystem from 'expo-file-system/legacy';
 // here) -- no Console.app, Sentry, or device connection required. Remove
 // both once confirmed.
 export const IAP_DIAGNOSTIC_LOG_PATH = `${FileSystem.documentDirectory}iap-diagnostic-log.txt`;
-(function logIapModuleLoadedToDisk() {
-  const line = `${new Date().toISOString()} iap.js loaded\n`;
+// Factored out (rather than inlined per call site) so every diagnostic
+// write below goes through the exact same read-modify-write path -- not
+// just structurally similar copies of it.
+function appendIapDiagnosticLog(message) {
+  const line = `${new Date().toISOString()} ${message}\n`;
   FileSystem.readAsStringAsync(IAP_DIAGNOSTIC_LOG_PATH)
     .catch(() => '')
     .then((existing) => FileSystem.writeAsStringAsync(IAP_DIAGNOSTIC_LOG_PATH, existing + line))
     .catch(() => {});
-})();
+}
+appendIapDiagnosticLog('iap.js loaded');
 
 // require(), not `import`, and deliberately placed after the diagnostic
 // above -- see the comment there for why. Destructuring off require()'s
@@ -66,6 +70,13 @@ const { supabase } = require('./supabase');
 // completes the transaction on-device, so relying on it alone silently
 // loses purchases.
 const { NativeBillingModule, NativeStoreKitModule } = NativeModules;
+// TEMPORARY DIAGNOSTIC -- second line in the same disk log appendIapDiagnosticLog()
+// wrote to above, right after NativeModules is destructured. The first line
+// only proves this module's top-level code ran at all; it says nothing
+// about whether the native module actually resolved. Same append pattern,
+// same file, so both lines land in one place readable via the button in
+// calo.js. Remove alongside the rest of this diagnostic.
+appendIapDiagnosticLog(`NativeStoreKitModule resolved: ${!!NativeStoreKitModule}`);
 // TEMPORARY DIAGNOSTIC -- confirms two things at once: (1) that this module
 // (utils/iap.js) actually loaded at all this session -- if this line never
 // appears in Sentry, nothing below it ever ran, independent of any bug; (2)
