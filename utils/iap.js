@@ -1,7 +1,58 @@
-import { initConnection, endConnection, fetchProducts, requestPurchase, purchaseUpdatedListener, purchaseErrorListener, finishTransaction, getAvailablePurchases, getPendingTransactionsIOS, syncIOS, clearTransactionIOS, } from 'react-native-iap';
-import { Platform, AppState, NativeModules, NativeEventEmitter } from 'react-native';
-import * as Sentry from '@sentry/react-native';
-import { supabase } from './supabase';
+import * as FileSystem from 'expo-file-system/legacy';
+
+// TEMPORARY DIAGNOSTIC -- local-disk-only, no network, no Sentry client
+// state, no native RCTLog gate. Both of those were separately confirmed
+// this session to silently drop every diagnostic tried so far in this
+// exact Release/TestFlight build (Sentry.captureMessage: silently no-op'd
+// pre-init, and still invisible after fixing that ordering; NSLog: still
+// invisible). This has no such dependency -- it's a plain file write.
+//
+// Genuinely the first executable statement in this file -- not just
+// visually first. Babel's CommonJS transform hoists every `import`-derived
+// require() above a module's own top-level statements as one block,
+// regardless of source position (this is the same mechanism behind the
+// Sentry.init() ordering bug fixed earlier this session in index.js/calo.js
+// -- verified again here the same way, by compiling this exact file and
+// checking the real output). A first version of this diagnostic put it
+// between `import * as FileSystem ...` and this file's other imports
+// (react-native-iap, react-native, @sentry/react-native, ./supabase) and
+// verifiably did NOT run first -- those four got hoisted above it just the
+// same, meaning if any of THEM throw while loading, this diagnostic would
+// never run at all, defeating its purpose. Fix: those four are required
+// below, as plain require() calls (not `import`), positioned textually
+// after this diagnostic -- a literal require() is left exactly where it's
+// written, not hoisted, so this now genuinely runs before any of them are
+// even required, let alone before any of their own module bodies evaluate.
+//
+// writeAsStringAsync always overwrites (this API has no append mode), so
+// each load reads whatever's already there and writes it back plus one new
+// line, to build a history across sessions/loads rather than just the
+// latest one. Wrapped so this can never itself throw: a failure here must
+// never become a NEW reason for this module to fail to load. Read back via
+// the temporary button in calo.js (imports IAP_DIAGNOSTIC_LOG_PATH from
+// here) -- no Console.app, Sentry, or device connection required. Remove
+// both once confirmed.
+export const IAP_DIAGNOSTIC_LOG_PATH = `${FileSystem.documentDirectory}iap-diagnostic-log.txt`;
+(function logIapModuleLoadedToDisk() {
+  const line = `${new Date().toISOString()} iap.js loaded\n`;
+  FileSystem.readAsStringAsync(IAP_DIAGNOSTIC_LOG_PATH)
+    .catch(() => '')
+    .then((existing) => FileSystem.writeAsStringAsync(IAP_DIAGNOSTIC_LOG_PATH, existing + line))
+    .catch(() => {});
+})();
+
+// require(), not `import`, and deliberately placed after the diagnostic
+// above -- see the comment there for why. Destructuring off require()'s
+// return value gives identical bindings to the `import { x } from 'y'`
+// syntax this replaced; nothing below this point needed to change.
+const {
+  initConnection, endConnection, fetchProducts, requestPurchase, purchaseUpdatedListener,
+  purchaseErrorListener, finishTransaction, getAvailablePurchases, getPendingTransactionsIOS,
+  syncIOS, clearTransactionIOS,
+} = require('react-native-iap');
+const { Platform, AppState, NativeModules, NativeEventEmitter } = require('react-native');
+const Sentry = require('@sentry/react-native');
+const { supabase } = require('./supabase');
 
 // Android goes straight through Play Billing Library (see
 // android/.../NativeBillingModule.kt) instead of react-native-iap, to rule
