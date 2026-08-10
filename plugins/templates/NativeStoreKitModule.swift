@@ -47,6 +47,34 @@ class NativeStoreKitModule: RCTEventEmitter {
   // ever passes) doesn't need a redundant Product.products(for:) round trip.
   private var productCache: [String: Product] = [:]
 
+  // TEMPORARY DIAGNOSTIC -- writes to the exact same file
+  // utils/iap.js's appendIapDiagnosticLog() already writes to and the
+  // button in calo.js already reads, so both sides land in one place.
+  // Confirmed against real source (not assumed) that this is the same
+  // underlying path expo-file-system's FileSystem.documentDirectory
+  // resolves to for a standalone/EAS-built app: expo-file-system's JS
+  // constant returns `appContext.config.documentDirectory.absoluteString`
+  // (FileSystemLegacyModule.swift), and expo-modules-core's
+  // AppContextConfig.swift falls back to exactly
+  // `FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first`
+  // whenever no Expo-Go-style per-experience scoped directory was supplied
+  // -- which doesn't apply here, since this is a standalone app, not
+  // Expo Go. Read (not write) is done with `try?` and write with
+  // `try?` too, and the whole thing gated behind `if let` on the URL,
+  // so a failure here can never throw or crash the app -- this diagnostic
+  // must never itself become a new bug.
+  private static let diagnosticLogURL: URL? = FileManager.default
+    .urls(for: .documentDirectory, in: .userDomainMask)
+    .first?
+    .appendingPathComponent("iap-diagnostic-log.txt")
+
+  private func appendIapDiagnosticLog(_ message: String) {
+    guard let url = Self.diagnosticLogURL else { return }
+    let line = "\(ISO8601DateFormatter().string(from: Date())) \(message)\n"
+    let existing = (try? String(contentsOf: url, encoding: .utf8)) ?? ""
+    try? (existing + line).write(to: url, atomically: true, encoding: .utf8)
+  }
+
   override init() {
     // TEMPORARY DIAGNOSTIC -- confirms whether this class is ever
     // instantiated at all. Uses NSLog, not print(): plain print() writes to
@@ -94,6 +122,17 @@ class NativeStoreKitModule: RCTEventEmitter {
   }
 
   private func handle(updateResult result: VerificationResult<Transaction>) async {
+    // TEMPORARY DIAGNOSTIC -- first line, before the hasListeners guard
+    // below, specifically to distinguish "handle() never got called at
+    // all" (Transaction.updates itself never delivered anything) from
+    // "handle() was called but hasListeners read false" (the JS/native
+    // addListener race or the hasListeners data race across threads --
+    // this class runs with requiresMainQueueSetup() == false, so
+    // startObserving()/stopObserving() run on RN's module queue while this
+    // function runs on Swift Concurrency's own executor, with no
+    // synchronization between the two on this plain var). Remove once
+    // confirmed.
+    appendIapDiagnosticLog("handle(updateResult:) called, hasListeners=\(hasListeners)")
     guard case .verified(let transaction) = result else {
       if case .unverified(let transaction, let error) = result {
         // Not handed to JS / validateReceipt: there is nothing trustworthy
