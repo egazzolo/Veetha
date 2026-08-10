@@ -269,6 +269,7 @@ export async function purchaseSubscription(productId) {
       return result;
     } else {
       console.log('🛒 [purchaseSubscription] iOS AppState.currentState:', AppState.currentState, 'productId:', productId);
+      appendIapDiagnosticLog(`purchaseSubscription (iOS): currentUser.id present: ${!!currentUser?.id}, appAccountToken sent: ${currentUser?.id || '(none)'}`);
       await requestPurchase({
         request: {
           apple: {
@@ -421,6 +422,7 @@ export function setupPurchaseListeners(onSuccess, onError) {
   const purchaseUpdateSubscription = purchaseUpdatedListener(async (purchase) => {
     console.log('🔔 [purchaseUpdatedListener] fired');
     console.log('🛒 Purchase update:', purchase.productId);
+    appendIapDiagnosticLog(`purchaseUpdatedListener fired: transactionId=${purchase.transactionId}, productId=${purchase.productId}, transactionDate=${purchase.transactionDate}`);
     if (purchase.transactionId && handledTransactionIds.has(purchase.transactionId)) {
       console.log('🔔 [purchaseUpdatedListener] transaction already handled via NativeStoreKitModule, finishing to clear the queue:', purchase.transactionId);
       try {
