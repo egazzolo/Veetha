@@ -9,7 +9,7 @@ import * as Sentry from '@sentry/react-native';
 //import * as Updates from 'expo-updates';
 import React, { useState, useEffect, useRef } from 'react';
 //import Purchases from 'react-native-purchases';
-import { View, ActivityIndicator, Platform, StatusBar, Alert, AppState, TouchableOpacity, Text } from 'react-native';
+import { View, ActivityIndicator, Platform, StatusBar, Alert, AppState, TouchableOpacity, Text, Share } from 'react-native';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -406,6 +406,37 @@ function AppNavigator() {
         }}
       >
         <Text style={{ color: '#fff', fontSize: 11 }}>IAP log</Text>
+      </TouchableOpacity>
+      {/* TEMPORARY DIAGNOSTIC -- companion to the button above. Alert.alert
+          truncates/wraps long log text and offers no way to copy it, which
+          has been causing transcription typos when manually retyping values
+          out of it. Share.share() is a core React Native API (no new native
+          dependency, no extra native linking/rebuild needed) that opens the
+          OS share sheet with the full, untruncated text -- "Copy" is one of
+          the built-in options there. Remove alongside the rest of this
+          diagnostic. */}
+      <TouchableOpacity
+        onPress={async () => {
+          try {
+            const contents = await FileSystem.readAsStringAsync(IAP_DIAGNOSTIC_LOG_PATH);
+            await Share.share({ message: contents || '(empty file)' });
+          } catch (error) {
+            Alert.alert('iap.js diagnostic log', `File not found or unreadable yet: ${error?.message || error}`);
+          }
+        }}
+        style={{
+          position: 'absolute',
+          top: 80,
+          right: 10,
+          zIndex: 9999,
+          backgroundColor: '#000',
+          opacity: 0.6,
+          paddingHorizontal: 10,
+          paddingVertical: 6,
+          borderRadius: 6,
+        }}
+      >
+        <Text style={{ color: '#fff', fontSize: 11 }}>Copy log</Text>
       </TouchableOpacity>
       <NavigationContainer ref={navigationRef} theme={navTheme}>
         <Stack.Navigator

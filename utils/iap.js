@@ -107,6 +107,16 @@ export const PRODUCT_ID_ANNUAL_TEST = 'com.yourname.veetha.premium.annual2';
 
 export const SUBSCRIPTION_SKUS = [PRODUCT_ID_MONTHLY_TEST, PRODUCT_ID_ANNUAL_TEST];
 
+// This transaction is confirmed (via diagnostic logging across many real
+// device tests) to belong to a different, earlier test account, and to keep
+// getting redelivered by StoreKit no matter which account is signed in --
+// finishTransaction() alone doesn't stop the redelivery (a known sandbox
+// limitation, not specific to this app). Left unvalidated and unreported to
+// the caller entirely: reporting it as an error confuses/covers up whatever
+// the user's actual, current purchase attempt is doing, since this has
+// nothing to do with it.
+const KNOWN_GHOST_TRANSACTION_IDS_IOS = ['2000001218944727'];
+
 // Any transaction left unfinished in the on-device StoreKit queue --
 // belonging to this sandbox tester or any other one that's used this
 // device -- gets redelivered on every future connection init and can get
@@ -385,6 +395,15 @@ function setupNativeStoreKitListener(onSuccess, onError, handledTransactionIds) 
       console.error('❌ [NativeStoreKitModule] onTransactionUpdate missing transactionId/jwsRepresentation');
       return;
     }
+    if (KNOWN_GHOST_TRANSACTION_IDS_IOS.includes(transactionId)) {
+      console.log('🔔 [NativeStoreKitModule] known ghost transaction, ignoring silently:', transactionId);
+      // Native side already unconditionally calls transaction.finish() after
+      // sending this event (see NativeStoreKitModule.swift), so nothing to
+      // finish here -- just don't validate or report it, and mark it handled
+      // so purchaseUpdatedListener's own ghost check below is a no-op too.
+      handledTransactionIds.add(transactionId);
+      return;
+    }
     if (handledTransactionIds.has(transactionId)) {
       console.log('🔔 [NativeStoreKitModule] transaction already handled via react-native-iap, skipping:', transactionId);
       return;
@@ -422,6 +441,16 @@ export function setupPurchaseListeners(onSuccess, onError) {
     console.log('🔔 [purchaseUpdatedListener] fired');
     console.log('🛒 Purchase update:', purchase.productId);
     appendIapDiagnosticLog(`purchaseUpdatedListener fired: transactionId=${purchase.transactionId}, productId=${purchase.productId}, transactionDate=${purchase.transactionDate}`);
+    if (purchase.transactionId && KNOWN_GHOST_TRANSACTION_IDS_IOS.includes(purchase.transactionId)) {
+      console.log('🔔 [purchaseUpdatedListener] known ghost transaction, finishing silently:', purchase.transactionId);
+      try {
+        await finishTransaction({ purchase, isConsumable: false });
+      } catch (finishError) {
+        console.error('❌ Finish transaction error:', finishError);
+      }
+      handledTransactionIds.add(purchase.transactionId);
+      return;
+    }
     if (purchase.transactionId && handledTransactionIds.has(purchase.transactionId)) {
       console.log('🔔 [purchaseUpdatedListener] transaction already handled via NativeStoreKitModule, finishing to clear the queue:', purchase.transactionId);
       try {
