@@ -107,28 +107,27 @@ export const PRODUCT_ID_ANNUAL_TEST = 'com.yourname.veetha.premium.annual2';
 
 export const SUBSCRIPTION_SKUS = [PRODUCT_ID_MONTHLY_TEST, PRODUCT_ID_ANNUAL_TEST];
 
-// This specific transaction is stuck in the on-device StoreKit queue and gets
-// redelivered on every purchase attempt regardless of which sandbox tester is
-// signed in, always failing the appAccountToken check since it belongs to a
-// different user. clearTransactionIOS() should flush it but hasn't, so it's
-// force-finished by id as a targeted fallback. Safe to leave in even after
-// the queue clears — the id simply won't match anything in the pending list.
-const KNOWN_STUCK_TRANSACTION_IDS_IOS = ['2000001206453510'];
-
-// ── Force-finish known stuck iOS transactions ──────────────────────
-async function finishKnownStuckTransactionsIOS() {
+// Any transaction left unfinished in the on-device StoreKit queue --
+// belonging to this sandbox tester or any other one that's used this
+// device -- gets redelivered on every future connection init and can get
+// validated against whichever user happens to be signed in at that moment
+// (surfacing as "Transaction does not belong to this user"), or can occupy
+// the purchaseUpdatedListener/onTransactionUpdate slot a genuinely new
+// purchase needed, making it look like the new purchase silently never
+// arrived. finishTransaction() only tells StoreKit "stop redelivering
+// this" -- it doesn't touch whatever server-side validation already ran --
+// so it's safe to force-finish every pending transaction unconditionally
+// here, not just ones matching a specific known-bad id.
+async function finishStuckTransactionsIOS() {
   if (Platform.OS !== 'ios') return;
   try {
     const pending = await getPendingTransactionsIOS();
-    const stuck = pending.filter((purchase) =>
-      KNOWN_STUCK_TRANSACTION_IDS_IOS.includes(purchase.transactionId)
-    );
-    for (const purchase of stuck) {
+    for (const purchase of pending) {
       try {
         await finishTransaction({ purchase, isConsumable: false });
-        console.log('✅ Force-finished stuck transaction:', purchase.transactionId);
+        console.log('✅ Force-finished pending transaction:', purchase.transactionId);
       } catch (finishError) {
-        console.error('❌ Force-finish stuck transaction error:', finishError);
+        console.error('❌ Force-finish pending transaction error:', finishError);
       }
     }
   } catch (error) {
@@ -155,7 +154,7 @@ export async function initIAP() {
       } catch (clearError) {
         console.error('❌ Clear transaction error:', clearError);
       }
-      await finishKnownStuckTransactionsIOS();
+      await finishStuckTransactionsIOS();
       try {
         const pendingAtReady = await getPendingTransactionsIOS();
         console.log('🔍 [initIAP] pending StoreKit transactions:', JSON.stringify(
