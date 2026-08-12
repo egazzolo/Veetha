@@ -59,6 +59,19 @@ async function signAppleServerJWT(): Promise<string> {
 
 const APPLE_FETCH_TIMEOUT_MS = 15_000
 
+// Apple's sandbox Get Transaction Info endpoint has been confirmed (both by
+// our own testing and by widely-reported external issues, e.g.
+// RevenueCat/purchases-ios#2674) to intermittently return 5xx for genuinely
+// valid transactions. Retrying a couple of times before giving up absorbs
+// that transient flakiness instead of surfacing it to the user as a hard
+// purchase failure.
+const APPLE_TRANSACTION_INFO_MAX_ATTEMPTS = 3
+const APPLE_TRANSACTION_INFO_RETRY_DELAY_MS = 750
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 export async function getTransactionInfo(transactionId: string): Promise<string> {
   const jwt = await signAppleServerJWT()
 
@@ -80,17 +93,29 @@ export async function getTransactionInfo(transactionId: string): Promise<string>
     }
   }
 
-  let res = await fetchFrom('https://api.storekit.apple.com')
-  if (res.status === 404) {
-    res = await fetchFrom('https://api.storekit-sandbox.apple.com')
-  }
+  let lastError: Error = new Error('Apple Get Transaction Info failed for an unknown reason')
 
-  if (!res.ok) {
+  for (let attempt = 1; attempt <= APPLE_TRANSACTION_INFO_MAX_ATTEMPTS; attempt++) {
+    let res = await fetchFrom('https://api.storekit.apple.com')
+    if (res.status === 404) {
+      res = await fetchFrom('https://api.storekit-sandbox.apple.com')
+    }
+
+    if (res.ok) {
+      const data = await res.json()
+      return data.signedTransactionInfo
+    }
+
     const bodyText = await res.text().catch(() => '<failed to read response body>')
-    console.error(`Apple Get Transaction Info failed: ${res.status}`, bodyText)
-    throw new Error(`Apple Get Transaction Info failed: ${res.status} - ${bodyText}`)
+    console.error(`Apple Get Transaction Info failed (attempt ${attempt}/${APPLE_TRANSACTION_INFO_MAX_ATTEMPTS}): ${res.status}`, bodyText)
+    lastError = new Error(`Apple Get Transaction Info failed: ${res.status} - ${bodyText}`)
+
+    // Only retry server-side errors -- a 4xx won't fix itself.
+    if (res.status < 500 || attempt === APPLE_TRANSACTION_INFO_MAX_ATTEMPTS) {
+      throw lastError
+    }
+    await sleep(APPLE_TRANSACTION_INFO_RETRY_DELAY_MS * attempt)
   }
 
-  const data = await res.json()
-  return data.signedTransactionInfo
+  throw lastError
 }
