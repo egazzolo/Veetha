@@ -263,6 +263,23 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'platform must be ios or android' }), { status: 400 })
     }
 
+    // TEMPORARY DIAGNOSTIC -- records every validation attempt (success or
+    // failure) server-side, independent of the client's on-device log file.
+    // Queried directly via `supabase db query` against
+    // public.iap_validation_log. Never let a logging failure affect the
+    // actual response to the client.
+    try {
+      await supabase.from('iap_validation_log').insert({
+        user_id: user.id,
+        platform,
+        valid: !!result?.valid,
+        error: result?.valid ? null : (result?.error ?? null),
+        product_id: result?.productId ?? null,
+      })
+    } catch (logErr) {
+      console.error('Failed to record iap_validation_log entry:', logErr)
+    }
+
     return new Response(JSON.stringify(result), {
       headers: {
         'Content-Type': 'application/json',
