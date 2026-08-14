@@ -40,7 +40,27 @@ class NativeStoreKitModule: RCTEventEmitter {
   ]
 
   private var updatesTask: Task<Void, Never>?
-  private var hasListeners = false
+
+  // startObserving()/stopObserving() run on RN's module queue; handle(updateResult:)
+  // runs on Swift Concurrency's own executor via the detached Task below --
+  // confirmed via real device logging (hasListeners read false immediately
+  // after a JS listener had already attached) that a plain var read/written
+  // across those two contexts can observe a stale value. Guarded with a lock
+  // so every read/write goes through the same synchronization point.
+  private let hasListenersLock = NSLock()
+  private var _hasListeners = false
+  private var hasListeners: Bool {
+    get {
+      hasListenersLock.lock()
+      defer { hasListenersLock.unlock() }
+      return _hasListeners
+    }
+    set {
+      hasListenersLock.lock()
+      _hasListeners = newValue
+      hasListenersLock.unlock()
+    }
+  }
 
   // Cached from the last successful fetchSubscriptionProducts()/
   // purchaseSubscription() call so a purchase by productId string (all JS
@@ -125,13 +145,12 @@ class NativeStoreKitModule: RCTEventEmitter {
     // TEMPORARY DIAGNOSTIC -- first line, before the hasListeners guard
     // below, specifically to distinguish "handle() never got called at
     // all" (Transaction.updates itself never delivered anything) from
-    // "handle() was called but hasListeners read false" (the JS/native
-    // addListener race or the hasListeners data race across threads --
-    // this class runs with requiresMainQueueSetup() == false, so
-    // startObserving()/stopObserving() run on RN's module queue while this
-    // function runs on Swift Concurrency's own executor, with no
-    // synchronization between the two on this plain var). Remove once
-    // confirmed.
+    // "handle() was called but hasListeners read false" (a genuine no-
+    // listener-yet case, e.g. very early cold start). The stale-read race
+    // this used to also cover is fixed now that hasListeners is
+    // lock-guarded (see its declaration above) -- this diagnostic line is
+    // still useful to distinguish the two "nothing happened" cases above,
+    // so left in. Remove once confirmed no longer needed.
     appendIapDiagnosticLog("handle(updateResult:) called, hasListeners=\(hasListeners)")
     guard case .verified(let transaction) = result else {
       if case .unverified(let transaction, let error) = result {
