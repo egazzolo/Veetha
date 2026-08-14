@@ -17,6 +17,7 @@ RCT_EXTERN_METHOD(fetchSubscriptionProducts:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
 RCT_EXTERN_METHOD(purchaseSubscription:(NSString *)productId
+                  appAccountToken:(NSString *)appAccountToken
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 

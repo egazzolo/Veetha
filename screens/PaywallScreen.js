@@ -1,11 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-  import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Linking, Animated, ActivityIndicator, Alert, Platform, } from 'react-native';
+  import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Linking, Animated, ActivityIndicator, Alert, } from 'react-native';
   import { SafeAreaView } from 'react-native-safe-area-context';
   import { useTheme } from '../utils/ThemeContext';
   import VeethaModal from '../components/VeethaModal';
   import { showToast } from '../components/VeethaToast';
   import { posthog } from '../utils/posthog';
-  import { ErrorCode } from 'react-native-iap';
   import {
     initIAP,
     endIAP,
@@ -23,11 +22,9 @@ import React, { useState, useRef, useEffect } from 'react';
   } from '../utils/iap';
   import { fetchProducts } from 'react-native-iap';
 
-  // requestPurchase() only resolves once StoreKit/Play *dispatches* the request —
-  // the actual result comes later via purchaseUpdatedListener/purchaseErrorListener.
-  // If the native purchase sheet gets stuck (e.g. "already subscribed" on iOS never
-  // calling back), neither listener ever fires, so this bounds how long the spinner
-  // can wait before we give up and let the user retry.
+  // Bounds how long the spinner waits on purchaseSubscription() before giving
+  // up and letting the user retry -- e.g. if the native purchase sheet gets
+  // stuck (an "already subscribed" case never resolving the call at all).
   // 60s, not 30s: validateReceipt()'s own Get Transaction Info call can retry
   // up to 3x on Apple's transient 5xxs (see app-store-server-api.ts), ~47s
   // worst case alone -- a 30s outer bound could cut off a retry sequence that
@@ -65,7 +62,6 @@ import React, { useState, useRef, useEffect } from 'react';
     const [purchasing, setPurchasing] = useState(false);
     const [restoring, setRestoring] = useState(false);
     const pulseAnims = useRef(TABLE_ROWS.map(() => new Animated.Value(0))).current;
-    const purchaseResultRef = useRef(null);
 
     const trialEndDate = new Date();
     trialEndDate.setDate(trialEndDate.getDate() + 7);
@@ -96,11 +92,16 @@ import React, { useState, useRef, useEffect } from 'react';
       let cleanup;
       // Wait for initIAP() (initConnection + clearTransactionIOS +
       // finishKnownStuckTransactionsIOS) to fully finish before attaching
-      // purchaseUpdatedListener. Attaching it earlier races the native
-      // queue flush: any stale transaction left over from a different
-      // account on this device gets redelivered as soon as the connection
-      // opens, and if the listener is already live it gets reported to
-      // this user as a failed purchase before they've done anything.
+      // the NativeStoreKitModule listener. Attaching it earlier races the
+      // native queue flush: any stale transaction left over from a
+      // different account on this device gets redelivered as soon as the
+      // connection opens, and if the listener is already live it gets
+      // reported to this user as a failed purchase before they've done
+      // anything.
+      // This listener only ever fires for background-delivered transactions
+      // now (renewals, a purchase that completed while the app was closed)
+      // -- the primary purchase flow in handleConfirmTrial() below gets its
+      // result directly and doesn't route through this at all.
       (async () => {
         await initIAP();
         if (cancelled) return;
@@ -110,18 +111,14 @@ import React, { useState, useRef, useEffect } from 'react';
             appendIapDiagnosticLog('SUCCESS UI SHOWN');
             showToast('success', 'Welcome to Premium! 🎉');
             navigation.goBack();
-            purchaseResultRef.current?.resolve(result);
-            purchaseResultRef.current = null;
           },
           (error) => {
             setPurchasing(false);
-            if (error?.code !== ErrorCode.UserCancelled) {
+            if (error?.code !== 'USER_CANCELLED' && error?.code !== 'USER_CANCELED') {
               appendIapDiagnosticLog(`ERROR UI SHOWN: ${error?.message || 'Please try again.'}`);
               Alert.alert('Purchase failed', error?.message || 'Please try again.');
               navigation.goBack();
             }
-            purchaseResultRef.current?.reject(error);
-            purchaseResultRef.current = null;
           }
         );
       })();
@@ -145,40 +142,31 @@ import React, { useState, useRef, useEffect } from 'react';
         // Use ensureIAPConnection() (not initIAP()) so this doesn't also
         // re-run clearTransactionIOS() — doing that right before a purchase
         // races with StoreKit delivering the new transaction and can eat it
-        // before purchaseUpdatedListener ever fires.
+        // before the native purchase call resolves.
         await ensureIAPConnection();
         const productId = plan === 'yearly' ? PRODUCT_ID_ANNUAL : PRODUCT_ID_MONTHLY;
 
-        if (Platform.OS === 'android') {
-          // Android's purchaseSubscription() goes through NativeBillingModule's
-          // own BillingClient, not react-native-iap, so react-native-iap's
-          // purchaseUpdatedListener (wired below via setupPurchaseListeners)
-          // never fires for it. It resolves/rejects with the validated
-          // purchase result directly, so there's no purchaseResultRef/
-          // withTimeout indirection needed here like iOS still relies on.
-          await purchaseSubscription(productId);
-          setPurchasing(false);
-          appendIapDiagnosticLog('SUCCESS UI SHOWN');
-          showToast('success', 'Welcome to Premium! 🎉');
-          navigation.goBack();
-          return;
-        }
-
-        const purchaseOutcome = new Promise((resolve, reject) => {
-          purchaseResultRef.current = { resolve, reject };
-        });
-        await purchaseSubscription(productId);
+        // purchaseSubscription() resolves/rejects with the validated
+        // purchase result directly on both platforms now -- iOS calls
+        // NativeStoreKitModule's product.purchase() directly (a real
+        // request/response call) instead of react-native-iap's
+        // requestPurchase(), which only dispatched the request and left the
+        // actual result to arrive later, indirectly, via a separate event
+        // stream that months of testing showed could simply never deliver
+        // anything. Still timeout-guarded in case the native call itself
+        // hangs (e.g. a stuck purchase sheet).
         await withTimeout(
-          purchaseOutcome,
+          purchaseSubscription(productId),
           PURCHASE_TIMEOUT_MS,
           'Purchase is taking longer than expected. Please check your connection and try again.'
         );
-      } catch (error) {
-        purchaseResultRef.current = null;
         setPurchasing(false);
-        const isUserCancelled = Platform.OS === 'android'
-          ? error?.code === 'USER_CANCELED'
-          : error?.code === ErrorCode.UserCancelled;
+        appendIapDiagnosticLog('SUCCESS UI SHOWN');
+        showToast('success', 'Welcome to Premium! 🎉');
+        navigation.goBack();
+      } catch (error) {
+        setPurchasing(false);
+        const isUserCancelled = error?.code === 'USER_CANCELED' || error?.code === 'USER_CANCELLED';
         if (!isUserCancelled) {
           appendIapDiagnosticLog(`ERROR UI SHOWN: ${error?.message || 'Please try again.'}`);
           Alert.alert('Purchase failed', error?.message || 'Please try again.');

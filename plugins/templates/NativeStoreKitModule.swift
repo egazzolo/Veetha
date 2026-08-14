@@ -215,7 +215,7 @@ class NativeStoreKitModule: RCTEventEmitter {
   }
 
   @objc
-  func purchaseSubscription(_ productId: String, resolver resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
+  func purchaseSubscription(_ productId: String, appAccountToken: String, resolver resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
     Task {
       do {
         let product: Product
@@ -231,7 +231,20 @@ class NativeStoreKitModule: RCTEventEmitter {
           product = match
         }
 
-        let result = try await product.purchase()
+        // appAccountToken must be a UUID -- this is the Supabase user id JS
+        // sends, and the whole appAccountToken/"transaction doesn't belong
+        // to this user" saga tonight makes this the single most important
+        // value in this method to get right. Logged explicitly rather than
+        // silently falling back to no options, so a conversion failure is
+        // never invisible again.
+        var options: Set<Product.PurchaseOption> = []
+        if let uuid = UUID(uuidString: appAccountToken) {
+          options.insert(.appAccountToken(uuid))
+        } else {
+          appendIapDiagnosticLog("purchaseSubscription: appAccountToken '\(appAccountToken)' is not a valid UUID, purchasing WITHOUT appAccountToken")
+        }
+
+        let result = try await product.purchase(options: options)
 
         switch result {
         case .success(let verificationResult):

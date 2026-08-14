@@ -50,9 +50,8 @@ appendIapDiagnosticLog('iap.js loaded');
 // return value gives identical bindings to the `import { x } from 'y'`
 // syntax this replaced; nothing below this point needed to change.
 const {
-  initConnection, endConnection, fetchProducts, requestPurchase, purchaseUpdatedListener,
-  purchaseErrorListener, finishTransaction, getAvailablePurchases, getPendingTransactionsIOS,
-  syncIOS, clearTransactionIOS,
+  initConnection, endConnection, fetchProducts, finishTransaction, getAvailablePurchases,
+  getPendingTransactionsIOS, syncIOS, clearTransactionIOS,
 } = require('react-native-iap');
 const { Platform, AppState, NativeModules, NativeEventEmitter } = require('react-native');
 const Sentry = require('@sentry/react-native');
@@ -61,14 +60,17 @@ const { supabase } = require('./supabase');
 // Android goes straight through Play Billing Library (see
 // android/.../NativeBillingModule.kt) instead of react-native-iap, to rule
 // out react-native-iap's own wrapper as the source of the empty-SKU issue.
-// iOS purchase *initiation* still goes through react-native-iap (see
-// purchaseSubscription() below) -- only transaction *delivery/listening*
-// also runs through NativeStoreKitModule, a direct StoreKit 2 bridge (see
-// ios/NativeStoreKitModule.swift, generated from plugins/templates/), as a
-// second independent path. react-native-iap's purchaseUpdatedListener has
-// been confirmed to sometimes never fire in JS even though StoreKit
-// completes the transaction on-device, so relying on it alone silently
-// loses purchases.
+// iOS purchase *initiation and delivery/listening* both go through
+// NativeStoreKitModule, a direct StoreKit 2 bridge (see
+// ios/NativeStoreKitModule.swift, generated from plugins/templates/) --
+// react-native-iap is no longer used for the iOS purchase flow at all.
+// (It was originally run in parallel with react-native-iap's own
+// purchaseUpdatedListener as a second independent path, after that listener
+// was confirmed to sometimes never fire in JS even though StoreKit
+// completed the transaction on-device. Running two independent listeners
+// for the same underlying transaction stream turned out to be its own
+// source of unreliable delivery, so react-native-iap's purchase handling
+// was removed for iOS entirely rather than kept as a second path.)
 const { NativeBillingModule, NativeStoreKitModule } = NativeModules;
 // TEMPORARY DIAGNOSTIC -- second line in the same disk log appendIapDiagnosticLog()
 // wrote to above, right after NativeModules is destructured. The first line
@@ -125,9 +127,9 @@ const KNOWN_GHOST_TRANSACTION_IDS_IOS = ['2000001218944727', '2000001221221842']
 // device -- gets redelivered on every future connection init and can get
 // validated against whichever user happens to be signed in at that moment
 // (surfacing as "Transaction does not belong to this user"), or can occupy
-// the purchaseUpdatedListener/onTransactionUpdate slot a genuinely new
-// purchase needed, making it look like the new purchase silently never
-// arrived. finishTransaction() only tells StoreKit "stop redelivering
+// the onTransactionUpdate slot a genuinely new purchase needed, making it
+// look like the new purchase silently never arrived. finishTransaction()
+// only tells StoreKit "stop redelivering
 // this" -- it doesn't touch whatever server-side validation already ran --
 // so it's safe to force-finish every pending transaction unconditionally
 // here, not just ones matching a specific known-bad id.
@@ -191,9 +193,9 @@ export async function initIAP() {
 // finishes every unfinished transaction in the on-device StoreKit queue,
 // which can take a long time and races with StoreKit delivering the
 // transaction for a purchase in progress — the drain loop can scoop up
-// and finish that transaction before purchaseUpdatedListener ever sees
+// and finish that transaction before the app's own purchase call ever sees
 // it, so the request silently gets no response. It must only run once,
-// at session start (inside initIAP()), never right before requestPurchase().
+// at session start (inside initIAP()), never right before a purchase.
 export async function ensureIAPConnection() {
   try {
     await initConnection();
@@ -280,18 +282,28 @@ export async function purchaseSubscription(productId) {
 
       return result;
     } else {
+      // Calls NativeStoreKitModule.purchaseSubscription() (native Swift,
+      // StoreKit 2's Product.purchase()) directly instead of going through
+      // react-native-iap's requestPurchase() + purchaseUpdatedListener.
+      // requestPurchase() only dispatches the request -- the actual result
+      // arrives later, indirectly, via a separate async event stream that
+      // months of testing showed can simply never deliver anything at all.
+      // product.purchase() is a direct request/response call that resolves
+      // deterministically once the user completes or cancels the purchase
+      // sheet, so there's nothing to separately wait on and nothing for an
+      // event stream to fail to deliver.
       console.log('🛒 [purchaseSubscription] iOS AppState.currentState:', AppState.currentState, 'productId:', productId);
-      appendIapDiagnosticLog(`purchaseSubscription (iOS): currentUser.id present: ${!!currentUser?.id}, appAccountToken sent: ${currentUser?.id || '(none)'}`);
-      await requestPurchase({
-        request: {
-          apple: {
-            sku: productId,
-            andDangerouslyFinishTransactionAutomatically: false,
-            appAccountToken: currentUser?.id,
-          }
-        },
-        type: 'subs',
-      });
+      appendIapDiagnosticLog(`purchaseSubscription (iOS, direct): currentUser.id present: ${!!currentUser?.id}, appAccountToken sent: ${currentUser?.id || '(none)'}`);
+      const purchase = await NativeStoreKitModule.purchaseSubscription(productId, currentUser?.id || '');
+      appendIapDiagnosticLog(`purchaseSubscription (iOS, direct): native call resolved, transactionId=${purchase.transactionId}`);
+
+      const result = await validateReceipt({ purchaseToken: purchase.jwsRepresentation, productId: purchase.productId });
+
+      if (!result?.valid) {
+        throw new Error(result?.error || 'Purchase could not be verified. Please try again.');
+      }
+
+      return result;
     }
   } catch (error) {
     console.error('❌ Purchase error:', error);
@@ -402,17 +414,26 @@ export async function restorePurchases() {
   }
 }
 
-// ── NativeStoreKitModule transaction listener (iOS only) ──────────
-// Second, independent delivery path for the exact same transaction
-// react-native-iap's purchaseUpdatedListener is supposed to deliver below.
-// NativeStoreKitModule finishes the transaction on the native side itself
-// once it has handed the event to JS (see NativeStoreKitModule.swift), so
-// this only needs to validate -- there's no finishTransaction() call here.
-function setupNativeStoreKitListener(onSuccess, onError, handledTransactionIds) {
+// ── Set up purchase listeners ────────────────────────────────────
+// Background-only: the primary purchase flow (PaywallScreen ->
+// purchaseSubscription()) now gets its result directly from the native
+// product.purchase() call and never goes through this at all. This exists
+// purely to catch transactions StoreKit delivers *outside* an active,
+// JS-initiated purchase -- renewals, or a transaction that completed while
+// the app was closed. Previously this also ran react-native-iap's own
+// purchaseUpdatedListener in parallel with this same native listener, both
+// independently observing the same underlying transaction stream -- exactly
+// the kind of redundant dual-observer setup Apple's own guidance warns
+// causes inconsistent delivery. Removed; NativeStoreKitModule is now the
+// only iOS transaction-delivery path, for both the direct-purchase and
+// background cases.
+export function setupPurchaseListeners(onSuccess, onError) {
+  console.log('🔔 [setupPurchaseListeners] registering listeners');
   if (Platform.OS !== 'ios' || !NativeStoreKitModule) {
     return () => {};
   }
 
+  const handledTransactionIds = new Set();
   const emitter = new NativeEventEmitter(NativeStoreKitModule);
   appendIapDiagnosticLog('NativeStoreKitModule listener registered');
   const subscription = emitter.addListener('onTransactionUpdate', async (event) => {
@@ -425,15 +446,10 @@ function setupNativeStoreKitListener(onSuccess, onError, handledTransactionIds) 
     }
     if (KNOWN_GHOST_TRANSACTION_IDS_IOS.includes(transactionId)) {
       console.log('🔔 [NativeStoreKitModule] known ghost transaction, ignoring silently:', transactionId);
-      // Native side already unconditionally calls transaction.finish() after
-      // sending this event (see NativeStoreKitModule.swift), so nothing to
-      // finish here -- just don't validate or report it, and mark it handled
-      // so purchaseUpdatedListener's own ghost check below is a no-op too.
-      handledTransactionIds.add(transactionId);
       return;
     }
     if (handledTransactionIds.has(transactionId)) {
-      console.log('🔔 [NativeStoreKitModule] transaction already handled via react-native-iap, skipping:', transactionId);
+      console.log('🔔 [NativeStoreKitModule] transaction already handled this session, skipping:', transactionId);
       return;
     }
     handledTransactionIds.add(transactionId);
@@ -453,93 +469,4 @@ function setupNativeStoreKitListener(onSuccess, onError, handledTransactionIds) 
   });
 
   return () => subscription.remove();
-}
-
-// ── Set up purchase listeners ────────────────────────────────────
-export function setupPurchaseListeners(onSuccess, onError) {
-  console.log('🔔 [setupPurchaseListeners] registering listeners');
-  // Shared between both listener paths below so that whichever of
-  // react-native-iap's purchaseUpdatedListener / NativeStoreKitModule's
-  // onTransactionUpdate delivers a given transaction first "wins" --
-  // without this, a transaction either path can independently deliver
-  // would otherwise get validated and reported to the caller twice.
-  const handledTransactionIds = new Set();
-
-  const purchaseUpdateSubscription = purchaseUpdatedListener(async (purchase) => {
-    console.log('🔔 [purchaseUpdatedListener] fired');
-    console.log('🛒 Purchase update:', purchase.productId);
-    appendIapDiagnosticLog(`purchaseUpdatedListener fired: transactionId=${purchase.transactionId}, productId=${purchase.productId}, transactionDate=${purchase.transactionDate}`);
-    if (purchase.transactionId && KNOWN_GHOST_TRANSACTION_IDS_IOS.includes(purchase.transactionId)) {
-      console.log('🔔 [purchaseUpdatedListener] known ghost transaction, finishing silently:', purchase.transactionId);
-      try {
-        await finishTransaction({ purchase, isConsumable: false });
-      } catch (finishError) {
-        console.error('❌ Finish transaction error:', finishError);
-      }
-      handledTransactionIds.add(purchase.transactionId);
-      return;
-    }
-    if (purchase.transactionId && handledTransactionIds.has(purchase.transactionId)) {
-      console.log('🔔 [purchaseUpdatedListener] transaction already handled via NativeStoreKitModule, finishing to clear the queue:', purchase.transactionId);
-      try {
-        await finishTransaction({ purchase, isConsumable: false });
-      } catch (finishError) {
-        console.error('❌ Finish transaction error:', finishError);
-      }
-      return;
-    }
-    if (purchase.transactionId) handledTransactionIds.add(purchase.transactionId);
-
-    let result;
-    let validationError;
-    try {
-      result = await validateReceipt(purchase);
-    } catch (error) {
-      validationError = error;
-    }
-    // Always finish the transaction, even when validation failed, so it
-    // doesn't stay stuck unfinished in the StoreKit queue — an unfinished
-    // transaction gets redelivered on every future connection init (to any
-    // sandbox tester on the device) and makes StoreKit report the product
-    // as already purchased on the next purchase attempt.
-    try {
-      await finishTransaction({ purchase, isConsumable: false });
-    } catch (finishError) {
-      console.error('❌ Finish transaction error:', finishError);
-    }
-    if (validationError) {
-      console.error('❌ Purchase listener error:', validationError);
-      onError && onError(validationError);
-      return;
-    }
-    if (result?.valid) {
-      onSuccess && onSuccess(result);
-    } else {
-      // The edge function can resolve with { valid: false, error } instead of
-      // throwing (e.g. Apple's Get Transaction Info API not yet having the
-      // just-completed transaction indexed). Without this branch neither
-      // onSuccess nor onError ever fires, so the ref/promise this listener is
-      // meant to settle is left dangling until the caller's own timeout fires.
-      console.error('❌ Purchase validation returned invalid:', result?.error);
-      onError && onError(new Error(result?.error || 'Purchase could not be verified. Please try again.'));
-    }
-  });
-
-  const removeNativeStoreKitListener = setupNativeStoreKitListener(onSuccess, onError, handledTransactionIds);
-
-  const purchaseErrorSubscription = purchaseErrorListener((error) => {
-    console.error('❌ Purchase error listener:', error);
-    try {
-      console.error('❌ Purchase error listener (raw):', JSON.stringify(error, Object.getOwnPropertyNames(error)));
-    } catch (stringifyError) {
-      console.error('❌ Purchase error listener stringify failed:', stringifyError);
-    }
-    onError && onError(error);
-  });
-
-  return () => {
-    purchaseUpdateSubscription.remove();
-    purchaseErrorSubscription.remove();
-    removeNativeStoreKitListener();
-  };
 }
