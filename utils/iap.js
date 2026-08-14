@@ -297,6 +297,19 @@ export async function purchaseSubscription(productId) {
       const purchase = await NativeStoreKitModule.purchaseSubscription(productId, currentUser?.id || '');
       appendIapDiagnosticLog(`purchaseSubscription (iOS, direct): native call resolved, transactionId=${purchase.transactionId}`);
 
+      // product.purchase() can resolve with a pre-existing unfinished
+      // transaction instead of creating a new one, if one is already sitting
+      // in the local queue for this product -- confirmed via real device
+      // testing (product.purchase() returned the known ghost transaction id
+      // directly as its result, not just via the background listener).
+      // Treated the same way as the background listener treats it: never
+      // validated or reported as this attempt's result, since it has
+      // nothing to do with it and would only produce the same confusing
+      // "doesn't belong to this user" error again.
+      if (KNOWN_GHOST_TRANSACTION_IDS_IOS.includes(purchase.transactionId)) {
+        throw new Error('A stale transaction is blocking new purchases. Please try again.');
+      }
+
       const result = await validateReceipt({ purchaseToken: purchase.jwsRepresentation, productId: purchase.productId });
 
       if (!result?.valid) {
