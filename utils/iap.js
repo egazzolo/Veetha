@@ -115,7 +115,10 @@ export const SUBSCRIPTION_SKUS = [PRODUCT_ID_MONTHLY_TEST, PRODUCT_ID_ANNUAL_TES
 // the caller entirely: reporting it as an error confuses/covers up whatever
 // the user's actual, current purchase attempt is doing, since this has
 // nothing to do with it.
-const KNOWN_GHOST_TRANSACTION_IDS_IOS = ['2000001218944727'];
+// Second entry: orphaned by the pre-timeout-fix validateReceipt() hang
+// (see withTimeout() below) -- that hang meant finishTransaction() never
+// ran for it, so it's been stuck redelivering since.
+const KNOWN_GHOST_TRANSACTION_IDS_IOS = ['2000001218944727', '2000001221221842'];
 
 // Any transaction left unfinished in the on-device StoreKit queue --
 // belonging to this sandbox tester or any other one that's used this
