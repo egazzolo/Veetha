@@ -28,7 +28,11 @@ import React, { useState, useRef, useEffect } from 'react';
   // If the native purchase sheet gets stuck (e.g. "already subscribed" on iOS never
   // calling back), neither listener ever fires, so this bounds how long the spinner
   // can wait before we give up and let the user retry.
-  const PURCHASE_TIMEOUT_MS = 30_000;
+  // 60s, not 30s: validateReceipt()'s own Get Transaction Info call can retry
+  // up to 3x on Apple's transient 5xxs (see app-store-server-api.ts), ~47s
+  // worst case alone -- a 30s outer bound could cut off a retry sequence that
+  // was about to legitimately succeed.
+  const PURCHASE_TIMEOUT_MS = 60_000;
 
   function withTimeout(promise, ms, message) {
     return new Promise((resolve, reject) => {
