@@ -315,12 +315,33 @@ export async function diagnosticFetchStaticTestProduct() {
   }
 }
 
+// A hang here (stuck token refresh, network hiccup reaching Supabase) has no
+// timeout of its own to fail fast with -- it silently eats time until
+// PaywallScreen's unrelated outer purchase timeout eventually catches it,
+// showing a generic "check your connection" message that doesn't reflect
+// what actually happened (confirmed via the server-side audit log showing
+// zero entries for an attempt that timed out client-side -- the request
+// never got far enough to reach the edge function at all).
+function withTimeout(promise, ms, message) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(message)), ms);
+    promise.then(
+      (value) => { clearTimeout(timer); resolve(value); },
+      (error) => { clearTimeout(timer); reject(error); }
+    );
+  });
+}
+
 // ── Validate receipt with Supabase Edge Function ─────────────────
 export async function validateReceipt(purchase) {
   console.log('🔍 [validateReceipt] enter, purchaseToken present:', !!purchase?.purchaseToken, 'productId:', purchase?.productId);
   try {
     console.log('🔍 [validateReceipt] calling supabase.auth.getSession()...');
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await withTimeout(
+      supabase.auth.getSession(),
+      10_000,
+      'Getting your session timed out. Please check your connection and try again.'
+    );
     console.log('🔍 [validateReceipt] getSession() resolved, session present:', !!session);
     if (!session) throw new Error('No session');
 
@@ -339,10 +360,14 @@ export async function validateReceipt(purchase) {
         };
     console.log('🔍 [validateReceipt] body constructed, about to call supabase.functions.invoke()');
 
-    const { data, error } = await supabase.functions.invoke('validate-receipt', {
-      body,
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    });
+    const { data, error } = await withTimeout(
+      supabase.functions.invoke('validate-receipt', {
+        body,
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      }),
+      20_000,
+      'Validating your purchase timed out. Please check your connection and try again.'
+    );
     console.log('🔍 [validateReceipt] invoke() resolved, error:', !!error, 'data:', JSON.stringify(data));
 
     if (error) throw error;
