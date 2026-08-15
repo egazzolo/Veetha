@@ -122,6 +122,15 @@ export const SUBSCRIPTION_SKUS = [PRODUCT_ID_MONTHLY_TEST, PRODUCT_ID_ANNUAL_TES
 // ran for it, so it's been stuck redelivering since.
 const KNOWN_GHOST_TRANSACTION_IDS_IOS = ['2000001218944727', '2000001221221842'];
 
+// A transaction created via purchaseSubscription()'s direct product.purchase()
+// call also flows through Transaction.updates like any other -- confirmed via
+// real device testing that the background listener in setupPurchaseListeners()
+// independently validates and reports success for the exact same transaction
+// moments later, showing "Welcome to Premium!" and navigating back twice.
+// Shared across both so whichever one handles a given transaction first marks
+// it done for the other.
+const directlyHandledTransactionIds = new Set();
+
 // Any transaction left unfinished in the on-device StoreKit queue --
 // belonging to this sandbox tester or any other one that's used this
 // device -- gets redelivered on every future connection init and can get
@@ -296,6 +305,7 @@ export async function purchaseSubscription(productId) {
       appendIapDiagnosticLog(`purchaseSubscription (iOS, direct): currentUser.id present: ${!!currentUser?.id}, appAccountToken sent: ${currentUser?.id || '(none)'}`);
       const purchase = await NativeStoreKitModule.purchaseSubscription(productId, currentUser?.id || '');
       appendIapDiagnosticLog(`purchaseSubscription (iOS, direct): native call resolved, transactionId=${purchase.transactionId}`);
+      if (purchase.transactionId) directlyHandledTransactionIds.add(purchase.transactionId);
 
       // product.purchase() can resolve with a pre-existing unfinished
       // transaction instead of creating a new one, if one is already sitting
@@ -459,6 +469,10 @@ export function setupPurchaseListeners(onSuccess, onError) {
     }
     if (KNOWN_GHOST_TRANSACTION_IDS_IOS.includes(transactionId)) {
       console.log('🔔 [NativeStoreKitModule] known ghost transaction, ignoring silently:', transactionId);
+      return;
+    }
+    if (directlyHandledTransactionIds.has(transactionId)) {
+      console.log('🔔 [NativeStoreKitModule] transaction already handled by direct purchaseSubscription() call, skipping:', transactionId);
       return;
     }
     if (handledTransactionIds.has(transactionId)) {
