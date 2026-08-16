@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
   import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Linking, Animated, ActivityIndicator, Alert, } from 'react-native';
   import { SafeAreaView } from 'react-native-safe-area-context';
   import { useTheme } from '../utils/ThemeContext';
+  import { useUser } from '../utils/UserContext';
   import VeethaModal from '../components/VeethaModal';
   import { showToast } from '../components/VeethaToast';
   import { posthog } from '../utils/posthog';
@@ -57,6 +58,7 @@ import React, { useState, useRef, useEffect } from 'react';
   export default function PaywallScreen({ navigation, route }) {
     const { highlightFeature } = route.params ?? {};
     const { theme } = useTheme();
+    const { refreshProfile } = useUser();
     const [plan, setPlan] = useState('yearly');
     const [modalVisible, setModalVisible] = useState(false);
     const [purchasing, setPurchasing] = useState(false);
@@ -146,12 +148,22 @@ import React, { useState, useRef, useEffect } from 'react';
       // sure exactly one of (early success, late success, error) ever
       // reaches the UI, whichever happens to land.
       let outcomeShown = false;
-      const showSuccess = () => {
+      const showSuccess = async () => {
         if (outcomeShown) return;
         outcomeShown = true;
         setPurchasing(false);
         appendIapDiagnosticLog('SUCCESS UI SHOWN');
         showToast('success', 'Welcome to Premium! 🎉');
+        // UserContext's profile is cached, not live -- without this, the
+        // "Go Premium" card on Profile keeps showing after a successful
+        // purchase until the user manually pulls to refresh, confirmed on
+        // a real device. Awaited before navigating back so whichever screen
+        // the user lands on already has the correct premium status.
+        try {
+          await refreshProfile();
+        } catch (refreshError) {
+          console.error('❌ refreshProfile after purchase error:', refreshError);
+        }
         navigation.goBack();
       };
 
@@ -228,6 +240,11 @@ import React, { useState, useRef, useEffect } from 'react';
         if (result?.restored) {
           appendIapDiagnosticLog('SUCCESS UI SHOWN');
           showToast('success', 'Purchases restored! 🎉');
+          try {
+            await refreshProfile();
+          } catch (refreshError) {
+            console.error('❌ refreshProfile after restore error:', refreshError);
+          }
           navigation.goBack();
         } else {
           Alert.alert('No purchases found', 'No active subscriptions were found for your account.');
