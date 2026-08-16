@@ -613,6 +613,11 @@ export default {
       otherPlaceholder: 'ej. Día de brazos',
       summaryPrefix: 'Estás registrando:',
       continue: 'Continuar',
+      enterExercises: 'Ingresar ejercicios',
+      exerciseName: 'Nombre del ejercicio',
+      sets: 'Series',
+      reps: 'Repeticiones',
+      addExercise: 'Agregar ejercicio',
       splits: {
         fullBody: 'Cuerpo completo',
         upperLower: 'Tren superior/inferior',

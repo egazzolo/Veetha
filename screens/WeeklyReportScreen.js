@@ -90,16 +90,31 @@ export default function WeeklyReportScreen({ navigation }) {
 
       if (waterError) throw waterError;
 
-      // Fetch exercise logs for last 7 days
-      const { data: exerciseLogs, error: exerciseError } = await supabase
-        .from('exercises')
-        .select('logged_at, calories_burned, activity_name, duration_minutes')
-        .eq('user_id', user.id)
-        .gte('logged_at', startDate.toISOString())
-        .lte('logged_at', endDate.toISOString())
-        .order('logged_at', { ascending: true });
+      // Fetch exercise logs for last 7 days -- two separate sources feed
+      // this: the legacy per-activity "exercises" table, and the newer
+      // split-based "exercise_logs" table, both need to count toward the
+      // weekly totals.
+      const [legacyExerciseResult, splitExerciseResult] = await Promise.all([
+        supabase
+          .from('exercises')
+          .select('logged_at, calories_burned, activity_name, duration_minutes')
+          .eq('user_id', user.id)
+          .gte('logged_at', startDate.toISOString())
+          .lte('logged_at', endDate.toISOString())
+          .order('logged_at', { ascending: true }),
+        supabase
+          .from('exercise_logs')
+          .select('logged_at, calories_burned')
+          .eq('user_id', user.id)
+          .gte('logged_at', startDate.toISOString())
+          .lte('logged_at', endDate.toISOString())
+          .order('logged_at', { ascending: true })
+      ]);
 
-      if (exerciseError) throw exerciseError;
+      if (legacyExerciseResult.error) throw legacyExerciseResult.error;
+      if (splitExerciseResult.error) throw splitExerciseResult.error;
+
+      const exerciseLogs = [...(legacyExerciseResult.data || []), ...(splitExerciseResult.data || [])];
 
       // Group exercise by date (ADD THIS)
       const exerciseByDate = {};

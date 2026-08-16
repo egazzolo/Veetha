@@ -106,7 +106,7 @@ export default function ExerciseSubCategoryScreen({ navigation, route }) {
             { backgroundColor: theme.primary, opacity: canContinue ? 1 : 0.5 }
           ]}
           disabled={!canContinue}
-          onPress={() => navigation.navigate('ExerciseSplitIntensityScreen', {
+          onPress={() => navigation.navigate('ExerciseEntriesScreen', {
             splits,
             subCategories: selected,
             customLabel: customLabel.trim(),

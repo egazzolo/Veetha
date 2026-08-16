@@ -1,76 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { supabase } from '../utils/supabase';
 
-export default function CalorieWarningBanner({ theme, t }) {
-  const [warningState, setWarningState] = useState(null); // null, 'warning', or 'over'
-  const [percentage, setPercentage] = useState(0);
-  const [remaining, setRemaining] = useState(0);
+// Derives its warning state from the same `consumed`/`totalCalories` HomeScreen
+// already keeps current -- previously this polled Supabase directly on its own
+// 5-second timer (duplicated in FrameWarning below), which meant two separate
+// components each firing 3 network requests every 5 seconds for as long as the
+// app was open. That constant, ever-growing request volume was the real cause
+// of the app eventually hanging and needing a force-close.
+export default function CalorieWarningBanner({ theme, t, consumed = 0, totalCalories }) {
+  const dailyGoal = totalCalories || 2000;
+  const percentage = Math.round((consumed / dailyGoal) * 100);
+  const remaining = Math.round(dailyGoal - consumed);
 
-  useEffect(() => {
-    checkCalorieStatus();
-  }, []);
-
-  // Re-check every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(checkCalorieStatus, 5000);
-    return () => clearInterval(interval);
-  }, [warningState, percentage]);
-
-  const checkCalorieStatus = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setWarningState(null);
-        return;
-      }
-
-      // Get daily goal
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('daily_calorie_goal')
-        .eq('id', user.id)
-        .single();
-
-      const dailyGoal = profile?.daily_calorie_goal || 2000;
-
-      // Get TODAY's meals
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayStr = today.toISOString().split('T')[0];
-
-      const { data: meals } = await supabase
-        .from('meals')
-        .select('calories')
-        .eq('user_id', user.id)
-        .gte('logged_at', `${todayStr}T00:00:00`)
-        .lte('logged_at', `${todayStr}T23:59:59`);
-
-      const consumed = meals?.reduce((sum, meal) => sum + (meal.calories || 0), 0) || 0;
-      const pct = (consumed / dailyGoal) * 100;
-      const rem = dailyGoal - consumed;
-
-      setPercentage(Math.round(pct));
-      setRemaining(Math.round(rem));
-
-      // Determine warning state (only update if changed)
-      let newState = null;
-      if (consumed > dailyGoal) {
-        newState = 'over';
-      } else if (pct >= 90) {
-        newState = 'warning';
-      }
-
-      // Only update state if it actually changed
-      setWarningState(prev => prev !== newState ? newState : prev);
-      setPercentage(prev => Math.round(pct) !== prev ? Math.round(pct) : prev);
-      setRemaining(prev => Math.round(rem) !== prev ? Math.round(rem) : prev);
-
-    } catch (error) {
-      console.error('Error checking calorie status:', error);
-      setWarningState(null);
-    }
-  };
+  let warningState = null;
+  if (consumed > dailyGoal) {
+    warningState = 'over';
+  } else if (percentage >= 90) {
+    warningState = 'warning';
+  }
 
   // Don't show banner if under 90%
   if (!warningState) {

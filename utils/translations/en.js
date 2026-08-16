@@ -613,6 +613,11 @@ export default {
       otherPlaceholder: 'e.g. Arm day',
       summaryPrefix: "You're logging:",
       continue: 'Continue',
+      enterExercises: 'Enter Exercises',
+      exerciseName: 'Exercise name',
+      sets: 'Sets',
+      reps: 'Reps',
+      addExercise: 'Add exercise',
       splits: {
         fullBody: 'Full Body',
         upperLower: 'Upper/Lower',

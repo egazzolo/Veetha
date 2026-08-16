@@ -19,7 +19,7 @@ const DURATION_PRESETS = [15, 30, 45, 60];
 
 export default function ExerciseSplitIntensityScreen({ navigation, route }) {
   const { t } = useLanguage();
-  const { splits, subCategories, customLabel, weight, theme } = route.params;
+  const { splits, subCategories, customLabel, entries, weight, theme } = route.params;
 
   const [intensity, setIntensity] = useState(null);
   const [selectedDuration, setSelectedDuration] = useState(30);
@@ -69,7 +69,7 @@ export default function ExerciseSplitIntensityScreen({ navigation, route }) {
         .map((s) => (s === 'other' ? (customLabel || 'other') : s))
         .join(',');
 
-      const { error } = await supabase
+      const { data: insertedLog, error } = await supabase
         .from('exercise_logs')
         .insert({
           user_id: user.id,
@@ -77,16 +77,43 @@ export default function ExerciseSplitIntensityScreen({ navigation, route }) {
           sub_categories: subCategories || [],
           intensity,
           calories_burned: estimatedCalories
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Individual exercises (name/sets/reps/weight) are a separate,
+      // one-to-many child table -- a workout session can include more than
+      // one exercise (e.g. Bench Press and Squats logged in the same Push
+      // day). Only attempted if there's at least one to insert; failing to
+      // save the entries doesn't roll back the already-saved session row --
+      // better to have the session logged with incomplete detail than to
+      // lose it entirely over a secondary insert failing.
+      if (entries && entries.length > 0) {
+        const { error: entriesError } = await supabase
+          .from('exercise_log_entries')
+          .insert(entries.map((entry) => ({
+            exercise_log_id: insertedLog.id,
+            sub_category: entry.subCategory,
+            name: entry.name,
+            sets: entry.sets,
+            reps: entry.reps,
+            weight: entry.weight,
+            weight_unit: entry.weightUnit
+          })));
+        if (entriesError) {
+          console.error('Error logging exercise entries:', entriesError);
+        }
+      }
 
       posthog.capture('exercise_split_logged', {
         splits,
         sub_categories: subCategories,
         intensity,
         duration_minutes: duration,
-        calories: estimatedCalories
+        calories: estimatedCalories,
+        exercise_count: entries?.length || 0
       });
 
       showToast('success', t('common.success'), t('exercise.loggedSuccess', { calories: estimatedCalories }));

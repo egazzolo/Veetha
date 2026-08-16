@@ -366,6 +366,8 @@ export default function HomeScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [showDateSection, setShowDateSection] = useState(false);
+  const [showRemainingDetail, setShowRemainingDetail] = useState(false);
   const [currentStreak, setCurrentStreak] = useState(0);
   const [copyingMeals, setCopyingMeals] = useState(false);
   const [showNutrientModal, setShowNutrientModal] = useState(false);
@@ -463,7 +465,6 @@ export default function HomeScreen({ navigation }) {
 
   const loadExerciseCalories = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
       const today = new Date(selectedDate);
@@ -471,16 +472,29 @@ export default function HomeScreen({ navigation }) {
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
 
-      const { data: exerciseData, error } = await supabase
-        .from('exercises')
-        .select('calories_burned')
-        .eq('user_id', user.id)
-        .gte('logged_at', today.toISOString())
-        .lt('logged_at', tomorrow.toISOString());
+      // Two separate sources of burned calories: the legacy per-activity
+      // "exercises" table, and the newer split-based "exercise_logs" table --
+      // both need to count toward today's total.
+      const [legacyResult, splitResult] = await Promise.all([
+        supabase
+          .from('exercises')
+          .select('calories_burned')
+          .eq('user_id', user.id)
+          .gte('logged_at', today.toISOString())
+          .lt('logged_at', tomorrow.toISOString()),
+        supabase
+          .from('exercise_logs')
+          .select('calories_burned')
+          .eq('user_id', user.id)
+          .gte('logged_at', today.toISOString())
+          .lt('logged_at', tomorrow.toISOString())
+      ]);
 
-      if (error) throw error;
+      if (legacyResult.error) throw legacyResult.error;
+      if (splitResult.error) throw splitResult.error;
 
-      const totalBurned = exerciseData?.reduce((sum, ex) => sum + (ex.calories_burned || 0), 0) || 0;
+      const totalBurned = [...(legacyResult.data || []), ...(splitResult.data || [])]
+        .reduce((sum, ex) => sum + (ex.calories_burned || 0), 0);
       setExerciseCaloriesBurned(totalBurned);
     } catch (error) {
       console.error('Error loading exercise calories:', error);
@@ -489,7 +503,6 @@ export default function HomeScreen({ navigation }) {
 
   const loadStepCalories = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser(); // ✅ Get user from auth
       if (!user) return;
 
       const today = selectedDate.toLocaleDateString('en-CA');
@@ -511,7 +524,6 @@ export default function HomeScreen({ navigation }) {
   // Load water intake
   const loadWaterIntake = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         console.log('💧 loadWaterIntake: no user, skipping');
         setWaterIntake(0);
@@ -621,7 +633,6 @@ export default function HomeScreen({ navigation }) {
 
       setUpdatingWater(true);
 
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         console.log('💧 handleAddWater: no user, skipping');
         return;
@@ -670,7 +681,6 @@ export default function HomeScreen({ navigation }) {
 
       setUpdatingWater(true);
 
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         console.log('💧 handleSubtractWater: no user, skipping');
         return;
@@ -818,7 +828,6 @@ export default function HomeScreen({ navigation }) {
   // Calculate current logging streak
   const calculateStreak = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
       // Get ALL meals from MIN_DATE to today in ONE query
@@ -917,8 +926,6 @@ export default function HomeScreen({ navigation }) {
         return;
       }
 
-      const { data: { user } } = await supabase.auth.getUser();
-
       if (!user) return;
 
       // Format date to YYYY-MM-DD
@@ -983,9 +990,8 @@ export default function HomeScreen({ navigation }) {
         return;
       }
 
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      
+
       const firstDay = new Date(year, month, 1);
       firstDay.setHours(0, 0, 0, 0);
       const lastDay = new Date(year, month + 1, 0);
@@ -1762,7 +1768,7 @@ export default function HomeScreen({ navigation }) {
     };
 
   return (
-    <FrameWarning theme={theme}>
+    <FrameWarning theme={theme} consumed={consumed} totalCalories={totalCalories}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <GestureDetector gesture={swipeGesture}>
           <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
@@ -1850,7 +1856,11 @@ export default function HomeScreen({ navigation }) {
                   </View>
                 )}
 
-                {/* Streak Badge - Always visible */}
+                {/* Streak Badge - Always visible, shares its line with the
+                    remaining-kcal badge (collapsed to just the number by
+                    default; tap to reveal the full remaining/over + exercise
+                    message) -- shared here instead of inside CardsLayout/
+                    BarsLayout so both layouts get the same behavior for free. */}
                 <View style={styles.streakBadgeWrapper}>
                   <View style={[styles.streakBadge, { backgroundColor: '#FF6B35' }]}>
                     <AppIcon name="streak" size={24} tintColor="#fff" />
@@ -1859,58 +1869,111 @@ export default function HomeScreen({ navigation }) {
                       {currentStreak === 1 ? t('home.dayStreak') : t('home.daysStreak')}
                     </Text>
                   </View>
+
+                  <TouchableOpacity
+                    style={styles.remainingBadge}
+                    onPress={() => setShowRemainingDetail((v) => !v)}
+                    activeOpacity={0.7}
+                  >
+                    {showRemainingDetail ? (
+                      <>
+                        <Text style={[styles.remainingBadgeText, { color: remaining >= 0 ? theme.success : theme.error }]}>
+                          {Math.abs(Math.round(remaining))} kcal {remaining >= 0 ? t('home.remaining') : t('home.over')}
+                        </Text>
+                        {exerciseCaloriesBurned > 0 && (
+                          <Text style={[styles.remainingBadgeExerciseText, { color: '#4CAF50' }]}>
+                            +{Math.round(exerciseCaloriesBurned)} {t('home.fromExercise')}
+                          </Text>
+                        )}
+                      </>
+                    ) : (
+                      <Text style={[styles.remainingBadgeNumber, { color: remaining >= 0 ? theme.success : theme.error }]}>
+                        {remaining < 0 ? '-' : ''}{Math.abs(Math.round(remaining))} kcal
+                      </Text>
+                    )}
+                  </TouchableOpacity>
                 </View>
 
-                {/* Date Navigation */}
+                {/* Date Navigation -- collapsed to a single pill showing the
+                    current selection; tapping it reveals the full date
+                    picker + quick-jump row (previously always visible,
+                    taking up two full rows) in a dismissible overlay. */}
                 <View style={styles.dateNavigation}>
-                  <View style={[styles.datePicker, { backgroundColor: theme.cardBackground }]}>
-                    <TouchableOpacity 
-                      style={[styles.dateArrow, { opacity: canGoBack() ? 1 : 0.3 }]}
-                      onPress={goToPreviousDay}
-                      disabled={!canGoBack()}
-                    >
-                      <Text style={[styles.dateArrowText, { color: theme.text }]}>‹</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity 
-                      style={styles.dateLabel} 
-                      onPress={() => setShowCalendar(true)}
-                      disabled={false}
-                    >
-                      <Text style={[styles.dateLabelText, { color: theme.text }]}>{getDateLabel()}</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity 
-                      style={[styles.dateArrow, { opacity: isToday() ? 0.3 : 1 }]}
-                      onPress={goToNextDay}
-                      disabled={isToday()}
-                    >
-                      <Text style={[styles.dateArrowText, { color: theme.text }]}>›</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-
-                {/* Quick Jump Buttons */}
-                <View style={styles.quickJumpContainer}>
-                  <TouchableOpacity 
-                    style={[styles.quickJumpButton, { backgroundColor: theme.cardBackground }]}
-                    onPress={goToToday}
+                  <TouchableOpacity
+                    style={[styles.dateSummaryPill, { backgroundColor: theme.cardBackground }]}
+                    onPress={() => setShowDateSection(true)}
                   >
-                    <Text style={[styles.quickJumpText, { color: theme.primary }]}>{t('home.today')}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={[styles.quickJumpButton, { backgroundColor: theme.cardBackground }]}
-                    onPress={goToStartOfWeek}
-                  >
-                    <Text style={[styles.quickJumpText, { color: theme.text }]}>{t('home.startOfWeek')}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={[styles.quickJumpButton, { backgroundColor: theme.cardBackground }]}
-                    onPress={goToStartOfMonth}
-                  >
-                    <Text style={[styles.quickJumpText, { color: theme.text }]}>{t('home.startOfMonth')}</Text>
+                    <Text style={[styles.dateSummaryText, { color: theme.text }]}>{getDateLabel()}</Text>
+                    <Text style={[styles.dateSummaryChevron, { color: theme.textSecondary }]}>⌄</Text>
                   </TouchableOpacity>
                 </View>
+
+                {showDateSection && (
+                  <Modal
+                    transparent
+                    visible={showDateSection}
+                    animationType="fade"
+                    onRequestClose={() => setShowDateSection(false)}
+                  >
+                    <TouchableOpacity
+                      style={styles.dateSectionOverlay}
+                      activeOpacity={1}
+                      onPress={() => setShowDateSection(false)}
+                    >
+                      <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()} style={styles.dateSectionSheet}>
+                        <View style={[styles.datePicker, { backgroundColor: theme.cardBackground }]}>
+                          <TouchableOpacity
+                            style={[styles.dateArrow, { opacity: canGoBack() ? 1 : 0.3 }]}
+                            onPress={goToPreviousDay}
+                            disabled={!canGoBack()}
+                          >
+                            <Text style={[styles.dateArrowText, { color: theme.text }]}>‹</Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            style={styles.dateLabel}
+                            onPress={() => {
+                              setShowDateSection(false);
+                              setShowCalendar(true);
+                            }}
+                            disabled={false}
+                          >
+                            <Text style={[styles.dateLabelText, { color: theme.text }]}>{getDateLabel()}</Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            style={[styles.dateArrow, { opacity: isToday() ? 0.3 : 1 }]}
+                            onPress={goToNextDay}
+                            disabled={isToday()}
+                          >
+                            <Text style={[styles.dateArrowText, { color: theme.text }]}>›</Text>
+                          </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.quickJumpContainer}>
+                          <TouchableOpacity
+                            style={[styles.quickJumpButton, { backgroundColor: theme.cardBackground }]}
+                            onPress={() => { goToToday(); setShowDateSection(false); }}
+                          >
+                            <Text style={[styles.quickJumpText, { color: theme.primary }]}>{t('home.today')}</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={[styles.quickJumpButton, { backgroundColor: theme.cardBackground }]}
+                            onPress={() => { goToStartOfWeek(); setShowDateSection(false); }}
+                          >
+                            <Text style={[styles.quickJumpText, { color: theme.text }]}>{t('home.startOfWeek')}</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={[styles.quickJumpButton, { backgroundColor: theme.cardBackground }]}
+                            onPress={() => { goToStartOfMonth(); setShowDateSection(false); }}
+                          >
+                            <Text style={[styles.quickJumpText, { color: theme.text }]}>{t('home.startOfMonth')}</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </TouchableOpacity>
+                    </TouchableOpacity>
+                  </Modal>
+                )}
 
                 {/* Layout (Bars or Cards) */}
                 {layout === 'bars' ? (
@@ -1979,7 +2042,7 @@ export default function HomeScreen({ navigation }) {
                 )}
 
                 {/* Warning Banner */}
-                <CalorieWarningBanner theme={theme} t={t} />
+                <CalorieWarningBanner theme={theme} t={t} consumed={consumed} totalCalories={totalCalories} />
 
                 {/* Exercise & Water Cards - SIDE BY SIDE */}
                 <View style={styles.activityCardsRow}>
@@ -2348,8 +2411,11 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   streakBadgeWrapper: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 15,
+    marginHorizontal: 20,
   },
   streakBadge: {
     paddingHorizontal: 16,
@@ -2358,6 +2424,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: 6,
+  },
+  remainingBadge: {
+    alignItems: 'flex-end',
+  },
+  remainingBadgeNumber: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  remainingBadgeText: {
+    fontSize: 15,
+    fontWeight: '700',
+    textAlign: 'right',
+  },
+  remainingBadgeExerciseText: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: 4,
+    textAlign: 'right',
   },
   streakEmoji: {
     fontSize: 24,
@@ -2889,6 +2973,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 15,
     paddingBottom: 10,
+  },
+  dateSummaryPill: {
+    flexDirection: 'row',
+    alignSelf: 'center',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+    borderRadius: 20,
+    gap: 6,
+  },
+  dateSummaryText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  dateSummaryChevron: {
+    fontSize: 14,
+  },
+  dateSectionOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+  },
+  dateSectionSheet: {
+    marginTop: 100,
+    paddingHorizontal: 20,
   },
   datePicker: {
     flexDirection: 'row',

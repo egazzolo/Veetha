@@ -613,6 +613,11 @@ export default {
       otherPlaceholder: 'ex. Jour bras',
       summaryPrefix: 'Vous enregistrez :',
       continue: 'Continuer',
+      enterExercises: 'Saisir les exercices',
+      exerciseName: "Nom de l'exercice",
+      sets: 'Séries',
+      reps: 'Répétitions',
+      addExercise: 'Ajouter un exercice',
       splits: {
         fullBody: 'Corps entier',
         upperLower: 'Haut/Bas du corps',

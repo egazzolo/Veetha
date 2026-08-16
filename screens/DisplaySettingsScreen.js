@@ -6,9 +6,22 @@ import { useLanguage } from '../utils/LanguageContext';
 import { useLayout } from '../utils/LayoutContext';
 import { posthog } from '../utils/posthog';
 import { Svg, Circle } from 'react-native-svg';
+import AppIcon from '../components/AppIcon';
+
+const PREVIEW_MARKER_SIZE = 12;
+
+// Matches the ring-tint-as-track treatment in components/CardsLayout.js so
+// this preview stays visually in sync with the real Home screen.
+function hexToRgba(hex, alpha) {
+  const clean = hex.replace('#', '');
+  const r = parseInt(clean.substring(0, 2), 16);
+  const g = parseInt(clean.substring(2, 4), 16);
+  const b = parseInt(clean.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 // Mini Circular Progress for Preview
-function MiniCircularProgress({ percentage, size = 40, strokeWidth = 4, color = '#fff', children }) {
+function MiniCircularProgress({ percentage, size = 40, strokeWidth = 4, color = '#fff', trackColor = 'rgba(128,128,128,0.25)', children }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const progress = Math.min(Math.max(percentage, 0), 100);
@@ -18,7 +31,7 @@ function MiniCircularProgress({ percentage, size = 40, strokeWidth = 4, color = 
     <View style={{ width: size, height: size, position: 'relative' }}>
       <Svg width={size} height={size} style={{ transform: [{ rotate: '-90deg' }] }}>
         <Circle
-          stroke="rgba(255,255,255,0.3)"
+          stroke={trackColor}
           fill="none"
           cx={size / 2}
           cy={size / 2}
@@ -184,10 +197,15 @@ export default function DisplaySettingsScreen({ navigation }) {
                 <View style={styles.previewBarRow}>
                   <Text style={[styles.previewBarLabel, { color: theme.text }]}>Protein</Text>
                   <View style={styles.previewBarContainer}>
-                    <View style={[styles.previewBar, { backgroundColor: theme.border }]}>
-                      <View style={[styles.previewBarFill, { backgroundColor: '#2196F3', width: '60%' }]} />
+                    <View style={styles.previewBarWrapper}>
+                      <View style={[styles.previewBar, { backgroundColor: theme.border }]}>
+                        <View style={[styles.previewBarFill, { backgroundColor: '#2196F3', width: '60%' }]} />
+                      </View>
+                      <View style={[styles.previewBarMarker, { left: '60%' }]}>
+                        <AppIcon name="chicken" size={PREVIEW_MARKER_SIZE} />
+                      </View>
                     </View>
-                    <Text style={[styles.previewBarValue, { color: theme.textSecondary }]}>89/150g</Text>
+                    <Text style={[styles.previewBarValue, { color: '#2196F3' }]}>89/150g</Text>
                   </View>
                 </View>
 
@@ -195,10 +213,15 @@ export default function DisplaySettingsScreen({ navigation }) {
                 <View style={styles.previewBarRow}>
                   <Text style={[styles.previewBarLabel, { color: theme.text }]}>Carbs</Text>
                   <View style={styles.previewBarContainer}>
-                    <View style={[styles.previewBar, { backgroundColor: theme.border }]}>
-                      <View style={[styles.previewBarFill, { backgroundColor: '#FF9800', width: '78%' }]} />
+                    <View style={styles.previewBarWrapper}>
+                      <View style={[styles.previewBar, { backgroundColor: theme.border }]}>
+                        <View style={[styles.previewBarFill, { backgroundColor: '#FF9800', width: '78%' }]} />
+                      </View>
+                      <View style={[styles.previewBarMarker, { left: '78%' }]}>
+                        <AppIcon name="bread" size={PREVIEW_MARKER_SIZE} />
+                      </View>
                     </View>
-                    <Text style={[styles.previewBarValue, { color: theme.textSecondary }]}>156/200g</Text>
+                    <Text style={[styles.previewBarValue, { color: '#FF9800' }]}>156/200g</Text>
                   </View>
                 </View>
 
@@ -206,38 +229,47 @@ export default function DisplaySettingsScreen({ navigation }) {
                 <View style={styles.previewBarRow}>
                   <Text style={[styles.previewBarLabel, { color: theme.text }]}>Fat</Text>
                   <View style={styles.previewBarContainer}>
-                    <View style={[styles.previewBar, { backgroundColor: theme.border }]}>
-                      <View style={[styles.previewBarFill, { backgroundColor: '#9C27B0', width: '45%' }]} />
+                    <View style={styles.previewBarWrapper}>
+                      <View style={[styles.previewBar, { backgroundColor: theme.border }]}>
+                        <View style={[styles.previewBarFill, { backgroundColor: '#9C27B0', width: '45%' }]} />
+                      </View>
+                      <View style={[styles.previewBarMarker, { left: '45%' }]}>
+                        <AppIcon name="avocado" size={PREVIEW_MARKER_SIZE} />
+                      </View>
                     </View>
-                    <Text style={[styles.previewBarValue, { color: theme.textSecondary }]}>45/65g</Text>
+                    <Text style={[styles.previewBarValue, { color: '#9C27B0' }]}>45/65g</Text>
                   </View>
                 </View>
               </View>
             ) : (
               <View style={styles.previewGrid}>
-                <View style={[styles.previewCard, { backgroundColor: '#4CAF50' }]}>
-                  <MiniCircularProgress percentage={75} size={45} strokeWidth={4} color="#fff">
-                    <Text style={styles.previewCardNumber}>1847</Text>
+                <View style={styles.previewCard}>
+                  <MiniCircularProgress percentage={75} size={50} strokeWidth={5} color="#4CAF50" trackColor={hexToRgba('#4CAF50', 0.18)}>
+                    <Text style={[styles.previewCardNumber, { color: theme.text }]}>1847</Text>
+                    <Text style={[styles.previewCardGoal, { color: theme.textSecondary }]}>/2200</Text>
                   </MiniCircularProgress>
-                  <Text style={styles.previewCardText}>{t('displaySettings.calories')}</Text>
+                  <Text style={[styles.previewCardText, { color: theme.text }]}>{t('displaySettings.calories')}</Text>
                 </View>
-                <View style={[styles.previewCard, { backgroundColor: '#2196F3' }]}>
-                  <MiniCircularProgress percentage={60} size={45} strokeWidth={4} color="#fff">
-                    <Text style={styles.previewCardNumber}>89g</Text>
+                <View style={styles.previewCard}>
+                  <MiniCircularProgress percentage={60} size={42} strokeWidth={4} color="#2196F3" trackColor={hexToRgba('#2196F3', 0.18)}>
+                    <Text style={[styles.previewCardNumber, { color: theme.text }]}>89</Text>
+                    <Text style={[styles.previewCardGoal, { color: theme.textSecondary }]}>/150g</Text>
                   </MiniCircularProgress>
-                  <Text style={styles.previewCardText}>{t('displaySettings.protein')}</Text>
+                  <Text style={[styles.previewCardText, { color: theme.text }]}>{t('displaySettings.protein')}</Text>
                 </View>
-                <View style={[styles.previewCard, { backgroundColor: '#FF9800' }]}>
-                  <MiniCircularProgress percentage={78} size={45} strokeWidth={4} color="#fff">
-                    <Text style={styles.previewCardNumber}>156g</Text>
+                <View style={styles.previewCard}>
+                  <MiniCircularProgress percentage={78} size={42} strokeWidth={4} color="#FF9800" trackColor={hexToRgba('#FF9800', 0.18)}>
+                    <Text style={[styles.previewCardNumber, { color: theme.text }]}>156</Text>
+                    <Text style={[styles.previewCardGoal, { color: theme.textSecondary }]}>/200g</Text>
                   </MiniCircularProgress>
-                  <Text style={styles.previewCardText}>{t('displaySettings.carbs')}</Text>
+                  <Text style={[styles.previewCardText, { color: theme.text }]}>{t('displaySettings.carbs')}</Text>
                 </View>
-                <View style={[styles.previewCard, { backgroundColor: '#9C27B0' }]}>
-                  <MiniCircularProgress percentage={45} size={45} strokeWidth={4} color="#fff">
-                    <Text style={styles.previewCardNumber}>45g</Text>
+                <View style={styles.previewCard}>
+                  <MiniCircularProgress percentage={45} size={42} strokeWidth={4} color="#9C27B0" trackColor={hexToRgba('#9C27B0', 0.18)}>
+                    <Text style={[styles.previewCardNumber, { color: theme.text }]}>45</Text>
+                    <Text style={[styles.previewCardGoal, { color: theme.textSecondary }]}>/65g</Text>
                   </MiniCircularProgress>
-                  <Text style={styles.previewCardText}>{t('displaySettings.fat')}</Text>
+                  <Text style={[styles.previewCardText, { color: theme.text }]}>{t('displaySettings.fat')}</Text>
                 </View>
               </View>
             )}
@@ -355,8 +387,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  previewBar: {
+  previewBarWrapper: {
     flex: 1,
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  previewBar: {
     height: 6,
     borderRadius: 3,
     overflow: 'hidden',
@@ -364,6 +400,18 @@ const styles = StyleSheet.create({
   previewBarFill: {
     height: '100%',
     borderRadius: 3,
+  },
+  // Mirrors components/BarsLayout.js's marker treatment -- sits on top of the
+  // (overflow: hidden) bar rather than inside it, positioned by percentage to
+  // ride along the fill's leading edge.
+  previewBarMarker: {
+    position: 'absolute',
+    top: -(PREVIEW_MARKER_SIZE - 6) / 2,
+    marginLeft: -PREVIEW_MARKER_SIZE / 2,
+    width: PREVIEW_MARKER_SIZE,
+    height: PREVIEW_MARKER_SIZE,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   previewBarValue: {
     fontSize: 10,
@@ -374,20 +422,14 @@ const styles = StyleSheet.create({
   previewGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    justifyContent: 'space-between',
+    rowGap: 6,
   },
   previewCard: {
     width: '47%',
-    aspectRatio: 1,
-    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 12,
-  },
-  previewCardText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
+    paddingVertical: 6,
   },
   infoBox: {
     flexDirection: 'row',
@@ -407,15 +449,17 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   previewCardText: {
-    color: '#fff',
     fontSize: 10,
     fontWeight: 'bold',
-    marginTop: 10,
+    marginTop: 8,
   },
   previewCardNumber: {
-    color: '#fff',
-    fontSize: 12,
+    fontSize: 9,
     fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  previewCardGoal: {
+    fontSize: 7,
     textAlign: 'center',
   },
   themeRow: {

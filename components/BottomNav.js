@@ -86,7 +86,7 @@ export default function BottomNav({
         >
           <AppIcon
             name="scanner"
-            size={32}
+            size={42}
             tintColor="#fff"
           />
         </View>
@@ -194,9 +194,9 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   scanButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 66,
+    height: 66,
+    borderRadius: 33,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: -20,

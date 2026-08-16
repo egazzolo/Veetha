@@ -613,6 +613,11 @@ export default {
       otherPlaceholder: 'hal. Arm day',
       summaryPrefix: 'Ini-log mo:',
       continue: 'Magpatuloy',
+      enterExercises: 'Ilagay ang mga Ehersisyo',
+      exerciseName: 'Pangalan ng ehersisyo',
+      sets: 'Sets',
+      reps: 'Reps',
+      addExercise: 'Magdagdag ng ehersisyo',
       splits: {
         fullBody: 'Full Body',
         upperLower: 'Upper/Lower',

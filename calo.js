@@ -62,6 +62,7 @@ import ExerciseIntensityScreen from './screens/ExerciseFlow/ExerciseIntensityScr
 import ExerciseLogModal from './screens/ExerciseFlow/ExerciseLogModal';
 import ExerciseSplitScreen from './screens/ExerciseFlow/ExerciseSplitScreen';
 import ExerciseSubCategoryScreen from './screens/ExerciseFlow/ExerciseSubCategoryScreen';
+import ExerciseEntriesScreen from './screens/ExerciseFlow/ExerciseEntriesScreen';
 import ExerciseSplitIntensityScreen from './screens/ExerciseFlow/ExerciseSplitIntensityScreen';
 import ReportViewerScreen from './screens/ReportViewerScreen';
 import ForgotPasswordScreen from './screens/auth/ForgotPasswordScreen';
@@ -405,6 +406,7 @@ function AppNavigator() {
           <Stack.Screen name="ExerciseLogModal" component={ExerciseLogModal} options={{ headerShown: false }}/>
           <Stack.Screen name="ExerciseSplitScreen" component={ExerciseSplitScreen} options={{ headerShown: false }}/>
           <Stack.Screen name="ExerciseSubCategoryScreen" component={ExerciseSubCategoryScreen} options={{ headerShown: false }}/>
+          <Stack.Screen name="ExerciseEntriesScreen" component={ExerciseEntriesScreen} options={{ headerShown: false }}/>
           <Stack.Screen name="ExerciseSplitIntensityScreen" component={ExerciseSplitIntensityScreen} options={{ headerShown: false }}/>
           <Stack.Screen name="Scanner" component={ScannerScreen} />
           <Stack.Screen name="Result" component={ResultScreen} />

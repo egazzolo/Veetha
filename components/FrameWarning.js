@@ -1,19 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
-import { supabase } from '../utils/supabase';
 
-export default function FrameWarning({ children, theme }) {
+// Derives its warning color from the same `consumed`/`totalCalories` HomeScreen
+// already keeps current -- previously this polled Supabase directly on its own
+// 5-second timer (duplicated in CalorieWarningBanner above), which meant two
+// separate components each firing 3 network requests every 5 seconds for as
+// long as the app was open. That constant, ever-growing request volume was the
+// real cause of the app eventually hanging and needing a force-close.
+export default function FrameWarning({ children, theme, consumed = 0, totalCalories }) {
   const [frameColor, setFrameColor] = useState(null);
   const [showFrame, setShowFrame] = useState(false);
   const fadeAnim = useState(new Animated.Value(0))[0];
 
   useEffect(() => {
-    checkCalorieStatus();
-    
-    // Re-check every 30 seconds
-    const interval = setInterval(checkCalorieStatus, 5000);
-    return () => clearInterval(interval);
-  }, [frameColor]);
+    const dailyGoal = totalCalories || 2000;
+    const percentage = (consumed / dailyGoal) * 100;
+
+    let newColor = null;
+    if (consumed > dailyGoal) {
+      newColor = '#FF3B30'; // Red - OVER goal
+    } else if (percentage >= 90) {
+      newColor = '#FF9500'; // Orange - WARNING (90%+)
+    }
+
+    // Only show frame if color changed (new warning state)
+    if (newColor && newColor !== frameColor) {
+      setFrameColor(newColor);
+      setShowFrame(true);
+    } else if (!newColor) {
+      setFrameColor(null);
+      setShowFrame(false);
+    }
+  }, [consumed, totalCalories]);
 
   // Animate frame appearance/disappearance
   useEffect(() => {
@@ -39,62 +57,6 @@ export default function FrameWarning({ children, theme }) {
       return () => clearTimeout(timer);
     }
   }, [frameColor, showFrame]);
-
-  const checkCalorieStatus = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setFrameColor(null);
-        return;
-      }
-
-      // Get daily goal
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('daily_calorie_goal')
-        .eq('id', user.id)
-        .single();
-
-      const dailyGoal = profile?.daily_calorie_goal || 2000;
-
-      // Get TODAY's meals
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayStr = today.toISOString().split('T')[0];
-
-      const { data: meals } = await supabase
-        .from('meals')
-        .select('calories')
-        .eq('user_id', user.id)
-        .gte('logged_at', `${todayStr}T00:00:00`)
-        .lte('logged_at', `${todayStr}T23:59:59`);
-
-      const consumed = meals?.reduce((sum, meal) => sum + (meal.calories || 0), 0) || 0;
-      const percentage = (consumed / dailyGoal) * 100;
-
-      // Determine frame color
-      let newColor = null;
-      if (consumed > dailyGoal) {
-        newColor = '#FF3B30'; // Red - OVER goal
-      } else if (percentage >= 90) {
-        newColor = '#FF9500'; // Orange - WARNING (90%+)
-      }
-
-      // Only show frame if color changed (new warning state)
-      if (newColor && newColor !== frameColor) {
-        setFrameColor(newColor);
-        setShowFrame(true);
-      } else if (!newColor) {
-        setFrameColor(null);
-        setShowFrame(false);
-      }
-
-    } catch (error) {
-      console.error('Error checking calorie status:', error);
-      setFrameColor(null);
-      setShowFrame(false);
-    }
-  };
 
   // If no frame to show, just return children
   if (!frameColor || !showFrame) {

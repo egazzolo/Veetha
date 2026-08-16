@@ -2,38 +2,96 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
 import { useLanguage } from '../utils/LanguageContext';
 import { supabase } from '../utils/supabase';
+import { useUser } from '../utils/UserContext';
 import VeethaModal from '../components/VeethaModal';
+
+const SPLIT_KEYS = ['fullBody', 'upperLower', 'pushPullLegs', 'broSplit'];
+const SUB_CATEGORY_KEYS = ['upper', 'lower', 'push', 'pull', 'legs', 'chest', 'back', 'shoulders', 'arms', 'core'];
 
 export default function ExerciseHistoryScreen({ route, nestedInScrollView }) {
   const { t } = useLanguage();
+  const { user, loading: userContextLoading } = useUser();
   const { theme, isPremium } = route.params || {};
 
   const isNested = nestedInScrollView === true;
-  
-  const [exercises, setExercises] = useState([]);
+
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState(null);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   useEffect(() => {
-    fetchExercises();
-  }, []);
+    // `user` is set early in UserContext's load chain -- well before it
+    // goes on to also fetch the full profile and today's meals -- so fetch
+    // as soon as a user id shows up instead of waiting for that unrelated
+    // work to finish too. Only fall back to `userContextLoading` to detect
+    // the "confirmed guest, no user" case so the spinner doesn't hang forever.
+    if (user?.id) {
+      fetchExercises();
+    } else if (!userContextLoading) {
+      setLoading(false);
+    }
+  }, [user?.id, userContextLoading]);
+
+  const formatSplitType = (splitTypeValue) => {
+    return splitTypeValue
+      .split(',')
+      .map((part) => (SPLIT_KEYS.includes(part) ? t(`exercise.splitFlow.splits.${part}`) : part))
+      .join(', ');
+  };
+
+  const formatSubCategory = (key) => (
+    key && SUB_CATEGORY_KEYS.includes(key) ? t(`exercise.splitFlow.subCategories.${key}`) : null
+  );
 
   const fetchExercises = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      let query = supabase
-        .from('exercises')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('logged_at', { ascending: false });
+      // Two separate sources feed this list: the original per-activity
+      // "exercises" table, and the newer split-based "exercise_logs" table
+      // (with its child "exercise_log_entries" for individual sets/reps),
+      // merged here by date so both show up in one unified history.
+      const [legacyResult, splitResult] = await Promise.all([
+        supabase
+          .from('exercises')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('logged_at', { ascending: false }),
+        supabase
+          .from('exercise_logs')
+          .select('*, exercise_log_entries(*)')
+          .eq('user_id', user.id)
+          .order('logged_at', { ascending: false })
+      ]);
 
-      const { data, error } = await query;
-      if (error) throw error;
+      if (legacyResult.error) throw legacyResult.error;
+      if (splitResult.error) throw splitResult.error;
 
-      setExercises(data || []);
+      const legacyItems = (legacyResult.data || []).map((item) => ({
+        type: 'legacy',
+        id: `legacy-${item.id}`,
+        rawId: item.id,
+        logged_at: item.logged_at,
+        calories_burned: item.calories_burned,
+        raw: item
+      }));
+
+      const splitItems = (splitResult.data || []).map((item) => ({
+        type: 'split',
+        id: `split-${item.id}`,
+        rawId: item.id,
+        logged_at: item.logged_at,
+        calories_burned: item.calories_burned,
+        raw: item
+      }));
+
+      const merged = [...legacyItems, ...splitItems].sort(
+        (a, b) => new Date(b.logged_at) - new Date(a.logged_at)
+      );
+
+      setItems(merged);
     } catch (error) {
       console.error('Error fetching exercises:', error);
     } finally {
@@ -41,18 +99,19 @@ export default function ExerciseHistoryScreen({ route, nestedInScrollView }) {
     }
   };
 
-  const handleDelete = (id) => {
-    setDeleteTargetId(id);
+  const handleDelete = (item) => {
+    setDeleteTarget(item);
     setDeleteModalVisible(true);
   };
 
   const confirmDelete = async () => {
     setDeleteModalVisible(false);
     try {
+      const table = deleteTarget.type === 'legacy' ? 'exercises' : 'exercise_logs';
       const { error } = await supabase
-        .from('exercises')
+        .from(table)
         .delete()
-        .eq('id', deleteTargetId);
+        .eq('id', deleteTarget.rawId);
 
       if (error) throw error;
       fetchExercises();
@@ -60,7 +119,7 @@ export default function ExerciseHistoryScreen({ route, nestedInScrollView }) {
       console.error('Error deleting exercise:', error);
       Alert.alert(t('common.error'), t('exercise.deleteFailed'));
     }
-    setDeleteTargetId(null);
+    setDeleteTarget(null);
   };
 
   const formatDate = (dateString) => {
@@ -78,20 +137,20 @@ export default function ExerciseHistoryScreen({ route, nestedInScrollView }) {
     }
   };
 
-  const renderExerciseItem = ({ item }) => (
+  const renderLegacyItem = (item) => (
     <View style={[styles.exerciseCard, { backgroundColor: theme.cardBackground }]}>
       <View style={styles.exerciseInfo}>
         <Text style={[styles.activityName, { color: theme.text }]}>
-          {t(`exercise.activities.${item.activity_name}`)}
+          {t(`exercise.activities.${item.raw.activity_name}`)}
         </Text>
         <Text style={[styles.activityDetails, { color: theme.textSecondary }]}>
-          {t(`exercise.intensities.${item.intensity}`)} • {item.duration_minutes} min
+          {t(`exercise.intensities.${item.raw.intensity}`)} • {item.raw.duration_minutes} min
         </Text>
         <Text style={[styles.dateText, { color: theme.textSecondary }]}>
           {formatDate(item.logged_at)}
         </Text>
       </View>
-      
+
       <View style={styles.caloriesSection}>
         <Text style={[styles.caloriesValue, { color: theme.success || '#4CAF50' }]}>
           -{item.calories_burned}
@@ -101,13 +160,99 @@ export default function ExerciseHistoryScreen({ route, nestedInScrollView }) {
         </Text>
       </View>
 
-      <TouchableOpacity
-        style={styles.deleteButton}
-        onPress={() => handleDelete(item.id)}
-      >
+      <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(item)}>
         <Text style={styles.deleteIcon}>🗑️</Text>
       </TouchableOpacity>
     </View>
+  );
+
+  const renderSplitItem = (item) => {
+    const isExpanded = expandedId === item.id;
+    const entries = item.raw.exercise_log_entries || [];
+
+    // Group entries by sub-category for display -- entries with no
+    // sub-category (Full Body / a custom "Other" label) are listed
+    // ungrouped.
+    const grouped = {};
+    const ungrouped = [];
+    for (const entry of entries) {
+      const label = formatSubCategory(entry.sub_category);
+      if (label) {
+        if (!grouped[label]) grouped[label] = [];
+        grouped[label].push(entry);
+      } else {
+        ungrouped.push(entry);
+      }
+    }
+
+    return (
+      <View style={[styles.exerciseCard, styles.splitCard, { backgroundColor: theme.cardBackground }]}>
+        <TouchableOpacity
+          style={styles.splitCardHeader}
+          onPress={() => setExpandedId(isExpanded ? null : item.id)}
+        >
+          <View style={styles.exerciseInfo}>
+            <Text style={[styles.activityName, { color: theme.text }]}>
+              {formatSplitType(item.raw.split_type)}
+            </Text>
+            <Text style={[styles.activityDetails, { color: theme.textSecondary }]}>
+              {t(`exercise.intensities.${item.raw.intensity}`)}
+            </Text>
+            <Text style={[styles.dateText, { color: theme.textSecondary }]}>
+              {formatDate(item.logged_at)}
+            </Text>
+          </View>
+
+          <View style={styles.caloriesSection}>
+            <Text style={[styles.caloriesValue, { color: theme.success || '#4CAF50' }]}>
+              -{item.calories_burned}
+            </Text>
+            <Text style={[styles.caloriesLabel, { color: theme.textSecondary }]}>
+              {t('common.kcal')}
+            </Text>
+          </View>
+
+          <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(item)}>
+            <Text style={styles.deleteIcon}>🗑️</Text>
+          </TouchableOpacity>
+        </TouchableOpacity>
+
+        {isExpanded && (
+          <View style={styles.expandedDetail}>
+            {Object.entries(grouped).map(([label, groupEntries]) => (
+              <View key={label} style={styles.detailGroup}>
+                <Text style={[styles.detailGroupTitle, { color: theme.text }]}>{label}</Text>
+                {groupEntries.map((entry) => (
+                  <Text key={entry.id} style={[styles.detailRow, { color: theme.textSecondary }]}>
+                    {entry.name} — {entry.sets} × {entry.reps}
+                    {entry.weight ? ` @ ${entry.weight}${entry.weight_unit ? ` ${entry.weight_unit}` : ''}` : ''}
+                  </Text>
+                ))}
+              </View>
+            ))}
+            {ungrouped.length > 0 && (
+              <View style={styles.detailGroup}>
+                {ungrouped.map((entry) => (
+                  <Text key={entry.id} style={[styles.detailRow, { color: theme.textSecondary }]}>
+                    {entry.name} — {entry.sets} × {entry.reps}
+                    {entry.weight ? ` @ ${entry.weight}${entry.weight_unit ? ` ${entry.weight_unit}` : ''}` : ''}
+                  </Text>
+                ))}
+              </View>
+            )}
+            {entries.length === 0 && (
+              <Text style={[styles.detailRow, { color: theme.textSecondary }]}>
+                {t('exercise.noHistory')}
+              </Text>
+            )}
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  const renderExerciseItem = ({ item }) => (
+    item.type === 'legacy' ? renderLegacyItem(item) : renderSplitItem(item)
   );
 
   if (loading) {
@@ -118,7 +263,7 @@ export default function ExerciseHistoryScreen({ route, nestedInScrollView }) {
     );
   }
 
-  if (exercises.length === 0) {
+  if (items.length === 0) {
     return (
       <View style={[styles.container, styles.centerContent, { backgroundColor: theme.background }]}>
         <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
@@ -130,9 +275,9 @@ export default function ExerciseHistoryScreen({ route, nestedInScrollView }) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      
+
       <FlatList
-        data={exercises}
+        data={items}
         renderItem={renderExerciseItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
@@ -149,7 +294,7 @@ export default function ExerciseHistoryScreen({ route, nestedInScrollView }) {
         onConfirm={confirmDelete}
         onCancel={() => {
           setDeleteModalVisible(false);
-          setDeleteTargetId(null);
+          setDeleteTarget(null);
         }}
         destructive
       />
@@ -173,6 +318,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     alignItems: 'center'
   },
+  splitCard: { flexDirection: 'column', alignItems: 'stretch' },
+  splitCardHeader: { flexDirection: 'row', alignItems: 'center' },
   exerciseInfo: { flex: 1 },
   activityName: {
     fontSize: 17,
@@ -196,5 +343,14 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     textAlign: 'center'
-  }
+  },
+  expandedDetail: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#00000022'
+  },
+  detailGroup: { marginBottom: 10 },
+  detailGroupTitle: { fontSize: 14, fontWeight: '700', marginBottom: 4 },
+  detailRow: { fontSize: 14, marginBottom: 2 }
 });

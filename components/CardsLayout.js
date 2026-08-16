@@ -3,18 +3,29 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Svg, Circle } from 'react-native-svg';
 import { useTheme } from '../utils/ThemeContext';
 
+// A flat grey track read as an unrelated smudge sitting next to a colored
+// ring once the card backgrounds were removed. A soft tint of the ring's
+// own color reads as "this ring, not yet filled" instead.
+function hexToRgba(hex, alpha) {
+  const clean = hex.replace('#', '');
+  const r = parseInt(clean.substring(0, 2), 16);
+  const g = parseInt(clean.substring(2, 4), 16);
+  const b = parseInt(clean.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 // Circular Progress Component
-function CircularProgress({ percentage, size = 80, strokeWidth = 6, color = '#fff', children }) {
+function CircularProgress({ percentage, size = 80, strokeWidth = 6, color = '#fff', trackColor = 'rgba(128,128,128,0.25)', style, children }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const progress = Math.min(Math.max(percentage, 0), 100);
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   return (
-    <View style={{ width: size, height: size, position: 'relative' }}>
+    <View style={[{ width: size, height: size, position: 'relative' }, style]}>
       <Svg width={size} height={size} style={{ transform: [{ rotate: '-90deg' }] }}>
         <Circle
-          stroke="rgba(255,255,255,0.3)"
+          stroke={trackColor}
           fill="none"
           cx={size / 2}
           cy={size / 2}
@@ -122,7 +133,7 @@ export default function CardsLayout({
               });
             }
           }}
-          style={[styles.card, { backgroundColor: caloriesBg }]}
+          style={[styles.card, styles.topCard, styles.leftCard]}
           onPress={() => {
             if (!loading && !refreshing) {
               setSelectedNutrient('calories');
@@ -131,25 +142,27 @@ export default function CardsLayout({
           }}
           disabled={loading || refreshing}
         >
-          <CircularProgress 
-            percentage={caloriePercent} 
-            size={110} 
-            strokeWidth={11} 
-            color="#fff"
+          <CircularProgress
+            percentage={caloriePercent}
+            size={130}
+            strokeWidth={13}
+            color={caloriesBg}
+            trackColor={hexToRgba(caloriesBg, 0.18)}
           >
             <Text style={[
-              styles.cardValue, 
-              { fontSize: Math.round(consumed) >= 1000 || Math.round(totalCalories) >= 1000 ? 13 : 16 }
+              styles.cardValue,
+              { color: theme.text },
+              { fontSize: Math.round(consumed) >= 1000 || Math.round(totalCalories) >= 1000 ? 15 : 18 }
             ]}>
               {Math.round(consumed)} / {Math.round(totalCalories)}
             </Text>
           </CircularProgress>
-          <Text style={styles.cardLabel}>{t('home.calories')}</Text>
+          <Text style={[styles.cardLabel, styles.caloriesCardLabel, { color: theme.text }]}>{t('home.calories')}</Text>
         </TouchableOpacity>
 
         {/* Protein Card */}
         <TouchableOpacity
-          style={[styles.card, { backgroundColor: proteinBg }]}
+          style={[styles.card, styles.topCard, styles.rightCard]}
           onPress={() => {
             if (!loading && !refreshing) {
               setSelectedNutrient('protein');
@@ -158,25 +171,28 @@ export default function CardsLayout({
           }}
           disabled={loading || refreshing}
         >
-          <CircularProgress 
-            percentage={proteinPercent} 
-            size={110} 
-            strokeWidth={11} 
-            color="#fff"
+          <CircularProgress
+            percentage={proteinPercent}
+            size={110}
+            strokeWidth={11}
+            color={proteinBg}
+            trackColor={hexToRgba(proteinBg, 0.18)}
+            style={styles.proteinRing}
           >
             <Text style={[
-              styles.cardValue, 
+              styles.cardValue,
+              { color: theme.text },
               { fontSize: Math.round(protein) >= 100 || Math.round(totalProtein) >= 100 ? 13 : 16 }
             ]}>
               {Math.round(protein)} / {Math.round(totalProtein)}g
             </Text>
           </CircularProgress>
-          <Text style={styles.cardLabel}>{t('home.protein')}</Text>
+          <Text style={[styles.cardLabel, styles.proteinCardLabel, { color: theme.text }]}>{t('home.protein')}</Text>
         </TouchableOpacity>
 
         {/* Carbs Card */}
         <TouchableOpacity
-          style={[styles.card, { backgroundColor: carbsBg }]}
+          style={[styles.card, styles.leftCard]}
           onPress={() => {
             if (!loading && !refreshing) {
               setSelectedNutrient('carbs');
@@ -185,25 +201,27 @@ export default function CardsLayout({
           }}
           disabled={loading || refreshing}
         >
-          <CircularProgress 
-            percentage={carbsPercent} 
-            size={110} 
-            strokeWidth={11} 
-            color="#fff"
+          <CircularProgress
+            percentage={carbsPercent}
+            size={110}
+            strokeWidth={11}
+            color={carbsBg}
+            trackColor={hexToRgba(carbsBg, 0.18)}
           >
             <Text style={[
-              styles.cardValue, 
+              styles.cardValue,
+              { color: theme.text },
               { fontSize: Math.round(carbs) >= 100 || Math.round(totalCarbs) >= 100 ? 13 : 16 }
             ]}>
               {Math.round(carbs)} / {Math.round(totalCarbs)}g
             </Text>
           </CircularProgress>
-          <Text style={styles.cardLabel}>{t('home.carbs')}</Text>
+          <Text style={[styles.cardLabel, { color: theme.text }]}>{t('home.carbs')}</Text>
         </TouchableOpacity>
 
         {/* Fat Card */}
         <TouchableOpacity
-          style={[styles.card, { backgroundColor: fatBg }]}
+          style={[styles.card, styles.rightCard]}
           onPress={() => {
             if (!loading && !refreshing) {
               setSelectedNutrient('fat');
@@ -212,33 +230,23 @@ export default function CardsLayout({
           }}
           disabled={loading || refreshing}
         >
-          <CircularProgress 
-            percentage={fatPercent} 
-            size={110} 
-            strokeWidth={11} 
-            color="#fff"
+          <CircularProgress
+            percentage={fatPercent}
+            size={110}
+            strokeWidth={11}
+            color={fatBg}
+            trackColor={hexToRgba(fatBg, 0.18)}
           >
             <Text style={[
-              styles.cardValue, 
+              styles.cardValue,
+              { color: theme.text },
               { fontSize: Math.round(fat) >= 100 || Math.round(totalFat) >= 100 ? 13 : 16 }
             ]}>
               {Math.round(fat)} / {Math.round(totalFat)}g
             </Text>
           </CircularProgress>
-          <Text style={styles.cardLabel}>{t('home.fat')}</Text>
+          <Text style={[styles.cardLabel, { color: theme.text }]}>{t('home.fat')}</Text>
         </TouchableOpacity>
-      </View>
-
-      {/* Remaining Text */}
-      <View style={styles.remainingContainer}>
-        <Text style={[styles.remainingText, { color: remaining >= 0 ? theme.success : theme.error }]}>
-          {Math.abs(Math.round(remaining))} kcal {remaining >= 0 ? t('home.remaining') : t('home.over')}
-        </Text>
-        {exerciseCaloriesBurned > 0 && (
-          <Text style={[styles.exerciseCaloriesText, { color: '#4CAF50' }]}>
-            +{Math.round(exerciseCaloriesBurned)} {t('home.fromExercise')}
-          </Text>
-        )}
       </View>
     </View>
   );
@@ -250,7 +258,8 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     marginHorizontal: 20,
     marginBottom: 15,
-    gap: 12,
+    rowGap: 4,
+    columnGap: 0,
   },
   card: {
     width: '47.5%',
@@ -262,42 +271,49 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  caloriesCard: {
-    backgroundColor: '#4CAF50',
+  topCard: {
+    marginTop: 12,
+    // Calories' ring (130px) and Protein's ring (110px) sit in equal-size
+    // boxes -- centering each independently makes the bigger calories ring
+    // start higher than protein's. Aligning to the top of the box instead
+    // makes both rings start at the same height, matching their different
+    // sizes without being centered against each other.
+    justifyContent: 'flex-start',
   },
-  proteinCard: {
-    backgroundColor: '#2196F3',
+  // Column gap between cards is already at its minimum (0) -- these nudge
+  // each ring's content toward the vertical center within its own
+  // (invisible, background-less) card box instead, tightening the columns
+  // further without needing negative margins between separate boxes.
+  leftCard: {
+    paddingLeft: 14,
   },
-  carbsCard: {
-    backgroundColor: '#FF9800',
-  },
-  fatCard: {
-    backgroundColor: '#9C27B0',
+  rightCard: {
+    paddingRight: 14,
   },
   cardLabel: {
     fontSize: 14,
-    color: '#fff',
     marginBottom: 8,
     fontWeight: '600',
   },
+  caloriesCardLabel: {
+    fontSize: 16,
+  },
+  proteinCardLabel: {
+    // Calories' ring is 130px, Protein's is 110px (now shifted down 10px
+    // via proteinRing) -- this closes the remaining 10px gap so both
+    // labels still land at the same height.
+    marginTop: 10,
+  },
+  proteinRing: {
+    // Moves the whole ring (not just the number inside it) down so its
+    // number lands level with calories' bigger, lower-centered number --
+    // keeps the number properly centered within its own ring, unlike
+    // shifting the text alone would.
+    marginTop: 10,
+  },
   cardValue: {
     fontSize: 20,
-    color: '#fff',
     fontWeight: 'bold',
     textAlign: 'center',
-  },
-  remainingContainer: {
-    marginHorizontal: 20,
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-  remainingText: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  exerciseCaloriesText: {
-    fontSize: 14,
-    marginTop: 4,
-    fontWeight: '600',
   },
 });
