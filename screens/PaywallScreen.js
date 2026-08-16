@@ -133,6 +133,28 @@ import React, { useState, useRef, useEffect } from 'react';
       if (purchasing) return;
       setModalVisible(false);
       setPurchasing(true);
+
+      // withTimeout() below can't actually cancel purchaseSubscription() if
+      // it loses the race -- confirmed on a real device that a slow native
+      // purchase-sheet interaction (~3 minutes) went on to genuinely
+      // succeed, validated and all, roughly 200ms after the 60s timeout had
+      // already shown the user an error. Nothing was left listening for
+      // that late success, so it silently set is_premium=true server-side
+      // with zero UI feedback the purchase had actually worked -- this is
+      // the mechanism behind the original "no toast, but somehow premium"
+      // mystery this whole investigation started from. outcomeShown makes
+      // sure exactly one of (early success, late success, error) ever
+      // reaches the UI, whichever happens to land.
+      let outcomeShown = false;
+      const showSuccess = () => {
+        if (outcomeShown) return;
+        outcomeShown = true;
+        setPurchasing(false);
+        appendIapDiagnosticLog('SUCCESS UI SHOWN');
+        showToast('success', 'Welcome to Premium! 🎉');
+        navigation.goBack();
+      };
+
       try {
         // Defensive re-init: a fast unmount/remount of this screen (e.g. the
         // user dismissing an error and reopening the paywall) can race the
@@ -154,17 +176,20 @@ import React, { useState, useRef, useEffect } from 'react';
         // actual result to arrive later, indirectly, via a separate event
         // stream that months of testing showed could simply never deliver
         // anything. Still timeout-guarded in case the native call itself
-        // hangs (e.g. a stuck purchase sheet).
+        // hangs (e.g. a stuck purchase sheet) -- but the promise itself is
+        // also given a standing success handler below, independent of the
+        // race, so a late-but-real success still reaches the UI.
+        const purchasePromise = purchaseSubscription(productId);
+        purchasePromise.then(showSuccess).catch(() => {});
+
         await withTimeout(
-          purchaseSubscription(productId),
+          purchasePromise,
           PURCHASE_TIMEOUT_MS,
           'Purchase is taking longer than expected. Please check your connection and try again.'
         );
-        setPurchasing(false);
-        appendIapDiagnosticLog('SUCCESS UI SHOWN');
-        showToast('success', 'Welcome to Premium! 🎉');
-        navigation.goBack();
+        showSuccess();
       } catch (error) {
+        if (outcomeShown) return;
         setPurchasing(false);
         const isUserCancelled = error?.code === 'USER_CANCELED' || error?.code === 'USER_CANCELLED';
         if (!isUserCancelled) {
