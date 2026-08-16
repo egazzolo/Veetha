@@ -131,15 +131,7 @@ async function validateAppleReceipt(transactionJws: string, userId: string) {
   const payload = verification.payload
 
   if (payload.appAccountToken !== userId) {
-    // TEMPORARY DIAGNOSTIC -- this check has been failing consistently even
-    // with a brand-new sandbox tester and a brand-new Veetha account, which
-    // rules out stale/replayed transactions and session-timing as causes.
-    // Surfacing the actual compared values (instead of the generic message)
-    // to confirm whether Apple's transaction carried no appAccountToken at
-    // all (most likely: react-native-iap not passing it through to
-    // StoreKit correctly) vs. carried a genuinely different value. Revert
-    // to the generic message once the root cause is confirmed.
-    return { valid: false, error: `Transaction does not belong to this user (appAccountToken=${payload.appAccountToken ?? '(missing)'}, expected userId=${userId})` }
+    return { valid: false, error: 'Transaction does not belong to this user' }
   }
 
   if (!APPLE_PRODUCT_IDS.includes(payload.productId ?? '')) {

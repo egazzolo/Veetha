@@ -1,60 +1,8 @@
-import * as FileSystem from 'expo-file-system/legacy';
-
-// TEMPORARY DIAGNOSTIC -- local-disk-only, no network, no Sentry client
-// state, no native RCTLog gate. Both of those were separately confirmed
-// this session to silently drop every diagnostic tried so far in this
-// exact Release/TestFlight build (Sentry.captureMessage: silently no-op'd
-// pre-init, and still invisible after fixing that ordering; NSLog: still
-// invisible). This has no such dependency -- it's a plain file write.
-//
-// Genuinely the first executable statement in this file -- not just
-// visually first. Babel's CommonJS transform hoists every `import`-derived
-// require() above a module's own top-level statements as one block,
-// regardless of source position (this is the same mechanism behind the
-// Sentry.init() ordering bug fixed earlier this session in index.js/calo.js
-// -- verified again here the same way, by compiling this exact file and
-// checking the real output). A first version of this diagnostic put it
-// between `import * as FileSystem ...` and this file's other imports
-// (react-native-iap, react-native, @sentry/react-native, ./supabase) and
-// verifiably did NOT run first -- those four got hoisted above it just the
-// same, meaning if any of THEM throw while loading, this diagnostic would
-// never run at all, defeating its purpose. Fix: those four are required
-// below, as plain require() calls (not `import`), positioned textually
-// after this diagnostic -- a literal require() is left exactly where it's
-// written, not hoisted, so this now genuinely runs before any of them are
-// even required, let alone before any of their own module bodies evaluate.
-//
-// writeAsStringAsync always overwrites (this API has no append mode), so
-// each load reads whatever's already there and writes it back plus one new
-// line, to build a history across sessions/loads rather than just the
-// latest one. Wrapped so this can never itself throw: a failure here must
-// never become a NEW reason for this module to fail to load. Read back via
-// the temporary button in calo.js (imports IAP_DIAGNOSTIC_LOG_PATH from
-// here) -- no Console.app, Sentry, or device connection required. Remove
-// both once confirmed.
-export const IAP_DIAGNOSTIC_LOG_PATH = `${FileSystem.documentDirectory}iap-diagnostic-log.txt`;
-// Factored out (rather than inlined per call site) so every diagnostic
-// write below goes through the exact same read-modify-write path -- not
-// just structurally similar copies of it.
-export function appendIapDiagnosticLog(message) {
-  const line = `${new Date().toISOString()} ${message}\n`;
-  FileSystem.readAsStringAsync(IAP_DIAGNOSTIC_LOG_PATH)
-    .catch(() => '')
-    .then((existing) => FileSystem.writeAsStringAsync(IAP_DIAGNOSTIC_LOG_PATH, existing + line))
-    .catch(() => {});
-}
-appendIapDiagnosticLog('iap.js loaded');
-
-// require(), not `import`, and deliberately placed after the diagnostic
-// above -- see the comment there for why. Destructuring off require()'s
-// return value gives identical bindings to the `import { x } from 'y'`
-// syntax this replaced; nothing below this point needed to change.
 const {
-  initConnection, endConnection, fetchProducts, finishTransaction, getAvailablePurchases,
+  initConnection, endConnection, finishTransaction, getAvailablePurchases,
   getPendingTransactionsIOS, syncIOS, clearTransactionIOS,
 } = require('react-native-iap');
 const { Platform, AppState, NativeModules, NativeEventEmitter } = require('react-native');
-const Sentry = require('@sentry/react-native');
 const { supabase } = require('./supabase');
 
 // Android goes straight through Play Billing Library (see
@@ -72,42 +20,9 @@ const { supabase } = require('./supabase');
 // source of unreliable delivery, so react-native-iap's purchase handling
 // was removed for iOS entirely rather than kept as a second path.)
 const { NativeBillingModule, NativeStoreKitModule } = NativeModules;
-// TEMPORARY DIAGNOSTIC -- second line in the same disk log appendIapDiagnosticLog()
-// wrote to above, right after NativeModules is destructured. The first line
-// only proves this module's top-level code ran at all; it says nothing
-// about whether the native module actually resolved. Same append pattern,
-// same file, so both lines land in one place readable via the button in
-// calo.js. Remove alongside the rest of this diagnostic.
-appendIapDiagnosticLog(`NativeStoreKitModule resolved: ${!!NativeStoreKitModule}`);
-// TEMPORARY DIAGNOSTIC -- confirms two things at once: (1) that this module
-// (utils/iap.js) actually loaded at all this session -- if this line never
-// appears in Sentry, nothing below it ever ran, independent of any bug; (2)
-// if it does appear, whether the native module resolved to a real object
-// or came back undefined (e.g. registered-but-stripped in a Release/
-// TestFlight build vs. genuinely never linked). Uses Sentry.captureMessage,
-// not console.log/addBreadcrumb: console.log is silently discarded in
-// Release/TestFlight builds (RCT_DEBUG is 0 there and this project
-// registers no custom RCTLogFunction, so React Native's own native log
-// bridge drops every JS console.log unconditionally -- confirmed against
-// react-native/React/Base/RCTLog.mm). addBreadcrumb was considered instead
-// but breadcrumbs are only ever attached to a *later* captured event
-// (per @sentry/core's own Breadcrumb doc comment) -- iap.js has no other
-// Sentry calls anywhere in it for a bare breadcrumb to ever attach to, so
-// it would have been just as invisible as console.log, for a different
-// reason. captureMessage sends a real, standalone, immediately-visible
-// Sentry event regardless of build type. Remove once confirmed.
-Sentry.captureMessage(`[iap.js] NativeStoreKitModule resolved: ${!!NativeStoreKitModule}`);
 
 export const PRODUCT_ID_MONTHLY = 'com.yourname.veetha.premium.plan';
 export const PRODUCT_ID_ANNUAL = 'com.yourname.veetha.premium.annual';
-
-// TEMPORARY — test product IDs to isolate whether fetchProducts empty result
-// is specific to the original two products or affects any product on this app.
-// Remove once diagnosed.
-export const PRODUCT_ID_MONTHLY_TEST = 'com.yourname.veetha.premium.monthly2';
-export const PRODUCT_ID_ANNUAL_TEST = 'com.yourname.veetha.premium.annual2';
-
-export const SUBSCRIPTION_SKUS = [PRODUCT_ID_MONTHLY_TEST, PRODUCT_ID_ANNUAL_TEST];
 
 // This transaction is confirmed (via diagnostic logging across many real
 // device tests) to belong to a different, earlier test account, and to keep
@@ -224,40 +139,6 @@ export async function endIAP() {
   }
 }
 
-// ── Fetch subscription products ──────────────────────────────────
-export async function fetchSubscriptions() {
-  try {
-    if (Platform.OS === 'android') {
-      console.log('🔍 [fetchSubscriptions] Android (native): calling NativeBillingModule.fetchSubscriptionProducts()');
-      const subscriptions = await NativeBillingModule.fetchSubscriptionProducts();
-      console.log('✅ Subscriptions fetched (native):', subscriptions.length, JSON.stringify(subscriptions));
-      return subscriptions;
-    }
-
-    const fetchProductsRequest = { skus: SUBSCRIPTION_SKUS, productType: 'subs' };
-    console.log('🔍 [fetchSubscriptions] BEFORE fetchProducts(), timestamp:', new Date().toISOString(), 'request:', JSON.stringify(fetchProductsRequest));
-    let subscriptions;
-    try {
-      subscriptions = await fetchProducts(fetchProductsRequest);
-    } catch (fetchProductsError) {
-      console.error('❌ [fetchSubscriptions] fetchProducts() threw, full error:', JSON.stringify(fetchProductsError, Object.getOwnPropertyNames(fetchProductsError)));
-      throw fetchProductsError;
-    }
-    console.log(
-      '🔍 [fetchSubscriptions] AFTER fetchProducts() returned, timestamp:', new Date().toISOString(),
-      'isNull:', subscriptions === null,
-      'isUndefined:', subscriptions === undefined,
-      'isEmptyArray:', Array.isArray(subscriptions) && subscriptions.length === 0,
-      'raw:', JSON.stringify(subscriptions)
-    );
-    console.log('✅ Subscriptions fetched:', subscriptions.length);
-    return subscriptions;
-  } catch (error) {
-    console.error('❌ Fetch subscriptions error:', error);
-    return [];
-  }
-}
-
 // ── Purchase a subscription ──────────────────────────────────────
 export async function purchaseSubscription(productId) {
   try {
@@ -302,9 +183,8 @@ export async function purchaseSubscription(productId) {
       // sheet, so there's nothing to separately wait on and nothing for an
       // event stream to fail to deliver.
       console.log('🛒 [purchaseSubscription] iOS AppState.currentState:', AppState.currentState, 'productId:', productId);
-      appendIapDiagnosticLog(`purchaseSubscription (iOS, direct): currentUser.id present: ${!!currentUser?.id}, appAccountToken sent: ${currentUser?.id || '(none)'}`);
       const purchase = await NativeStoreKitModule.purchaseSubscription(productId, currentUser?.id || '');
-      appendIapDiagnosticLog(`purchaseSubscription (iOS, direct): native call resolved, transactionId=${purchase.transactionId}`);
+      console.log('🛒 [purchaseSubscription] iOS (direct): native call resolved, transactionId=', purchase.transactionId);
       if (purchase.transactionId) directlyHandledTransactionIds.add(purchase.transactionId);
 
       // product.purchase() can resolve with a pre-existing unfinished
@@ -330,25 +210,6 @@ export async function purchaseSubscription(productId) {
     }
   } catch (error) {
     console.error('❌ Purchase error:', error);
-    throw error;
-  }
-}
-
-// ── TEMPORARY DIAGNOSTIC: isolate billing client vs. Play Console catalog ──
-// 'android.test.purchased' is Google's reserved static test product ID —
-// Play always resolves it regardless of what's configured in Play Console.
-// If this succeeds while real SKUs come back empty, the billing client and
-// connection are fine and the problem is catalog propagation, not app code.
-// Remove once the empty-SKU issue is diagnosed.
-export async function diagnosticFetchStaticTestProduct() {
-  const request = { skus: ['android.test.purchased'], productType: 'inapp' };
-  console.log('🧪 [diagnosticFetchStaticTestProduct] BEFORE fetchProducts(), request:', JSON.stringify(request));
-  try {
-    const result = await fetchProducts(request);
-    console.log('🧪 [diagnosticFetchStaticTestProduct] RESULT:', JSON.stringify(result));
-    return result;
-  } catch (error) {
-    console.error('🧪 [diagnosticFetchStaticTestProduct] THREW:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
     throw error;
   }
 }
@@ -458,9 +319,7 @@ export function setupPurchaseListeners(onSuccess, onError) {
 
   const handledTransactionIds = new Set();
   const emitter = new NativeEventEmitter(NativeStoreKitModule);
-  appendIapDiagnosticLog('NativeStoreKitModule listener registered');
   const subscription = emitter.addListener('onTransactionUpdate', async (event) => {
-    appendIapDiagnosticLog(`onTransactionUpdate fired: ${JSON.stringify(event)}`);
     const { transactionId, productId, jwsRepresentation } = event || {};
     console.log('🔔 [NativeStoreKitModule] onTransactionUpdate fired:', transactionId, productId);
     if (!transactionId || !jwsRepresentation) {

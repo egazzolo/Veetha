@@ -9,7 +9,7 @@ import * as Sentry from '@sentry/react-native';
 //import * as Updates from 'expo-updates';
 import React, { useState, useEffect, useRef } from 'react';
 //import Purchases from 'react-native-purchases';
-import { View, ActivityIndicator, Platform, StatusBar, Alert, AppState, TouchableOpacity, Text, Share } from 'react-native';
+import { View, ActivityIndicator, Platform, StatusBar, AppState } from 'react-native';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -17,15 +17,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import * as Updates from 'expo-updates';
-import * as FileSystem from 'expo-file-system/legacy';
 import { useTheme } from './utils/ThemeContext';
 import { LayoutProvider } from './utils/LayoutContext';
 import { TutorialProvider } from './utils/TutorialContext';
-// TEMPORARY DIAGNOSTIC -- reader half of the disk-log diagnostic in
-// utils/iap.js. Imports the exact same path constant that file writes to,
-// rather than duplicating the filename string here, so a typo can't make
-// this button silently look at the wrong file. Remove alongside it.
-import { IAP_DIAGNOSTIC_LOG_PATH } from './utils/iap';
 
 // Import screens
 import LandingScreen from './screens/onboarding/LandingScreen';
@@ -66,6 +60,9 @@ import ExerciseCategoryScreen from './screens/ExerciseFlow/ExerciseCategoryScree
 import ExerciseActivityScreen from './screens/ExerciseFlow/ExerciseActivityScreen';
 import ExerciseIntensityScreen from './screens/ExerciseFlow/ExerciseIntensityScreen';
 import ExerciseLogModal from './screens/ExerciseFlow/ExerciseLogModal';
+import ExerciseSplitScreen from './screens/ExerciseFlow/ExerciseSplitScreen';
+import ExerciseSubCategoryScreen from './screens/ExerciseFlow/ExerciseSubCategoryScreen';
+import ExerciseSplitIntensityScreen from './screens/ExerciseFlow/ExerciseSplitIntensityScreen';
 import ReportViewerScreen from './screens/ReportViewerScreen';
 import ForgotPasswordScreen from './screens/auth/ForgotPasswordScreen';
 import ResetPasswordScreen from './screens/onboarding/ResetPasswordScreen';
@@ -376,68 +373,6 @@ function AppNavigator() {
 
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? '#121212' : '#fff' }}>
-      {/* TEMPORARY DIAGNOSTIC -- reads back the disk log utils/iap.js writes
-          to on load. Floating here, a sibling of NavigationContainer inside
-          the same top-level View, so it's visible on whatever screen
-          actually renders first (Landing for new users, Home for returning
-          ones, etc.) without needing to navigate anywhere -- specifically
-          not gated behind opening the Paywall screen. Alert.alert needs no
-          Console.app, Sentry, or device connection to read. Remove once
-          confirmed. */}
-      <TouchableOpacity
-        onPress={async () => {
-          try {
-            const contents = await FileSystem.readAsStringAsync(IAP_DIAGNOSTIC_LOG_PATH);
-            Alert.alert('iap.js diagnostic log', contents || '(empty file)');
-          } catch (error) {
-            Alert.alert('iap.js diagnostic log', `File not found or unreadable yet: ${error?.message || error}`);
-          }
-        }}
-        style={{
-          position: 'absolute',
-          top: 50,
-          right: 10,
-          zIndex: 9999,
-          backgroundColor: '#000',
-          opacity: 0.6,
-          paddingHorizontal: 10,
-          paddingVertical: 6,
-          borderRadius: 6,
-        }}
-      >
-        <Text style={{ color: '#fff', fontSize: 11 }}>IAP log</Text>
-      </TouchableOpacity>
-      {/* TEMPORARY DIAGNOSTIC -- companion to the button above. Alert.alert
-          truncates/wraps long log text and offers no way to copy it, which
-          has been causing transcription typos when manually retyping values
-          out of it. Share.share() is a core React Native API (no new native
-          dependency, no extra native linking/rebuild needed) that opens the
-          OS share sheet with the full, untruncated text -- "Copy" is one of
-          the built-in options there. Remove alongside the rest of this
-          diagnostic. */}
-      <TouchableOpacity
-        onPress={async () => {
-          try {
-            const contents = await FileSystem.readAsStringAsync(IAP_DIAGNOSTIC_LOG_PATH);
-            await Share.share({ message: contents || '(empty file)' });
-          } catch (error) {
-            Alert.alert('iap.js diagnostic log', `File not found or unreadable yet: ${error?.message || error}`);
-          }
-        }}
-        style={{
-          position: 'absolute',
-          top: 80,
-          right: 10,
-          zIndex: 9999,
-          backgroundColor: '#000',
-          opacity: 0.6,
-          paddingHorizontal: 10,
-          paddingVertical: 6,
-          borderRadius: 6,
-        }}
-      >
-        <Text style={{ color: '#fff', fontSize: 11 }}>Copy log</Text>
-      </TouchableOpacity>
       <NavigationContainer ref={navigationRef} theme={navTheme}>
         <Stack.Navigator
           initialRouteName={initialRoute}
@@ -468,6 +403,9 @@ function AppNavigator() {
           <Stack.Screen name="ExerciseActivityScreen" component={ExerciseActivityScreen} options={{ headerShown: false }}/>
           <Stack.Screen name="ExerciseIntensityScreen" component={ExerciseIntensityScreen} options={{ headerShown: false }}/>
           <Stack.Screen name="ExerciseLogModal" component={ExerciseLogModal} options={{ headerShown: false }}/>
+          <Stack.Screen name="ExerciseSplitScreen" component={ExerciseSplitScreen} options={{ headerShown: false }}/>
+          <Stack.Screen name="ExerciseSubCategoryScreen" component={ExerciseSubCategoryScreen} options={{ headerShown: false }}/>
+          <Stack.Screen name="ExerciseSplitIntensityScreen" component={ExerciseSplitIntensityScreen} options={{ headerShown: false }}/>
           <Stack.Screen name="Scanner" component={ScannerScreen} />
           <Stack.Screen name="Result" component={ResultScreen} />
           <Stack.Screen name="EditMeal" component={EditMealScreen} />

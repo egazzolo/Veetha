@@ -10,18 +10,12 @@ import React, { useState, useRef, useEffect } from 'react';
     initIAP,
     endIAP,
     ensureIAPConnection,
-    fetchSubscriptions,
     purchaseSubscription,
     setupPurchaseListeners,
     restorePurchases,
-    diagnosticFetchStaticTestProduct,
-    appendIapDiagnosticLog,
     PRODUCT_ID_MONTHLY,
     PRODUCT_ID_ANNUAL,
-    PRODUCT_ID_MONTHLY_TEST,
-    PRODUCT_ID_ANNUAL_TEST,
   } from '../utils/iap';
-  import { fetchProducts } from 'react-native-iap';
 
   // Bounds how long the spinner waits on purchaseSubscription() before giving
   // up and letting the user retry -- e.g. if the native purchase sheet gets
@@ -110,14 +104,12 @@ import React, { useState, useRef, useEffect } from 'react';
         cleanup = setupPurchaseListeners(
           (result) => {
             setPurchasing(false);
-            appendIapDiagnosticLog('SUCCESS UI SHOWN');
             showToast('success', 'Welcome to Premium! 🎉');
             navigation.goBack();
           },
           (error) => {
             setPurchasing(false);
             if (error?.code !== 'USER_CANCELLED' && error?.code !== 'USER_CANCELED') {
-              appendIapDiagnosticLog(`ERROR UI SHOWN: ${error?.message || 'Please try again.'}`);
               Alert.alert('Purchase failed', error?.message || 'Please try again.');
               navigation.goBack();
             }
@@ -152,7 +144,6 @@ import React, { useState, useRef, useEffect } from 'react';
         if (outcomeShown) return;
         outcomeShown = true;
         setPurchasing(false);
-        appendIapDiagnosticLog('SUCCESS UI SHOWN');
         showToast('success', 'Welcome to Premium! 🎉');
         // UserContext's profile is cached, not live -- without this, the
         // "Go Premium" card on Profile keeps showing after a successful
@@ -205,32 +196,11 @@ import React, { useState, useRef, useEffect } from 'react';
         setPurchasing(false);
         const isUserCancelled = error?.code === 'USER_CANCELED' || error?.code === 'USER_CANCELLED';
         if (!isUserCancelled) {
-          appendIapDiagnosticLog(`ERROR UI SHOWN: ${error?.message || 'Please try again.'}`);
           Alert.alert('Purchase failed', error?.message || 'Please try again.');
           navigation.goBack();
         }
       }
     };
-
-    // TEMPORARY DIAGNOSTIC ONLY — not part of the real purchase flow.
-    // Remove this along with the button below once the empty-SKU issue is resolved.
-    const handleRunDiagnosticTest = async () => {
-    try {
-      await ensureIAPConnection();
-      await diagnosticFetchStaticTestProduct();
-    } catch (error) {
-      console.error('🧪 [handleRunDiagnosticTest] error:', error);
-    }
-    try {
-      const testResult = await fetchProducts({
-        skus: [PRODUCT_ID_MONTHLY_TEST, PRODUCT_ID_ANNUAL_TEST],
-        productType: 'subs',
-      });
-      console.log('🧪🧪 [NEW TEST PRODUCTS] RESULT:', JSON.stringify(testResult));
-    } catch (error) {
-      console.error('🧪🧪 [NEW TEST PRODUCTS] error:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
-    }
-  };
 
     const handleRestorePurchases = async () => {
       setRestoring(true);
@@ -238,7 +208,6 @@ import React, { useState, useRef, useEffect } from 'react';
         await ensureIAPConnection();
         const result = await restorePurchases();
         if (result?.restored) {
-          appendIapDiagnosticLog('SUCCESS UI SHOWN');
           showToast('success', 'Purchases restored! 🎉');
           try {
             await refreshProfile();
@@ -369,13 +338,6 @@ import React, { useState, useRef, useEffect } from 'react';
               ? <ActivityIndicator color={theme.textSecondary} />
               : <Text style={[styles.restoreText, { color: theme.textSecondary }]}>Restore Purchases</Text>
             }
-          </TouchableOpacity>
-
-          {/* TEMPORARY DIAGNOSTIC ONLY — remove with handleRunDiagnosticTest */}
-          <TouchableOpacity onPress={handleRunDiagnosticTest}>
-            <Text style={[styles.restoreText, { color: theme.textSecondary }]}>
-              [DEV] Run static test SKU diagnostic
-            </Text>
           </TouchableOpacity>
         </ScrollView>
 

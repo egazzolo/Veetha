@@ -2,17 +2,17 @@ const { withXcodeProject, IOSConfig } = require('@expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
 
-// Replaces react-native-iap's iOS purchase-*listening* path with a direct
-// StoreKit 2 bridge (NativeStoreKitModule.swift), reusing the same
-// Transaction.updates mechanism Apple's own docs recommend, independent of
-// react-native-iap. This exists because react-native-iap's
-// purchaseUpdatedListener has been confirmed to sometimes never fire in JS
-// even though StoreKit completes the transaction on-device. Mirrors
-// withNativeBillingModule.js's Android fix in spirit (a second, native,
-// library-independent path) but not in API shape -- Play Billing and
-// StoreKit 2 are unrelated SDKs. react-native-iap is NOT removed: purchase
-// *initiation* on iOS still goes through it (see utils/iap.js) -- only
-// transaction *delivery* gains this second, independent path.
+// Replaces react-native-iap's iOS purchase path entirely with a direct
+// StoreKit 2 bridge (NativeStoreKitModule.swift) -- both purchase
+// *initiation* (product.purchase(), a real request/response call) and
+// transaction *delivery* (Transaction.updates, for renewals or a
+// transaction completed while the app was closed) go through it. This
+// replaced react-native-iap's requestPurchase() + purchaseUpdatedListener,
+// which only dispatched a purchase request and left the actual result to
+// arrive later, indirectly, via a separate event stream that could simply
+// never deliver anything. Mirrors withNativeBillingModule.js's Android
+// module in spirit (a native, library-independent path) but not in API
+// shape -- Play Billing and StoreKit 2 are unrelated SDKs.
 // Written as a config plugin (like withFmtPatch / withNativeBillingModule)
 // so it survives `expo prebuild --clean`.
 //
