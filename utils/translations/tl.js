@@ -603,6 +603,35 @@ export default {
       recreational: 'Recreational',
       casualGame: 'Casual na laro',
       competitive: 'Competitive'
+    },
+
+    splitFlow: {
+      selectSplit: 'Pumili ng Split',
+      selectSubCategory: 'Pumili ng Sub-Category',
+      selectIntensity: 'Pumili ng Intensity',
+      otherLabel: 'Custom na pangalan ng split',
+      otherPlaceholder: 'hal. Arm day',
+      summaryPrefix: 'Ini-log mo:',
+      continue: 'Magpatuloy',
+      splits: {
+        fullBody: 'Full Body',
+        upperLower: 'Upper/Lower',
+        pushPullLegs: 'Push/Pull/Legs',
+        broSplit: 'Bro Split',
+        other: 'Iba pa'
+      },
+      subCategories: {
+        upper: 'Upper',
+        lower: 'Lower',
+        push: 'Push',
+        pull: 'Pull',
+        legs: 'Legs',
+        chest: 'Dibdib',
+        back: 'Likod',
+        shoulders: 'Balikat',
+        arms: 'Braso',
+        core: 'Core'
+      }
     }
   },
 

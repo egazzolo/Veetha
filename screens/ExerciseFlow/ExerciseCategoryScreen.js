@@ -45,6 +45,12 @@ export default function ExerciseCategoryScreen({ navigation, route }) {
                 onPress={() => {
                   if (isPremiumLocked) {
                     navigation.navigate('Paywall', { highlightFeature: 'All exercise categories' });
+                  } else if (cat.id === 'strength') {
+                    // Strength routes into the split-based flow (Full Body,
+                    // Upper/Lower, Push/Pull/Legs, Bro Split, Other) instead
+                    // of the old flat activity list -- cardio/lifestyle/
+                    // sports are unchanged.
+                    navigation.navigate('ExerciseSplitScreen', { weight, theme });
                   } else {
                     navigation.navigate('ExerciseActivityScreen', { category: cat.id, weight, theme });
                   }

@@ -604,6 +604,35 @@ export default {
       casualGame: 'Jogo casual',
       competitive: 'Competitivo',
     },
+
+    splitFlow: {
+      selectSplit: 'Selecionar divisão',
+      selectSubCategory: 'Selecionar subcategoria',
+      selectIntensity: 'Selecionar intensidade',
+      otherLabel: 'Nome da divisão personalizada',
+      otherPlaceholder: 'ex. Dia de braço',
+      summaryPrefix: 'Você está registrando:',
+      continue: 'Continuar',
+      splits: {
+        fullBody: 'Corpo inteiro',
+        upperLower: 'Superior/Inferior',
+        pushPullLegs: 'Push/Pull/Legs',
+        broSplit: 'Divisão por grupo muscular',
+        other: 'Outro',
+      },
+      subCategories: {
+        upper: 'Superior',
+        lower: 'Inferior',
+        push: 'Push',
+        pull: 'Pull',
+        legs: 'Pernas',
+        chest: 'Peito',
+        back: 'Costas',
+        shoulders: 'Ombros',
+        arms: 'Braços',
+        core: 'Core',
+      },
+    },
   },
 
   // Edit Meal Screen

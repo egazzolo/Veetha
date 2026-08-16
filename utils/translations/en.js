@@ -603,6 +603,35 @@ export default {
       recreational: 'Recreational',
       casualGame: 'Casual game',
       competitive: 'Competitive'
+    },
+
+    splitFlow: {
+      selectSplit: 'Select Split',
+      selectSubCategory: 'Select Sub-Category',
+      selectIntensity: 'Select Intensity',
+      otherLabel: 'Custom split name',
+      otherPlaceholder: 'e.g. Arm day',
+      summaryPrefix: "You're logging:",
+      continue: 'Continue',
+      splits: {
+        fullBody: 'Full Body',
+        upperLower: 'Upper/Lower',
+        pushPullLegs: 'Push/Pull/Legs',
+        broSplit: 'Bro Split',
+        other: 'Other'
+      },
+      subCategories: {
+        upper: 'Upper',
+        lower: 'Lower',
+        push: 'Push',
+        pull: 'Pull',
+        legs: 'Legs',
+        chest: 'Chest',
+        back: 'Back',
+        shoulders: 'Shoulders',
+        arms: 'Arms',
+        core: 'Core'
+      }
     }
   },
 

@@ -603,6 +603,35 @@ export default {
       recreational: 'Récréatif',
       casualGame: 'Jeu décontracté',
       competitive: 'Compétitif'
+    },
+
+    splitFlow: {
+      selectSplit: 'Sélectionner le split',
+      selectSubCategory: 'Sélectionner la sous-catégorie',
+      selectIntensity: "Sélectionner l'intensité",
+      otherLabel: 'Nom du split personnalisé',
+      otherPlaceholder: 'ex. Jour bras',
+      summaryPrefix: 'Vous enregistrez :',
+      continue: 'Continuer',
+      splits: {
+        fullBody: 'Corps entier',
+        upperLower: 'Haut/Bas du corps',
+        pushPullLegs: 'Push/Pull/Legs',
+        broSplit: 'Split par groupe musculaire',
+        other: 'Autre'
+      },
+      subCategories: {
+        upper: 'Haut du corps',
+        lower: 'Bas du corps',
+        push: 'Push',
+        pull: 'Pull',
+        legs: 'Jambes',
+        chest: 'Poitrine',
+        back: 'Dos',
+        shoulders: 'Épaules',
+        arms: 'Bras',
+        core: 'Gainage'
+      }
     }
   },
 

@@ -603,6 +603,35 @@ export default {
       recreational: 'Recreativo',
       casualGame: 'Juego casual',
       competitive: 'Competitivo'
+    },
+
+    splitFlow: {
+      selectSplit: 'Selecciona la rutina',
+      selectSubCategory: 'Selecciona la subcategoría',
+      selectIntensity: 'Selecciona la intensidad',
+      otherLabel: 'Nombre de rutina personalizada',
+      otherPlaceholder: 'ej. Día de brazos',
+      summaryPrefix: 'Estás registrando:',
+      continue: 'Continuar',
+      splits: {
+        fullBody: 'Cuerpo completo',
+        upperLower: 'Tren superior/inferior',
+        pushPullLegs: 'Empuje/Tirón/Piernas',
+        broSplit: 'Rutina por grupo muscular',
+        other: 'Otro'
+      },
+      subCategories: {
+        upper: 'Tren superior',
+        lower: 'Tren inferior',
+        push: 'Empuje',
+        pull: 'Tirón',
+        legs: 'Piernas',
+        chest: 'Pecho',
+        back: 'Espalda',
+        shoulders: 'Hombros',
+        arms: 'Brazos',
+        core: 'Core'
+      }
     }
   },
 
