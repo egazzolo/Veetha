@@ -31,6 +31,7 @@ import { posthog } from '../utils/posthog';
 import { decode } from 'base64-arraybuffer';
 
 import AppTutorial from '../components/AppTutorial';
+import RenameAnnouncementModal from '../components/RenameAnnouncementModal';
 import AnimatedThemeWrapper from '../components/AnimatedThemeWrapper';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -2456,6 +2457,8 @@ export default function HomeScreen({ navigation }) {
               scannerButtonRef={scannerButtonRef}
               profileButtonRef={profileButtonRef}
             />
+
+            <RenameAnnouncementModal theme={theme} />
 
             {/* Tutorial freeze overlay — MUST be last child to cover everything */}
             {checkingTutorial && (
