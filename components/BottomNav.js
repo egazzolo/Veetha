@@ -34,16 +34,13 @@ export default function BottomNav({
     <View style={[
       styles.bottomNav,
       {
-        // ~88% opacity -- slightly see-through rather than a flat, fully
-        // opaque bar. theme.background is always a plain 6-digit hex, so an
-        // alpha suffix is safe to append directly.
-        backgroundColor: `${theme.background}E0`,
+        backgroundColor: 'transparent',
         shadowOpacity: 0,
         shadowRadius: 0,
         shadowOffset: { width: 0, height: 0 },
         elevation: 0,
         borderTopWidth: 0,
-        paddingBottom: insets.bottom + 8,
+        paddingBottom: Math.max(insets.bottom, 0),
       }
     ]}>
       {/* Home */}

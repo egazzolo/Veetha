@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Dimensions, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSwipeNavigation } from '../utils/useSwipeNavigation';
@@ -17,6 +17,27 @@ import { usePremiumStatus } from '../utils/usePremiumStatus';
 
 const { width } = Dimensions.get('window');
 
+// Rapidly counts up/down to `value` on every change, like a slot-machine
+// reel settling on a number, rather than just snapping to the new digits.
+function SlotNumber({ value, style }) {
+  const anim = useRef(new Animated.Value(value)).current;
+  const [display, setDisplay] = useState(value);
+
+  useEffect(() => {
+    const listenerId = anim.addListener(({ value: v }) => {
+      setDisplay(Math.round(v));
+    });
+    Animated.timing(anim, {
+      toValue: value,
+      duration: 700,
+      useNativeDriver: false,
+    }).start();
+    return () => anim.removeListener(listenerId);
+  }, [value]);
+
+  return <Text style={style}>{display}</Text>;
+}
+
 export default function StatsScreen({ navigation }) {
   const { theme, isDark } = useTheme();
   const { t } = useLanguage();
@@ -26,6 +47,15 @@ export default function StatsScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState(null);
   const [activeTab, setActiveTab] = useState('week');
+  const periodIndicatorAnim = useRef(new Animated.Value(0)).current;
+  const pushAnim = useRef(new Animated.Value(0)).current;
+  const [pushState, setPushState] = useState(null); // { from, to, direction } while a tab-switch push transition is playing
+  const [panelWidth, setPanelWidth] = useState(width);
+  const weekBarsAnim = useRef(new Animated.Value(0)).current;
+  const weekBarsAnimatedRef = useRef(false);
+  const calendarScaleAnim = useRef(new Animated.Value(0.3)).current;
+  const calendarWipeAnim = useRef(new Animated.Value(0)).current;
+  const calendarAnimatedRef = useRef(false);
   const { isPremium } = usePremiumStatus();
   const [currentStreak, setCurrentStreak] = useState(0);
   const MIN_DATE = new Date(2025, 10, 1); // November 1, 2025
@@ -268,7 +298,7 @@ export default function StatsScreen({ navigation }) {
         calculatedStreak: streak
       });
     } catch (error) {
-      console.error('Error calculating streak:', error);
+      console.error('Error calculating streak:', error?.message || error);
     }
   };
 
@@ -305,6 +335,61 @@ export default function StatsScreen({ navigation }) {
   useEffect(() => {
     fetchAllData();
   }, []);
+
+  useEffect(() => {
+    const index = activeTab === 'week' ? 0 : activeTab === 'month' ? 1 : 2;
+    Animated.spring(periodIndicatorAnim, {
+      toValue: index,
+      friction: 8,
+      tension: 60,
+      useNativeDriver: false,
+    }).start();
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (!weekBarsAnimatedRef.current && weeklyData.length > 0) {
+      weekBarsAnimatedRef.current = true;
+      Animated.timing(weekBarsAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: false,
+      }).start();
+    }
+  }, [weeklyData]);
+
+  useEffect(() => {
+    if (!calendarAnimatedRef.current && activeTab === 'month' && monthlyData.length > 0) {
+      calendarAnimatedRef.current = true;
+      Animated.sequence([
+        Animated.timing(calendarScaleAnim, {
+          toValue: 1,
+          duration: 450,
+          useNativeDriver: true,
+        }),
+        Animated.timing(calendarWipeAnim, {
+          toValue: 42, // upper bound on grid cells (6 rows x 7 cols); extra headroom is harmless
+          duration: 1400,
+          useNativeDriver: false,
+        }),
+      ]).start();
+    }
+  }, [activeTab, monthlyData]);
+
+  const tabIndexOf = (tab) => (tab === 'week' ? 0 : tab === 'month' ? 1 : 2);
+  const changeTab = (newTab) => {
+    if (newTab === activeTab) return;
+    const direction = tabIndexOf(newTab) > tabIndexOf(activeTab) ? -1 : 1;
+    setPushState({ from: activeTab, to: newTab, direction });
+    setActiveTab(newTab);
+    pushAnim.setValue(0);
+    Animated.timing(pushAnim, {
+      toValue: 1,
+      duration: 420,
+      useNativeDriver: true,
+    }).start(() => {
+      setPushState(null);
+    });
+  };
 
   // Refresh on screen focus (with throttling)
   const lastFetchTime = useRef(0);
@@ -370,25 +455,37 @@ export default function StatsScreen({ navigation }) {
 
               {/* Period Selector */}
               <View style={[styles.periodSelector, { backgroundColor: theme.cardBackground }]}>
+                <Animated.View
+                  style={[
+                    styles.periodIndicator,
+                    {
+                      backgroundColor: theme.primary,
+                      left: periodIndicatorAnim.interpolate({
+                        inputRange: [0, 1, 2],
+                        outputRange: ['0%', '33.3333%', '66.6667%'],
+                      }),
+                    },
+                  ]}
+                />
                 <TouchableOpacity
-                  style={[styles.periodButton, activeTab === 'week' && { backgroundColor: theme.primary }]}
-                  onPress={() => setActiveTab('week')}
+                  style={styles.periodButton}
+                  onPress={() => changeTab('week')}
                 >
                   <Text style={[styles.periodText, { color: activeTab === 'week' ? '#fff' : theme.textSecondary }]}>
                     {t('stats.week')}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.periodButton, activeTab === 'month' && { backgroundColor: theme.primary }]}
-                  onPress={() => setActiveTab('month')}
+                  style={styles.periodButton}
+                  onPress={() => changeTab('month')}
                 >
                   <Text style={[styles.periodText, { color: activeTab === 'month' ? '#fff' : theme.textSecondary }]}>
                     {t('stats.month')}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[ styles.periodButton, activeTab === 'exercise' && { backgroundColor: theme.primary }]}
-                  onPress={() => setActiveTab('exercise')}
+                  style={styles.periodButton}
+                  onPress={() => changeTab('exercise')}
                 >
                   <Text style={[ styles.periodText, { color: activeTab === 'exercise' ? '#fff' : theme.textSecondary }]}>
                     {t('stats.exercise')}
@@ -398,25 +495,25 @@ export default function StatsScreen({ navigation }) {
 
               {/* Quick Stats Summary */}
               <View style={styles.summaryContainer}>
-                <View style={[styles.summaryCard, { backgroundColor: theme.cardBackground }]}>
-                  <Text style={[styles.summaryValue, { color: theme.primary }]}>{avgCalories}</Text>
+                <View style={styles.summaryCard}>
+                  <SlotNumber value={avgCalories} style={[styles.summaryValue, { color: theme.primary }]} />
                   <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>{t('stats.avgDaily')}</Text>
                   <Text style={[styles.summaryUnit, { color: theme.textTertiary }]}>{t('stats.kcal')}</Text>
                 </View>
 
-                <View style={[styles.summaryCard, { backgroundColor: theme.cardBackground }]}>
-                  <Text style={[styles.summaryValue, { color: theme.success }]}>{daysWithData.length}</Text>
+                <View style={styles.summaryCard}>
+                  <SlotNumber value={daysWithData.length} style={[styles.summaryValue, { color: theme.success }]} />
                   <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>{t('stats.daysLogged')}</Text>
                   <Text style={[styles.summaryUnit, { color: theme.textTertiary }]}>
-                    {activeTab === 'week' 
+                    {activeTab === 'week'
                       ? (t('stats.thisWeek') || 'this week')
                       : (t('stats.thisMonth') || 'this month')
                     }
                   </Text>
                 </View>
 
-                <View style={[styles.summaryCard, { backgroundColor: theme.cardBackground }]}>
-                  <Text style={[styles.summaryValue, { color: theme.warning }]}>{currentStreak}</Text>
+                <View style={styles.summaryCard}>
+                  <SlotNumber value={currentStreak} style={[styles.summaryValue, { color: theme.warning }]} />
                   <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>{t('stats.streak')}</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <Text style={[styles.summaryUnit, { color: theme.textTertiary }]}>{t('stats.days')}</Text>
@@ -425,7 +522,8 @@ export default function StatsScreen({ navigation }) {
                 </View>
               </View>
 
-              {activeTab === 'week' && (
+              {(() => {
+                const weekPanel = (
                 <>
                   {isGuestMode && (
                     <View style={[styles.guestBanner, { backgroundColor: theme.cardBackground, borderColor: theme.primary }]}>
@@ -463,11 +561,14 @@ export default function StatsScreen({ navigation }) {
                                       <Text style={[styles.barValue, { color: theme.text }]}>
                                         {day.calories}
                                       </Text>
-                                      <View
+                                      <Animated.View
                                         style={[
                                           styles.bar,
                                           {
-                                            height: barHeight,
+                                            height: weekBarsAnim.interpolate({
+                                              inputRange: [0, 1],
+                                              outputRange: [0, barHeight],
+                                            }),
                                             backgroundColor: isOverGoal ? theme.warning : theme.primary,
                                           },
                                         ]}
@@ -550,9 +651,9 @@ export default function StatsScreen({ navigation }) {
 
                   </View>
                 </>
-              )}
+                );
 
-              {activeTab === 'month' && (
+                const monthPanel = (
                   <>
                     {!isPremium ? (
                       <View style={[styles.chartCard, { backgroundColor: theme.cardBackground, alignItems: 'center', paddingVertical: 40 }]}>
@@ -599,7 +700,7 @@ export default function StatsScreen({ navigation }) {
                           </View>
 
                           {/* Calendar Grid */}
-                          <View style={styles.calendarGrid}>
+                          <Animated.View style={[styles.calendarGrid, { transform: [{ scale: calendarScaleAnim }] }]}>
                             {(() => {
                               const now = new Date();
                               const year = now.getFullYear();
@@ -646,18 +747,37 @@ export default function StatsScreen({ navigation }) {
                                 const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
                                 const isToday = dayData.date === todayStr;
 
+                                const hasMeals = dayData.mealsCount > 0;
+
                                 return (
                                   <View key={dayData.date} style={styles.calendarCell}>
                                     <View
                                       style={[
                                         styles.calendarCellInner,
-                                        { backgroundColor: bgColor },
+                                        { backgroundColor: hasMeals ? theme.border : bgColor },
                                         isToday && { borderWidth: 2, borderColor: theme.primary },
                                       ]}
                                     >
+                                      {hasMeals && (
+                                        <Animated.View
+                                          pointerEvents="none"
+                                          style={[
+                                            StyleSheet.absoluteFill,
+                                            {
+                                              backgroundColor: bgColor,
+                                              borderRadius: 6,
+                                              opacity: calendarWipeAnim.interpolate({
+                                                inputRange: [index, index + 1],
+                                                outputRange: [0, 1],
+                                                extrapolate: 'clamp',
+                                              }),
+                                            },
+                                          ]}
+                                        />
+                                      )}
                                       <Text style={[
                                         styles.calendarDayNumber,
-                                        { color: dayData.mealsCount > 0 ? '#fff' : theme.textTertiary }
+                                        { color: hasMeals ? '#fff' : theme.textTertiary }
                                       ]}>
                                         {dayData.day}
                                       </Text>
@@ -666,7 +786,7 @@ export default function StatsScreen({ navigation }) {
                                 );
                               });
                             })()}
-                          </View>
+                          </Animated.View>
 
                           <View style={styles.heatmapLegend}>
                             <View style={styles.heatmapLegendItem}>
@@ -727,9 +847,9 @@ export default function StatsScreen({ navigation }) {
                       </>
                     )}
                   </>
-                )}
+                );
 
-              {activeTab === 'exercise' && (
+                const exercisePanel = (
                 <>
                   {isGuestMode && (
                     <View style={[styles.guestBanner, { backgroundColor: theme.cardBackground, borderColor: theme.primary }]}>
@@ -749,7 +869,43 @@ export default function StatsScreen({ navigation }) {
                     nestedInScrollView={true}
                   />
                 </>
-              )}
+                );
+
+                const panelFor = (tab) => (tab === 'week' ? weekPanel : tab === 'month' ? monthPanel : exercisePanel);
+
+                if (pushState) {
+                  const { from, to, direction } = pushState;
+                  const leftTab = direction === 1 ? from : to;
+                  const rightTab = direction === 1 ? to : from;
+                  return (
+                    <View
+                      style={{ overflow: 'hidden' }}
+                      onLayout={(e) => setPanelWidth(e.nativeEvent.layout.width)}
+                    >
+                      <Animated.View
+                        style={{
+                          flexDirection: 'row',
+                          width: panelWidth * 2,
+                          transform: [{
+                            translateX: direction === 1
+                              ? pushAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -panelWidth] })
+                              : pushAnim.interpolate({ inputRange: [0, 1], outputRange: [-panelWidth, 0] }),
+                          }],
+                        }}
+                      >
+                        <View style={{ width: panelWidth }}>{panelFor(leftTab)}</View>
+                        <View style={{ width: panelWidth }}>{panelFor(rightTab)}</View>
+                      </Animated.View>
+                    </View>
+                  );
+                }
+
+                return (
+                  <View onLayout={(e) => setPanelWidth(e.nativeEvent.layout.width)}>
+                    {panelFor(activeTab)}
+                  </View>
+                );
+              })()}
 
               {/* REPORTS SECTION — hidden for guests */}
               {!isGuestMode && (
@@ -819,6 +975,14 @@ const styles = StyleSheet.create({
     marginVertical: 15,
     padding: 4,
     borderRadius: 12,
+    position: 'relative',
+  },
+  periodIndicator: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: '33.3333%',
+    borderRadius: 10,
   },
   periodButton: {
     flex: 1,
@@ -843,7 +1007,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   summaryValue: {
-    fontSize: 24,
+    fontSize: 30,
     fontWeight: 'bold',
   },
   summaryLabel: {
