@@ -1,7 +1,9 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Easing } from 'react-native';
 import { Svg, Circle } from 'react-native-svg';
 import { useTheme } from '../utils/ThemeContext';
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 // A flat grey track read as an unrelated smudge sitting next to a colored
 // ring once the card backgrounds were removed. A soft tint of the ring's
@@ -19,7 +21,25 @@ function CircularProgress({ percentage, size = 80, strokeWidth = 6, color = '#ff
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const progress = Math.min(Math.max(percentage, 0), 100);
-  const strokeDashoffset = circumference - (progress / 100) * circumference;
+
+  // Sweeps from empty up to the real value on load/update -- like a
+  // speedometer needle settling into place -- instead of just appearing
+  // already at its final position.
+  const animatedProgress = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(animatedProgress, {
+      toValue: progress,
+      duration: 1100,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false, // strokeDashoffset isn't driven by the native driver
+    }).start();
+  }, [progress]);
+
+  const strokeDashoffset = animatedProgress.interpolate({
+    inputRange: [0, 100],
+    outputRange: [circumference, 0],
+    extrapolate: 'clamp',
+  });
 
   return (
     <View style={[{ width: size, height: size, position: 'relative' }, style]}>
@@ -32,7 +52,7 @@ function CircularProgress({ percentage, size = 80, strokeWidth = 6, color = '#ff
           r={radius}
           strokeWidth={strokeWidth}
         />
-        <Circle
+        <AnimatedCircle
           stroke={color}
           fill="none"
           cx={size / 2}
@@ -257,7 +277,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     marginHorizontal: 20,
-    marginBottom: 15,
+    marginBottom: 4,
     rowGap: 4,
     columnGap: 0,
   },

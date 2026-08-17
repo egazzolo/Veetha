@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, Pressable, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { decode } from 'base64-arraybuffer';
@@ -37,10 +38,26 @@ export default function MealsList({
   const [selectedMeal, setSelectedMeal] = useState(null);
   const [guestSheetVisible, setGuestSheetVisible] = useState(false);
   const [postItView, setPostItView] = useState('whole'); // 'whole' or 'individual'
-  const [listViewMode, setListViewMode] = useState('grid'); // 'grid' or 'list'
+  const [listViewMode, setListViewModeState] = useState('grid'); // 'grid' or 'list'
   const [enlargedImage, setEnlargedImage] = useState(null);
   const { isDark } = useTheme();
   const { isPremium } = usePremiumStatus();
+
+  // MealsList remounts on navigating away and back (Home isn't kept alive
+  // like a typical tab screen here), which was resetting this choice back
+  // to the 'grid' default every time -- persist it so it sticks.
+  useEffect(() => {
+    AsyncStorage.getItem('meals_list_view_mode').then((saved) => {
+      if (saved === 'grid' || saved === 'list') {
+        setListViewModeState(saved);
+      }
+    });
+  }, []);
+
+  const setListViewMode = (mode) => {
+    setListViewModeState(mode);
+    AsyncStorage.setItem('meals_list_view_mode', mode);
+  };
 
   const formatSmallMacro = (value) => {
     const num = Number(value) || 0;
@@ -722,11 +739,13 @@ export default function MealsList({
 }
 
 const styles = StyleSheet.create({
-  mealsCard: { 
-    marginHorizontal: 20, 
-    marginBottom: 15, 
-    padding: 20, 
-    borderRadius: 16 
+  mealsCard: {
+    // Full-bleed, not an inset rounded card -- so this reads as the page's
+    // own background changing color starting at "Today's Meals," not a
+    // floating card sitting on top of it.
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 30,
   },
   mealsHeader: { 
     marginBottom: 15 
@@ -784,15 +803,10 @@ const styles = StyleSheet.create({
     borderRadius: 12, 
     marginBottom: 10 
   },
-  mealCard: { 
-    padding: 12, 
-    marginBottom: 14, 
-    borderRadius: 16, 
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 2 }, 
-    shadowOpacity: 0.1, 
-    shadowRadius: 4, 
-    elevation: 3, 
+  mealCard: {
+    padding: 12,
+    marginBottom: 14,
+    borderRadius: 16,
     position: 'relative',
   },
   checkboxOverlay: { 
@@ -1133,11 +1147,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginBottom: 8,
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
     position: 'relative',
     gap: 12,
   },

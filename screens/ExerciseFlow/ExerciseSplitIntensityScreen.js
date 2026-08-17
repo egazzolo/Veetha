@@ -76,6 +76,7 @@ export default function ExerciseSplitIntensityScreen({ navigation, route }) {
           split_type: splitTypeValue,
           sub_categories: subCategories || [],
           intensity,
+          duration_minutes: Math.round(duration),
           calories_burned: estimatedCalories
         })
         .select()

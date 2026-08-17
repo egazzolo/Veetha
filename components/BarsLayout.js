@@ -1,8 +1,30 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Easing } from 'react-native';
 import AppIcon from './AppIcon';
 
 const MARKER_SIZE = 20;
+
+// Sweeps the fill (and its marker) up from empty to its real value on
+// load/update, same as the rings in CardsLayout.js, instead of just
+// appearing already at its final width. Returns the raw animated value
+// rather than JSX, since the fill needs to render *inside* the bar's
+// overflow: hidden clipping box while the marker sits *outside* it (see the
+// progressMarker comment below) -- they can't share one wrapping element.
+function useAnimatedPercent(percent) {
+  const clamped = Math.min(Math.max(percent, 0), 100);
+  const anim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(anim, {
+      toValue: clamped,
+      duration: 1100,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false, // width/left aren't driven by the native driver
+    }).start();
+  }, [clamped]);
+
+  return anim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'], extrapolate: 'clamp' });
+}
 
 export default function BarsLayout({
   theme,
@@ -22,6 +44,11 @@ export default function BarsLayout({
   setShowNutrientModal,
   exerciseCaloriesBurned,
 }) {
+  const caloriesAnimPercent = useAnimatedPercent((consumed / dailyGoal) * 100);
+  const proteinAnimPercent = useAnimatedPercent(proteinPercent);
+  const carbsAnimPercent = useAnimatedPercent(carbsPercent);
+  const fatAnimPercent = useAnimatedPercent(fatPercent);
+
   return (
     <View>
       {/* Calories Display */}
@@ -45,21 +72,13 @@ export default function BarsLayout({
           </View>
           <View style={[styles.progressBarWrapper, { marginTop: 8 }]}>
             <View style={[styles.progressBar, { backgroundColor: theme.border }]}>
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    backgroundColor: '#4CAF50',
-                    width: `${Math.min((consumed / dailyGoal) * 100, 100)}%`,
-                  }
-                ]}
-              />
+              <Animated.View style={[styles.progressFill, { backgroundColor: '#4CAF50', width: caloriesAnimPercent }]} />
             </View>
-            <View style={[styles.progressMarker, { left: `${Math.min((consumed / dailyGoal) * 100, 100)}%` }]}>
+            <Animated.View style={[styles.progressMarker, { left: caloriesAnimPercent }]}>
               {/* The battery icon is a horizontal rectangle like the bar itself --
                   tilted so its outline reads against the bar instead of blending in. */}
               <AppIcon name="calories" size={MARKER_SIZE} style={styles.caloriesMarkerIcon} />
-            </View>
+            </Animated.View>
           </View>
         </TouchableOpacity>
       </View>
@@ -81,19 +100,11 @@ export default function BarsLayout({
           <View style={styles.macroRight}>
             <View style={styles.progressBarWrapper}>
               <View style={[styles.progressBar, { backgroundColor: theme.border }]}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    {
-                      backgroundColor: '#2196F3',
-                      width: `${Math.min(proteinPercent, 100)}%`
-                    }
-                  ]}
-                />
+                <Animated.View style={[styles.progressFill, { backgroundColor: '#2196F3', width: proteinAnimPercent }]} />
               </View>
-              <View style={[styles.progressMarker, { left: `${Math.min(proteinPercent, 100)}%` }]}>
+              <Animated.View style={[styles.progressMarker, { left: proteinAnimPercent }]}>
                 <AppIcon name="chicken" size={MARKER_SIZE} />
-              </View>
+              </Animated.View>
             </View>
             <Text style={[styles.macroValue, { color: '#2196F3' }]}>
               {Math.round(protein)}/150g
@@ -116,19 +127,11 @@ export default function BarsLayout({
           <View style={styles.macroRight}>
             <View style={styles.progressBarWrapper}>
               <View style={[styles.progressBar, { backgroundColor: theme.border }]}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    {
-                      backgroundColor: '#FF9800',
-                      width: `${Math.min(carbsPercent, 100)}%`
-                    }
-                  ]}
-                />
+                <Animated.View style={[styles.progressFill, { backgroundColor: '#FF9800', width: carbsAnimPercent }]} />
               </View>
-              <View style={[styles.progressMarker, { left: `${Math.min(carbsPercent, 100)}%` }]}>
+              <Animated.View style={[styles.progressMarker, { left: carbsAnimPercent }]}>
                 <AppIcon name="bread" size={MARKER_SIZE} />
-              </View>
+              </Animated.View>
             </View>
             <Text style={[styles.macroValue, { color: '#FF9800' }]}>
               {Math.round(carbs)}/200g
@@ -151,19 +154,11 @@ export default function BarsLayout({
           <View style={styles.macroRight}>
             <View style={styles.progressBarWrapper}>
               <View style={[styles.progressBar, { backgroundColor: theme.border }]}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    {
-                      backgroundColor: '#9C27B0',
-                      width: `${Math.min(fatPercent, 100)}%`
-                    }
-                  ]}
-                />
+                <Animated.View style={[styles.progressFill, { backgroundColor: '#9C27B0', width: fatAnimPercent }]} />
               </View>
-              <View style={[styles.progressMarker, { left: `${Math.min(fatPercent, 100)}%` }]}>
+              <Animated.View style={[styles.progressMarker, { left: fatAnimPercent }]}>
                 <AppIcon name="avocado" size={MARKER_SIZE} />
-              </View>
+              </Animated.View>
             </View>
             <Text style={[styles.macroValue, { color: '#9C27B0' }]}>
               {Math.round(fat)}/65g
@@ -196,7 +191,7 @@ const styles = StyleSheet.create({
   },
   macrosCard: {
     marginHorizontal: 20,
-    marginBottom: 15,
+    marginBottom: 4,
   },
   macroRow: {
     marginBottom: 24,

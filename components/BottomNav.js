@@ -1,15 +1,21 @@
 import React from 'react'; // X:
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppIcon from './AppIcon';
 
-export default function BottomNav({ 
-  theme, 
-  t, 
-  navigation, 
-  activeScreen = 'Home', 
-  scannerButtonRef, 
-  profileButtonRef 
+export default function BottomNav({
+  theme,
+  t,
+  navigation,
+  activeScreen = 'Home',
+  scannerButtonRef,
+  profileButtonRef
 }) {
+  // Explicit inset instead of relying on each screen's ambient SafeAreaView
+  // padding to push an absolutely-positioned child above the system nav bar
+  // -- that worked on Home but not on Stats/Profile, so this makes the bar
+  // responsible for its own safe-area clearance everywhere it's used.
+  const insets = useSafeAreaInsets();
   // Screen order for directional navigation
   const screenOrder = ['Home', 'Scanner', 'Stats', 'Profile'];
   
@@ -26,14 +32,18 @@ export default function BottomNav({
   
   return (
     <View style={[
-      styles.bottomNav, 
-      { 
-        backgroundColor: theme.background,
+      styles.bottomNav,
+      {
+        // ~88% opacity -- slightly see-through rather than a flat, fully
+        // opaque bar. theme.background is always a plain 6-digit hex, so an
+        // alpha suffix is safe to append directly.
+        backgroundColor: `${theme.background}E0`,
         shadowOpacity: 0,
         shadowRadius: 0,
         shadowOffset: { width: 0, height: 0 },
         elevation: 0,
         borderTopWidth: 0,
+        paddingBottom: insets.bottom + 8,
       }
     ]}>
       {/* Home */}
@@ -160,6 +170,13 @@ export default function BottomNav({
 
 const styles = StyleSheet.create({
   bottomNav: {
+    // Floats over the scrollable content instead of sitting in normal flow
+    // below it -- translucency is invisible when there's nothing behind the
+    // bar to show through.
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingVertical: 8,

@@ -94,7 +94,11 @@ export default function QuickEntryScreen({ navigation }) {
           messages: [
             {
               role: 'user',
-              content: `Estimate nutrition for: "${mealName.trim()}". Use average homemade/standard portions. A standard pizza slice = 250-280 kcal, medium banana = 105 kcal. Return ONLY JSON, no markdown:
+              content: `Estimate nutrition for: "${mealName.trim()}". Use average homemade/standard portions. A standard pizza slice = 250-280 kcal, medium banana = 105 kcal.
+
+Reason per-ingredient before totaling: break the description into its component foods, estimate a realistic weight and calories-per-100g for each (most cooked home meals are 100-250 kcal/100g; fried/breaded foods 200-350 kcal/100g; only concentrated fats, oils, nuts, or candy exceed 500 kcal/100g), then sum them. A vague quantity like "a plate" or "a bowl" means one typical individual serving, not a large/family portion.
+
+Return ONLY JSON, no markdown:
 {"calories": number, "protein": number, "carbs": number, "fat": number, "serving_grams": number}
 Values are for the total amount described. Be accurate, not inflated.`
             }
@@ -123,7 +127,17 @@ Values are for the total amount described. Be accurate, not inflated.`
       setServingGrams(grams.toString());
 
       posthog.capture('ai_nutrition_estimated', { source: 'quick_entry' });
-      showToast('success', 'Nutrition Estimated!', 'Review and adjust if needed.');
+
+      // AI estimates for vague/compound descriptions ("1 plate of X and Y")
+      // occasionally come back wildly inflated -- almost no whole-food dish
+      // exceeds ~600 kcal/100g (that's roughly the density of pure fat/oil),
+      // so flag anything past that instead of silently trusting the number.
+      const kcalPer100g = grams > 0 ? ((parsed.calories || 0) / grams) * 100 : 0;
+      if (kcalPer100g > 600) {
+        showToast('info', 'Double-check this one', 'That calorie estimate looks unusually high for the portion size — please review before saving.');
+      } else {
+        showToast('success', 'Nutrition Estimated!', 'Review and adjust if needed.');
+      }
     } catch (error) {
       console.error('GPT nutrition error:', error);
       Alert.alert('Error', 'Could not estimate nutrition. Please enter manually.');
@@ -234,16 +248,23 @@ Values are for the total amount described. Be accurate, not inflated.`
         return;
       }
 
+      // food_database stores calories/macros per 100g (HomeScreen and every
+      // other consumer multiply by serving_grams/100 to get the real total)
+      // -- the form fields above hold totals for the CURRENT servingGrams,
+      // so they need to be normalized back down to a per-100g basis here.
+      const grams = parseFloat(servingGrams) || 100;
+      const scale = 100 / grams;
+
       // Create product in food_database
       const { data: newProduct, error: productError } = await supabase
         .from('food_database')
         .insert({
           name: mealName.trim(),
-          calories: parseFloat(calories),
-          protein: parseFloat(protein) || 0,
+          calories: (parseFloat(calories) || 0) * scale,
+          protein: (parseFloat(protein) || 0) * scale,
           emoji: '🍽️',
-          carbs: parseFloat(carbs) || 0,
-          fat: parseFloat(fat) || 0,
+          carbs: (parseFloat(carbs) || 0) * scale,
+          fat: (parseFloat(fat) || 0) * scale,
           fiber: 0,
           sugar: 0,
           sodium: 0,
@@ -260,7 +281,7 @@ Values are for the total amount described. Be accurate, not inflated.`
       const { error } = await supabase.from('meals').insert({
         user_id: user.id,
         product_id: newProduct.id,
-        serving_grams: parseFloat(servingGrams) || 100,
+        serving_grams: grams,
         serving_unit: 'g',
       });
 

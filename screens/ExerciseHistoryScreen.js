@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert, Modal } from 'react-native';
 import { useLanguage } from '../utils/LanguageContext';
 import { supabase } from '../utils/supabase';
 import { useUser } from '../utils/UserContext';
@@ -20,6 +20,8 @@ export default function ExerciseHistoryScreen({ route, nestedInScrollView }) {
   const [expandedId, setExpandedId] = useState(null);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [editingEntry, setEditingEntry] = useState(null);
+  const [savingEntry, setSavingEntry] = useState(false);
 
   useEffect(() => {
     // `user` is set early in UserContext's load chain -- well before it
@@ -122,6 +124,70 @@ export default function ExerciseHistoryScreen({ route, nestedInScrollView }) {
     setDeleteTarget(null);
   };
 
+  const openEditEntry = (entry) => {
+    setEditingEntry({
+      id: entry.id,
+      name: entry.name || '',
+      sets: entry.sets != null ? String(entry.sets) : '',
+      reps: entry.reps != null ? String(entry.reps) : '',
+      weight: entry.weight != null ? String(entry.weight) : '',
+      weight_unit: entry.weight_unit || 'kg',
+    });
+  };
+
+  // id: null marks a new row rather than an edit of an existing one --
+  // exerciseLogId/subCategory are only needed for that insert path, so the
+  // update path (openEditEntry above) doesn't carry them.
+  const openAddEntry = (exerciseLogId, subCategory) => {
+    setEditingEntry({
+      id: null,
+      exerciseLogId,
+      subCategory,
+      name: '',
+      sets: '',
+      reps: '',
+      weight: '',
+      weight_unit: 'kg',
+    });
+  };
+
+  const saveEditedEntry = async () => {
+    if (!editingEntry.name.trim() || !editingEntry.sets || !editingEntry.reps) {
+      Alert.alert(t('common.error'), 'Please fill in the exercise name, sets, and reps.');
+      return;
+    }
+
+    setSavingEntry(true);
+    try {
+      const hasWeight = editingEntry.weight !== '' && !isNaN(parseFloat(editingEntry.weight));
+      const payload = {
+        name: editingEntry.name.trim(),
+        sets: parseInt(editingEntry.sets, 10) || 0,
+        reps: parseInt(editingEntry.reps, 10) || 0,
+        weight: hasWeight ? parseFloat(editingEntry.weight) : null,
+        weight_unit: hasWeight ? editingEntry.weight_unit : null,
+      };
+
+      const { error } = editingEntry.id
+        ? await supabase.from('exercise_log_entries').update(payload).eq('id', editingEntry.id)
+        : await supabase.from('exercise_log_entries').insert({
+            ...payload,
+            exercise_log_id: editingEntry.exerciseLogId,
+            sub_category: editingEntry.subCategory,
+          });
+
+      if (error) throw error;
+
+      setEditingEntry(null);
+      fetchExercises();
+    } catch (error) {
+      console.error('Error saving exercise entry:', error);
+      Alert.alert(t('common.error'), 'Could not save changes. Please try again.');
+    } finally {
+      setSavingEntry(false);
+    }
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const today = new Date();
@@ -166,24 +232,41 @@ export default function ExerciseHistoryScreen({ route, nestedInScrollView }) {
     </View>
   );
 
+  const renderEntryRow = (entry) => (
+    <TouchableOpacity key={entry.id} onPress={() => openEditEntry(entry)}>
+      <Text style={[styles.detailRow, { color: theme.textSecondary }]}>
+        {entry.name} — {entry.sets} × {entry.reps}
+        {entry.weight ? ` @ ${entry.weight}${entry.weight_unit ? ` ${entry.weight_unit}` : ''}` : ''}
+      </Text>
+    </TouchableOpacity>
+  );
+
   const renderSplitItem = (item) => {
     const isExpanded = expandedId === item.id;
     const entries = item.raw.exercise_log_entries || [];
 
-    // Group entries by sub-category for display -- entries with no
-    // sub-category (Full Body / a custom "Other" label) are listed
+    // Group entries by their raw sub-category key (not the translated label,
+    // so it can double as the value passed back to openAddEntry). Entries
+    // with no sub-category (Full Body / a custom "Other" label) are listed
     // ungrouped.
     const grouped = {};
     const ungrouped = [];
     for (const entry of entries) {
-      const label = formatSubCategory(entry.sub_category);
-      if (label) {
-        if (!grouped[label]) grouped[label] = [];
-        grouped[label].push(entry);
+      if (entry.sub_category && SUB_CATEGORY_KEYS.includes(entry.sub_category)) {
+        if (!grouped[entry.sub_category]) grouped[entry.sub_category] = [];
+        grouped[entry.sub_category].push(entry);
       } else {
         ungrouped.push(entry);
       }
     }
+
+    // Sections come from what was originally selected on this log (so a
+    // section the user forgot to log anything for still shows up, with
+    // nothing but an Add button) -- falling back to whatever groups exist
+    // for older logs saved before sub_categories was stored on the log itself.
+    const sectionKeys = item.raw.sub_categories?.length
+      ? item.raw.sub_categories.filter((key) => SUB_CATEGORY_KEYS.includes(key))
+      : Object.keys(grouped);
 
     return (
       <View style={[styles.exerciseCard, styles.splitCard, { backgroundColor: theme.cardBackground }]}>
@@ -219,31 +302,31 @@ export default function ExerciseHistoryScreen({ route, nestedInScrollView }) {
 
         {isExpanded && (
           <View style={styles.expandedDetail}>
-            {Object.entries(grouped).map(([label, groupEntries]) => (
-              <View key={label} style={styles.detailGroup}>
-                <Text style={[styles.detailGroupTitle, { color: theme.text }]}>{label}</Text>
-                {groupEntries.map((entry) => (
-                  <Text key={entry.id} style={[styles.detailRow, { color: theme.textSecondary }]}>
-                    {entry.name} — {entry.sets} × {entry.reps}
-                    {entry.weight ? ` @ ${entry.weight}${entry.weight_unit ? ` ${entry.weight_unit}` : ''}` : ''}
+            {sectionKeys.map((key) => (
+              <View key={key} style={styles.detailGroup}>
+                <Text style={[styles.detailGroupTitle, { color: theme.text }]}>
+                  {formatSubCategory(key)}
+                </Text>
+                {(grouped[key] || []).map((entry) => renderEntryRow(entry))}
+                <TouchableOpacity onPress={() => openAddEntry(item.rawId, key)}>
+                  <Text style={[styles.addEntryText, { color: theme.primary }]}>
+                    + {t('exercise.splitFlow.addExercise')}
                   </Text>
-                ))}
+                </TouchableOpacity>
               </View>
             ))}
-            {ungrouped.length > 0 && (
+
+            {/* Full Body / "Other" workouts have no sub-category sections --
+                everything (existing entries and the add button) lives here. */}
+            {sectionKeys.length === 0 && (
               <View style={styles.detailGroup}>
-                {ungrouped.map((entry) => (
-                  <Text key={entry.id} style={[styles.detailRow, { color: theme.textSecondary }]}>
-                    {entry.name} — {entry.sets} × {entry.reps}
-                    {entry.weight ? ` @ ${entry.weight}${entry.weight_unit ? ` ${entry.weight_unit}` : ''}` : ''}
+                {ungrouped.map((entry) => renderEntryRow(entry))}
+                <TouchableOpacity onPress={() => openAddEntry(item.rawId, null)}>
+                  <Text style={[styles.addEntryText, { color: theme.primary }]}>
+                    + {t('exercise.splitFlow.addExercise')}
                   </Text>
-                ))}
+                </TouchableOpacity>
               </View>
-            )}
-            {entries.length === 0 && (
-              <Text style={[styles.detailRow, { color: theme.textSecondary }]}>
-                {t('exercise.noHistory')}
-              </Text>
             )}
           </View>
         )}
@@ -298,6 +381,112 @@ export default function ExerciseHistoryScreen({ route, nestedInScrollView }) {
         }}
         destructive
       />
+
+      <Modal
+        visible={!!editingEntry}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setEditingEntry(null)}
+      >
+        <View style={styles.editModalOverlay}>
+          <View style={[styles.editModalContent, { backgroundColor: theme.cardBackground }]}>
+            <Text style={[styles.editModalTitle, { color: theme.text }]}>
+              {editingEntry?.id ? t('exercise.splitFlow.exerciseName') : t('exercise.splitFlow.addExercise')}
+            </Text>
+
+            {editingEntry && (
+              <>
+                <TextInput
+                  style={[styles.editInput, { color: theme.text, borderColor: theme.border }]}
+                  value={editingEntry.name}
+                  onChangeText={(v) => setEditingEntry({ ...editingEntry, name: v })}
+                  placeholder={t('exercise.splitFlow.exerciseName')}
+                  placeholderTextColor={theme.textSecondary}
+                />
+
+                <View style={styles.editRow}>
+                  <View style={styles.editField}>
+                    <Text style={[styles.editLabel, { color: theme.textSecondary }]}>
+                      {t('exercise.splitFlow.sets')}
+                    </Text>
+                    <TextInput
+                      style={[styles.editInput, { color: theme.text, borderColor: theme.border }]}
+                      value={editingEntry.sets}
+                      onChangeText={(v) => setEditingEntry({ ...editingEntry, sets: v })}
+                      keyboardType="numeric"
+                    />
+                  </View>
+                  <View style={styles.editField}>
+                    <Text style={[styles.editLabel, { color: theme.textSecondary }]}>
+                      {t('exercise.splitFlow.reps')}
+                    </Text>
+                    <TextInput
+                      style={[styles.editInput, { color: theme.text, borderColor: theme.border }]}
+                      value={editingEntry.reps}
+                      onChangeText={(v) => setEditingEntry({ ...editingEntry, reps: v })}
+                      keyboardType="numeric"
+                    />
+                  </View>
+                </View>
+
+                <Text style={[styles.editLabel, { color: theme.textSecondary, marginTop: 12 }]}>
+                  {t('exercise.weight')}
+                </Text>
+                <View style={styles.editRow}>
+                  <TextInput
+                    style={[styles.editInput, { flex: 1, color: theme.text, borderColor: theme.border }]}
+                    value={editingEntry.weight}
+                    onChangeText={(v) => setEditingEntry({ ...editingEntry, weight: v })}
+                    keyboardType="numeric"
+                    placeholder="0"
+                    placeholderTextColor={theme.textSecondary}
+                  />
+                  {['kg', 'lb'].map((unit) => (
+                    <TouchableOpacity
+                      key={unit}
+                      style={[
+                        styles.unitButton,
+                        { borderColor: theme.border },
+                        editingEntry.weight_unit === unit && { backgroundColor: theme.primary, borderColor: theme.primary }
+                      ]}
+                      onPress={() => setEditingEntry({ ...editingEntry, weight_unit: unit })}
+                    >
+                      <Text style={[styles.unitButtonText, { color: theme.text }, editingEntry.weight_unit === unit && { color: '#fff' }]}>
+                        {unit}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </>
+            )}
+
+            <View style={styles.editModalButtons}>
+              <TouchableOpacity
+                style={[styles.editModalButton, { borderColor: theme.border }]}
+                onPress={() => setEditingEntry(null)}
+                disabled={savingEntry}
+              >
+                <Text style={[styles.editModalButtonText, { color: theme.primary }]}>
+                  {t('common.cancel')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.editModalButton, styles.editModalSaveButton, { backgroundColor: theme.primary }]}
+                onPress={saveEditedEntry}
+                disabled={savingEntry}
+              >
+                {savingEntry ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={[styles.editModalButtonText, { color: '#fff' }]}>
+                    {t('common.save')}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -352,5 +541,78 @@ const styles = StyleSheet.create({
   },
   detailGroup: { marginBottom: 10 },
   detailGroupTitle: { fontSize: 14, fontWeight: '700', marginBottom: 4 },
-  detailRow: { fontSize: 14, marginBottom: 2 }
+  detailRow: { fontSize: 14, marginBottom: 2 },
+  addEntryText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 10,
+  },
+  editModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  editModalContent: {
+    width: '88%',
+    borderRadius: 20,
+    padding: 24,
+  },
+  editModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  editInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    fontSize: 15,
+    marginBottom: 12,
+  },
+  editRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  editField: {
+    flex: 1,
+  },
+  editLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  unitButton: {
+    paddingHorizontal: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  unitButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  editModalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  editModalButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  editModalSaveButton: {
+    borderWidth: 0,
+  },
+  editModalButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });

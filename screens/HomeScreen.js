@@ -5,7 +5,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Notifications from 'expo-notifications';
 import * as StoreReview from 'expo-store-review';
 import * as Location from 'expo-location';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, RefreshControl, Alert, Modal, Platform, Animated, ActivityIndicator, Linking, TextInput, Image } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, RefreshControl, Alert, Modal, Platform, Animated, Easing, ActivityIndicator, Linking, TextInput, Image, useWindowDimensions } from 'react-native';
 import { showToast } from '../components/VeethaToast';
 import VeethaModal from '../components/VeethaModal';
 import GuestUpsellSheet from '../components/GuestUpsellSheet';
@@ -90,6 +90,78 @@ function CircularProgress({ percentage, size = 100, strokeWidth = 8, color = '#4
         {children}
       </View>
     </View>
+  );
+}
+
+// Unrolls its content downward on mount, like a projector screen dropping
+// into place -- translateY + scaleY rather than a true top-anchored scale
+// (which would need an onLayout height measurement), but reads the same at
+// this size.
+function RollDownReveal({ children, delay = 0, style }) {
+  const anim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.sequence([
+      Animated.delay(delay),
+      // Held near-flat a beat longer before releasing (Easing.in start),
+      // then a loose spring so it drops with real momentum and settles
+      // with a visible bounce, like a projector screen's spring roller.
+      Animated.timing(anim, { toValue: 0.15, duration: 90, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+      Animated.spring(anim, { toValue: 1, friction: 5, tension: 32, useNativeDriver: true }),
+    ]).start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const scaleY = anim.interpolate({ inputRange: [0, 1], outputRange: [0.02, 1] });
+  const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] });
+  const opacity = anim.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0, 1, 1] });
+
+  return (
+    <Animated.View style={[style, { opacity, transform: [{ translateY }, { scaleY }] }]}>
+      {children}
+    </Animated.View>
+  );
+}
+
+// Flickers the flame icon like a live flame on load, then settles to rest.
+// Rotation read as the icon swaying/dancing rather than flickering -- a real
+// flame doesn't tilt side to side, it varies in brightness and height. So
+// this drives opacity + a small vertical stretch (no rotation at all) with
+// two fast, out-of-phase oscillators for an irregular flicker rather than a
+// single regular pulse. Each loop iteration returns to its rest value by
+// construction, so a fixed iteration count settles cleanly on its own.
+// `active` gates it off entirely (e.g. a 0-day streak shouldn't flicker).
+function FlickerFlame({ children, style, active = true }) {
+  const flickerA = useRef(new Animated.Value(0)).current;
+  const flickerB = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!active) return;
+    const cycle = (val, period, iterations) => (
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(val, { toValue: 1, duration: period / 2, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(val, { toValue: -1, duration: period, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(val, { toValue: 0, duration: period / 2, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        ]),
+        { iterations }
+      )
+    );
+    cycle(flickerA, 90, 5).start();
+    cycle(flickerB, 65, 6).start();
+  }, [active]);
+
+  if (!active) {
+    return <View style={style}>{children}</View>;
+  }
+
+  const opacity = flickerA.interpolate({ inputRange: [-1, 1], outputRange: [0.8, 1] });
+  const scaleY = flickerA.interpolate({ inputRange: [-1, 1], outputRange: [0.92, 1.08] });
+  const scaleX = flickerB.interpolate({ inputRange: [-1, 1], outputRange: [0.95, 1.05] });
+
+  return (
+    <Animated.View style={[style, { opacity, transform: [{ scaleX }, { scaleY }] }]}>
+      {children}
+    </Animated.View>
   );
 }
 
@@ -342,6 +414,7 @@ function NutrientModal({ visible, nutrient, onClose, theme, currentIntake, daily
 }
 
 export default function HomeScreen({ navigation }) {
+  const { height: windowHeight } = useWindowDimensions();
   const { theme, isDark } = useTheme();
   const { t, language } = useLanguage();
   const LOCALE_MAP = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', tl: 'fil-PH' };
@@ -422,8 +495,23 @@ export default function HomeScreen({ navigation }) {
   const scannerButtonRef = useRef(null);
   const scrollViewRef = useRef(null);
 
+  // The exercise button's curl animation used to fire on mount, which since
+  // it sits below the fold on most screens meant it had already finished
+  // playing by the time it scrolled into view -- track its scroll-content Y
+  // position (captured once via onLayout) against live scroll offset instead,
+  // so it only starts once its section actually becomes visible.
+  const exerciseCardYRef = useRef(null);
+  const scrollViewHeightRef = useRef(null);
+  const [exerciseCardVisible, setExerciseCardVisible] = useState(false);
+
   // Swipe navigation
-  const swipeGesture = useSwipeNavigation(navigation, 'Home', tutorialCompleted);
+  // Not gated on tutorialCompleted -- AppTutorial already renders its own
+  // Modal while a step is actively showing, which blocks touches to the
+  // screen underneath on its own. Gating this too meant swipe stayed
+  // silently disabled whenever tutorialCompleted was false for any reason
+  // (a stale/missed AsyncStorage flag, a timing hiccup on load), with no
+  // indication to the user why nothing was happening.
+  const swipeGesture = useSwipeNavigation(navigation, 'Home');
 
   const [calendarMonth, setCalendarMonth] = useState({ 
     year: new Date().getFullYear(), 
@@ -1059,13 +1147,19 @@ export default function HomeScreen({ navigation }) {
 
   // Load meals when date changes
   useEffect(() => {
+    // These all bail out early if `user` isn't loaded yet (see loadMealsForDate
+    // etc. below), and none of that data has anywhere else to come from once
+    // it bails -- without `user?.id` here, a mount that races ahead of
+    // UserContext resolving would leave meals permanently empty since nothing
+    // else re-triggers this effect once `user` shows up.
+    if (!isGuest && !user) return;
     loadMealsForDate(selectedDate);
     loadWaterIntake();
     loadExerciseCalories();
     loadStepCalories();
     calculateStreak();
     fetchMonthlyData(calendarMonth.year, calendarMonth.month);
-  }, [selectedDate, calendarMonth, isGuest]);
+  }, [selectedDate, calendarMonth, isGuest, user?.id]);
 
   // Check greeting only when needed (login or 5 hours later)
   useEffect(() => {
@@ -1809,7 +1903,7 @@ export default function HomeScreen({ navigation }) {
             <AnimatedThemeWrapper>
               {/* ScrollView with content */}
               <ScrollView
-                ref={scrollViewRef} 
+                ref={scrollViewRef}
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 scrollEnabled={!checkingTutorial}
@@ -1821,6 +1915,17 @@ export default function HomeScreen({ navigation }) {
                   />
                 }
                 showsVerticalScrollIndicator={false}
+                onLayout={(event) => {
+                  scrollViewHeightRef.current = event.nativeEvent.layout.height;
+                }}
+                onScroll={(event) => {
+                  if (exerciseCardVisible || exerciseCardYRef.current === null) return;
+                  const { contentOffset, layoutMeasurement } = event.nativeEvent;
+                  if (contentOffset.y + layoutMeasurement.height > exerciseCardYRef.current) {
+                    setExerciseCardVisible(true);
+                  }
+                }}
+                scrollEventThrottle={100}
               >
                 {/* Greeting Banner */}
                 <GreetingBanner
@@ -1861,9 +1966,11 @@ export default function HomeScreen({ navigation }) {
                     default; tap to reveal the full remaining/over + exercise
                     message) -- shared here instead of inside CardsLayout/
                     BarsLayout so both layouts get the same behavior for free. */}
-                <View style={styles.streakBadgeWrapper}>
-                  <View style={[styles.streakBadge, { backgroundColor: '#FF6B35' }]}>
-                    <AppIcon name="streak" size={24} tintColor="#fff" />
+                <RollDownReveal style={styles.streakBadgeWrapper}>
+                  <View style={styles.streakBadge}>
+                    <FlickerFlame active={currentStreak > 0}>
+                      <AppIcon name="streak" size={24} tintColor={currentStreak > 0 ? '#FF6B35' : theme.textTertiary} />
+                    </FlickerFlame>
                     <Text style={styles.streakNumber}>{currentStreak}</Text>
                     <Text style={styles.streakLabel}>
                       {currentStreak === 1 ? t('home.dayStreak') : t('home.daysStreak')}
@@ -1892,21 +1999,21 @@ export default function HomeScreen({ navigation }) {
                       </Text>
                     )}
                   </TouchableOpacity>
-                </View>
+                </RollDownReveal>
 
                 {/* Date Navigation -- collapsed to a single pill showing the
                     current selection; tapping it reveals the full date
                     picker + quick-jump row (previously always visible,
                     taking up two full rows) in a dismissible overlay. */}
-                <View style={styles.dateNavigation}>
+                <RollDownReveal style={styles.dateNavigation} delay={100}>
                   <TouchableOpacity
-                    style={[styles.dateSummaryPill, { backgroundColor: theme.cardBackground }]}
+                    style={styles.dateSummaryPill}
                     onPress={() => setShowDateSection(true)}
                   >
                     <Text style={[styles.dateSummaryText, { color: theme.text }]}>{getDateLabel()}</Text>
                     <Text style={[styles.dateSummaryChevron, { color: theme.textSecondary }]}>⌄</Text>
                   </TouchableOpacity>
-                </View>
+                </RollDownReveal>
 
                 {showDateSection && (
                   <Modal
@@ -2045,12 +2152,30 @@ export default function HomeScreen({ navigation }) {
                 <CalorieWarningBanner theme={theme} t={t} consumed={consumed} totalCalories={totalCalories} />
 
                 {/* Exercise & Water Cards - SIDE BY SIDE */}
-                <View style={styles.activityCardsRow}>
+                <View
+                  style={styles.activityCardsRow}
+                  onLayout={(event) => {
+                    const { y } = event.nativeEvent.layout;
+                    exerciseCardYRef.current = y;
+                    // Already on-screen without any scrolling needed (e.g. a
+                    // tall device where it fits above the fold) -- onScroll
+                    // would never fire in that case, so check right away too.
+                    // Uses the ScrollView's own measured height, not the raw
+                    // device screen height -- the header/nav chrome around it
+                    // means the actual visible scroll area is smaller than
+                    // the full screen, so comparing against the full screen
+                    // height was marking it "visible" before it actually was.
+                    const viewportHeight = scrollViewHeightRef.current ?? windowHeight;
+                    if (!exerciseCardVisible && y < viewportHeight) {
+                      setExerciseCardVisible(true);
+                    }
+                  }}
+                >
                   {/* Exercise Card - LEFT SIDE */}
-                  <ExerciseButton theme={theme} navigation={navigation} isGuestMode={isGuestMode} onGuestPress={showGuestAlert} />
+                  <ExerciseButton theme={theme} navigation={navigation} isGuestMode={isGuestMode} onGuestPress={showGuestAlert} startAnimation={exerciseCardVisible} />
 
                   {/* Water Intake with Animated Pitcher */}
-                  <View style={[styles.activityCard, { backgroundColor: theme.cardBackground }]}>
+                  <View style={styles.activityCard}>
                     <WaterPitcher 
                       cups={waterIntake} 
                       maxCups={profile?.daily_water_goal_cups || 8}
@@ -2114,16 +2239,6 @@ export default function HomeScreen({ navigation }) {
                   onCropped={() => loadMealsForDate(selectedDate)}
                 />
               </ScrollView>
-
-              {/* Bottom Navigation */}
-              <BottomNav 
-                theme={theme} 
-                t={t} 
-                navigation={navigation} 
-                activeScreen="Home" 
-                scannerButtonRef={scannerButtonRef} 
-                profileButtonRef={profileButtonRef} 
-              />
 
               {/* Calendar Modal */}
               {showCalendar && (
@@ -2329,6 +2444,19 @@ export default function HomeScreen({ navigation }) {
               </Modal>
             </AnimatedThemeWrapper>
 
+            {/* Bottom Navigation -- a direct sibling of AnimatedThemeWrapper
+                (not nested inside it) so it positions itself against the
+                SafeAreaView the same way it does on Stats/Profile, instead
+                of being nested a level deeper and sitting too high up. */}
+            <BottomNav
+              theme={theme}
+              t={t}
+              navigation={navigation}
+              activeScreen="Home"
+              scannerButtonRef={scannerButtonRef}
+              profileButtonRef={profileButtonRef}
+            />
+
             {/* Tutorial freeze overlay — MUST be last child to cover everything */}
             {checkingTutorial && (
               <View
@@ -2406,6 +2534,12 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  // BottomNav now floats over the content (position: absolute) instead of
+  // sitting below it in normal flow -- this reserves space so the last
+  // scrolled content isn't hidden underneath it.
+  scrollContent: {
+    paddingBottom: 100,
+  },
   header: {
     padding: 20,
     paddingTop: 10,
@@ -2450,11 +2584,11 @@ const styles = StyleSheet.create({
   streakNumber: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#FF6B35',
   },
   streakLabel: {
     fontSize: 10,
-    color: '#fff',
+    color: '#FF6B35',
     marginTop: 2,
     opacity: 0.9,
   },
@@ -2971,20 +3105,19 @@ const styles = StyleSheet.create({
   },
   dateNavigation: {
     paddingHorizontal: 20,
-    paddingTop: 15,
-    paddingBottom: 10,
+    paddingTop: 3,
+    paddingBottom: 0,
+    marginBottom: -2,
   },
   dateSummaryPill: {
     flexDirection: 'row',
     alignSelf: 'center',
     alignItems: 'center',
     paddingVertical: 8,
-    paddingHorizontal: 18,
-    borderRadius: 20,
     gap: 6,
   },
   dateSummaryText: {
-    fontSize: 15,
+    fontSize: 20,
     fontWeight: '600',
   },
   dateSummaryChevron: {
@@ -3014,7 +3147,13 @@ const styles = StyleSheet.create({
   },
   activityCard: {
     flex: 1,
-    padding: 10,
+    paddingTop: 0,
+    paddingBottom: 10,
+    paddingLeft: 10,
+    // Extra right padding nudges the centered water content left, to line
+    // up with the protein/fat ring column above (its own rightCard style
+    // shifts those rings left the same way within their column).
+    paddingRight: 32,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',

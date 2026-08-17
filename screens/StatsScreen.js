@@ -361,14 +361,11 @@ export default function StatsScreen({ navigation }) {
           <AnimatedThemeWrapper>
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
               {/* Header */}
-              <View style={[styles.header, { backgroundColor: theme.cardBackground }]}>
+              <View style={styles.header}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
                     <Text style={[styles.headerTitle, { color: theme.text }]}>{t('stats.title')}</Text>
-                    <AppIcon name="chart" size={24} style={{ marginLeft: 8 }} />
+                    <AppIcon name="chart" size={42} style={{ marginLeft: 8 }} />
                   </View>
-                <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
-                  {t('stats.subtitle')}
-                </Text>
               </View>
 
               {/* Period Selector */}
