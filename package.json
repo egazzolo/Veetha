@@ -73,6 +73,7 @@
   "devDependencies": {
     "@babel/core": "^7.25.0",
     "@react-native/metro-config": "^0.84.0",
+    "babel-preset-expo": "~54.0.12",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
