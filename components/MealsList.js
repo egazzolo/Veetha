@@ -11,6 +11,21 @@ import { useTheme } from '../utils/ThemeContext';
 import { usePremiumStatus } from '../utils/usePremiumStatus';
 import { supabase } from '../utils/supabase';
 
+// Cycles "." -> ".." -> "..." -> "" -> repeat, one dot appearing at a time
+// and then clearing, for as long as the button it's inside stays loading.
+function LoadingDots({ style }) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCount((c) => (c + 1) % 4); // 0, 1, 2, 3, 0 (cleared), 1, ...
+    }, 350);
+    return () => clearInterval(interval);
+  }, []);
+
+  return <Text style={style}>{'.'.repeat(count)}</Text>;
+}
+
 export default function MealsList({
   theme,
   t,
@@ -66,6 +81,11 @@ export default function MealsList({
     if (abs < 0.1) return num.toFixed(4);
     if (abs < 1) return num.toFixed(2);
     return num.toFixed(1);
+  };
+
+  const formatLoggedTime = (loggedAt) => {
+    if (!loggedAt) return null;
+    return new Date(loggedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   };
 
   const handleMealPress = (meal) => {
@@ -180,7 +200,7 @@ export default function MealsList({
           });
         }
       }}
-      style={[styles.mealsCard, { backgroundColor: theme.cardBackground }]}
+      style={[styles.mealsCard, { backgroundColor: theme.background }]}
     >
       <View style={styles.mealsHeader}>
         {selectionMode ? (
@@ -223,28 +243,17 @@ export default function MealsList({
             {isToday() && (
               <View style={styles.mealsHeaderButtons}>
                 <TouchableOpacity
-                  style={[styles.copyMealsButton, { backgroundColor: theme.primary }]}
+                  style={styles.copyMealsButton}
                   onPress={copyYesterdaysMeals}
                   disabled={copyingMeals}
                 >
-                  <Text style={styles.copyMealsButtonText}>
-                    {copyingMeals ? '...' : t('home.copyYesterday')}
-                  </Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[styles.quickEntryButton, { backgroundColor: '#2196F3' }]}
-                  onPress={() => {
-                    if (isGuestMode) {
-                      setGuestSheetVisible(true);
-                      return;
-                    }
-                    navigation.navigate('QuickEntry');
-                  }}
-                >
-                  <Text style={styles.quickEntryButtonText}>
-                    {t('home.quickEntry')}
-                  </Text>
+                  {copyingMeals ? (
+                    <LoadingDots style={[styles.copyMealsButtonText, { color: theme.primary }]} />
+                  ) : (
+                    <Text style={[styles.copyMealsButtonText, { color: theme.primary }]}>
+                      {t('home.copyYesterday')}
+                    </Text>
+                  )}
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -253,6 +262,21 @@ export default function MealsList({
                 >
                   <Text style={[styles.quickEntryButtonText, { color: theme.text }]}>
                     {listViewMode === 'grid' ? '☰' : '▦'}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.quickEntryButton}
+                  onPress={() => {
+                    if (isGuestMode) {
+                      setGuestSheetVisible(true);
+                      return;
+                    }
+                    navigation.navigate('QuickEntry');
+                  }}
+                >
+                  <Text style={[styles.quickEntryButtonText, { color: '#2196F3' }]}>
+                    {t('home.quickEntry')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -335,6 +359,10 @@ export default function MealsList({
                   style={styles.thumbSectionCompact}
                   onPress={(e) => {
                     e.stopPropagation();
+                    if (selectionMode) {
+                      onToggleSelection(meal.id);
+                      return;
+                    }
                     if (!meal.image_url && !product.image_url) {
                       if (onImageUpload) onImageUpload(meal);
                     } else {
@@ -439,6 +467,10 @@ export default function MealsList({
                 style={styles.imageSectionBig}
                 onPress={() => {
                   // If no image, upload. If image exists, behave like the card (open post-it OR toggle selection)
+                  if (selectionMode) {
+                    onToggleSelection(meal.id);
+                    return;
+                  }
                   if (!meal.image_url && !product.image_url && onImageUpload) {
                     onImageUpload(meal);
                   } else {
@@ -646,6 +678,11 @@ export default function MealsList({
                     <Text style={[styles.postItServingText, isDark && { color: '#C9A961' }]}>
                       {t('home.mealsList.serving')}: {selectedMeal?.serving_grams}{selectedMeal?.serving_unit || 'g'}
                     </Text>
+                    {formatLoggedTime(selectedMeal?.logged_at) && (
+                      <Text style={[styles.postItServingText, isDark && { color: '#C9A961' }]}>
+                        Entered at {formatLoggedTime(selectedMeal?.logged_at)}
+                      </Text>
+                    )}
                   </View>
                 </>
               )}
@@ -750,30 +787,31 @@ const styles = StyleSheet.create({
   mealsHeader: { 
     marginBottom: 15 
   },
-  mealsHeaderButtons: { 
-    flexDirection: 'row', 
-    gap: 8, 
-    marginTop: 12 
+  mealsHeaderButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 12
   },
   copyMealsButton: { 
     paddingHorizontal: 14, 
     paddingVertical: 8, 
     borderRadius: 8 
   },
-  copyMealsButtonText: { 
-    color: '#fff', 
-    fontSize: 12, 
-    fontWeight: '600' 
+  copyMealsButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600'
   },
   quickEntryButton: { 
     paddingHorizontal: 14, 
     paddingVertical: 8, 
     borderRadius: 8 
   },
-  quickEntryButtonText: { 
-    color: '#fff', 
-    fontSize: 12, 
-    fontWeight: '600' 
+  quickEntryButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600'
   },
   cardTitle: { 
     fontSize: 18, 
@@ -1125,7 +1163,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#D4C100',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    backgroundColorwhen : 'rgba(255,255,255,0.3)',
   },
   postItToggleBtnActive: {
     backgroundColor: '#1F9B39',

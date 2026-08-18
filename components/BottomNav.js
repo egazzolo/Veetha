@@ -34,7 +34,10 @@ export default function BottomNav({
     <View style={[
       styles.bottomNav,
       {
-        backgroundColor: 'transparent',
+        // ~10% opacity -- just enough of a backdrop to be felt, not seen.
+        // theme.background is always a plain 6-digit hex, so an alpha
+        // suffix is safe to append directly.
+        backgroundColor: `${theme.background}80`,
         shadowOpacity: 0,
         shadowRadius: 0,
         shadowOffset: { width: 0, height: 0 },
