@@ -13,7 +13,9 @@ module.exports = {
     ],
     plugins: [
       "expo-apple-authentication",
+      "expo-asset",
       "expo-localization",
+      "expo-web-browser",
       "./plugins/withFmtPatch",
       "./plugins/withGradleJvmArgs",
       "./plugins/withNativeBillingTest",
