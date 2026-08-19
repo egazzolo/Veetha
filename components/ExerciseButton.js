@@ -29,7 +29,7 @@ const CURL_FRAMES = [
 ];
 const CURL_FRAME_DURATION = 80; // ms per frame -- ~560ms total, a brisk single curl
 
-export default function ExerciseButton({ theme, navigation, isGuestMode, onGuestPress, startAnimation = true }) {
+export default function ExerciseButton({ theme, navigation, isGuestMode, onGuestPress, startAnimation = true, iconStyle, labelStyle }) {
   const { t } = useLanguage();
   const { refreshProfile } = useUser();
   const [showWeightModal, setShowWeightModal] = useState(false);
@@ -45,7 +45,9 @@ export default function ExerciseButton({ theme, navigation, isGuestMode, onGuest
   // on mount, since this button sits below the fold on most screens and
   // would otherwise finish playing before it ever scrolled into view.
   // hasPlayedRef guards against restarting if startAnimation flips again.
-  const [curlFrame, setCurlFrame] = useState(0);
+  // When not animating (e.g. the static empty-state button elsewhere),
+  // start on the last/flexed frame instead of the resting extended pose.
+  const [curlFrame, setCurlFrame] = useState(startAnimation ? 0 : CURL_FRAMES.length - 1);
   const hasPlayedRef = useRef(false);
   useEffect(() => {
     if (!startAnimation || hasPlayedRef.current) return;
@@ -187,10 +189,10 @@ export default function ExerciseButton({ theme, navigation, isGuestMode, onGuest
       >
         <Image
           source={CURL_FRAMES[curlFrame]}
-          style={{ width: 104, height: 104, marginBottom: 8, tintColor: theme.primary }}
+          style={[{ width: 104, height: 104, marginBottom: 8, tintColor: theme.primary }, iconStyle]}
           resizeMode="contain"
         />
-        <Text style={[styles.buttonText, { color: theme.text }]}>
+        <Text style={[styles.buttonText, { color: theme.text }, labelStyle]}>
           {t('exercise.exercise')}
         </Text>
         {loading && <ActivityIndicator size="small" color={theme.primary} />}

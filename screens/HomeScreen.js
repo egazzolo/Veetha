@@ -1,4 +1,4 @@
-import StepsCard from '../components/StepsCard';
+import StepsButton from '../components/StepsButton';
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -33,6 +33,7 @@ import { decode } from 'base64-arraybuffer';
 import AppTutorial from '../components/AppTutorial';
 import RenameAnnouncementModal from '../components/RenameAnnouncementModal';
 import AnimatedThemeWrapper from '../components/AnimatedThemeWrapper';
+import ThemedScreenBackground from '../components/ThemedScreenBackground';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import GreetingBanner from '../components/GreetingBanner';
@@ -1866,8 +1867,9 @@ export default function HomeScreen({ navigation }) {
     <FrameWarning theme={theme} consumed={consumed} totalCalories={totalCalories}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <GestureDetector gesture={swipeGesture}>
-          <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
-            <AppTutorial 
+          <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+            <ThemedScreenBackground />
+            <AppTutorial
                 screen="Home" 
                 scrollViewRef={scrollViewRef}
                   onComplete={() => {
@@ -2175,6 +2177,9 @@ export default function HomeScreen({ navigation }) {
                   {/* Exercise Card - LEFT SIDE */}
                   <ExerciseButton theme={theme} navigation={navigation} isGuestMode={isGuestMode} onGuestPress={showGuestAlert} startAnimation={exerciseCardVisible} />
 
+                  {/* Steps Card - MIDDLE */}
+                  <StepsButton theme={theme} />
+
                   {/* Water Intake with Animated Pitcher */}
                   <View style={styles.activityCard}>
                     <WaterPitcher 
@@ -2212,8 +2217,6 @@ export default function HomeScreen({ navigation }) {
                     </View>
                   </View>
                 </View>
-
-                {/*<StepsCard />*/}
 
                 {/* Meals List */}
                 <MealsList
@@ -3152,11 +3155,11 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 0,
     paddingBottom: 10,
-    paddingLeft: 10,
-    // Extra right padding nudges the centered water content left, to line
-    // up with the protein/fat ring column above (its own rightCard style
-    // shifts those rings left the same way within their column).
-    paddingRight: 32,
+    // Was asymmetric (paddingLeft: 10, paddingRight: 32) to line up with
+    // the rings grid above when Water was the 2nd of 2 columns -- now the
+    // 3rd of 3, so that alignment trick no longer applies. Simple centered
+    // padding until/unless this needs re-tuning against the new layout.
+    paddingHorizontal: 10,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',

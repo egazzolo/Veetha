@@ -46,10 +46,32 @@ const proModeTheme = {
   warning: '#555555',
 };
 
+// Gold Mode — warm brushed-gold backdrop, dark text for contrast against
+// the bright metal, and the same two-layer gradient technique used for
+// the (now removed) Silver mode: a multi-band brushed base plus a soft
+// warm-white sheen crossing it diagonally.
+const goldTheme = {
+  background: '#C9A227',
+  cardBackground: '#D9B94A',
+  text: '#241B00',
+  textSecondary: '#4A3A0A',
+  textTertiary: '#6E5A18',
+  primary: '#4CAF50',
+  border: '#A9821D',
+  error: '#C62828',
+  success: '#4CAF50',
+  warning: '#8A5A00',
+  gradientColors: ['#B8860B', '#E8C766', '#AD850F', '#F0D878', '#A2790C', '#DEB94D', '#B8901C', '#F4DE8E', '#A67C0E'],
+  gradientLocations: [0, 0.12, 0.25, 0.37, 0.5, 0.62, 0.75, 0.87, 1],
+  gradientHighlightColors: ['rgba(255,250,225,0)', 'rgba(255,250,225,0.6)', 'rgba(255,250,225,0)'],
+  gradientHighlightLocations: [0.25, 0.5, 0.75],
+};
+
 const themes = {
   'modern-light': modernLightTheme,
   'modern-dark': modernDarkTheme,
   'pro-mode': proModeTheme,
+  'gold': goldTheme,
 };
 
 export function ThemeProvider({ children }) {
@@ -116,9 +138,13 @@ export function ThemeProvider({ children }) {
     await changeTheme(newTheme);
   };
 
-  const theme = themes[currentTheme];
+  // Falls back to Light if a saved theme (e.g. a removed one like the old
+  // Silver mode) no longer exists in `themes`, rather than crashing every
+  // screen that reads theme.* on an undefined object.
+  const theme = themes[currentTheme] || modernLightTheme;
   const isDark = currentTheme === 'modern-dark';
   const isProMode = currentTheme === 'pro-mode';
+  const isGold = currentTheme === 'gold';
 
   if (!loaded) return null;
 
@@ -126,8 +152,9 @@ export function ThemeProvider({ children }) {
     <ThemeContext.Provider value={{ 
       theme, 
       currentTheme, 
-      isDark, 
+      isDark,
       isProMode,
+      isGold,
       isTransitioning,
       toggleTheme,
       changeTheme,

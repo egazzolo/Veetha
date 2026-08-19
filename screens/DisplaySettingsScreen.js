@@ -119,6 +119,22 @@ export default function DisplaySettingsScreen({ navigation }) {
               <Text style={[styles.themeOptionLabel, { color: theme.text }]}>Dark</Text>
             </TouchableOpacity>
 
+            {/* Gold mode -- shelved for now, revisit later.
+            <TouchableOpacity
+              style={[
+                styles.themeOption,
+                { backgroundColor: theme.cardBackground, borderColor: theme.border },
+                currentTheme === 'gold' && styles.themeOptionActive,
+              ]}
+              onPress={() => { posthog.capture('theme_changed', { theme: 'gold' }); changeTheme('gold'); }}
+            >
+              <View style={[styles.themeSwatch, { backgroundColor: '#C9A227' }]}>
+                <View style={[styles.themeSwatchDot, { backgroundColor: '#4CAF50' }]} />
+              </View>
+              <Text style={[styles.themeOptionLabel, { color: theme.text }]}>Gold</Text>
+            </TouchableOpacity>
+            */}
+
             {/* <TouchableOpacity
               style={[
                 styles.themeOption,
@@ -137,6 +153,7 @@ export default function DisplaySettingsScreen({ navigation }) {
           <Text style={[styles.layoutDescription, { color: theme.textSecondary }]}>
             {currentTheme === 'modern-light' && 'Warm beige with green accents.'}
             {currentTheme === 'modern-dark' && 'Pure black with green accents.'}
+            {/* {currentTheme === 'gold' && 'Brushed gold with dark contrast text.'} */}
             {/* {currentTheme === 'pro-mode' && 'Minimal black, white, and grey with a single green accent.'} */}
           </Text>
         </View>

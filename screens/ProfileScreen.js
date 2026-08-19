@@ -18,6 +18,7 @@ import { useUserMode } from '../utils/UserModeContext';
 import { RefreshControl } from 'react-native';
 import { logScreen, logEvent, logMealLogged } from '../utils/analytics';
 import AnimatedThemeWrapper from '../components/AnimatedThemeWrapper';
+import ThemedScreenBackground from '../components/ThemedScreenBackground';
 import Constants from 'expo-constants';
 import BottomNav from '../components/BottomNav';
 import { useTutorial } from '../utils/TutorialContext';
@@ -353,7 +354,8 @@ export default function ProfileScreen({ navigation }) {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <GestureDetector gesture={swipeGesture}>
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
+        <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+          <ThemedScreenBackground />
           <AnimatedThemeWrapper>
             <ScrollView
               ref={scrollViewRef}

@@ -10,6 +10,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { logScreen, logEvent, logMealLogged } from '../utils/analytics';
 import { useUserMode } from '../utils/UserModeContext';
 import AnimatedThemeWrapper from '../components/AnimatedThemeWrapper';
+import ThemedScreenBackground from '../components/ThemedScreenBackground';
 import BottomNav from '../components/BottomNav';
 import ExerciseHistoryScreen from './ExerciseHistoryScreen';
 import AppIcon from '../components/AppIcon';
@@ -442,7 +443,8 @@ export default function StatsScreen({ navigation }) {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <GestureDetector gesture={swipeGesture}>
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
+        <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+          <ThemedScreenBackground />
           <AnimatedThemeWrapper>
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
               {/* Header */}
@@ -497,7 +499,9 @@ export default function StatsScreen({ navigation }) {
               <View style={styles.summaryContainer}>
                 <View style={styles.summaryCard}>
                   <SlotNumber value={avgCalories} style={[styles.summaryValue, { color: theme.primary }]} />
-                  <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>{t('stats.avgDaily')}</Text>
+                  <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>
+                    {activeTab === 'month' ? 'Avg Monthly' : t('stats.avgDaily')}
+                  </Text>
                   <Text style={[styles.summaryUnit, { color: theme.textTertiary }]}>{t('stats.kcal')}</Text>
                 </View>
 
@@ -865,6 +869,7 @@ export default function StatsScreen({ navigation }) {
                     </View>
                   )}
                   <ExerciseHistoryScreen
+                    navigation={navigation}
                     route={{ params: { theme, isPremium } }}
                     nestedInScrollView={true}
                   />
@@ -909,17 +914,14 @@ export default function StatsScreen({ navigation }) {
 
               {/* REPORTS SECTION — hidden for guests */}
               {!isGuestMode && (
-              <View style={styles.section}>
+              <View style={[styles.section, activeTab === 'exercise' && { marginTop: -20 }]}>
                 <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>
                   {t('stats.reports')}
                 </Text>
 
                 <TouchableOpacity
                   style={[styles.settingItem, { backgroundColor: theme.cardBackground }]}
-                  onPress={() => isPremium
-                    ? navigation.navigate('ExportReport')
-                    : navigation.navigate('Paywall', { highlightFeature: 'PDF & Excel exports' })
-                  }
+                  onPress={() => navigation.navigate('ExportReport')}
                 >
                   <View style={styles.settingLeft}>
                     <AppIcon name="document" size={24} style={{ marginRight: 15 }} />

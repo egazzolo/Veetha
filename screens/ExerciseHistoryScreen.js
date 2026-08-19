@@ -4,11 +4,12 @@ import { useLanguage } from '../utils/LanguageContext';
 import { supabase } from '../utils/supabase';
 import { useUser } from '../utils/UserContext';
 import VeethaModal from '../components/VeethaModal';
+import ExerciseButton from '../components/ExerciseButton';
 
 const SPLIT_KEYS = ['fullBody', 'upperLower', 'pushPullLegs', 'broSplit'];
 const SUB_CATEGORY_KEYS = ['upper', 'lower', 'push', 'pull', 'legs', 'chest', 'back', 'shoulders', 'arms', 'core'];
 
-export default function ExerciseHistoryScreen({ route, nestedInScrollView }) {
+export default function ExerciseHistoryScreen({ route, navigation, nestedInScrollView }) {
   const { t } = useLanguage();
   const { user, loading: userContextLoading } = useUser();
   const { theme, isPremium } = route.params || {};
@@ -51,6 +52,14 @@ export default function ExerciseHistoryScreen({ route, nestedInScrollView }) {
     try {
       if (!user) return;
 
+      // This list only ever shows today's exercises -- anything further
+      // back requires Premium + generating a report (ExportReportScreen),
+      // rather than scrolling an ever-growing in-app history.
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999);
+
       // Two separate sources feed this list: the original per-activity
       // "exercises" table, and the newer split-based "exercise_logs" table
       // (with its child "exercise_log_entries" for individual sets/reps),
@@ -60,11 +69,15 @@ export default function ExerciseHistoryScreen({ route, nestedInScrollView }) {
           .from('exercises')
           .select('*')
           .eq('user_id', user.id)
+          .gte('logged_at', startOfDay.toISOString())
+          .lte('logged_at', endOfDay.toISOString())
           .order('logged_at', { ascending: false }),
         supabase
           .from('exercise_logs')
           .select('*, exercise_log_entries(*)')
           .eq('user_id', user.id)
+          .gte('logged_at', startOfDay.toISOString())
+          .lte('logged_at', endOfDay.toISOString())
           .order('logged_at', { ascending: false })
       ]);
 
@@ -352,6 +365,15 @@ export default function ExerciseHistoryScreen({ route, nestedInScrollView }) {
         <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
           {t('exercise.noHistory')}
         </Text>
+        <View style={{ marginTop: 16 }}>
+          <ExerciseButton
+            theme={theme}
+            navigation={navigation}
+            startAnimation={false}
+            iconStyle={{ marginTop: -8 }}
+            labelStyle={{ marginTop: -28 }}
+          />
+        </View>
       </View>
     );
   }
