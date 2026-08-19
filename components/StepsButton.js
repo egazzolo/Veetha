@@ -28,7 +28,19 @@ export default function StepsButton({ theme }) {
     try {
       const available = await Pedometer.isAvailableAsync();
       setIsAvailable(available);
-      if (available) startStepCounter();
+      if (!available) return;
+
+      // isAvailableAsync() only checks hardware capability -- it doesn't
+      // request the actual motion/activity-recognition permission, so
+      // without this call watchStepCount() below silently never fires and
+      // no system permission dialog ever appears to the user.
+      const { status } = await Pedometer.requestPermissionsAsync();
+      if (status !== 'granted') {
+        setIsAvailable(false);
+        return;
+      }
+
+      startStepCounter();
     } catch (err) {
       console.error('Pedometer error:', err);
       setIsAvailable(false);

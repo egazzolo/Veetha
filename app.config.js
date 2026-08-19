@@ -26,6 +26,12 @@ module.exports = {
         {
           "locationAlwaysAndWhenInUsePermission": "Allow Veetha to suggest local foods based on your location."
         }
+      ],
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "Allow Veetha to access your motion data to track your daily step count."
+        }
       ]
     ],
     extra: {
