@@ -14,10 +14,15 @@ export default function StepsButton({ theme }) {
   const [steps, setSteps] = useState(0);
   const [isAvailable, setIsAvailable] = useState(true);
   const subscriptionRef = useRef(null);
+  // Steps already logged today before this watch session started -- the
+  // fixed offset watchStepCount's cumulative counts get added to.
+  const baselineStepsRef = useRef(0);
 
   useEffect(() => {
-    checkAndStartPedometer();
-    loadStepsFromDB();
+    (async () => {
+      await loadStepsFromDB();
+      await checkAndStartPedometer();
+    })();
 
     return () => {
       subscriptionRef.current?.remove();
@@ -49,11 +54,15 @@ export default function StepsButton({ theme }) {
 
   const startStepCounter = () => {
     subscriptionRef.current = Pedometer.watchStepCount((result) => {
-      setSteps((prev) => {
-        const next = prev + result.steps;
-        if (next % 10 === 0) saveStepsToDatabase(next);
-        return next;
-      });
+      // result.steps is CUMULATIVE since this watch session started (that's
+      // how CMPedometer.startUpdates reports on every callback, confirmed in
+      // expo-sensors' own native module) -- not a delta since the last
+      // callback. Adding it to the running `steps` state on every firing
+      // compounded it every time (36 real steps was showing as 238); it
+      // only ever needs to be added once, to the fixed pre-watch baseline.
+      const next = baselineStepsRef.current + result.steps;
+      setSteps(next);
+      if (next % 10 === 0) saveStepsToDatabase(next);
     });
   };
 
@@ -68,9 +77,11 @@ export default function StepsButton({ theme }) {
         .eq('date', today)
         .single();
 
-      if (data) setSteps(data.steps || 0);
+      const baseline = data?.steps || 0;
+      baselineStepsRef.current = baseline;
+      setSteps(baseline);
     } catch (err) {
-      // No steps logged yet today -- fine, stays at 0.
+      // No steps logged yet today -- fine, baseline stays 0.
     }
   };
 
