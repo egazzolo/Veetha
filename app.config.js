@@ -74,7 +74,7 @@ module.exports = {
     ios: {
       icon: "./assets/LogoAppStore.png",
       bundleIdentifier: "com.yourname.veetha",
-      buildNumber: "103",
+      buildNumber: "104",
       usesAppleSignIn: true,
       associatedDomains: ["applinks:nonotenb.com"],
       infoPlist: {
