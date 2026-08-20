@@ -3,7 +3,7 @@ module.exports = {
     name: "Veetha",
     slug: "Veetha",
     scheme: "veetha",
-    version: "1.2.8",
+    version: "1.2.9",
     orientation: "portrait",
     icon: "./assets/LogoAppStore.png",
     userInterfaceStyle: "light",
@@ -74,7 +74,7 @@ module.exports = {
     ios: {
       icon: "./assets/LogoAppStore.png",
       bundleIdentifier: "com.yourname.veetha",
-      buildNumber: "105",
+      buildNumber: "107",
       usesAppleSignIn: true,
       associatedDomains: ["applinks:nonotenb.com"],
       infoPlist: {
