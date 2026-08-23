@@ -402,7 +402,7 @@ export default function SignUpScreen({ navigation }) {
 
             {/* Logo */}
             <View style={styles.logoContainer}>
-              <Image source={require('../../assets/LogoB.png')} style={styles.logo} />
+              <Image source={require('../../assets/meal_break_logo.png')} style={styles.logo} />
             </View>
             <Text style={styles.welcomeText}>{t('signup.createAccount')}</Text>
 
