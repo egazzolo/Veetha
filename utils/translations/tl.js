@@ -190,7 +190,7 @@ export default {
     
     // Step 7 - Referral Source
     step7Title: 'Paano mo kami nahanap?',
-    step7Subtitle: 'Tumutulong ito sa amin na pahusayin ang Veetha',
+    step7Subtitle: 'Tumutulong ito sa amin na pahusayin ang Meal Break',
     tiktok: 'TikTok',
     instagram: 'Instagram',
     youtube: 'YouTube',
@@ -310,7 +310,7 @@ export default {
       },
       step4: {
         title: 'Itakda ang Food Preferences',
-        content: 'Sabihin sa Veetha ang tungkol sa mga allergy o dietary preferences (vegan, gluten-free, atbp). Babalaan ka namin kapag nag-scan ng hindi tugmang pagkain.',
+        content: 'Sabihin sa Meal Break ang tungkol sa mga allergy o dietary preferences (vegan, gluten-free, atbp). Babalaan ka namin kapag nag-scan ng hindi tugmang pagkain.',
       },
       step5: {
         title: 'Pumili ng Iyong Layout',
@@ -750,10 +750,10 @@ export default {
     takePhoto: 'Kumuha ng larawan',
     chooseFromGallery: 'Pumili mula sa gallery',
     cameraUnavailable: 'Hindi available ang camera',
-    cameraPermissionDenied: 'Kailangan ng Veetha ng access sa camera para kumuha ng larawan. Paki-enable ito sa settings ng iyong device.',
+    cameraPermissionDenied: 'Kailangan ng Meal Break ng access sa camera para kumuha ng larawan. Paki-enable ito sa settings ng iyong device.',
     cameraGenericError: 'Hindi namin nabuksan ang camera. Subukang muli o pumili mula sa gallery.',
     galleryUnavailable: 'Hindi available ang gallery',
-    galleryPermissionDenied: 'Kailangan ng Veetha ng access sa gallery para pumili ng larawan. Paki-enable ito sa settings ng iyong device.',
+    galleryPermissionDenied: 'Kailangan ng Meal Break ng access sa gallery para pumili ng larawan. Paki-enable ito sa settings ng iyong device.',
     galleryGenericError: 'Hindi namin nabuksan ang gallery. Subukang muli o kumuha na lang ng larawan.',
   },
 
@@ -1014,7 +1014,7 @@ export default {
     contactSupport: 'Makipag-ugnayan sa Support',
     privacyPolicy: 'Patakaran sa Privacy',
     termsOfService: 'Mga Tuntunin ng Serbisyo',
-    aboutVeetha: 'Tungkol sa Veetha',
+    aboutVeetha: 'Tungkol sa Meal Break',
     version: 'Bersyon',
     logOut: 'Mag-log Out',
     logOutConfirm: 'Sigurado ka bang gusto mong mag-log out?',
@@ -1202,13 +1202,13 @@ export default {
     
     // Section 1
     section1Title: '1. PANIMULA',
-    section1Para1: 'Maligayang pagdating sa Veetha ("kami", "aming" o "amin"). Kami ay nakatuon sa pagprotekta ng iyong privacy at paghawak ng iyong personal na impormasyon nang may pag-aalaga at paggalang.',
-    section1Para2: 'Ang Patakaran sa Privacy na ito ay nagpapaliwanag kung paano kami kumukuha, gumagamit, naghahayag, at pinoprotektahan ang iyong impormasyon kapag ginagamit mo ang aming mobile application na Veetha (ang "App"). Pakibasa nang mabuti ang patakaran sa privacy na ito. Kung hindi ka sumasang-ayon sa mga tuntunin ng patakaran sa privacy na ito, huwag mag-access sa App.',
+    section1Para1: 'Maligayang pagdating sa Meal Break ("kami", "aming" o "amin"). Kami ay nakatuon sa pagprotekta ng iyong privacy at paghawak ng iyong personal na impormasyon nang may pag-aalaga at paggalang.',
+    section1Para2: 'Ang Patakaran sa Privacy na ito ay nagpapaliwanag kung paano kami kumukuha, gumagamit, naghahayag, at pinoprotektahan ang iyong impormasyon kapag ginagamit mo ang aming mobile application na Meal Break (ang "App"). Pakibasa nang mabuti ang patakaran sa privacy na ito. Kung hindi ka sumasang-ayon sa mga tuntunin ng patakaran sa privacy na ito, huwag mag-access sa App.',
     
     // Section 2
     section2Title: '2. IMPORMASYONG KINOKOLEKTA NAMIN',
     section2_1Title: '2.1 Personal na Impormasyon na Ibinibigay Mo',
-    section2_1Intro: 'Kapag lumilikha ka ng account at gumagamit ng Veetha, kinukuha namin ang sumusunod na impormasyon:',
+    section2_1Intro: 'Kapag lumilikha ka ng account at gumagamit ng Meal Break, kinukuha namin ang sumusunod na impormasyon:',
     section2_1AccountTitle: 'Impormasyon ng Account:',
     section2_1Account: '• Email address\n• Display name (opsyonal)\n• Buong pangalan\n• Password (naka-encrypt)',
     section2_1HealthTitle: 'Impormasyon sa Kalusugan at Profile:',
@@ -1247,7 +1247,7 @@ export default {
     
     // Section 9
     section9Title: '9. PRIVACY NG MGA BATA',
-    section9Content: 'Ang Veetha ay HINDI para sa mga bata na wala pang 13 taong gulang. Hindi kami sinasadyang kumukuha ng personal information mula sa mga bata na wala pang 13 taong gulang. Kung ikaw ay wala pang 13 taong gulang, huwag gumamit ng App.',
+    section9Content: 'Ang Meal Break ay HINDI para sa mga bata na wala pang 13 taong gulang. Hindi kami sinasadyang kumukuha ng personal information mula sa mga bata na wala pang 13 taong gulang. Kung ikaw ay wala pang 13 taong gulang, huwag gumamit ng App.',
     
     // Section 10
     section10Title: '10. DATA RETENTION',
@@ -1262,8 +1262,8 @@ export default {
     section12Content: 'Kung mayroon kang mga tanong o kahilingan tungkol sa Patakaran sa Privacy na ito, pakiusap na makipag-ugnayan sa amin:\n\nEmail: cancloth.store@gmail.com\nResponse Time: Sa loob ng 7 business days\n\nLokasyon: Peru',
     
     // Footer
-    footerAcknowledge: 'Sa paggamit ng Veetha, kinikilala mo na nabasa at naunawaan mo ang Patakaran sa Privacy na ito at sumasang-ayon sa mga tuntunin nito.',
-    footerThankYou: 'Salamat sa pagtitiwala sa Veetha ng iyong health at nutrition data. Ang iyong privacy ay mahalaga sa amin.',
+    footerAcknowledge: 'Sa paggamit ng Meal Break, kinikilala mo na nabasa at naunawaan mo ang Patakaran sa Privacy na ito at sumasang-ayon sa mga tuntunin nito.',
+    footerThankYou: 'Salamat sa pagtitiwala sa Meal Break ng iyong health at nutrition data. Ang iyong privacy ay mahalaga sa amin.',
     version: 'Bersyon 1.0 • Huling Na-update: Nobyembre 21, 2024',
   },
 
@@ -1280,7 +1280,7 @@ export default {
     profileBanner: 'Gumawa ng account para ma-unlock ang lahat ng features, i-save ang iyong data, at mag-sync sa iba\'t ibang device.',
   },
   guestSheet: {
-    brand: 'Veetha',
+    brand: 'Meal Break',
     defaultMessage: 'Gumawa ng account para ma-unlock ang lahat ng features at i-save ang iyong progreso.',
     createAccount: 'Gumawa ng Account',
     logIn: 'Mag-log In',
@@ -1295,9 +1295,9 @@ export default {
   },
   update: {
     softTitle: 'May update na available',
-    softMessage: 'May bagong bersyon ng Veetha. Gusto mo bang i-update ngayon?',
+    softMessage: 'May bagong bersyon ng Meal Break. Gusto mo bang i-update ngayon?',
     forcedTitle: 'Kailangang mag-update',
-    forcedMessage: 'Ang bersyong ito ng Veetha ay hindi na suportado. Mangyaring mag-update para magpatuloy.',
+    forcedMessage: 'Ang bersyong ito ng Meal Break ay hindi na suportado. Mangyaring mag-update para magpatuloy.',
     updateNow: 'I-update',
     later: 'Mamaya',
     otaReadyTitle: 'Handa na ang update',
@@ -1305,17 +1305,17 @@ export default {
     restart: 'I-restart',
   },
   rateGate: {
-    title: 'Nag-eenjoy ka ba sa Veetha?',
+    title: 'Nag-eenjoy ka ba sa Meal Break?',
     yes: 'Oo',
     no: 'Hindi',
     thankYouMessages: [
       'Masaya kaming marinig iyan! Sana ma-enjoy mo rin ang mga bagong feature na inihahanda namin.',
       'Astig! Salamat sa pagmamahal — mas marami pang magagandang bagay na darating.',
-      'Pinasaya niyo ang araw namin! Nagtatrabaho kami ng husto para mas mapaganda pa ang Veetha.',
+      'Pinasaya niyo ang araw namin! Nagtatrabaho kami ng husto para mas mapaganda pa ang Meal Break.',
       'Salamat! Manatiling nakatutok — may mga kapana-panabik na bagay kaming inihahanda.',
       'Ikaw na ang pinakamagaling! Hindi kami makapaghintay ipakita ang susunod.'
     ],
-    feedbackTitle: 'Pasensya na at hindi mo na-eenjoy ang Veetha.',
+    feedbackTitle: 'Pasensya na at hindi mo na-eenjoy ang Meal Break.',
     feedbackPrompt: 'Maaari mo bang ipaliwanag kung bakit?',
     feedbackPlaceholder: 'Sabihin mo kung ano ang maaari naming pagbutihin...',
     feedbackSubmit: 'Ipadala ang feedback',

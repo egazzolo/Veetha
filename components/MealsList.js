@@ -107,7 +107,7 @@ export default function MealsList({
 
   const handleCropPhoto = async (meal, currentImageUrl) => {
     if (!isPremium) {
-      Alert.alert('Premium Feature', 'Cropping photos is available with Veetha Premium.');
+      Alert.alert('Premium Feature', 'Cropping photos is available with Meal Break Premium.');
       return;
     }
     if (!currentImageUrl) return;
@@ -606,7 +606,7 @@ export default function MealsList({
                     ]}
                     onPress={() => {
                       if (!isPremium) {
-                        Alert.alert('Premium Feature', 'Individual food breakdown is available with Veetha Premium.');
+                        Alert.alert('Premium Feature', 'Individual food breakdown is available with Meal Break Premium.');
                         return;
                       }
                       setPostItView('individual');

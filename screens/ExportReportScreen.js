@@ -587,7 +587,7 @@ export default function ExportReportScreen({ navigation }) {
 
       const fileUri =
         FileSystem.cacheDirectory +
-        `Veetha_${periodLabel}_Report_${new Date().toLocaleDateString('en-CA')}.xlsx`;
+        `MealBreak_${periodLabel}_Report_${new Date().toLocaleDateString('en-CA')}.xlsx`;
 
       await FileSystem.writeAsStringAsync(fileUri, wbout, {
         encoding:'base64'

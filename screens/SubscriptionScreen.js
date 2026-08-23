@@ -14,12 +14,12 @@ export default function SubscriptionScreen({ navigation }) {
     try {
       // 1. Get available packages from RevenueCat
       const offerings = await Purchases.getOfferings();
-      const package = isMonthly 
-        ? offerings.current.monthly 
+      const pkg = isMonthly
+        ? offerings.current.monthly
         : offerings.current.annual;
-      
+
       // 2. Purchase the package
-      const { customerInfo } = await Purchases.purchasePackage(package);
+      const { customerInfo } = await Purchases.purchasePackage(pkg);
       
       // 3. If promo code was used, track the conversion
       if (promoCode.trim()) {
@@ -36,7 +36,7 @@ export default function SubscriptionScreen({ navigation }) {
         subscription_type: isMonthly ? 'monthly' : 'annual'
       }).eq('id', user.id);
       
-      showToast('success', 'Success!', 'Welcome to Veetha Premium!');
+      showToast('success', 'Success!', 'Welcome to Meal Break Premium!');
       navigation.goBack();
       
     } catch (error) {

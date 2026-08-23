@@ -1,6 +1,6 @@
 module.exports = {
   expo: {
-    name: "Veetha",
+    name: "Meal Break",
     slug: "Veetha",
     scheme: "veetha",
     version: "1.2.9",
@@ -24,13 +24,13 @@ module.exports = {
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow Veetha to suggest local foods based on your location."
+          "locationAlwaysAndWhenInUsePermission": "Allow Meal Break to suggest local foods based on your location."
         }
       ],
       [
         "expo-sensors",
         {
-          "motionPermission": "Allow Veetha to access your motion data to track your daily step count."
+          "motionPermission": "Allow Meal Break to access your motion data to track your daily step count."
         }
       ]
     ],
@@ -80,8 +80,8 @@ module.exports = {
       infoPlist: {
         "ITSAppUsesNonExemptEncryption": false,
         "NSLocationWhenInUseUsageDescription": "We use your location to suggest common foods in your area.",
-        "NSCameraUsageDescription": "Veetha uses your camera to scan food barcodes for instant nutrition lookup and to photograph meals for AI-powered food recognition and calorie tracking.",
-        "NSPhotoLibraryUsageDescription": "Veetha uses your photo library to let you select meal photos for AI-powered food recognition and calorie tracking."
+        "NSCameraUsageDescription": "Meal Break uses your camera to scan food barcodes for instant nutrition lookup and to photograph meals for AI-powered food recognition and calorie tracking.",
+        "NSPhotoLibraryUsageDescription": "Meal Break uses your photo library to let you select meal photos for AI-powered food recognition and calorie tracking."
       }
     },
     updates: {

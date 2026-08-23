@@ -190,7 +190,7 @@ export default {
     
     // Step 7 - Referral Source
     step7Title: 'Comment nous avez-vous trouvé?',
-    step7Subtitle: 'Cela nous aide à améliorer Veetha',
+    step7Subtitle: 'Cela nous aide à améliorer Meal Break',
     tiktok: 'TikTok',
     instagram: 'Instagram',
     youtube: 'YouTube',
@@ -310,7 +310,7 @@ export default {
       },
       step4: {
         title: 'Définissez vos préférences alimentaires',
-        content: 'Informez Veetha de vos allergies ou préférences alimentaires (végétalien, sans gluten, etc). Nous vous alerterons lors du scan d\'aliments incompatibles.',
+        content: 'Informez Meal Break de vos allergies ou préférences alimentaires (végétalien, sans gluten, etc). Nous vous alerterons lors du scan d\'aliments incompatibles.',
       },
       step5: {
         title: 'Choisissez votre mise en page',
@@ -750,10 +750,10 @@ export default {
     takePhoto: 'Prendre une photo',
     chooseFromGallery: 'Choisir dans la galerie',
     cameraUnavailable: 'Caméra indisponible',
-    cameraPermissionDenied: "Veetha a besoin d'accéder à la caméra pour prendre une photo. Activez-le dans les paramètres de votre appareil.",
+    cameraPermissionDenied: "Meal Break a besoin d'accéder à la caméra pour prendre une photo. Activez-le dans les paramètres de votre appareil.",
     cameraGenericError: "Impossible d'ouvrir la caméra. Veuillez réessayer ou choisir une photo dans votre galerie.",
     galleryUnavailable: 'Galerie indisponible',
-    galleryPermissionDenied: "Veetha a besoin d'accéder à la galerie pour choisir une photo. Activez-le dans les paramètres de votre appareil.",
+    galleryPermissionDenied: "Meal Break a besoin d'accéder à la galerie pour choisir une photo. Activez-le dans les paramètres de votre appareil.",
     galleryGenericError: "Impossible d'ouvrir votre galerie. Veuillez réessayer ou prendre une photo.",
   },
 
@@ -1014,7 +1014,7 @@ export default {
     contactSupport: 'Contacter le Support',
     privacyPolicy: 'Politique de confidentialité',
     termsOfService: 'Conditions d\'utilisation',
-    aboutVeetha: 'À propos de Veetha',
+    aboutVeetha: 'À propos de Meal Break',
     version: 'Version',
     logOut: 'Se déconnecter',
     logOutConfirm: 'Êtes-vous sûr de vouloir vous déconnecter?',
@@ -1202,13 +1202,13 @@ export default {
     
     // Section 1
     section1Title: '1. INTRODUCTION',
-    section1Para1: 'Bienvenue sur Veetha ("nous", "notre" ou "nos"). Nous nous engageons à protéger votre vie privée et à traiter vos informations personnelles avec soin et respect.',
-    section1Para2: 'Cette Politique de Confidentialité explique comment nous collectons, utilisons, divulguons et protégeons vos informations lorsque vous utilisez notre application mobile Veetha (l\'"Application"). Veuillez lire attentivement cette politique de confidentialité. Si vous n\'acceptez pas les termes de cette politique, veuillez ne pas accéder à l\'Application.',
+    section1Para1: 'Bienvenue sur Meal Break ("nous", "notre" ou "nos"). Nous nous engageons à protéger votre vie privée et à traiter vos informations personnelles avec soin et respect.',
+    section1Para2: 'Cette Politique de Confidentialité explique comment nous collectons, utilisons, divulguons et protégeons vos informations lorsque vous utilisez notre application mobile Meal Break (l\'"Application"). Veuillez lire attentivement cette politique de confidentialité. Si vous n\'acceptez pas les termes de cette politique, veuillez ne pas accéder à l\'Application.',
     
     // Section 2
     section2Title: '2. INFORMATIONS QUE NOUS COLLECTONS',
     section2_1Title: '2.1 Informations personnelles que vous fournissez',
-    section2_1Intro: 'Lorsque vous créez un compte et utilisez Veetha, nous collectons les informations suivantes:',
+    section2_1Intro: 'Lorsque vous créez un compte et utilisez Meal Break, nous collectons les informations suivantes:',
     section2_1AccountTitle: 'Informations de compte:',
     section2_1Account: '• Adresse e-mail\n• Nom d\'affichage (optionnel)\n• Nom complet\n• Mot de passe (crypté)',
     section2_1HealthTitle: 'Informations de santé et de profil:',
@@ -1247,7 +1247,7 @@ export default {
     
     // Section 9
     section9Title: '9. CONFIDENTIALITÉ DES ENFANTS',
-    section9Content: 'Veetha n\'est PAS destiné aux enfants de moins de 13 ans. Nous ne collectons pas sciemment d\'informations personnelles auprès d\'enfants de moins de 13 ans. Si vous avez moins de 13 ans, veuillez ne pas utiliser l\'Application.',
+    section9Content: 'Meal Break n\'est PAS destiné aux enfants de moins de 13 ans. Nous ne collectons pas sciemment d\'informations personnelles auprès d\'enfants de moins de 13 ans. Si vous avez moins de 13 ans, veuillez ne pas utiliser l\'Application.',
     
     // Section 10
     section10Title: '10. CONSERVATION DES DONNÉES',
@@ -1262,8 +1262,8 @@ export default {
     section12Content: 'Si vous avez des questions ou des demandes concernant cette Politique de Confidentialité, veuillez nous contacter:\n\nE-mail: cancloth.store@gmail.com\nDélai de réponse: Dans les 7 jours ouvrables\n\nLocalisation: Pérou',
     
     // Footer
-    footerAcknowledge: 'En utilisant Veetha, vous reconnaissez avoir lu et compris cette Politique de Confidentialité et acceptez ses termes.',
-    footerThankYou: 'Merci de faire confiance à Veetha avec vos données de santé et de nutrition. Votre vie privée est importante pour nous.',
+    footerAcknowledge: 'En utilisant Meal Break, vous reconnaissez avoir lu et compris cette Politique de Confidentialité et acceptez ses termes.',
+    footerThankYou: 'Merci de faire confiance à Meal Break avec vos données de santé et de nutrition. Votre vie privée est importante pour nous.',
     version: 'Version 1.0 • Dernière mise à jour: 21 novembre 2024',
   },
 
@@ -1280,7 +1280,7 @@ export default {
     profileBanner: 'Créez un compte pour débloquer toutes les fonctionnalités, sauvegarder vos données et synchroniser entre appareils.',
   },
   guestSheet: {
-    brand: 'Veetha',
+    brand: 'Meal Break',
     defaultMessage: 'Creez un compte pour debloquer toutes les fonctionnalites et sauvegarder votre progression.',
     createAccount: 'Creer un Compte',
     logIn: 'Se Connecter',
@@ -1295,9 +1295,9 @@ export default {
   },
   update: {
     softTitle: 'Mise à jour disponible',
-    softMessage: 'Une nouvelle version de Veetha est disponible. Voulez-vous mettre à jour maintenant?',
+    softMessage: 'Une nouvelle version de Meal Break est disponible. Voulez-vous mettre à jour maintenant?',
     forcedTitle: 'Mise à jour requise',
-    forcedMessage: 'Cette version de Veetha n\'est plus prise en charge. Veuillez mettre à jour pour continuer.',
+    forcedMessage: 'Cette version de Meal Break n\'est plus prise en charge. Veuillez mettre à jour pour continuer.',
     updateNow: 'Mettre à jour',
     later: 'Plus tard',
     otaReadyTitle: 'Mise à jour prête',
@@ -1305,17 +1305,17 @@ export default {
     restart: 'Redémarrer',
   },
   rateGate: {
-    title: 'Aimez-vous Veetha ?',
+    title: 'Aimez-vous Meal Break ?',
     yes: 'Oui',
     no: 'Non',
     thankYouMessages: [
       "Ça nous fait plaisir ! Nous espérons que vous apprécierez les nouvelles fonctionnalités à venir.",
       'Génial ! Merci pour votre soutien — plus de nouveautés arrivent.',
-      'Vous nous faites la journée ! Nous travaillons dur pour rendre Veetha encore meilleur.',
+      'Vous nous faites la journée ! Nous travaillons dur pour rendre Meal Break encore meilleur.',
       'Merci ! Restez à l\'écoute — nous avons des choses passionnantes en préparation.',
       'Vous êtes formidable ! Nous avons hâte de partager ce qui suit.'
     ],
-    feedbackTitle: 'Nous sommes désolés que vous n\'aimiez pas Veetha.',
+    feedbackTitle: 'Nous sommes désolés que vous n\'aimiez pas Meal Break.',
     feedbackPrompt: 'Pourriez-vous nous aider à comprendre pourquoi ?',
     feedbackPlaceholder: 'Dites-nous ce que nous pouvons améliorer...',
     feedbackSubmit: 'Envoyer les commentaires',

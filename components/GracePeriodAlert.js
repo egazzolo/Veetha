@@ -72,7 +72,7 @@ export default function GracePeriodAlert() {
           <Text style={styles.emoji}>🌟</Text>
           <Text style={styles.title}>Your free access ends in {daysLeft} {daysLeft === 1 ? 'day' : 'days'}</Text>
           <Text style={styles.body}>
-            You have {daysLeft} {daysLeft === 1 ? 'day' : 'days'} of full Veetha access remaining. After that, features will split into free and premium tiers. Make the most of it — and consider upgrading to keep everything you love.
+            You have {daysLeft} {daysLeft === 1 ? 'day' : 'days'} of full Meal Break access remaining. After that, features will split into free and premium tiers. Make the most of it — and consider upgrading to keep everything you love.
           </Text>
           <TouchableOpacity style={styles.primaryBtn} onPress={handleCompare}>
             <Text style={styles.primaryBtnText}>Compare Free vs Premium</Text>

@@ -776,7 +776,7 @@ export default function ScannerScreen({ navigation }) {
       if (error.message?.includes('permission') || error.message?.includes('Permission') || error.message?.includes('access')) {
         Alert.alert(
           t('scanner.error'),
-          'Camera access is required. Please go to Settings → Veetha → Camera and enable access.',
+          'Camera access is required. Please go to Settings → Meal Break → Camera and enable access.',
           [{ text: 'OK', onPress: () => setLoading(false) }]
         );
       } else {
