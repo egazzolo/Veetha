@@ -23,6 +23,8 @@ import Constants from 'expo-constants';
 import BottomNav from '../components/BottomNav';
 import { useTutorial } from '../utils/TutorialContext';
 import AppTutorial from '../components/AppTutorial';
+import ExitSurveyModal from '../components/ExitSurveyModal';
+import { posthog } from '../utils/posthog';
 import * as ImagePicker from 'expo-image-picker';
 import AppIcon from '../components/AppIcon';
 
@@ -39,7 +41,7 @@ export default function ProfileScreen({ navigation }) {
   const { isPremium } = usePremiumStatus();
   const [guestSheetVisible, setGuestSheetVisible] = useState(false);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
-  const [deleteModalStep, setDeleteModalStep] = useState(0); // 0=hidden, 1=first confirm, 2=final confirm
+  const [deleteModalStep, setDeleteModalStep] = useState(0); // 0=hidden, 1=first confirm, 2=final confirm, 3=exit survey
   const [photoPickerVisible, setPhotoPickerVisible] = useState(false);
 
   // Swipe navigation
@@ -249,6 +251,28 @@ export default function ProfileScreen({ navigation }) {
       await AsyncStorage.clear();
       navigation.reset({ index: 0, routes: [{ name: 'Landing' }] });
     }
+  };
+
+  // The reason is the one signal PostHog funnels/RevenueCat-style billing
+  // metrics can't infer on their own -- fire it to both so it shows up
+  // alongside the behavioral and revenue data instead of sitting isolated
+  // in its own table. Best-effort: a failure here should never block the
+  // account deletion the user actually asked for.
+  const handleExitSurveySubmit = async (reason, feedbackText) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('account_deletion_feedback').insert({
+          user_id: user.id,
+          reason,
+          feedback_text: feedbackText || null,
+        });
+      }
+      posthog.capture('account_deletion_reason', { reason });
+    } catch (err) {
+      console.error('Error saving exit survey:', err);
+    }
+    confirmDeleteAccountFinal();
   };
 
   const handleToggleDarkMode = () => {
@@ -477,7 +501,7 @@ export default function ProfileScreen({ navigation }) {
                   activeOpacity={0.85}
                 >
                   <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>
-                    Veetha Premium
+                    Meal Break Premium
                   </Text>
                   <Text style={{ color: '#fff', fontSize: 14, marginTop: 4 }}>
                     Unlock all features with a 7-day free trial
@@ -738,8 +762,16 @@ export default function ProfileScreen({ navigation }) {
             confirmText={t('profile.yesDeleteEverything')}
             cancelText={t('common.cancel')}
             confirmStyle="destructive"
-            onConfirm={confirmDeleteAccountFinal}
+            onConfirm={() => setDeleteModalStep(3)}
             onCancel={() => setDeleteModalStep(0)}
+          />
+
+          {/* Delete Account - Step 3 (Exit Survey) */}
+          <ExitSurveyModal
+            visible={deleteModalStep === 3}
+            theme={theme}
+            onSubmit={handleExitSurveySubmit}
+            onSkip={confirmDeleteAccountFinal}
           />
 
           {/* Photo Picker Modal */}
