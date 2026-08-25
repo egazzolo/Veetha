@@ -1,26 +1,33 @@
 import React, { useState, useEffect, useRef } from 'react'; //E:
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Modal, Image, StatusBar, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Modal, Image, StatusBar, Platform, Alert } from 'react-native';
 import { useLanguage } from '../utils/LanguageContext';
 import { useTutorial } from '../utils/TutorialContext';
 import { useTheme } from '../utils/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
-export default function AppTutorial({ 
-  screen, 
-  tutorialRefs, 
-  scrollViewRef, 
-  mode, 
-  setMode, 
+export default function AppTutorial({
+  screen,
+  tutorialRefs,
+  scrollViewRef,
+  mode,
+  setMode,
   onComplete,
-  onProfileRefresh 
+  onProfileRefresh,
+  // Fired once measurement finishes and the coach-mark overlay actually
+  // becomes visible (or once it's determined there's nothing to show) --
+  // screens use this to release their own "freeze the screen" overlay at
+  // the right moment instead of guessing a fixed delay, which was
+  // repeatedly too short/too long and left a real gap where the raw
+  // screen was briefly tappable before the coach marks took over.
+  onVisible,
 }) {
   //return null;
 
   const { t } = useLanguage();
   const { theme } = useTheme();
-  const { tutorialCompleted, currentStep, currentScreen, nextStep, skipTutorial } = useTutorial();
+  const { tutorialCompleted, currentStep, currentScreen, nextStep, skipTutorial, markAllTutorialsSeen } = useTutorial();
   const [visible, setVisible] = useState(false);
   const [stepConfig, setStepConfig] = useState([]);
   const [measuring, setMeasuring] = useState(false);
@@ -132,6 +139,17 @@ export default function AppTutorial({
     try {
       const steps = [];
 
+      // Every scroll-compensated step below (meals list, reports, etc.)
+      // assumes the ScrollView is at offset 0 when its baseline coords are
+      // captured -- if it isn't (e.g. leftover scroll position from before
+      // the tutorial started), scrollAmount math is silently wrong and a
+      // later step's highlight frame can end up computed at a completely
+      // unrelated position. Force it back to the top first so that
+      // assumption always actually holds.
+      if (scrollViewRef?.current) {
+        scrollViewRef.current.scrollTo({ y: 0, animated: false });
+      }
+
       await new Promise(resolve => setTimeout(resolve, 500)); // 1.5 second delay
       console.log('✅ Layout settled, starting measurements...');
 
@@ -150,12 +168,12 @@ export default function AppTutorial({
           steps.push({
             targetArea: coords,
             bubblePosition: {
-              top: coords.top - 210,  // ABOVE the card
+              top: coords.top + coords.height + 70,  // BELOW the card -- above it had no room and covered the ring
               left: 20,
               maxWidth: width - 40,
             },
             arrow: {
-              direction: 'down',  // Arrow points DOWN at card
+              direction: 'up',  // Arrow points UP at card, since the bubble is now below it
               position: (coords.left + coords.width / 2) - 20 - 15,
             },
             title: t('tutorial.home.step1.title'),
@@ -174,14 +192,23 @@ export default function AppTutorial({
         console.log('📏 caloriesCard coords for reference:', caloriesCoords);
         
         if (gridCoords && caloriesCoords) {
-          const cardWidth = (gridCoords.width - 12) / 2;  // Width of one card
-          const cardHeight = caloriesCoords.height;  // Height of one card
-          const gap = 12;
-          
+          // Matches CardsLayout.js's actual cardGrid styles: each card is
+          // 47.5% of the grid width with columnGap:0 (cards sit flush against
+          // each other -- the visual "gap" you see is just each card's own
+          // internal padding, not real space between the boxes) and
+          // rowGap:4 between the two rows. The old math assumed a 12px gap
+          // that doesn't exist, which is why the right-column highlight
+          // (protein/fat) sat too far right and the left column (carbs) read
+          // as too far left relative to the real card edges.
+          const cardWidth = gridCoords.width * 0.475;
+          const cardHeight = caloriesCoords.height;
+          const columnGap = 0;
+          const rowGap = 4;
+
           // Protein card (top-right) - SAME ROW as calories
           const proteinCard = {
             top: caloriesCoords.top,  // Same top as calories
-            left: caloriesCoords.left + caloriesCoords.width + gap,
+            left: gridCoords.left + cardWidth + columnGap,
             width: cardWidth,
             height: cardHeight,
             borderRadius: 16,
@@ -189,7 +216,7 @@ export default function AppTutorial({
 
           // Carbs card (bottom-left)
           const carbsCard = {
-            top: caloriesCoords.top + caloriesCoords.height + gap,  // Below calories
+            top: caloriesCoords.top + caloriesCoords.height + rowGap,  // Below calories
             left: gridCoords.left,
             width: cardWidth,
             height: cardHeight,
@@ -198,25 +225,35 @@ export default function AppTutorial({
 
           // Fat card (bottom-right) - SAME ROW as carbs
           const fatCard = {
-            top: caloriesCoords.top + caloriesCoords.height + gap,  // Same top as carbs
-            left: caloriesCoords.left + caloriesCoords.width + gap,
+            top: caloriesCoords.top + caloriesCoords.height + rowGap,  // Same top as carbs
+            left: gridCoords.left + cardWidth + columnGap,
             width: cardWidth,
             height: cardHeight,
             borderRadius: 16,
           };
 
           console.log('📏 Calculated highlights:', { proteinCard, carbsCard, fatCard });
-          
+
           steps.push({
-            targetArea: proteinCard,  // Main highlight on Protein
-            extraHighlights: [carbsCard, fatCard],  // Extra highlights on Carbs & Fat
+            targetArea: proteinCard,  // Border on protein
+            extraHighlights: [carbsCard, fatCard],  // Borders on carbs & fat
+            // Row 1 (calories/protein) only lights protein's half; row 2
+            // (carbs/fat) lights the full width -- calories stays dark.
+            maskRows: [
+              // Row 1's height reaches all the way down to row 2's top (not
+              // just its own card height) so there's no thin uncovered strip
+              // in the small rowGap between them -- that gap was showing
+              // through as a visible line since neither row's mask covered it.
+              { top: proteinCard.top, height: carbsCard.top - proteinCard.top, left: proteinCard.left, width: proteinCard.width },
+              { top: carbsCard.top, height: carbsCard.height, left: gridCoords.left, width: cardWidth * 2 },
+            ],
             bubblePosition: {
-              top: gridCoords.top - 220,  // Above all cards
+              top: gridCoords.top + gridCoords.height + 58,  // BELOW all cards -- above it covered protein
               left: 20,
               maxWidth: width - 40,
             },
             arrow: {
-              direction: 'down',
+              direction: 'up',  // Bubble is now below the grid, pointing up at it
               position: (gridCoords.left + gridCoords.width / 4) + 165 - 15,
             },
             title: t('tutorial.home.step2.title'),
@@ -225,12 +262,41 @@ export default function AppTutorial({
         }
       }
 
-      // Step 3: Meals List - BUBBLE AT TOP, ARROW DOWN
-      console.log('📏 Measuring mealsList...');
-      if (tutorialRefs.mealsList?.current) {   
-        const coords = await measureComponent(tutorialRefs.mealsList.current);
-        console.log('📏 mealsList coords:', coords);
+      // Step 3: Exercise, Steps & Water row
+      console.log('📏 Measuring activityRow...');
+      if (tutorialRefs.activityRow?.current) {
+        const coords = await measureComponent(tutorialRefs.activityRow.current);
+        console.log('📏 activityRow coords:', coords);
         if (coords) {
+          steps.push({
+            targetArea: coords,
+            bubblePosition: {
+              top: coords.top - 189,  // ABOVE the row, ~3cm higher
+              left: 20,
+              maxWidth: width - 40,
+            },
+            arrow: {
+              direction: 'down',
+              position: (coords.left + coords.width / 2) - 20 - 15,
+            },
+            title: t('tutorial.home.step3.title'),
+            content: t('tutorial.home.step3.content'),
+          });
+        }
+      }
+
+      // Step 4: Meals List - BUBBLE AT TOP, ARROW DOWN
+      console.log('📏 Measuring mealsList...');
+      if (tutorialRefs.mealsList?.current) {
+        const rawCoords = await measureComponent(tutorialRefs.mealsList.current);
+        console.log('📏 mealsList coords (pre-scroll):', rawCoords);
+        if (rawCoords) {
+          // Same post-scroll compensation as Stats step4 / Profile step3:
+          // the highlight frame must reflect where the target will be
+          // AFTER scrollTo runs, not its raw pre-scroll position, or the
+          // frame ends up rendered way down where the element used to be.
+          const scrollAmount = rawCoords.top - 200;
+          const coords = { ...rawCoords, top: rawCoords.top - scrollAmount };
           steps.push({
             targetArea: coords,
             bubblePosition: {
@@ -242,14 +308,14 @@ export default function AppTutorial({
               direction: 'down',
               position: (coords.left + coords.width / 2) - 20 - 15,
             },
-            title: t('tutorial.home.step3.title'),
-            content: t('tutorial.home.step3.content'),
-            scrollTo: coords.top - 200,  // Scroll to show meals list
+            title: t('tutorial.home.step4.title'),
+            content: t('tutorial.home.step4.content'),
+            scrollTo: scrollAmount,
           });
         }
       }
 
-      // Step 4: Scanner Button
+      // Step 5: Scanner Button
       console.log('📏 Measuring scannerButton...');
       if (tutorialRefs.scannerButton?.current) {
         const coords = await measureComponent(tutorialRefs.scannerButton.current);
@@ -258,7 +324,7 @@ export default function AppTutorial({
           steps.push({
             targetArea: coords,
             bubblePosition: {
-              top: coords.top - 230,
+              top: coords.top - 198,  // was -230, moved down ~5mm
               left: 20,
               maxWidth: width - 40,
             },
@@ -266,9 +332,117 @@ export default function AppTutorial({
               direction: 'down',
               position: (coords.left + coords.width / 2) - 20 - 15,
             },
-            title: t('tutorial.home.step4.title'),
-            content: t('tutorial.home.step4.content'),
+            title: t('tutorial.home.step5.title'),
+            content: t('tutorial.home.step5.content'),
           });
+        }
+      }
+
+      // Stats Screen Steps
+      if (screen === 'Stats') {
+        console.log('📏 Starting Stats measurements...');
+
+        // Step 1: Week/Month toggle
+        if (tutorialRefs.toggle?.current) {
+          const coords = await measureComponent(tutorialRefs.toggle.current);
+          console.log('📏 stats toggle coords:', coords);
+          if (coords) {
+            steps.push({
+              targetArea: coords,
+              bubblePosition: {
+                top: coords.top + coords.height + 83,  // BELOW the toggle, ~1cm lower than before
+                left: 20,
+                maxWidth: width - 40,
+              },
+              arrow: {
+                direction: 'up',
+                position: (coords.left + coords.width / 2) - 20 - 15,
+              },
+              title: t('tutorial.stats.step1.title'),
+              content: t('tutorial.stats.step1.content'),
+            });
+          }
+        }
+
+        // Step 2: Weekly calories chart
+        if (tutorialRefs.chart?.current) {
+          const coords = await measureComponent(tutorialRefs.chart.current);
+          console.log('📏 stats chart coords:', coords);
+          if (coords) {
+            steps.push({
+              targetArea: coords,
+              bubblePosition: {
+                top: coords.top - 190,  // ABOVE the chart
+                left: 20,
+                maxWidth: width - 40,
+              },
+              arrow: {
+                direction: 'down',
+                position: (coords.left + coords.width / 2) - 20 - 15,
+              },
+              title: t('tutorial.stats.step2.title'),
+              content: t('tutorial.stats.step2.content'),
+            });
+          }
+        }
+
+        // Step 3: Weekly Summary card -- sits low on the screen, scroll it
+        // into view so it isn't hidden behind the bottom nav bar
+        if (tutorialRefs.summary?.current) {
+          const rawCoords = await measureComponent(tutorialRefs.summary.current);
+          console.log('📏 stats summary coords (pre-scroll):', rawCoords);
+          if (rawCoords) {
+            const scrollAmount = rawCoords.top - 260;
+            const coords = { ...rawCoords, top: rawCoords.top - scrollAmount };
+            // This is the step that's actually showing up as "the last
+            // step" for accounts where the reports/export row doesn't
+            // render (it's wrapped in !isGuestMode) -- the box-position
+            // corrections from the last two rounds were mistakenly applied
+            // to the reports step instead of this one, which is why the
+            // box never visibly moved. Applying the full ~4mm (1mm + 3mm)
+            // correction here instead.
+            const boxCoords = { ...coords, top: coords.top + 25 };
+            steps.push({
+              targetArea: boxCoords,
+              bubblePosition: {
+                top: coords.top - 190,  // ABOVE the summary card
+                left: 20,
+                maxWidth: width - 40,
+              },
+              arrow: {
+                direction: 'down',
+                position: (coords.left + coords.width / 2) - 20 - 15,
+              },
+              title: t('tutorial.stats.step3.title'),
+              content: t('tutorial.stats.step3.content'),
+              scrollTo: scrollAmount,
+            });
+          }
+        }
+
+        // Step 4: Reports / export row -- lower on the screen, scroll it into view
+        if (tutorialRefs.reports?.current) {
+          const rawCoords = await measureComponent(tutorialRefs.reports.current);
+          console.log('📏 stats reports coords (pre-scroll):', rawCoords);
+          if (rawCoords) {
+            const scrollAmount = rawCoords.top - 260;
+            const coords = { ...rawCoords, top: rawCoords.top - scrollAmount };
+            steps.push({
+              targetArea: coords,
+              bubblePosition: {
+                top: coords.top - 190,  // ABOVE the reports row
+                left: 20,
+                maxWidth: width - 40,
+              },
+              arrow: {
+                direction: 'down',
+                position: (coords.left + coords.width / 2) - 20 - 15,
+              },
+              title: t('tutorial.stats.step4.title'),
+              content: t('tutorial.stats.step4.content'),
+              scrollTo: scrollAmount,
+            });
+          }
         }
       }
 
@@ -314,10 +488,18 @@ export default function AppTutorial({
           console.log('📏 modeToggle coords:', toggleCoords);
           
           if (toggleCoords) {
+            // Measured position sat ~1cm above where the icon actually
+            // renders, so both the highlight and the bubble (which is
+            // anchored off it) landed too high, covering the icon instead of
+            // framing it. The bubble anchor (modeToggleTop) is confirmed
+            // correct now -- the outline alone still needed an additional
+            // ~12mm back up, so it gets its own separate top.
+            const modeToggleTop = toggleCoords.top + 63;
+            const modeToggleOutlineTop = modeToggleTop - 62;  // was -76, -57, -51, -57, -60; now up ~0.25mm more
             steps.push({
-              targetArea: toggleCoords,
+              targetArea: { ...toggleCoords, top: modeToggleOutlineTop },
               bubblePosition: {
-                top: toggleCoords.top + toggleCoords.height + 20,
+                top: modeToggleTop + toggleCoords.height + 20,
                 left: 20,
                 maxWidth: width - 40,
               },
@@ -340,7 +522,7 @@ export default function AppTutorial({
 
         steps.push({
           targetArea: {
-            top: buttonTop - 40,
+            top: buttonTop - 40 - 31,  // net of -8mm, +6mm, then -3mm per feedback
             left: (width / 2) - 40,
             width: 80,
             height: 80,
@@ -381,7 +563,7 @@ export default function AppTutorial({
             steps.push({
               targetArea: statsCoords,
               bubblePosition: {
-                top: statsCoords.top - 180,
+                top: statsCoords.top - 167,  // was -180, moved down ~2mm
                 left: 20,
                 maxWidth: width - 40,
               },
@@ -404,7 +586,7 @@ export default function AppTutorial({
             steps.push({
               targetArea: editCoords,
               bubblePosition: {
-                top: editCoords.top + editCoords.height + 40,
+                top: editCoords.top + editCoords.height + 53,  // was +40, moved down ~2mm
                 left: 20,
                 maxWidth: width - 40,
               },
@@ -436,7 +618,7 @@ export default function AppTutorial({
               steps.push({
                 targetArea: targetAfterScroll,
                 bubblePosition: {
-                  top: targetAfterScroll.top + targetAfterScroll.height + 40,  // BELOW the button
+                  top: targetAfterScroll.top + targetAfterScroll.height + 53,  // BELOW the button; was +40, moved down ~2mm
                   left: 20,
                   maxWidth: width - 40,
                 },
@@ -524,9 +706,11 @@ export default function AppTutorial({
       console.log('📋 Step order:', steps.map((s, i) => `${i+1}. ${s.title}`));
       setVisible(steps.length > 0);
       setMeasuring(false);
+      onVisible?.();
     } catch (error) {
       console.error('Error measuring components:', error);
       setMeasuring(false);
+      onVisible?.();
     }
   };
 
@@ -630,7 +814,7 @@ export default function AppTutorial({
         
         // Wait for scroll to complete, then re-measure the target
         setTimeout(async () => {
-          if (nextStepIndex === 2 && tutorialRefs.mealsList?.current) {
+          if (nextStepIndex === 3 && tutorialRefs.mealsList?.current) {
             // Re-measure meals list after scroll
             const newCoords = await measureComponent(tutorialRefs.mealsList.current);
             console.log('📏 RE-MEASURED mealsList after scroll:', newCoords);
@@ -661,18 +845,31 @@ export default function AppTutorial({
       // Only show thank you after Profile tutorial (the final one)
       if (screen === 'Profile') {
         setTimeout(() => {
-          alert(t('tutorial.thankYou'));
+          // Alert.alert (not the bare global alert()) so the OK button has
+          // a callback -- allTutorialsCompleted only flips once the user
+          // actually taps it, so RenameAnnouncementModal can't appear ahead
+          // of this alert.
+          Alert.alert('', t('tutorial.thankYou'), [
+            { text: 'OK', onPress: markAllTutorialsSeen },
+          ]);
         }, 300);
       }
 
-      // Refresh profile to get latest tutorial flags
-      if (onProfileRefresh) {
-        await onProfileRefresh();
-      }
-      
-      // Call onComplete callback if provided
+      // Call onComplete immediately -- screens use it to re-freeze
+      // themselves (blocking taps) until their own "point at the next
+      // icon" arrow is ready. Awaiting onProfileRefresh (a network call)
+      // before this was leaving a real gap where nothing was frozen: the
+      // Modal above already closed via setVisible(false), but the re-freeze
+      // in onComplete hadn't fired yet, so the real screen underneath (e.g.
+      // the camera capture button) was briefly tappable. onComplete doesn't
+      // depend on fresh profile data, so it no longer waits on this.
       if (onComplete) {
         onComplete();
+      }
+
+      // Refresh profile to get latest tutorial flags (not blocking)
+      if (onProfileRefresh) {
+        onProfileRefresh();
       }
     }
   };
@@ -706,57 +903,86 @@ export default function AppTutorial({
       animationType="fade"
       onRequestClose={handleSkip}
     >
-      <View style={styles.overlay} pointerEvents="box-none">
-        {/* Gray overlay - everything except target */}
+      <View style={styles.overlay}>
+        {/* Gray overlay - everything except target. Deliberately NOT
+            pointerEvents="box-none" here: these coach marks are purely
+            informational (unlike TutorialArrow's tap-the-real-button
+            pattern), so nothing on the real screen underneath -- including
+            whatever's inside the highlighted/lit area, like the camera
+            capture button -- should be reachable until the user taps
+            Skip/Next below. "none" on the mask subtree previously let
+            every tap fall straight through the whole overlay. */}
 
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          {step.targetArea && (() => {
+          {step.maskRows ? (() => {
+            // Multiple lit bands stacked vertically (e.g. macro grid: row 1
+            // only lights the right half [protein], row 2 lights the full
+            // width [carbs+fat]) -- the single-targetArea 4-strip punch below
+            // can only cut one rectangular hole, which isn't enough shape for
+            // an L-shaped region like this.
+            const sbOffset = Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0;
+            const rows = step.maskRows.map(r => ({ ...r, top: r.top + sbOffset }));
+            const firstTop = rows[0].top;
+            const lastBottom = rows[rows.length - 1].top + rows[rows.length - 1].height;
+            return (
+              <>
+                <View style={[styles.grayArea, { height: firstTop }]} pointerEvents="none" />
+                {rows.map((r, i) => (
+                  <React.Fragment key={i}>
+                    <View style={[styles.grayArea, { top: r.top, height: r.height, width: r.left }]} pointerEvents="none" />
+                    <View style={[styles.grayArea, { top: r.top, left: r.left + r.width, height: r.height, width: width - (r.left + r.width) }]} pointerEvents="none" />
+                  </React.Fragment>
+                ))}
+                <View style={[styles.grayArea, { top: lastBottom, height: height - lastBottom }]} pointerEvents="none" />
+              </>
+            );
+          })() : step.targetArea && (() => {
             const sbOffset = Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0;
             const adjTop = step.targetArea.top + sbOffset;
             return (
               <>
                 {/* Top gray area */}
-                <View 
-                  style={[styles.grayArea, { height: adjTop }]} 
+                <View
+                  style={[styles.grayArea, { height: adjTop }]}
                   pointerEvents="none"
                 />
-                
+
                 {/* Left gray area */}
-                <View 
+                <View
                   style={[
-                    styles.grayArea, 
-                    { 
+                    styles.grayArea,
+                    {
                       top: adjTop,
                       height: step.targetArea.height,
-                      width: step.targetArea.left 
+                      width: step.targetArea.left
                     }
-                  ]} 
+                  ]}
                   pointerEvents="none"
                 />
-                
+
                 {/* Right gray area */}
-                <View 
+                <View
                   style={[
-                    styles.grayArea, 
-                    { 
+                    styles.grayArea,
+                    {
                       top: adjTop,
                       left: step.targetArea.left + step.targetArea.width,
                       height: step.targetArea.height,
                       width: width - (step.targetArea.left + step.targetArea.width)
                     }
-                  ]} 
+                  ]}
                   pointerEvents="none"
                 />
-                
+
                 {/* Bottom gray area */}
-                <View 
+                <View
                   style={[
-                    styles.grayArea, 
-                    { 
+                    styles.grayArea,
+                    {
                       top: adjTop + step.targetArea.height,
                       height: height - (adjTop + step.targetArea.height)
                     }
-                  ]} 
+                  ]}
                   pointerEvents="none"
                 />
               </>

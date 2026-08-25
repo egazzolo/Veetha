@@ -21,8 +21,8 @@ export default {
   },
   // Landing Screen
   landing: {
-    tagline1: 'Track your food intake,',
-    tagline2: 'work on you.',
+    tagline1: 'Everything you need to track your meals and exercise',
+    tagline2: '',
     login: 'LOG IN',
     signup: 'SIGN UP',
     continue: 'CONTINUE',
@@ -125,8 +125,8 @@ export default {
     step2Title: 'Your current stats',
     height: 'Height',
     weight: 'Weight',
-    imperial: 'Imperial',
-    metric: 'Metric',
+    imperial: 'Feet',
+    metric: 'Meters',
     enterHeight: 'Please enter your height',
     enterWeight: 'Please enter your weight',
     validHeightImperial: 'Please enter a valid height (3-8 ft, 0-11 in)',
@@ -246,6 +246,7 @@ export default {
     preparing: 'Preparing tutorial...',
     tapToScan: 'Tap to scan food!',
     tapToExit: 'Tap to exit camera',
+    tapToStats: 'Tap to open Stats',
     tapToProfile: 'Tap to open Profile',
     skip: 'Skip',
     next: 'Next',
@@ -262,15 +263,19 @@ export default {
         content: 'These track protein, carbs, and fat. Each macro plays a unique role in your health. Tap any card to learn more.',
       },
       step3: {
+        title: 'Exercise, Steps & Water',
+        content: 'Log a workout, track your daily steps, and keep up with your water intake — all right here on Home.',
+      },
+      step4: {
         title: 'View Your Meals',
         content: 'Tap once on any meal to see full macro breakdown. Press and hold to edit serving size or delete the entry.',
       },
-      step4: {
+      step5: {
         title: 'Log Your Meals Here',
         content: 'Tap this scanner button to learn how to log your meals!',
       },
     },
-    
+
     scanner: {
       step1: {
         title: 'Scan Barcodes',
@@ -293,6 +298,18 @@ export default {
       step1: {
         title: 'Weekly vs Monthly View',
         content: 'Switch between weekly and monthly statistics to see your progress over time.',
+      },
+      step2: {
+        title: 'Your Calorie Trend',
+        content: 'Each bar is a day\'s total calories — orange means you went over your goal that day.',
+      },
+      step3: {
+        title: 'Your Weekly Summary',
+        content: 'Average calories, protein, and carbs for the period, all in one glance.',
+      },
+      step4: {
+        title: 'Export Your Data',
+        content: 'Generate a PDF or Excel report of your nutrition history, anytime you need it.',
       },
     },
     profile: {
@@ -903,7 +920,7 @@ export default {
       title: 'Export Report',
       subtitle: 'Download your nutrition data',
       startExport: 'Start Export',
-      whatsIncluded: "What's Included?",
+      whatsIncluded: "What's included in the Reports?",
       dailyCalories: 'Daily calorie totals',
       macroBreakdown: 'Macronutrient breakdown',
       goalComparison: 'Goal vs actual comparison',

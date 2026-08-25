@@ -430,9 +430,11 @@ export default function HomeScreen({ navigation }) {
   const tutorialStartedRef = useRef(false);
   
   // Date selection state (MOVED HERE - correct location!)
-  const [showArrowToProfile, setShowArrowToProfile] = useState(false);
-  const [profileCoords, setProfileCoords] = useState(null);
-  const profileArrowShownRef = useRef(false);
+  // After Scanner, the hand points at Stats next (Profile's arrow now lives
+  // on StatsScreen itself, shown once the Stats tutorial completes).
+  const [showArrowToStats, setShowArrowToStats] = useState(false);
+  const [statsCoords, setStatsCoords] = useState(null);
+  const statsArrowShownRef = useRef(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [monthlyDataCache, setMonthlyDataCache] = useState({});
   const [waterIntake, setWaterIntake] = useState(0);
@@ -490,9 +492,10 @@ export default function HomeScreen({ navigation }) {
   });
 
   // Tutorial refs
-  const profileButtonRef = useRef(null);
+  const statsButtonRef = useRef(null);
   const caloriesCardRef = useRef(null);
   const macroCardsRef = useRef(null);
+  const activityRowRef = useRef(null);
   const mealsListRef = useRef(null);
   const scannerButtonRef = useRef(null);
   const scrollViewRef = useRef(null);
@@ -901,16 +904,24 @@ export default function HomeScreen({ navigation }) {
       scannerButtonRef.current.measureInWindow((x, y, w, h) => {
         console.log('📍 Scanner button coords:', { x, y, w, h });
         setScannerCoords({ top: y, left: x, width: w, height: h });
+        // Re-freezing (below, in onComplete) closes the gap between
+        // AppTutorial's Modal closing and TutorialArrow actually rendering
+        // (it's gated on scannerCoords, which only exists after this async
+        // measureInWindow round-trip) -- release it now that TutorialArrow
+        // has what it needs to render and block taps itself.
+        setCheckingTutorial(false);
       });
+    } else {
+      setCheckingTutorial(false);
     }
   };
   
-  // Measure profile button for arrow
-  const measureProfileButton = () => {
-    if (profileButtonRef.current) {
-      profileButtonRef.current.measureInWindow((x, y, w, h) => {
-        console.log('📍 Profile button coords:', { x, y, w, h });
-        setProfileCoords({ top: y, left: x, width: w, height: h });
+  // Measure stats button for arrow
+  const measureStatsButton = () => {
+    if (statsButtonRef.current) {
+      statsButtonRef.current.measureInWindow((x, y, w, h) => {
+        console.log('📍 Stats button coords:', { x, y, w, h });
+        setStatsCoords({ top: y, left: x, width: w, height: h });
       });
     }
   };
@@ -1217,15 +1228,17 @@ export default function HomeScreen({ navigation }) {
             return;
           }
           
-          const refsReady = 
+          const refsReady =
             caloriesCardRef.current !== null &&
             macroCardsRef.current !== null &&
+            activityRowRef.current !== null &&
             mealsListRef.current !== null &&
             scannerButtonRef.current !== null;
-          
+
           console.log('🎓 Refs ready check:', {
             caloriesCard: !!caloriesCardRef.current,
             macroCards: !!macroCardsRef.current,
+            activityRow: !!activityRowRef.current,
             mealsList: !!mealsListRef.current,
             scannerButton: !!scannerButtonRef.current,
           });
@@ -1240,10 +1253,17 @@ export default function HomeScreen({ navigation }) {
 
               tutorialStartedRef.current = true;
 
-              // keep screen frozen until tutorial overlay takes control
               startTutorial('Home');
 
-              setCheckingTutorial(false);
+              // AppTutorial's own onVisible fires once its coach-mark
+              // overlay actually becomes visible -- that's the real release
+              // signal. This fallback only covers startTutorial() deciding
+              // NOT to start (tutorial already completed for this user), in
+              // which case AppTutorial never measures anything and
+              // onVisible never fires.
+              setTimeout(() => {
+                setCheckingTutorial(false);
+              }, 800);
 
             }, 500);
           } else {
@@ -1505,32 +1525,32 @@ export default function HomeScreen({ navigation }) {
         console.log('📊 Fresh tutorial flags:', {
           home: freshProfile?.home_tutorial_completed,
           scanner: freshProfile?.scanner_tutorial_completed,
-          profileTut: freshProfile?.profile_tutorial_completed,
+          statsTut: freshProfile?.stats_tutorial_completed,
         });
-        
+
         // GUARD: Only proceed if Home tutorial is done
         if (!freshProfile?.home_tutorial_completed) {
           console.log('⏸️ Home tutorial not done yet, skipping arrow check');
           return;
         }
-        
-        console.log('✅ Home tutorial done, checking for profile arrow...');
-        
-        // Check if we should show Profile arrow (only once)
-        if (freshProfile?.scanner_tutorial_completed && !freshProfile?.profile_tutorial_completed && !profileArrowShownRef.current) {
-          console.log('✅ CONDITIONS MET - Showing arrow to Profile (once)');
-          profileArrowShownRef.current = true;
+
+        console.log('✅ Home tutorial done, checking for stats arrow...');
+
+        // Check if we should show Stats arrow (only once)
+        if (freshProfile?.scanner_tutorial_completed && !freshProfile?.stats_tutorial_completed && !statsArrowShownRef.current) {
+          console.log('✅ CONDITIONS MET - Showing arrow to Stats (once)');
+          statsArrowShownRef.current = true;
 
           // Small delay for layout to settle
           setTimeout(() => {
-            measureProfileButton();
-            setShowArrowToProfile(true);
+            measureStatsButton();
+            setShowArrowToStats(true);
           }, 100);
         } else {
           console.log('❌ Not showing arrow - conditions not met');
           console.log('  scanner_completed:', freshProfile?.scanner_tutorial_completed);
-          console.log('  profile_completed:', freshProfile?.profile_tutorial_completed);
-          setShowArrowToProfile(false);
+          console.log('  stats_completed:', freshProfile?.stats_tutorial_completed);
+          setShowArrowToStats(false);
         }
       };
       
@@ -1870,10 +1890,16 @@ export default function HomeScreen({ navigation }) {
           <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
             <ThemedScreenBackground />
             <AppTutorial
-                screen="Home" 
+                screen="Home"
                 scrollViewRef={scrollViewRef}
+                onVisible={() => setCheckingTutorial(false)}
                   onComplete={() => {
                   console.log('🏠 Home tutorial complete');
+                  // Re-freeze through the gap between AppTutorial's Modal
+                  // closing and TutorialArrow actually rendering (it needs
+                  // scannerCoords, set asynchronously below) -- otherwise
+                  // the real scanner button is briefly tappable in between.
+                  setCheckingTutorial(true);
                   measureScannerButton();
                   setShowArrowToScanner(true);
                 }}
@@ -1881,6 +1907,7 @@ export default function HomeScreen({ navigation }) {
                 tutorialRefs={{
                   caloriesCard: caloriesCardRef,
                   macroCards: macroCardsRef,
+                  activityRow: activityRowRef,
                   mealsList: mealsListRef,
                   scannerButton: scannerButtonRef,
                 }}
@@ -1891,16 +1918,24 @@ export default function HomeScreen({ navigation }) {
                   visible={showArrowToScanner}
                   targetCoords={scannerCoords}
                   onSkip={() => setShowArrowToScanner(false)}
+                  onTargetPress={() => {
+                    setShowArrowToScanner(false);
+                    navigation.navigate('Scanner', { animationDirection: 'right' });
+                  }}
                   message={t('tutorial.tapToScan')}
                 />
               )}
 
-              {profileCoords && (
+              {statsCoords && (
                 <TutorialArrow
-                  visible={showArrowToProfile}
-                  targetCoords={profileCoords}
-                  onSkip={() => setShowArrowToProfile(false)}
-                  message={t('tutorial.tapToProfile')}
+                  visible={showArrowToStats}
+                  targetCoords={statsCoords}
+                  onSkip={() => setShowArrowToStats(false)}
+                  onTargetPress={() => {
+                    setShowArrowToStats(false);
+                    navigation.navigate('Stats', { animationDirection: 'right' });
+                  }}
+                  message={t('tutorial.tapToStats')}
                 />
               )}
             <AnimatedThemeWrapper>
@@ -2156,6 +2191,7 @@ export default function HomeScreen({ navigation }) {
 
                 {/* Exercise & Water Cards - SIDE BY SIDE */}
                 <View
+                  ref={activityRowRef}
                   style={styles.activityCardsRow}
                   onLayout={(event) => {
                     const { y } = event.nativeEvent.layout;
@@ -2458,7 +2494,7 @@ export default function HomeScreen({ navigation }) {
               navigation={navigation}
               activeScreen="Home"
               scannerButtonRef={scannerButtonRef}
-              profileButtonRef={profileButtonRef}
+              statsButtonRef={statsButtonRef}
             />
 
             <RenameAnnouncementModal theme={theme} />

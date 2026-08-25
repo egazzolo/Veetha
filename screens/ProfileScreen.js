@@ -58,7 +58,6 @@ export default function ProfileScreen({ navigation }) {
   console.log('📱 ProfileScreen: loading =', loading);
 
   const userName = profile?.full_name || profile?.email?.split('@')[0] || "User";
-  const userEmail = profile?.email || "user@example.com";
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -76,6 +75,15 @@ export default function ProfileScreen({ navigation }) {
   // Start Profile tutorial on first visit to this screen
   useFocusEffect(
     React.useCallback(() => {
+    // Re-arm the freeze on every focus, not just the component's first ever
+    // mount -- this screen stays mounted between tab navigations, so
+    // checkingTutorial's useState(true) initializer only ever applies once.
+    // Without this, revisiting Profile later in the same session (after an
+    // earlier visit already resolved it to false) would find the freeze
+    // already off, leaving the screen tappable/scrollable before this
+    // visit's own checks (and the tutorial, if it's about to start) are done.
+    setCheckingTutorial(true);
+
     // Guests never see tutorials
     if (isGuest) {
       setCheckingTutorial(false);
@@ -140,10 +148,23 @@ export default function ProfileScreen({ navigation }) {
           });
 
           if (refsReady) {
-            setCheckingTutorial(false);
             timerId = setTimeout(() => {
               if (cancelled) return;
               startTutorial('Profile');
+              // AppTutorial's own onVisible fires once its coach-mark
+              // overlay actually becomes visible -- that's the real release
+              // signal. This fallback only covers startTutorial() deciding
+              // NOT to start (tutorial already completed for this user),
+              // in which case AppTutorial never measures anything and
+              // onVisible never fires.
+              //
+              // Deliberately NOT gated on `cancelled` here: startTutorial()
+              // has already been called above, so if this release got
+              // skipped the freeze overlay would be stuck on screen forever
+              // with no other code path left to clear it.
+              setTimeout(() => {
+                setCheckingTutorial(false);
+              }, 800);
             }, 300);
           } else if (checkCount < 10) {
             timerId = setTimeout(checkRefsReady, 300);
@@ -178,7 +199,9 @@ export default function ProfileScreen({ navigation }) {
 
   const userStats = React.useMemo(() => ({
     age: profile?.age || 0,
-    gender: profile?.gender || 'Not set',
+    gender: profile?.gender === 'male' ? t('onboarding.male')
+      : profile?.gender === 'female' ? t('onboarding.female')
+      : 'Not set',
     height: profile?.unit_preference === 'imperial' 
       ? `${profile?.height_ft || 0}'${profile?.height_in || 0}"` 
       : `${profile?.height_cm || 0}cm`, 
@@ -383,8 +406,9 @@ export default function ProfileScreen({ navigation }) {
           <AnimatedThemeWrapper>
             <ScrollView
               ref={scrollViewRef}
-              style={styles.scrollView} 
+              style={styles.scrollView}
               showsVerticalScrollIndicator={false}
+              scrollEnabled={!checkingTutorial}
               refreshControl={
                 <RefreshControl 
                   refreshing={refreshing} 
@@ -414,8 +438,7 @@ export default function ProfileScreen({ navigation }) {
                   </View>
                 </TouchableOpacity>
                 <Text style={[styles.userName, { color: theme.text }]}>{userName}</Text>
-                <Text style={[styles.userEmail, { color: theme.textSecondary }]}>{userEmail}</Text>
-                <TouchableOpacity 
+                <TouchableOpacity
                   ref={editButtonRef}
                   onLayout={(event) => {
                     try {
@@ -441,10 +464,11 @@ export default function ProfileScreen({ navigation }) {
 
               </View>
 
-              {/* Stats Summary */}
+              {/* Stats Summary -- notebook-page treatment matching the
+                  Weekly Summary card on Stats, but without the punched
+                  holes / red margin rule (Profile-only variant). */}
               <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('profile.yourStats')}</Text>
-                <View 
+                <View
                   ref={statsGridRef}
                   onLayout={(event) => {
                     try {
@@ -452,8 +476,8 @@ export default function ProfileScreen({ navigation }) {
                       if (statsGridRef?.current?.measureInWindow) {
                         statsGridRef.current.measureInWindow((wx, wy, w, h) => {
                           if (statsGridRef.current) {
-                            statsGridRef.current.tutorialCoords = { 
-                              top: wy, left: wx, width: w, height: h, borderRadius: 16 
+                            statsGridRef.current.tutorialCoords = {
+                              top: wy, left: wx, width: w, height: h, borderRadius: 16
                             };
                           }
                         });
@@ -462,28 +486,36 @@ export default function ProfileScreen({ navigation }) {
                       // Silently ignore - this is expected during layout
                     }
                   }}
-                  style={styles.statsGrid}
+                  style={styles.notebookCard}
                 >
-                  <View style={[styles.statCard, { backgroundColor: theme.cardBackground }]}>
-                    <Text style={[styles.statValue, { color: theme.primary }]}>{userStats.height}</Text>
+                  <Text style={[styles.sectionTitle, styles.notebookTitle, { color: theme.text, borderBottomColor: 'rgba(90, 130, 190, 0.4)' }]}>
+                    {t('profile.yourStats')}
+                  </Text>
+
+                  <View style={[styles.notebookRow, { borderBottomColor: 'rgba(90, 130, 190, 0.4)' }]}>
+                    <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t('onboarding.gender')}</Text>
+                    <Text style={[styles.statValue, { color: theme.text }]}>{userStats.gender}</Text>
+                  </View>
+                  <View style={[styles.notebookRow, { borderBottomColor: 'rgba(90, 130, 190, 0.4)' }]}>
                     <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t('profile.height')}</Text>
+                    <Text style={[styles.statValue, { color: theme.text }]}>{userStats.height}</Text>
                   </View>
-                  <View style={[styles.statCard, { backgroundColor: theme.cardBackground }]}>
-                    <Text style={[styles.statValue, { color: theme.primary }]}>{userStats.weight}</Text>
+                  <View style={[styles.notebookRow, { borderBottomColor: 'rgba(90, 130, 190, 0.4)' }]}>
                     <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t('profile.weight')}</Text>
+                    <Text style={[styles.statValue, { color: theme.text }]}>{userStats.weight}</Text>
                   </View>
-                  <View style={[styles.statCard, { backgroundColor: theme.cardBackground }]}>
-                    <Text style={[styles.statValue, { color: theme.primary }]}>{userStats.age}</Text>
+                  <View style={[styles.notebookRow, { borderBottomColor: 'rgba(90, 130, 190, 0.4)' }]}>
                     <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t('profile.age')}</Text>
+                    <Text style={[styles.statValue, { color: theme.text }]}>{userStats.age}</Text>
                   </View>
-                  <View style={[styles.statCard, { backgroundColor: theme.cardBackground }]}>
-                    <Text style={[styles.statValue, { color: theme.primary }]}>
-                      {userStats.goal === 'lose' ? t('profile.goalLose') : 
-                      userStats.goal === 'gain' ? t('profile.goalGain') : 
-                      userStats.goal === 'maintain' ? t('profile.goalMaintain') : 
+                  <View style={[styles.notebookRow, styles.notebookRowLast]}>
+                    <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t('profile.goal')}</Text>
+                    <Text style={[styles.statValue, { color: theme.text }]}>
+                      {userStats.goal === 'lose' ? t('profile.goalLose') :
+                      userStats.goal === 'gain' ? t('profile.goalGain') :
+                      userStats.goal === 'maintain' ? t('profile.goalMaintain') :
                       'Not set'}
                     </Text>
-                    <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t('profile.goal')}</Text>
                   </View>
                 </View>
               </View>
@@ -533,7 +565,7 @@ export default function ProfileScreen({ navigation }) {
                       // Silently ignore - this is expected during layout
                     }
                   }}
-                  style={[styles.settingItem, { backgroundColor: theme.cardBackground }]}
+                  style={[styles.settingItem, { backgroundColor: 'transparent' }]}
                   onPress={() => navigation.navigate('GoalsPreferences')}
                 >
                   <View style={styles.settingLeft}>
@@ -561,7 +593,7 @@ export default function ProfileScreen({ navigation }) {
                       // Silently ignore - this is expected during layout
                     }
                   }}
-                  style={[styles.settingItem, { backgroundColor: theme.cardBackground }]}
+                  style={[styles.settingItem, { backgroundColor: 'transparent' }]}
                   onPress={() => navigation.navigate('DietaryRestrictions')}
                 >
                   <View style={styles.settingLeft}>
@@ -593,7 +625,7 @@ export default function ProfileScreen({ navigation }) {
                       // Silently ignore - this is expected during layout
                     }
                   }}
-                  style={[styles.menuItem, { backgroundColor: theme.cardBackground }]}
+                  style={[styles.menuItem, { backgroundColor: 'transparent' }]}
                   onPress={() => navigation.navigate('DisplaySettings')}
                 >
                   <AppIcon name="palette" size={24} style={{ marginRight: 15 }} />
@@ -603,16 +635,16 @@ export default function ProfileScreen({ navigation }) {
                       {t('profile.displaySettingsDesc')}
                     </Text>
                   </View>
-                  <Text style={[styles.menuArrow, { color: theme.textTertiary }]}>›</Text>
+                  <Text style={[styles.menuArrow, { color: '#ccc' }]}>›</Text>
               </TouchableOpacity>
                 )}
               </View>
 
               {/* Resources Section */}
-              <View style={styles.section}>
+              <View style={[styles.section, { paddingBottom: 0 }]}>
                 <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('profile.resources')}</Text>
                 
-                <TouchableOpacity style={[styles.settingItem, { backgroundColor: theme.cardBackground, display: 'none' }]} onPress={handleLearnMore}>
+                <TouchableOpacity style={[styles.settingItem, { backgroundColor: 'transparent', display: 'none' }]} onPress={handleLearnMore}>
                   <View style={styles.settingLeft}>
                     <AppIcon name="book" size={24} style={{ marginRight: 15 }} />
                     <Text style={[styles.settingLabel, { color: theme.text }]}>{t('profile.learnMore')}</Text>
@@ -620,7 +652,7 @@ export default function ProfileScreen({ navigation }) {
                   <Text style={styles.settingArrow}>›</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={[styles.settingItem, { backgroundColor: theme.cardBackground }]} onPress={handleSupport}>
+                <TouchableOpacity style={[styles.settingItem, { backgroundColor: 'transparent' }]} onPress={handleSupport}>
                   <View style={styles.settingLeft}>
                     <AppIcon name="chat" size={24} style={{ marginRight: 15 }} />
                     <Text style={[styles.settingLabel, { color: theme.text }]}>{t('profile.helpSupport')}</Text>
@@ -629,7 +661,7 @@ export default function ProfileScreen({ navigation }) {
                 </TouchableOpacity>
 
                 <TouchableOpacity 
-                  style={[styles.settingItem, { backgroundColor: theme.cardBackground }]}
+                  style={[styles.settingItem, { backgroundColor: 'transparent' }]}
                   onPress={() => navigation.navigate('PrivacyPolicy', { initialTab: 'privacy' })}
                 >
                   <View style={styles.settingLeft}>
@@ -640,7 +672,7 @@ export default function ProfileScreen({ navigation }) {
                 </TouchableOpacity>
 
                 <TouchableOpacity 
-                  style={[styles.settingItem, { backgroundColor: theme.cardBackground }]}
+                  style={[styles.settingItem, { backgroundColor: 'transparent' }]}
                   onPress={() => navigation.navigate('PrivacyPolicy', { initialTab: 'terms' })} 
                 >
                   <View style={styles.settingLeft}>
@@ -652,8 +684,8 @@ export default function ProfileScreen({ navigation }) {
               </View>
 
               {/* App Info */}
-              <View style={styles.section}>
-                <TouchableOpacity style={[styles.settingItem, { backgroundColor: theme.cardBackground }]}>
+              <View style={[styles.section, { paddingTop: 0 }]}>
+                <TouchableOpacity style={[styles.settingItem, { backgroundColor: 'transparent' }]}>
                   <View style={styles.settingLeft}>
                     <AppIcon name="info" size={24} style={{ marginRight: 15 }} />
                     <Text style={[styles.settingLabel, { color: theme.text }]}>{t('profile.aboutVeetha')}</Text>
@@ -709,9 +741,10 @@ export default function ProfileScreen({ navigation }) {
               {/* Bottom Padding */}
               <View style={{ height: 100 }} />
             </ScrollView>
-            <AppTutorial 
+            <AppTutorial
               screen="Profile"
               scrollViewRef={scrollViewRef}
+              onVisible={() => setCheckingTutorial(false)}
               onProfileRefresh={refreshProfile}
               tutorialRefs={{
                 statsGrid: statsGridRef,
@@ -851,17 +884,10 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 5,
   },
-  userEmail: {
-    fontSize: 14,
-    color: '#999',
-    marginBottom: 15,
-  },
   editButton: {
     paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#4CAF50',
   },
   editButtonText: {
     color: '#4CAF50',
@@ -869,7 +895,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   section: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 2,
   },
   sectionTitle: {
     fontSize: 18,
@@ -877,42 +905,49 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 15,
   },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  statCard: {
-    flex: 1,
-    minWidth: '47%',
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 12,
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
   statValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#4CAF50',
-    marginBottom: 5,
-    textAlign: 'center',
-    flexShrink: 1,
+    fontSize: 14,
+    fontWeight: '600',
   },
   statLabel: {
-    fontSize: 11,
-    color: '#999',
-    textAlign: 'center',
-    flexShrink: 1,
+    fontSize: 14,
+  },
+  // "Your Stats" styled like a torn notebook sheet, matching the Weekly
+  // Summary card on the Stats screen (minus its punched holes / red margin
+  // rule, which are Stats-only): no background fill, pale blue ruled lines
+  // under each row instead of a card boundary.
+  notebookCard: {
+    marginHorizontal: 20,
+    marginBottom: 15,
+    paddingVertical: 18,
+    paddingHorizontal: 16,
+    backgroundColor: 'transparent',
+    position: 'relative',
+    borderWidth: 1.5,
+    borderColor: 'rgba(150, 120, 80, 0.4)',
+  },
+  notebookTitle: {
+    marginBottom: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+  },
+  notebookRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 11,
+    borderBottomWidth: 1,
+  },
+  notebookRowLast: {
+    borderBottomWidth: 0,
   },
   settingItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginBottom: 0,
   },
   settingLeft: {
     flexDirection: 'row',
@@ -956,9 +991,9 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginBottom: 0,
   },
   menuIcon: {
     fontSize: 24,
@@ -971,7 +1006,7 @@ const styles = StyleSheet.create({
   },
   menuLabel: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'normal',
     marginBottom: 2,
   },
   menuDescription: {
@@ -980,6 +1015,7 @@ const styles = StyleSheet.create({
   },
   menuArrow: {
     fontSize: 24,
+    fontWeight: 'normal',
     marginLeft: 10,
   },
   deleteButton: {

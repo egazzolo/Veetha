@@ -109,8 +109,10 @@ export function LanguageProvider({ children }) {
       value = value?.[k];
     }
 
-    // 🚨 Missing translation detector
-    if (!value) {
+    // 🚨 Missing translation detector -- an intentionally empty string (e.g.
+    // an unused tagline slot) is a real value, not a missing key, so only
+    // undefined/null should fall back to showing the raw key.
+    if (value === undefined || value === null) {
       console.warn('🚨 Missing translation:', key);
       return key;
     }

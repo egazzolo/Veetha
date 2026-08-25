@@ -21,8 +21,8 @@ export default {
   },
   // Landing Screen
   landing: {
-    tagline1: 'Registra tu consumo de alimentos,',
-    tagline2: 'trabaja en ti.',
+    tagline1: 'Todo lo que necesitas para registrar tus comidas y ejercicio',
+    tagline2: '',
     login: 'INICIAR SESIÓN',
     signup: 'REGISTRARSE',
     continue: 'CONTINUAR',
@@ -125,8 +125,8 @@ export default {
     step2Title: 'Tus estadísticas actuales',
     height: 'Altura',
     weight: 'Peso',
-    imperial: 'Imperial',
-    metric: 'Métrico',
+    imperial: 'Pies',
+    metric: 'Metros',
     enterHeight: 'Por favor ingresa tu altura',
     enterWeight: 'Por favor ingresa tu peso',
     validHeightImperial: 'Por favor ingresa una altura válida (3-8 ft, 0-11 in)',
@@ -246,6 +246,7 @@ export default {
     preparing: 'Preparando tutorial...',
     tapToScan: '¡Toca para escanear!',
     tapToExit: 'Toca para salir',
+    tapToStats: 'Toca para abrir Estadísticas',
     tapToProfile: 'Toca para abrir Perfil',
     skip: 'Saltar',
     next: 'Siguiente',
@@ -262,15 +263,19 @@ export default {
         content: 'Estos rastrean proteína, carbohidratos y grasa. Cada macro juega un papel único en tu salud. Toca cualquier tarjeta para aprender más.',
       },
       step3: {
+        title: 'Ejercicio, Pasos y Agua',
+        content: 'Registra un entrenamiento, controla tus pasos diarios y lleva el control de tu consumo de agua, todo desde Inicio.',
+      },
+      step4: {
         title: 'Ver Tus Comidas',
         content: 'Toca una vez cualquier comida para ver el desglose completo de macros. Mantén presionado para editar la porción o eliminar la entrada.',
       },
-      step4: {
+      step5: {
         title: 'Registra Tus Comidas Aquí',
         content: '¡Toca este botón de escáner para aprender a registrar tus comidas!',
       },
     },
-    
+
     scanner: {
       step1: {
         title: 'Escanear Códigos de Barras',
@@ -293,6 +298,18 @@ export default {
       step1: {
         title: 'Vista Semanal vs Mensual',
         content: 'Alterna entre estadísticas semanales y mensuales para ver tu progreso con el tiempo.',
+      },
+      step2: {
+        title: 'Tu Tendencia de Calorías',
+        content: 'Cada barra es el total de calorías de un día — el naranja significa que superaste tu meta ese día.',
+      },
+      step3: {
+        title: 'Tu Resumen Semanal',
+        content: 'Promedio de calorías, proteínas y carbohidratos del período, todo de un vistazo.',
+      },
+      step4: {
+        title: 'Exporta Tus Datos',
+        content: 'Genera un informe en PDF o Excel de tu historial nutricional, cuando lo necesites.',
       },
     },
     profile: {

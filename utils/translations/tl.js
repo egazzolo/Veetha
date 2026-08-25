@@ -21,8 +21,8 @@ export default {
   },
   // Landing Screen
   landing: {
-    tagline1: 'Subaybayan ang iyong pagkain,',
-    tagline2: 'magtrabaho sa sarili mo.',
+    tagline1: 'Lahat ng kailangan mo para subaybayan ang iyong mga pagkain at ehersisyo',
+    tagline2: '',
     login: 'MAG-LOG IN',
     signup: 'MAG-SIGN UP',
     continue: 'MAGPATULOY',
@@ -125,8 +125,8 @@ export default {
     step2Title: 'Ang iyong kasalukuyang stats',
     height: 'Taas',
     weight: 'Timbang',
-    imperial: 'Imperial',
-    metric: 'Metric',
+    imperial: 'Talampakan',
+    metric: 'Metro',
     enterHeight: 'Pakiusap na ilagay ang iyong taas',
     enterWeight: 'Pakiusap na ilagay ang iyong timbang',
     validHeightImperial: 'Pakiusap na maglagay ng valid na taas (3-8 ft, 0-11 in)',
@@ -246,6 +246,7 @@ export default {
     preparing: 'Inihahanda ang tutorial...',
     tapToScan: 'I-tap para mag-scan!',
     tapToExit: 'I-tap para lumabas',
+    tapToStats: 'I-tap para sa Stats',
     tapToProfile: 'I-tap para sa Profile',
     skip: 'Laktawan',
     next: 'Sunod',
@@ -262,10 +263,14 @@ export default {
         content: 'Sinusubaybayan nito ang protina, carbs, at fats. Bawat macro ay may natatanging papel sa iyong kalusugan. I-tap ang kahit anong card para matuto pa.',
       },
       step3: {
+        title: 'Ehersisyo, Hakbang, at Tubig',
+        content: 'Mag-log ng ehersisyo, subaybayan ang iyong pang-araw-araw na hakbang, at panatilihing updated ang iyong inuming tubig — dito mismo sa Home.',
+      },
+      step4: {
         title: 'Tingnan ang Iyong Mga Pagkain',
         content: 'I-tap nang isang beses ang kahit anong pagkain para makita ang buong breakdown ng macro. Pindutin at hawakan para i-edit ang serving size o tanggalin ang entry.',
       },
-      step4: {
+      step5: {
         title: 'Mag-log ng Mga Pagkain Dito',
         content: 'I-tap ang scanner button na ito para matuto kung paano mag-log ng mga pagkain!',
       },
@@ -293,6 +298,18 @@ export default {
       step1: {
         title: 'Lingguhan vs Buwanang View',
         content: 'Magpalitan sa pagitan ng lingguhan at buwanang estadistika para makita ang iyong progreso sa paglipas ng panahon.',
+      },
+      step2: {
+        title: 'Ang Iyong Kalakaran ng Calories',
+        content: 'Ang bawat bar ay ang kabuuang calories ng isang araw — ang orange ay nangangahulugang lumampas ka sa iyong goal nang araw na iyon.',
+      },
+      step3: {
+        title: 'Ang Iyong Lingguhang Buod',
+        content: 'Average na calories, protina, at carbs para sa panahong ito, lahat sa isang tingin.',
+      },
+      step4: {
+        title: 'I-export ang Iyong Data',
+        content: 'Gumawa ng PDF o Excel report ng iyong kasaysayan sa nutrisyon, kahit kailan mo kailanganin.',
       },
     },
     profile: {

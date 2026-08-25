@@ -71,6 +71,8 @@ const ICONS = {
   
   // Tutorial pointer
   'fork': require('../assets/icons/icon_fork.png'),
+  'hand_point_down': require('../assets/icons/icon_hand_point_down.png'),
+  'hand_point_left': require('../assets/icons/icon_hand_point_left.png'),
   
   // Allergens (plain green)
   'peanut': require('../assets/icons/icon_peanut.png'),

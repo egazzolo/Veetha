@@ -21,8 +21,8 @@ export default {
   },
   // Landing Screen
   landing: {
-    tagline1: 'Suivez votre alimentation,',
-    tagline2: 'travaillez sur vous.',
+    tagline1: 'Tout ce dont vous avez besoin pour suivre vos repas et votre exercice',
+    tagline2: '',
     login: 'CONNEXION',
     signup: 'INSCRIPTION',
     continue: 'CONTINUER',
@@ -125,8 +125,8 @@ export default {
     step2Title: 'Vos statistiques actuelles',
     height: 'Taille',
     weight: 'Poids',
-    imperial: 'Impérial',
-    metric: 'Métrique',
+    imperial: 'Pieds',
+    metric: 'Mètres',
     enterHeight: 'Veuillez entrer votre taille',
     enterWeight: 'Veuillez entrer votre poids',
     validHeightImperial: 'Veuillez entrer une taille valide (3-8 pi, 0-11 po)',
@@ -246,6 +246,7 @@ export default {
     preparing: 'Préparation du tutoriel...',
     tapToScan: 'Appuyez pour scanner!',
     tapToExit: 'Appuyez pour quitter',
+    tapToStats: 'Appuyez pour ouvrir Statistiques',
     tapToProfile: 'Appuyez pour ouvrir le profil',
     skip: 'Passer',
     next: 'Suivant',
@@ -262,10 +263,14 @@ export default {
         content: 'Ils suivent les protéines, glucides et lipides. Chaque macro joue un rôle unique pour votre santé. Appuyez sur une carte pour en savoir plus.',
       },
       step3: {
+        title: 'Exercice, Pas et Eau',
+        content: 'Enregistrez un entraînement, suivez vos pas quotidiens et votre consommation d\'eau, le tout depuis l\'Accueil.',
+      },
+      step4: {
         title: 'Consultez vos repas',
         content: 'Appuyez une fois sur un repas pour voir la répartition complète des macros. Maintenez appuyé pour modifier la portion ou supprimer l\'entrée.',
       },
-      step4: {
+      step5: {
         title: 'Enregistrez vos repas ici',
         content: 'Appuyez sur ce bouton scanner pour apprendre à enregistrer vos repas!',
       },
@@ -293,6 +298,18 @@ export default {
       step1: {
         title: 'Vue Hebdomadaire vs Mensuelle',
         content: 'Basculez entre les statistiques hebdomadaires et mensuelles pour voir vos progrès au fil du temps.',
+      },
+      step2: {
+        title: 'Votre Tendance Calorique',
+        content: 'Chaque barre représente le total de calories d\'un jour — l\'orange signifie que vous avez dépassé votre objectif ce jour-là.',
+      },
+      step3: {
+        title: 'Votre Résumé Hebdomadaire',
+        content: 'Moyenne des calories, protéines et glucides sur la période, en un coup d\'œil.',
+      },
+      step4: {
+        title: 'Exportez Vos Données',
+        content: 'Générez un rapport PDF ou Excel de votre historique nutritionnel, quand vous en avez besoin.',
       },
     },
     profile: {

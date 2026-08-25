@@ -9,6 +9,7 @@ export default function BottomNav({
   navigation,
   activeScreen = 'Home',
   scannerButtonRef,
+  statsButtonRef,
   profileButtonRef
 }) {
   // Explicit inset instead of relying on each screen's ambient SafeAreaView
@@ -103,7 +104,24 @@ export default function BottomNav({
       </TouchableOpacity>
 
       {/* Stats */}
-      <TouchableOpacity 
+      <TouchableOpacity
+        ref={statsButtonRef}
+        onLayout={(event) => {
+          const { x, y, width, height } = event.nativeEvent.layout;
+          if (statsButtonRef?.current?.measureInWindow) {
+            statsButtonRef.current.measureInWindow((wx, wy, w, h) => {
+              if (statsButtonRef.current) {
+                statsButtonRef.current.tutorialCoords = {
+                  top: wy,
+                  left: wx,
+                  width: w,
+                  height: h,
+                  borderRadius: 8
+                };
+              }
+            });
+          }
+        }}
         style={styles.navItem}
         onPress={() => navigateToScreen('Stats')}
       >

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Dimensions, Animated } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Dimensions, Animated, Alert, ActivityIndicator, Modal } from 'react-native';
+import { BlurView } from 'expo-blur';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSwipeNavigation } from '../utils/useSwipeNavigation';
@@ -15,8 +17,23 @@ import BottomNav from '../components/BottomNav';
 import ExerciseHistoryScreen from './ExerciseHistoryScreen';
 import AppIcon from '../components/AppIcon';
 import { usePremiumStatus } from '../utils/usePremiumStatus';
+import AppTutorial from '../components/AppTutorial';
+import TutorialArrow from '../components/TutorialArrow';
+import BrandedAlert from '../components/BrandedAlert';
+import { useTutorial } from '../utils/TutorialContext';
 
 const { width } = Dimensions.get('window');
+
+// Darkens a 6-digit hex color by the given amount (0-1) -- used to derive
+// the report-picker button color from the current theme's own background
+// instead of a hardcoded shade, so it works across every theme.
+const darkenColor = (hex, amount = 0.25) => {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const r = Math.max(0, Math.round(((num >> 16) & 0xff) * (1 - amount)));
+  const g = Math.max(0, Math.round(((num >> 8) & 0xff) * (1 - amount)));
+  const b = Math.max(0, Math.round((num & 0xff) * (1 - amount)));
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+};
 
 // Rapidly counts up/down to `value` on every change, like a slot-machine
 // reel settling on a number, rather than just snapping to the new digits.
@@ -52,6 +69,10 @@ export default function StatsScreen({ navigation }) {
   const pushAnim = useRef(new Animated.Value(0)).current;
   const [pushState, setPushState] = useState(null); // { from, to, direction } while a tab-switch push transition is playing
   const [panelWidth, setPanelWidth] = useState(width);
+  // Which way the panel slides in on a tab switch -- flipped via the
+  // long-press "Invert Swipe" prompt on the period selector, persisted so it
+  // sticks across app restarts like the other display prefs (theme, etc).
+  const [invertSwipeDirection, setInvertSwipeDirection] = useState(false);
   const weekBarsAnim = useRef(new Animated.Value(0)).current;
   const weekBarsAnimatedRef = useRef(false);
   const calendarScaleAnim = useRef(new Animated.Value(0.3)).current;
@@ -63,6 +84,89 @@ export default function StatsScreen({ navigation }) {
 
   // Swipe navigation
   const swipeGesture = useSwipeNavigation(navigation, 'Stats');
+
+  // Tutorial
+  const { startTutorial } = useTutorial();
+  const scrollViewRef = useRef(null);
+  const toggleRef = useRef(null);
+  const chartRef = useRef(null);
+  const summaryRef = useRef(null);
+  const reportsRef = useRef(null);
+  const tutorialStartedRef = useRef(false);
+  const [checkingTutorial, setCheckingTutorial] = useState(true);
+  // Once the Stats tutorial finishes, point the hand at the Profile tab next
+  const profileButtonRef = useRef(null);
+  const [profileCoords, setProfileCoords] = useState(null);
+  const [showArrowToProfile, setShowArrowToProfile] = useState(false);
+
+  // Report type + period pickers -- both float over the (blurred) Stats
+  // screen itself, one after the other, as soon as "Reports" is tapped.
+  // Only once both are chosen does it navigate into ExportReportScreen,
+  // which now just generates the report immediately (no "Start Report"
+  // step, no UI of its own).
+  const [showReportTypeModal, setShowReportTypeModal] = useState(false);
+  const [showReportPeriodModal, setShowReportPeriodModal] = useState(false);
+  const [pendingReportType, setPendingReportType] = useState(null);
+  const REPORT_TYPE_LABELS = {
+    macros: 'Macronutrient Report',
+    exercise: 'Exercise Report',
+    both: 'Macronutrient & Exercise Report',
+  };
+  const selectReportType = (reportType) => {
+    setPendingReportType(reportType);
+    setShowReportTypeModal(false);
+    setShowReportPeriodModal(true);
+  };
+  const selectReportPeriod = (period) => {
+    setShowReportPeriodModal(false);
+    navigation.navigate('ExportReport', { reportType: pendingReportType, period });
+  };
+  const [showWhatsIncludedModal, setShowWhatsIncludedModal] = useState(false);
+  const whatsIncludedMessage = `• ${t('stats.exportReport.dailyCalories')}\n• ${t('stats.exportReport.macroBreakdown')}\n• ${t('stats.exportReport.goalComparison')}\n• ${t('stats.exportReport.summaryStats')}\n• Exercise history & breakdown (sets, reps, weight)`;
+
+  const measureProfileButton = () => {
+    if (profileButtonRef.current) {
+      profileButtonRef.current.measureInWindow((x, y, w, h) => {
+        setProfileCoords({ top: y, left: x, width: w, height: h });
+        // Re-freezing (below, in onComplete) closes the gap between
+        // AppTutorial's Modal closing and TutorialArrow actually rendering
+        // (it's gated on profileCoords, which only exists after this async
+        // measureInWindow round-trip) -- release it now that TutorialArrow
+        // has what it needs to render and block taps itself.
+        setCheckingTutorial(false);
+      });
+    } else {
+      setCheckingTutorial(false);
+    }
+  };
+
+  useEffect(() => {
+    AsyncStorage.getItem('statsInvertSwipeDirection').then((val) => {
+      if (val != null) setInvertSwipeDirection(val === 'true');
+    });
+  }, []);
+
+  const toggleInvertSwipeDirection = () => {
+    const next = !invertSwipeDirection;
+    setInvertSwipeDirection(next);
+    AsyncStorage.setItem('statsInvertSwipeDirection', String(next));
+  };
+
+  const promptInvertSwipe = () => {
+    Alert.alert(
+      'Swipe Direction',
+      invertSwipeDirection
+        ? 'Panels currently slide in reversed. Switch back to the normal direction?'
+        : 'Invert the direction panels slide in from when you switch tabs?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: invertSwipeDirection ? 'Use Normal' : 'Invert Swipe',
+          onPress: toggleInvertSwipeDirection,
+        },
+      ]
+    );
+  };
 
   // Fetch user profile
   const fetchProfile = async () => {
@@ -379,7 +483,8 @@ export default function StatsScreen({ navigation }) {
   const tabIndexOf = (tab) => (tab === 'week' ? 0 : tab === 'month' ? 1 : 2);
   const changeTab = (newTab) => {
     if (newTab === activeTab) return;
-    const direction = tabIndexOf(newTab) > tabIndexOf(activeTab) ? -1 : 1;
+    let direction = tabIndexOf(newTab) > tabIndexOf(activeTab) ? -1 : 1;
+    if (invertSwipeDirection) direction *= -1;
     setPushState({ from: activeTab, to: newTab, direction });
     setActiveTab(newTab);
     pushAnim.setValue(0);
@@ -409,6 +514,69 @@ export default function StatsScreen({ navigation }) {
       }
     }, [])
   );
+
+  // Start the Stats tutorial once data has loaded and the panel (toggle,
+  // chart, summary, reports) has actually rendered -- mirrors HomeScreen's
+  // ref-readiness polling, since the week panel's content (chart/summary)
+  // doesn't exist until `loading` resolves.
+  useEffect(() => {
+    if (isGuestMode) {
+      setCheckingTutorial(false);
+      return;
+    }
+    if (loading || tutorialStartedRef.current) return;
+
+    let cancelled = false;
+    let checkCount = 0;
+    const MAX_CHECKS = 10;
+
+    const checkRefsReady = () => {
+      if (cancelled) return;
+      checkCount++;
+      const refsReady =
+        toggleRef.current !== null &&
+        chartRef.current !== null &&
+        summaryRef.current !== null &&
+        reportsRef.current !== null;
+
+      if (refsReady || checkCount > MAX_CHECKS) {
+        if (refsReady) {
+          tutorialStartedRef.current = true;
+          startTutorial('Stats');
+          // AppTutorial's own onVisible fires once its coach-mark overlay
+          // actually becomes visible, which is the real release signal --
+          // but startTutorial() can also decide NOT to start (e.g. this
+          // user already completed the Stats tutorial), in which case
+          // AppTutorial never measures anything and onVisible never fires.
+          // This fallback covers that case. Deliberately NOT gated on
+          // `cancelled`: once tutorialStartedRef is true, every later
+          // re-run of this effect (e.g. `loading` flipping again from an
+          // unrelated focus refetch) exits immediately via the guard above
+          // and never retries releasing the freeze -- so once committed,
+          // always release regardless, or the screen stays frozen forever.
+          setTimeout(() => {
+            setCheckingTutorial(false);
+          }, 800);
+        } else {
+          setCheckingTutorial(false);
+        }
+        return;
+      }
+      setTimeout(checkRefsReady, 150);
+    };
+
+    checkRefsReady();
+
+    // Failsafe: never leave the screen frozen more than 6s
+    const failsafeId = setTimeout(() => {
+      setCheckingTutorial(false);
+    }, 6000);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(failsafeId);
+    };
+  }, [loading, isGuestMode]);
 
   // Calculate statistics
   const daysWithData = activeTab === 'week'
@@ -445,8 +613,42 @@ export default function StatsScreen({ navigation }) {
       <GestureDetector gesture={swipeGesture}>
         <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
           <ThemedScreenBackground />
+          <AppTutorial
+            screen="Stats"
+            scrollViewRef={scrollViewRef}
+            onVisible={() => setCheckingTutorial(false)}
+            onComplete={() => {
+              console.log('📊 Stats tutorial complete');
+              // Re-freeze through the gap between AppTutorial's Modal
+              // closing and TutorialArrow actually rendering (it needs
+              // profileCoords, set asynchronously below) -- otherwise
+              // the real Profile tab is briefly tappable in between.
+              setCheckingTutorial(true);
+              measureProfileButton();
+              setShowArrowToProfile(true);
+            }}
+            tutorialRefs={{
+              toggle: toggleRef,
+              chart: chartRef,
+              summary: summaryRef,
+              reports: reportsRef,
+            }}
+          />
+          {profileCoords && (
+            <TutorialArrow
+              visible={showArrowToProfile}
+              targetCoords={profileCoords}
+              onSkip={() => setShowArrowToProfile(false)}
+              onTargetPress={() => {
+                setShowArrowToProfile(false);
+                navigation.navigate('Profile', { animationDirection: 'right' });
+              }}
+              message={t('tutorial.tapToProfile')}
+              offsetX={-6}
+            />
+          )}
           <AnimatedThemeWrapper>
-            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+            <ScrollView ref={scrollViewRef} style={styles.scrollView} showsVerticalScrollIndicator={false} scrollEnabled={!checkingTutorial}>
               {/* Header */}
               <View style={styles.header}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
@@ -456,7 +658,7 @@ export default function StatsScreen({ navigation }) {
               </View>
 
               {/* Period Selector */}
-              <View style={[styles.periodSelector, { backgroundColor: theme.cardBackground }]}>
+              <View ref={toggleRef} style={[styles.periodSelector, { backgroundColor: `${theme.cardBackground}80` }]}>
                 <Animated.View
                   style={[
                     styles.periodIndicator,
@@ -472,6 +674,7 @@ export default function StatsScreen({ navigation }) {
                 <TouchableOpacity
                   style={styles.periodButton}
                   onPress={() => changeTab('week')}
+                  onLongPress={promptInvertSwipe}
                 >
                   <Text style={[styles.periodText, { color: activeTab === 'week' ? '#fff' : theme.textSecondary }]}>
                     {t('stats.week')}
@@ -480,6 +683,7 @@ export default function StatsScreen({ navigation }) {
                 <TouchableOpacity
                   style={styles.periodButton}
                   onPress={() => changeTab('month')}
+                  onLongPress={promptInvertSwipe}
                 >
                   <Text style={[styles.periodText, { color: activeTab === 'month' ? '#fff' : theme.textSecondary }]}>
                     {t('stats.month')}
@@ -488,6 +692,7 @@ export default function StatsScreen({ navigation }) {
                 <TouchableOpacity
                   style={styles.periodButton}
                   onPress={() => changeTab('exercise')}
+                  onLongPress={promptInvertSwipe}
                 >
                   <Text style={[ styles.periodText, { color: activeTab === 'exercise' ? '#fff' : theme.textSecondary }]}>
                     {t('stats.exercise')}
@@ -543,7 +748,7 @@ export default function StatsScreen({ navigation }) {
                     </View>
                   )}
                   {/* Weekly Bar Chart */}
-                  <View style={[styles.chartCard, { backgroundColor: theme.cardBackground }]}>
+                  <View ref={chartRef} style={[styles.chartCard, { backgroundColor: theme.cardBackground }]}>
                     <Text style={[styles.cardTitle, { color: theme.text }]}>{t('stats.weeklyCals')}</Text>
                     
                     {loading ? (
@@ -613,11 +818,22 @@ export default function StatsScreen({ navigation }) {
                     )}
                   </View>
 
-                  {/* Weekly Summary */}
-                  <View style={[styles.detailCard, { backgroundColor: theme.cardBackground }]}>
-                    <Text style={[styles.cardTitle, { color: theme.text }]}>{t('stats.weeklySummary')}</Text>
-                    
-                    <View style={styles.detailRow}>
+                  {/* Weekly Summary -- styled like a loose-leaf notebook
+                      page instead of a filled card: no background fill,
+                      punched holes and a red margin rule down the left, and
+                      pale blue ruled lines under each row. */}
+                  <View ref={summaryRef} style={styles.notebookCard}>
+                    <View style={styles.notebookHolesColumn} pointerEvents="none">
+                      <View style={[styles.notebookHole, { backgroundColor: theme.background, borderColor: 'rgba(150, 120, 80, 0.4)' }]} />
+                      <View style={[styles.notebookHole, { backgroundColor: theme.background, borderColor: 'rgba(150, 120, 80, 0.4)' }]} />
+                      <View style={[styles.notebookHole, { backgroundColor: theme.background, borderColor: 'rgba(150, 120, 80, 0.4)' }]} />
+                    </View>
+                    <View style={[styles.notebookMarginLine, { backgroundColor: theme.notebookMargin || 'rgba(214, 80, 80, 0.45)' }]} />
+                    <Text style={[styles.cardTitle, styles.notebookTitle, { color: theme.text, borderBottomColor: theme.notebookRule || 'rgba(90, 130, 190, 0.4)' }]}>
+                      {t('stats.weeklySummary')}
+                    </Text>
+
+                    <View style={[styles.notebookRow, { borderBottomColor: theme.notebookRule || 'rgba(90, 130, 190, 0.4)' }]}>
                       <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
                         {t('stats.avgCalories')}
                       </Text>
@@ -626,7 +842,7 @@ export default function StatsScreen({ navigation }) {
                       </Text>
                     </View>
 
-                    <View style={styles.detailRow}>
+                    <View style={[styles.notebookRow, { borderBottomColor: theme.notebookRule || 'rgba(90, 130, 190, 0.4)' }]}>
                       <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
                         {t('stats.avgProtein')}
                       </Text>
@@ -635,7 +851,7 @@ export default function StatsScreen({ navigation }) {
                       </Text>
                     </View>
 
-                    <View style={styles.detailRow}>
+                    <View style={[styles.notebookRow, { borderBottomColor: theme.notebookRule || 'rgba(90, 130, 190, 0.4)' }]}>
                       <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
                         {t('stats.avgCarbs')}
                       </Text>
@@ -644,7 +860,7 @@ export default function StatsScreen({ navigation }) {
                       </Text>
                     </View>
 
-                    <View style={styles.detailRow}>
+                    <View style={[styles.notebookRow, styles.notebookRowLast]}>
                       <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
                         {t('stats.avgFat')}
                       </Text>
@@ -814,11 +1030,22 @@ export default function StatsScreen({ navigation }) {
                           </View>
                         </View>
 
-                        {/* Monthly Stats */}
-                        <View style={[styles.detailCard, { backgroundColor: theme.cardBackground }]}>
-                          <Text style={[styles.cardTitle, { color: theme.text }]}>{t('stats.thirtyDayStats')}</Text>
+                        {/* Monthly Stats -- same torn notebook-sheet
+                            treatment as Weekly Summary: no background fill,
+                            punched holes and a red margin rule down the
+                            left, pale blue ruled lines under each row. */}
+                        <View style={styles.notebookCard}>
+                          <View style={styles.notebookHolesColumn} pointerEvents="none">
+                            <View style={[styles.notebookHole, { backgroundColor: theme.background, borderColor: 'rgba(150, 120, 80, 0.4)' }]} />
+                            <View style={[styles.notebookHole, { backgroundColor: theme.background, borderColor: 'rgba(150, 120, 80, 0.4)' }]} />
+                            <View style={[styles.notebookHole, { backgroundColor: theme.background, borderColor: 'rgba(150, 120, 80, 0.4)' }]} />
+                          </View>
+                          <View style={[styles.notebookMarginLine, { backgroundColor: theme.notebookMargin || 'rgba(214, 80, 80, 0.45)' }]} />
+                          <Text style={[styles.cardTitle, styles.notebookTitle, { color: theme.text, borderBottomColor: theme.notebookRule || 'rgba(90, 130, 190, 0.4)' }]}>
+                            {t('stats.thirtyDayStats')}
+                          </Text>
 
-                          <View style={styles.detailRow}>
+                          <View style={[styles.notebookRow, { borderBottomColor: theme.notebookRule || 'rgba(90, 130, 190, 0.4)' }]}>
                             <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
                               {t('stats.daysWithMeals')}
                             </Text>
@@ -827,7 +1054,7 @@ export default function StatsScreen({ navigation }) {
                             </Text>
                           </View>
 
-                          <View style={styles.detailRow}>
+                          <View style={[styles.notebookRow, { borderBottomColor: theme.notebookRule || 'rgba(90, 130, 190, 0.4)' }]}>
                             <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
                               {t('stats.currentStreak')}
                             </Text>
@@ -839,11 +1066,11 @@ export default function StatsScreen({ navigation }) {
                             </View>
                           </View>
 
-                          <View style={styles.detailRow}>
+                          <View style={[styles.notebookRow, styles.notebookRowLast]}>
                             <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
                               {t('stats.consistency')}
                             </Text>
-                            <Text style={[styles.detailValue, { color: theme.primary }]}>
+                            <Text style={[styles.detailValue, { color: theme.text }]}>
                               {monthlyData.length > 0 ? Math.round((monthlyData.filter(d => d.hasData).length / monthlyData.length) * 100) : 0}%
                             </Text>
                           </View>
@@ -914,23 +1141,34 @@ export default function StatsScreen({ navigation }) {
 
               {/* REPORTS SECTION — hidden for guests */}
               {!isGuestMode && (
-              <View style={[styles.section, activeTab === 'exercise' && { marginTop: -20 }]}>
-                <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-                  {t('stats.reports')}
-                </Text>
-
-                <TouchableOpacity
-                  style={[styles.settingItem, { backgroundColor: theme.cardBackground }]}
-                  onPress={() => navigation.navigate('ExportReport')}
-                >
-                  <View style={styles.settingLeft}>
+              <View ref={reportsRef} style={[
+                styles.section,
+                activeTab === 'exercise' && { marginTop: -20 },
+                activeTab === 'week' && { marginTop: -10 },
+              ]}>
+                <View style={[styles.settingItem, { backgroundColor: 'transparent' }]}>
+                  <TouchableOpacity
+                    style={styles.settingLeft}
+                    activeOpacity={0.7}
+                    onPress={() => setShowReportTypeModal(true)}
+                  >
                     <AppIcon name="document" size={24} style={{ marginRight: 15 }} />
                     <Text style={[styles.settingLabel, { color: theme.text }]}>
                       {t('stats.reports')}
                     </Text>
+                  </TouchableOpacity>
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <TouchableOpacity
+                      onPress={() => setShowWhatsIncludedModal(true)}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      style={{ marginRight: 12 }}
+                    >
+                      <AppIcon name="info" size={18} tintColor={theme.textSecondary} />
+                    </TouchableOpacity>
+                    <Text style={styles.settingArrow} onPress={() => setShowReportTypeModal(true)}>›</Text>
                   </View>
-                  <Text style={styles.settingArrow}>›</Text>
-                </TouchableOpacity>
+                </View>
               </View>
               )}
 
@@ -940,12 +1178,131 @@ export default function StatsScreen({ navigation }) {
           </AnimatedThemeWrapper>
 
           {/* Bottom Navigation */}
-          <BottomNav 
+          <BottomNav
             theme={theme}
             t={t}
             navigation={navigation}
             activeScreen="Stats"
+            profileButtonRef={profileButtonRef}
           />
+
+          {/* Report-type picker -- floats over this (blurred) Stats screen
+              as soon as "Reports" is tapped, no Cancel button, tap outside
+              to dismiss. */}
+          <Modal
+            visible={showReportTypeModal}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setShowReportTypeModal(false)}
+          >
+            <TouchableOpacity
+              style={styles.reportPickerOverlay}
+              activeOpacity={1}
+              onPress={() => setShowReportTypeModal(false)}
+            >
+              <BlurView
+                intensity={80}
+                tint={isDark ? 'dark' : 'light'}
+                style={StyleSheet.absoluteFill}
+              />
+              <View style={styles.reportPickerOptions} pointerEvents="box-none">
+                <Text style={[styles.reportPickerTitle, { color: theme.text }]}>
+                  What would you like to export?
+                </Text>
+
+                <TouchableOpacity
+                  style={[styles.reportPickerButton, { backgroundColor: darkenColor(theme.background, 0.25) }]}
+                  onPress={() => selectReportType('macros')}
+                >
+                  <Text style={styles.reportPickerButtonText}>{REPORT_TYPE_LABELS.macros}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.reportPickerButton, { backgroundColor: darkenColor(theme.background, 0.25) }]}
+                  onPress={() => selectReportType('exercise')}
+                >
+                  <Text style={styles.reportPickerButtonText}>{REPORT_TYPE_LABELS.exercise}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.reportPickerButton, { backgroundColor: darkenColor(theme.background, 0.25) }]}
+                  onPress={() => selectReportType('both')}
+                >
+                  <Text style={styles.reportPickerButtonText}>Both</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          </Modal>
+
+          {/* Period picker -- shown right after a report type is chosen
+              above, same floating/blurred treatment, still on Stats. */}
+          <Modal
+            visible={showReportPeriodModal}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setShowReportPeriodModal(false)}
+          >
+            <TouchableOpacity
+              style={styles.reportPickerOverlay}
+              activeOpacity={1}
+              onPress={() => setShowReportPeriodModal(false)}
+            >
+              <BlurView
+                intensity={80}
+                tint={isDark ? 'dark' : 'light'}
+                style={StyleSheet.absoluteFill}
+              />
+              <View style={styles.reportPickerOptions} pointerEvents="box-none">
+                <Text style={[styles.reportPickerTitle, { color: theme.text }]}>
+                  {t('stats.exportReport.selectPeriod')}
+                </Text>
+
+                <TouchableOpacity
+                  style={[styles.reportPickerButton, { backgroundColor: darkenColor(theme.background, 0.25) }]}
+                  onPress={() => selectReportPeriod('weekly')}
+                >
+                  <Text style={styles.reportPickerButtonText}>{t('stats.exportReport.last7Days')}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.reportPickerButton, { backgroundColor: darkenColor(theme.background, 0.25) }]}
+                  onPress={() => selectReportPeriod('monthly')}
+                >
+                  <Text style={styles.reportPickerButtonText}>{t('stats.exportReport.currentMonth')}</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          </Modal>
+
+          <BrandedAlert
+            visible={showWhatsIncludedModal}
+            theme={theme}
+            title={t('stats.exportReport.whatsIncluded')}
+            message={whatsIncludedMessage}
+            messageAlign="left"
+            onDismiss={() => setShowWhatsIncludedModal(false)}
+          />
+
+          {/* Freeze overlay during tutorial check -- MUST be last child to cover everything */}
+          {checkingTutorial && (
+            <View
+              pointerEvents="auto"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0,0,0,0.5)',
+                justifyContent: 'center',
+                alignItems: 'center',
+                zIndex: 9999,
+                elevation: 9999,
+              }}
+            >
+              <ActivityIndicator size="large" color={theme.primary} />
+            </View>
+          )}
         </SafeAreaView>
       </GestureDetector>
     </GestureHandlerRootView>
@@ -955,6 +1312,42 @@ export default function StatsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  reportPickerOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  reportPickerOptions: {
+    width: '80%',
+    alignItems: 'center',
+  },
+  reportPickerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 24,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.25)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  reportPickerButton: {
+    width: '60%',
+    paddingVertical: 18,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+    marginBottom: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  reportPickerButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '600',
   },
   scrollView: {
     flex: 1,
@@ -1099,6 +1492,54 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     padding: 20,
     borderRadius: 16,
+  },
+  notebookCard: {
+    marginHorizontal: 20,
+    marginBottom: 15,
+    paddingVertical: 18,
+    paddingLeft: 34,
+    paddingRight: 16,
+    backgroundColor: 'transparent',
+    position: 'relative',
+    borderWidth: 1.5,
+    borderColor: 'rgba(150, 120, 80, 0.4)',
+  },
+  notebookMarginLine: {
+    position: 'absolute',
+    top: 4,
+    bottom: 4,
+    left: 22,
+    width: 1.5,
+  },
+  notebookHolesColumn: {
+    position: 'absolute',
+    left: 6,
+    top: 14,
+    bottom: 14,
+    width: 10,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  notebookHole: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    borderWidth: 1,
+  },
+  notebookTitle: {
+    marginBottom: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+  },
+  notebookRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 11,
+    borderBottomWidth: 1,
+  },
+  notebookRowLast: {
+    borderBottomWidth: 0,
   },
   detailRow: {
     flexDirection: 'row',

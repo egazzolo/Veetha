@@ -21,8 +21,8 @@ export default {
   },
   // Landing Screen
   landing: {
-    tagline1: 'Acompanhe sua alimentação,',
-    tagline2: 'trabalhe em você.',
+    tagline1: 'Tudo o que você precisa para acompanhar suas refeições e exercícios',
+    tagline2: '',
     login: 'ENTRAR',
     signup: 'CADASTRAR',
     continue: 'CONTINUAR',
@@ -125,8 +125,8 @@ export default {
     step2Title: 'Suas medidas atuais',
     height: 'Altura',
     weight: 'Peso',
-    imperial: 'Imperial',
-    metric: 'Métrico',
+    imperial: 'Pés',
+    metric: 'Metros',
     enterHeight: 'Por favor, insira sua altura',
     enterWeight: 'Por favor, insira seu peso',
     validHeightImperial: 'Por favor, insira uma altura válida (3-8 pés, 0-11 polegadas)',
@@ -246,6 +246,7 @@ export default {
     preparing: 'Preparando tutorial...',
     tapToScan: 'Toque para escanear alimentos!',
     tapToExit: 'Toque para sair da câmera',
+    tapToStats: 'Toque para abrir Estatísticas',
     tapToProfile: 'Toque para abrir o Perfil',
     skip: 'Pular',
     next: 'Próximo',
@@ -262,10 +263,14 @@ export default {
         content: 'Eles acompanham proteína, carboidratos e gordura. Cada macro tem um papel único na sua saúde. Toque em qualquer card para saber mais.',
       },
       step3: {
+        title: 'Exercício, Passos e Água',
+        content: 'Registre um treino, acompanhe seus passos diários e sua ingestão de água, tudo direto na tela Início.',
+      },
+      step4: {
         title: 'Veja Suas Refeições',
         content: 'Toque uma vez em qualquer refeição para ver o detalhamento completo dos macros. Pressione e segure para editar a porção ou excluir o registro.',
       },
-      step4: {
+      step5: {
         title: 'Registre Suas Refeições Aqui',
         content: 'Toque neste botão do scanner para aprender como registrar suas refeições!',
       },
@@ -293,6 +298,18 @@ export default {
       step1: {
         title: 'Visão Semanal vs Mensal',
         content: 'Alterne entre estatísticas semanais e mensais para ver seu progresso ao longo do tempo.',
+      },
+      step2: {
+        title: 'Sua Tendência de Calorias',
+        content: 'Cada barra é o total de calorias de um dia — laranja significa que você ultrapassou sua meta naquele dia.',
+      },
+      step3: {
+        title: 'Seu Resumo Semanal',
+        content: 'Média de calorias, proteínas e carboidratos do período, tudo em um só lugar.',
+      },
+      step4: {
+        title: 'Exporte Seus Dados',
+        content: 'Gere um relatório em PDF ou Excel do seu histórico nutricional, sempre que precisar.',
       },
     },
     profile: {

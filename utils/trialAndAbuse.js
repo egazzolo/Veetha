@@ -1,5 +1,6 @@
 import * as Application from 'expo-application';
 import * as Crypto from 'expo-crypto';
+import { Platform } from 'react-native';
 import { supabase } from './supabase';
 
 /**
@@ -9,11 +10,15 @@ import { supabase } from './supabase';
  */
 export async function getDeviceId() {
   try {
-    if (Application.getIosIdForVendorAsync) {
+    // expo-application exports getIosIdForVendorAsync on both platforms for a
+    // consistent JS API -- the function reference exists on Android too, it
+    // just throws when actually called there. Checking Platform.OS (not
+    // whether the function exists) is what actually gates this correctly.
+    if (Platform.OS === 'ios') {
       const iosId = await Application.getIosIdForVendorAsync();
       if (iosId) return iosId;
     }
-    if (Application.getAndroidId) {
+    if (Platform.OS === 'android' && Application.getAndroidId) {
       return Application.getAndroidId();
     }
     return null;

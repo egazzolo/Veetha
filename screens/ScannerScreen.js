@@ -76,7 +76,15 @@ export default function ScannerScreen({ navigation }) {
       backButtonRef.current.measureInWindow((x, y, w, h) => {
         console.log('📍 Back button coords:', { x, y, w, h });
         setBackButtonCoords({ top: y, left: x, width: w, height: h });
+        // Re-freezing (below, in onComplete) closes the gap between
+        // AppTutorial's Modal closing and TutorialArrow actually rendering
+        // (it's gated on backButtonCoords, which only exists after this
+        // async measureInWindow round-trip) -- release it now that
+        // TutorialArrow has what it needs to render and block taps itself.
+        setCheckingTutorial(false);
       });
+    } else {
+      setCheckingTutorial(false);
     }
   };
 
@@ -219,8 +227,18 @@ export default function ScannerScreen({ navigation }) {
             modeToggleRef.current !== null;
 
           if (refsReady) {
-            setCheckingTutorial(false);
-            setTimeout(() => startTutorial('Scanner'), 300);
+            setTimeout(() => {
+              startTutorial('Scanner');
+              // AppTutorial's own onVisible fires once its coach-mark
+              // overlay actually becomes visible -- that's the real release
+              // signal. This fallback only covers startTutorial() deciding
+              // NOT to start (tutorial already completed for this user),
+              // in which case AppTutorial never measures anything and
+              // onVisible never fires.
+              setTimeout(() => {
+                setCheckingTutorial(false);
+              }, 800);
+            }, 300);
           } else {
             setTimeout(checkRefsReady, 300);
           }
@@ -992,12 +1010,18 @@ export default function ScannerScreen({ navigation }) {
             </View>
           </Modal>
           {/* Tutorial */}
-          <AppTutorial 
+          <AppTutorial
             screen="Scanner"
             mode={mode}
             setMode={setMode}
+            onVisible={() => setCheckingTutorial(false)}
             onComplete={() => {
               console.log('📸 Scanner tutorial complete');
+              // Re-freeze through the gap between AppTutorial's Modal
+              // closing and TutorialArrow actually rendering (it needs
+              // backButtonCoords, set asynchronously below) -- otherwise
+              // the real capture button is briefly tappable in between.
+              setCheckingTutorial(true);
               measureBackButton();
               setShowArrowToBack(true);
             }}
@@ -1014,6 +1038,10 @@ export default function ScannerScreen({ navigation }) {
               targetCoords={backButtonCoords}
               direction="left"
               onSkip={() => setShowArrowToBack(false)}
+              onTargetPress={() => {
+                setShowArrowToBack(false);
+                navigation.goBack();
+              }}
               message={t('tutorial.tapToExit')}
               visible={showArrowToBack}
             />

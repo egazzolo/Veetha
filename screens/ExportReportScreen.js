@@ -1,44 +1,40 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Modal, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../utils/ThemeContext';
 import { useLanguage } from '../utils/LanguageContext';
 import { useUser } from '../utils/UserContext';
 import { supabase } from '../utils/supabase';
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system/legacy';
-import * as XLSX from 'xlsx';
-import * as MediaLibrary from 'expo-media-library';
-import * as IntentLauncher from 'expo-intent-launcher';
-import AppIcon from '../components/AppIcon';
 import { usePremiumStatus } from '../utils/usePremiumStatus';
+import BrandedAlert from '../components/BrandedAlert';
 
 const SPLIT_KEYS = ['fullBody', 'upperLower', 'pushPullLegs', 'broSplit'];
 
-// English-only for now, same as the report-type modal below -- this screen's
-// existing "Nutrition Report" title keeps its full translation (via
-// stats.exportReport.nutritionReportTitle) for the macros-only path, since
-// that's the only one that predates this feature.
+// English-only for now -- this screen's existing "Nutrition Report" title
+// keeps its full translation (via stats.exportReport.nutritionReportTitle)
+// for the macros-only path, since that's the only one that predates this
+// feature.
 const REPORT_TYPE_LABELS = {
   macros: 'Macronutrient Report',
   exercise: 'Exercise Report',
   both: 'Macronutrient & Exercise Report',
 };
 
-export default function ExportReportScreen({ navigation }) {
+// Report type and period are both chosen via the floating pickers on the
+// Stats screen now (blurred overlays, no separate "Start Report" step) --
+// this screen just receives both as params and immediately generates the
+// report, handing off to ReportViewer. It's a brief processing screen, not
+// an interactive one.
+export default function ExportReportScreen({ navigation, route }) {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  const { profile } = useUser();
+  const { profile, loading: userLoading } = useUser();
   const { isPremium } = usePremiumStatus();
 
-  const [showReportTypeModal, setShowReportTypeModal] = useState(false);
-  const [showPeriodModal, setShowPeriodModal] = useState(false);
-  const [showFormatModal, setShowFormatModal] = useState(false);
-  const [selectedReportType, setSelectedReportType] = useState(null); // 'macros', 'exercise', or 'both'
-  const [selectedPeriod, setSelectedPeriod] = useState(null); // 'weekly' or 'monthly'
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [exporting, setExporting] = useState(false);
+  const selectedReportType = route?.params?.reportType || null; // 'macros', 'exercise', or 'both'
+  const selectedPeriod = route?.params?.period || null; // 'weekly' or 'monthly'
+  const startedRef = useRef(false);
+  const [errorInfo, setErrorInfo] = useState(null); // { title, message } or null
 
   const formatSplitType = (splitTypeValue) => splitTypeValue
     .split(',')
@@ -66,85 +62,6 @@ export default function ExportReportScreen({ navigation }) {
       endDate.setHours(23, 59, 59, 999);
     }
     return { startDate, endDate };
-  };
-
-  // Handle report type selection
-  const handleReportTypeSelect = (reportType) => {
-    setSelectedReportType(reportType);
-    setShowReportTypeModal(false);
-    setShowPeriodModal(true);
-  };
-
-  // Handle period selection
-  const handlePeriodSelect = (period) => {
-    setSelectedPeriod(period);
-    setShowPeriodModal(false);
-    setShowFormatModal(true); // Go to format selection
-  };
-
-  // Handle format selection
-  const handleFormatSelect = async (format) => {
-
-    setShowFormatModal(false);
-
-    if (!isPremium) {
-      navigation.navigate('Paywall', { highlightFeature: 'PDF & Excel exports' });
-      return;
-    }
-
-    try {
-
-      setExporting(true);
-
-      const macroData = selectedReportType !== 'exercise' ? await fetchData() : null;
-      const exerciseData = selectedReportType !== 'macros' ? await fetchExerciseData() : null;
-
-      const hasMacroData = macroData && macroData.length > 0;
-      const hasExerciseData = exerciseData && exerciseData.length > 0;
-
-      if (!hasMacroData && !hasExerciseData) {
-        Alert.alert(t('common.error'), t('stats.exportReport.fetchFailed'));
-        return;
-      }
-
-      // ✅ PDF → go to preview screen
-      if (format === 'pdf') {
-
-        const html = buildReportHTML(macroData, exerciseData);
-
-        const periodLabel =
-          selectedPeriod === 'weekly'
-            ? t('stats.exportReport.weekly')
-            : t('stats.exportReport.monthly');
-
-        navigation.navigate('ReportViewer', {
-          reportHTML: html,
-          reportType: selectedPeriod,
-          exportFormat: format,
-          rawData: macroData,
-          periodLabel: periodLabel   // 👈 ADD THIS
-        });
-
-        return;
-      }
-
-      // ✅ EXCEL → export using full layout (same as PDF)
-      if (format === 'excel') {
-
-        await exportExcel(macroData, exerciseData);
-
-        return;
-      }
-
-    } catch (error) {
-
-      console.error(error);
-
-    } finally {
-
-      setExporting(false);
-
-    }
   };
 
   // Fetch exercise data (both legacy per-activity logs and split-based
@@ -195,23 +112,32 @@ export default function ExportReportScreen({ navigation }) {
       const { startDate, endDate } = getDateRange();
 
       // Fetch meals
-      const { data: meals, error } = await supabase
-        .from('meals')
-        .select(`
-          logged_at,
-          product:food_database!meals_product_fk (
-            calories,
-            protein,
-            carbs,
-            fat
-          )
-        `)
-        .eq('user_id', user.id)
-        .gte('logged_at', startDate.toISOString())
-        .lte('logged_at', endDate.toISOString())
-        .order('logged_at', { ascending: true });
+      const [{ data: meals, error }, { data: stepsLogs, error: stepsError }] = await Promise.all([
+        supabase
+          .from('meals')
+          .select(`
+            logged_at,
+            product:food_database!meals_product_fk (
+              calories,
+              protein,
+              carbs,
+              fat
+            )
+          `)
+          .eq('user_id', user.id)
+          .gte('logged_at', startDate.toISOString())
+          .lte('logged_at', endDate.toISOString())
+          .order('logged_at', { ascending: true }),
+        supabase
+          .from('steps_logs')
+          .select('date, steps')
+          .eq('user_id', user.id)
+          .gte('date', startDate.toLocaleDateString('en-CA'))
+          .lte('date', endDate.toLocaleDateString('en-CA')),
+      ]);
 
       if (error) throw error;
+      if (stepsError) throw stepsError;
 
       // Group by date
       const mealsByDate = {};
@@ -226,13 +152,18 @@ export default function ExportReportScreen({ navigation }) {
         mealsByDate[date].fat += meal.product?.fat || 0;
       });
 
+      const stepsByDate = {};
+      (stepsLogs || []).forEach(log => {
+        stepsByDate[log.date] = log.steps || 0;
+      });
+
       // Build daily data
       const days = [];
       const current = new Date(startDate);
       while (current <= endDate) {
         const dateStr = current.toLocaleDateString('en-CA');
         const dayData = mealsByDate[dateStr] || { calories: 0, protein: 0, carbs: 0, fat: 0 };
-        
+
         days.push({
           date: new Date(current).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
           calories: Math.round(dayData.calories),
@@ -240,8 +171,9 @@ export default function ExportReportScreen({ navigation }) {
           carbs: Math.round(dayData.carbs),
           fat: Math.round(dayData.fat),
           goal: profile?.daily_calorie_goal || 2000,
+          steps: stepsByDate[dateStr] || 0,
         });
-        
+
         current.setDate(current.getDate() + 1);
       }
 
@@ -258,6 +190,8 @@ export default function ExportReportScreen({ navigation }) {
     const totalProtein = data.reduce((sum, d) => sum + d.protein, 0);
     const totalCarbs = data.reduce((sum, d) => sum + d.carbs, 0);
     const totalFat = data.reduce((sum, d) => sum + d.fat, 0);
+    const totalSteps = data.reduce((sum, d) => sum + (d.steps || 0), 0);
+    const avgSteps = Math.round(totalSteps / data.length);
 
     return `
         <h2>${t('stats.exportReport.dailyTotals')}</h2>
@@ -270,6 +204,7 @@ export default function ExportReportScreen({ navigation }) {
             <th>${t('stats.exportReport.protein')}</th>
             <th>${t('stats.exportReport.carbs')}</th>
             <th>${t('stats.exportReport.fat')}</th>
+            <th>Steps</th>
           </tr>
 
           ${data.map(day => `
@@ -280,6 +215,7 @@ export default function ExportReportScreen({ navigation }) {
               <td>${day.protein}</td>
               <td>${day.carbs}</td>
               <td>${day.fat}</td>
+              <td>${(day.steps || 0).toLocaleString()}</td>
             </tr>
           `).join('')}
         </table>
@@ -305,6 +241,16 @@ export default function ExportReportScreen({ navigation }) {
           <div class="summary-item">
             <span>${t('stats.exportReport.totalCarbs')}:</span>
             <strong>${totalCarbs}g</strong>
+          </div>
+
+          <div class="summary-item">
+            <span>Total Steps:</span>
+            <strong>${totalSteps.toLocaleString()}</strong>
+          </div>
+
+          <div class="summary-item">
+            <span>Average Daily Steps:</span>
+            <strong>${avgSteps.toLocaleString()}</strong>
           </div>
 
           <div class="summary-item">
@@ -442,383 +388,100 @@ export default function ExportReportScreen({ navigation }) {
     `;
   };
 
-  // Export as Excel
-  const exportExcel = async (macroData, exerciseData) => {
+  const noDataMessage = () => {
+    if (selectedReportType === 'exercise') {
+      return 'No exercises logged for this period yet. Log a workout and try again!';
+    }
+    if (selectedReportType === 'macros') {
+      return 'No meals logged for this period yet. Log a meal and try again!';
+    }
+    return 'Nothing logged for this period yet. Log a meal or a workout and try again!';
+  };
+
+  const generateReport = async () => {
+    if (!isPremium) {
+      navigation.replace('Paywall', { highlightFeature: 'PDF export' });
+      return;
+    }
 
     try {
+      const macroData = selectedReportType !== 'exercise' ? await fetchData() : null;
+      const exerciseData = selectedReportType !== 'macros' ? await fetchExerciseData() : null;
 
-      setExporting(true);
+      const hasMacroData = macroData && macroData.length > 0;
+      const hasExerciseData = exerciseData && exerciseData.length > 0;
+
+      if (!hasMacroData && !hasExerciseData) {
+        setErrorInfo({ title: 'Nothing to report yet', message: noDataMessage() });
+        return;
+      }
+
+      const html = buildReportHTML(macroData, exerciseData);
 
       const periodLabel =
         selectedPeriod === 'weekly'
           ? t('stats.exportReport.weekly')
           : t('stats.exportReport.monthly');
 
-      const userName = profile?.full_name || 'User';
-
-      const wb = XLSX.utils.book_new();
-
-      if (macroData && macroData.length > 0) {
-        const totalCalories = macroData.reduce((sum,d)=>sum+d.calories,0);
-        const avgCalories = Math.round(totalCalories / macroData.length);
-        const totalProtein = macroData.reduce((sum,d)=>sum+d.protein,0);
-        const totalCarbs = macroData.reduce((sum,d)=>sum+d.carbs,0);
-        const totalFat = macroData.reduce((sum,d)=>sum+d.fat,0);
-
-        const macroExcelData = [
-
-          { A: t('stats.exportReport.nutritionReportTitle',{period:periodLabel}) },
-
-          {},
-
-          { A: t('stats.exportReport.name'), B: userName },
-          { A: t('stats.exportReport.generated'), B: new Date().toLocaleDateString() },
-
-          {},
-
-          { A: t('stats.exportReport.dailyTotals') },
-
-          {},
-
-          {
-            A: t('stats.exportReport.date'),
-            B: t('stats.exportReport.calories'),
-            C: t('stats.exportReport.goal'),
-            D: t('stats.exportReport.protein'),
-            E: t('stats.exportReport.carbs'),
-            F: t('stats.exportReport.fat'),
-          },
-
-          ...macroData.map(day => ({
-            A: day.date,
-            B: day.calories,
-            C: day.goal,
-            D: day.protein,
-            E: day.carbs,
-            F: day.fat,
-          })),
-
-          {},
-
-          { A: t('stats.exportReport.summary') },
-
-          { A: t('stats.exportReport.totalCalories'), B: totalCalories },
-          { A: t('stats.exportReport.avgDailyCalories'), B: avgCalories },
-          { A: t('stats.exportReport.totalProtein'), B: `${totalProtein}g` },
-          { A: t('stats.exportReport.totalCarbs'), B: `${totalCarbs}g` },
-          { A: t('stats.exportReport.totalFat'), B: `${totalFat}g` },
-
-        ];
-
-        const macroWs = XLSX.utils.json_to_sheet(macroExcelData);
-        XLSX.utils.book_append_sheet(wb, macroWs, 'Nutrition');
-      }
-
-      if (exerciseData && exerciseData.length > 0) {
-        // Each individual exercise gets its own row (rather than nesting,
-        // which doesn't translate to a spreadsheet) so Sets/Reps/Weight are
-        // real columns -- Date/Type/Intensity repeat per row for clarity.
-        const exerciseRows = [];
-        exerciseData.forEach((item) => {
-          const dateStr = new Date(item.logged_at).toLocaleDateString();
-          const type = item.type === 'legacy'
-            ? t(`exercise.activities.${item.raw.activity_name}`)
-            : formatSplitType(item.raw.split_type);
-          const intensityDuration = `${t(`exercise.intensities.${item.raw.intensity}`)}${item.raw.duration_minutes ? ` • ${item.raw.duration_minutes} min` : ''}`;
-
-          const entries = item.type === 'split' ? (item.raw.exercise_log_entries || []) : [];
-
-          if (entries.length === 0) {
-            exerciseRows.push({
-              A: dateStr,
-              B: type,
-              C: intensityDuration,
-              D: '-',
-              E: '-',
-              F: '-',
-              G: '-',
-              H: item.calories_burned,
-            });
-          } else {
-            entries.forEach((entry) => {
-              exerciseRows.push({
-                A: dateStr,
-                B: type,
-                C: intensityDuration,
-                D: entry.name,
-                E: entry.sets,
-                F: entry.reps,
-                G: entry.weight ? `${entry.weight}${entry.weight_unit || ''}` : '-',
-                H: item.calories_burned,
-              });
-            });
-          }
-        });
-
-        const totalExerciseCalories = exerciseData.reduce((sum, item) => sum + (item.calories_burned || 0), 0);
-
-        const exerciseExcelData = [
-          { A: `${periodLabel} Exercise Report` },
-          {},
-          { A: t('stats.exportReport.name'), B: userName },
-          { A: t('stats.exportReport.generated'), B: new Date().toLocaleDateString() },
-          {},
-          {
-            A: 'Date',
-            B: 'Type',
-            C: 'Intensity / Duration',
-            D: 'Exercise',
-            E: 'Sets',
-            F: 'Reps',
-            G: 'Wt.',
-            H: 'Calories Burned (approx.)',
-          },
-          ...exerciseRows,
-          {},
-          { A: t('stats.exportReport.summary') },
-          { A: 'Total Calories Burned (approx.)', B: totalExerciseCalories },
-        ];
-
-        const exerciseWs = XLSX.utils.json_to_sheet(exerciseExcelData);
-        XLSX.utils.book_append_sheet(wb, exerciseWs, 'Exercise');
-      }
-
-      const wbout = XLSX.write(wb, { type:'base64', bookType:'xlsx' });
-
-      const fileUri =
-        FileSystem.cacheDirectory +
-        `MealBreak_${periodLabel}_Report_${new Date().toLocaleDateString('en-CA')}.xlsx`;
-
-      await FileSystem.writeAsStringAsync(fileUri, wbout, {
-        encoding:'base64'
+      navigation.replace('ReportViewer', {
+        reportHTML: html,
+        reportType: selectedPeriod,
+        exportFormat: 'pdf',
+        rawData: macroData,
+        periodLabel,
       });
-
-      await Sharing.shareAsync(fileUri, {
-        mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      });
-
-    } catch(error) {
-
+    } catch (error) {
       console.error(error);
+      setErrorInfo({
+        title: 'Something went wrong',
+        message: 'We couldn\'t generate your report. Please try again in a moment.',
+      });
+    }
+  };
 
-    } finally {
+  useEffect(() => {
+    if (startedRef.current) return;
+    // Wait for the user/profile context to finish its initial load --
+    // isPremium is derived from `profile`, and starting immediately on
+    // mount (before that context has resolved) could read a still-null
+    // profile as "not premium" and wrongly bounce a real premium user to
+    // the paywall, or generate with a stale default goal.
+    if (userLoading) return;
+    startedRef.current = true;
 
-      setExporting(false);
-
+    if (!selectedReportType || !selectedPeriod) {
+      // Shouldn't happen -- this screen is only ever reached from the
+      // Stats screen's own pickers, which always supply both. Bail out
+      // safely if it's somehow missing either.
+      navigation.goBack();
+      return;
     }
 
-  };
+    generateReport();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userLoading]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
-      <View style={[styles.header, { backgroundColor: theme.cardBackground }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={[styles.backButtonText, { color: theme.primary }]}>
-            {t('stats.wreport.back')}
-          </Text>
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.text }]}>
-          {t('stats.exportReport.title')}
-        </Text>
-        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-          {t('stats.exportReport.subtitle')}
-        </Text>
-      </View>
-
-      <ScrollView style={styles.content}>
-        <TouchableOpacity
-          style={[styles.bigButton, { backgroundColor: theme.primary }]}
-          onPress={() => setShowReportTypeModal(true)}
-          disabled={exporting}
-        >
-          {exporting ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <>
-              <AppIcon name="export" size={48} style={{ marginBottom: 10 }} />
-              <Text style={styles.bigButtonText}>
-                {t('stats.exportReport.startExport')}
-              </Text>
-            </>
-          )}
-        </TouchableOpacity>
-
-        <View style={[styles.infoCard, { backgroundColor: theme.cardBackground }]}>
-          <Text style={[styles.infoTitle, { color: theme.text }]}>
-            {t('stats.exportReport.whatsIncluded')}
-          </Text>
-          <Text style={[styles.infoText, { color: theme.textSecondary }]}>
-            • {t('stats.exportReport.dailyCalories')}{'\n'}
-            • {t('stats.exportReport.macroBreakdown')}{'\n'}
-            • {t('stats.exportReport.goalComparison')}{'\n'}
-            • {t('stats.exportReport.summaryStats')}{'\n'}
-            • Exercise history & breakdown (sets, reps, weight)
+      {!errorInfo && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.primary} />
+          <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+            Generating your report...
           </Text>
         </View>
-      </ScrollView>
+      )}
 
-      {/* Report Type Selection Modal */}
-      <Modal
-        visible={showReportTypeModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowReportTypeModal(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowReportTypeModal(false)}
-        >
-          <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
-            <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
-              <Text style={[styles.modalTitle, { color: theme.text }]}>
-                What would you like to export?
-              </Text>
-
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: theme.primary }]}
-                onPress={() => handleReportTypeSelect('macros')}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                  <AppIcon name="chart" size={20} style={{ marginRight: 8 }} />
-                  <Text style={styles.modalButtonText}>{REPORT_TYPE_LABELS.macros}</Text>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: theme.primary }]}
-                onPress={() => handleReportTypeSelect('exercise')}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                  <AppIcon name="muscle" size={20} style={{ marginRight: 8 }} />
-                  <Text style={styles.modalButtonText}>{REPORT_TYPE_LABELS.exercise}</Text>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: theme.primary }]}
-                onPress={() => handleReportTypeSelect('both')}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                  <AppIcon name="document" size={20} style={{ marginRight: 8 }} />
-                  <Text style={styles.modalButtonText}>Both</Text>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.modalCancelButton, { borderColor: theme.border }]}
-                onPress={() => setShowReportTypeModal(false)}
-              >
-                <Text style={[styles.modalCancelText, { color: theme.text }]}>
-                  {t('common.cancel')}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
-
-      {/* Period Selection Modal */}
-      <Modal
-        visible={showPeriodModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowPeriodModal(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowPeriodModal(false)}
-        >
-          <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
-            <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
-              <Text style={[styles.modalTitle, { color: theme.text }]}>
-                {t('stats.exportReport.selectPeriod')}
-              </Text>
-              
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: theme.primary }]}
-                onPress={() => handlePeriodSelect('weekly')}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                  <AppIcon name="chart" size={20} style={{ marginRight: 8 }} />
-                  <Text style={styles.modalButtonText}>{t('stats.exportReport.last7Days')}</Text>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: theme.primary }]}
-                onPress={() => handlePeriodSelect('monthly')}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                  <AppIcon name="chart" size={20} style={{ marginRight: 8 }} />
-                  <Text style={styles.modalButtonText}>{t('stats.exportReport.currentMonth')}</Text>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.modalCancelButton, { borderColor: theme.border }]}
-                onPress={() => setShowPeriodModal(false)}
-              >
-                <Text style={[styles.modalCancelText, { color: theme.text }]}>
-                  {t('common.cancel')}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
-
-      {/* Format Selection Modal */}
-      <Modal
-        visible={showFormatModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowFormatModal(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowFormatModal(false)}
-        >
-          <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
-            <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
-              <Text style={[styles.modalTitle, { color: theme.text }]}>
-                {t('stats.exportReport.selectFormat')}
-              </Text>
-              
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: '#E53935' }]}
-                onPress={() => handleFormatSelect('pdf')}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                  <AppIcon name="document" size={20} style={{ marginRight: 8 }} />
-                  <Text style={styles.modalButtonText}>{t('stats.exportReport.pdfReport')}</Text>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: '#43A047' }]}
-                onPress={() => handleFormatSelect('excel')}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                  <AppIcon name="chart" size={20} style={{ marginRight: 8 }} />
-                  <Text style={styles.modalButtonText}>{t('stats.exportReport.excelSpreadsheet')}</Text>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.modalCancelButton, { borderColor: theme.border }]}
-                onPress={() => setShowFormatModal(false)}
-              >
-                <Text style={[styles.modalCancelText, { color: theme.text }]}>
-                  {t('common.cancel')}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
+      <BrandedAlert
+        visible={!!errorInfo}
+        theme={theme}
+        title={errorInfo?.title}
+        message={errorInfo?.message}
+        onDismiss={() => {
+          setErrorInfo(null);
+          navigation.goBack();
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -827,94 +490,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    padding: 20,
-    paddingTop: 10,
-  },
-  backButton: {
-    marginBottom: 10,
-  },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  subtitle: {
-    fontSize: 14,
-  },
-  content: {
+  loadingContainer: {
     flex: 1,
-    padding: 20,
-  },
-  bigButton: {
-    padding: 30,
-    borderRadius: 16,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  bigButtonIcon: {
-    fontSize: 48,
-    marginBottom: 10,
-  },
-  bigButtonText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  infoCard: {
-    padding: 20,
-    borderRadius: 12,
-  },
-  infoTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  infoText: {
-    fontSize: 14,
-    lineHeight: 24,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modalContent: {
-    width: '85%',
-    padding: 24,
-    borderRadius: 20,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  modalButton: {
-    padding: 18,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  modalButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  modalCancelButton: {
-    padding: 18,
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 2,
-    marginTop: 8,
-  },
-  modalCancelText: {
-    fontSize: 16,
-    fontWeight: '600',
+  loadingText: {
+    marginTop: 16,
+    fontSize: 15,
   },
 });

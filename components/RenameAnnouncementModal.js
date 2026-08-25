@@ -2,9 +2,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, Image, TouchableOpacity, Modal, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../utils/supabase';
+import { useTutorial } from '../utils/TutorialContext';
 
 const SEEN_VERSION_KEY = 'rename_announcement_seen_version';
 const ANNOUNCEMENT_ID = 'rename_meal_break';
+// Module-level (not component state) so it survives this component
+// remounting -- e.g. navigating Home -> Scanner -> back to Home unmounts and
+// remounts RenameAnnouncementModal along with HomeScreen, which would
+// otherwise re-fetch and re-show it every time you return to Home until you
+// actually tap "Got it". Resets on app restart like any other in-memory value.
+let shownThisSession = false;
 
 // Remote-controlled, not date-driven -- shows whenever the row's `version`
 // in Supabase is higher than the version this device has already
@@ -15,9 +22,17 @@ const ANNOUNCEMENT_ID = 'rename_meal_break';
 export default function RenameAnnouncementModal({ theme }) {
   const [announcement, setAnnouncement] = useState(null);
   const checkedRef = useRef(false);
+  // A native Modal always paints above everything, including any tutorial
+  // step's own overlay/bubbles -- fetch and hold the announcement as soon as
+  // it's ready (below), but only actually show it once allTutorialsCompleted
+  // is true, i.e. the entire Home -> Scanner -> Stats -> Profile sequence is
+  // done, not just Home. (tutorialCompleted flips true right after Home
+  // alone finishes -- it's the wrong signal here, that's what was causing
+  // this to show mid-tutorial.)
+  const { allTutorialsCompleted } = useTutorial();
 
   useEffect(() => {
-    if (checkedRef.current) return;
+    if (checkedRef.current || shownThisSession) return;
     checkedRef.current = true;
 
     (async () => {
@@ -32,6 +47,12 @@ export default function RenameAnnouncementModal({ theme }) {
 
         const seenVersion = parseInt(await AsyncStorage.getItem(SEEN_VERSION_KEY), 10) || 0;
         if (data.version > seenVersion) {
+          // NOT marked as seen here -- that has to wait for dismiss()
+          // (actual acknowledgment). Marking it here would mean a user who
+          // quits mid-tutorial gets silently marked as "seen" before the
+          // announcement (gated on allTutorialsCompleted below) ever
+          // actually showed them anything.
+          shownThisSession = true;
           setAnnouncement(data);
         }
       } catch (err) {
@@ -49,7 +70,7 @@ export default function RenameAnnouncementModal({ theme }) {
 
   return (
     <Modal
-      visible={!!announcement}
+      visible={!!announcement && allTutorialsCompleted}
       transparent
       animationType="fade"
       onRequestClose={dismiss}
