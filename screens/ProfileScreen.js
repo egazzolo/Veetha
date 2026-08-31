@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Switch, Alert, Linking, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Switch, Alert, Linking, ActivityIndicator, Platform } from 'react-native';
 import { showToast } from '../components/VeethaToast';
 import VeethaModal from '../components/VeethaModal';
 import GuestUpsellSheet from '../components/GuestUpsellSheet';
@@ -45,7 +45,10 @@ export default function ProfileScreen({ navigation }) {
   const [photoPickerVisible, setPhotoPickerVisible] = useState(false);
 
   // Swipe navigation
-  const swipeGesture = useSwipeNavigation(navigation, 'Profile');
+  // Disabled during the tutorial's freeze phase -- it's a plain View overlay
+  // (not a native Modal), so unlike the coach-mark steps themselves it
+  // doesn't stop this Pan gesture from reaching the screen underneath.
+  const swipeGesture = useSwipeNavigation(navigation, 'Profile', !checkingTutorial);
 
   const scrollViewRef = useRef(null);
   const statsGridRef = useRef(null);
@@ -169,11 +172,17 @@ export default function ProfileScreen({ navigation }) {
           } else if (checkCount < 10) {
             timerId = setTimeout(checkRefsReady, 300);
           } else {
-            // Hard fallback — never leave overlay up
-            setCheckingTutorial(false);
+            // Hard fallback -- refs never became ready in time. Still don't
+            // release the freeze before the tutorial actually starts (that
+            // was leaving the screen scrollable while it was still loading
+            // in) -- mirror the happy-path sequencing above instead: start
+            // it, then release shortly after.
             timerId = setTimeout(() => {
               if (cancelled) return;
               startTutorial('Profile');
+              setTimeout(() => {
+                setCheckingTutorial(false);
+              }, 800);
             }, 300);
           }
         };
@@ -575,7 +584,18 @@ export default function ProfileScreen({ navigation }) {
                   <Text style={styles.settingArrow}>›</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
+                <TouchableOpacity
+                  style={[styles.settingItem, { backgroundColor: 'transparent' }]}
+                  onPress={() => navigation.navigate('Preferences')}
+                >
+                  <View style={styles.settingLeft}>
+                    <AppIcon name="clipboard" size={24} style={{ marginRight: 15 }} />
+                    <Text style={[styles.settingLabel, { color: theme.text }]}>{t('profile.preferences')}</Text>
+                  </View>
+                  <Text style={styles.settingArrow}>›</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
                   ref={dietaryButtonRef}
                   onLayout={(event) => {
                     try {
@@ -814,7 +834,7 @@ export default function ProfileScreen({ navigation }) {
             onCancel={() => setPhotoPickerVisible(false)}
             buttons={[
               { text: t('profile.takePhoto') || 'Take Photo', onPress: () => { setPhotoPickerVisible(false); handleTakePhoto(); } },
-              { text: t('profile.chooseFromLibrary') || 'Choose from Library', onPress: () => { setPhotoPickerVisible(false); handleChooseFromLibrary(); } },
+              { text: (Platform.OS === 'ios' ? t('profile.fromPhotos') : t('profile.gallery')) || 'Choose from Library', onPress: () => { setPhotoPickerVisible(false); handleChooseFromLibrary(); } },
               { text: t('common.cancel') || 'Cancel', style: 'cancel', onPress: () => setPhotoPickerVisible(false) },
             ]}
           />

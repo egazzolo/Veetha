@@ -82,9 +82,6 @@ export default function StatsScreen({ navigation }) {
   const [currentStreak, setCurrentStreak] = useState(0);
   const MIN_DATE = new Date(2025, 10, 1); // November 1, 2025
 
-  // Swipe navigation
-  const swipeGesture = useSwipeNavigation(navigation, 'Stats');
-
   // Tutorial
   const { startTutorial } = useTutorial();
   const scrollViewRef = useRef(null);
@@ -98,6 +95,12 @@ export default function StatsScreen({ navigation }) {
   const profileButtonRef = useRef(null);
   const [profileCoords, setProfileCoords] = useState(null);
   const [showArrowToProfile, setShowArrowToProfile] = useState(false);
+
+  // Swipe navigation -- disabled during the tutorial's freeze/arrow phases,
+  // which are plain View overlays (not a native Modal), so unlike the
+  // coach-mark steps themselves they don't stop this Pan gesture from
+  // reaching the screen underneath and swiping the user away mid-tutorial.
+  const swipeGesture = useSwipeNavigation(navigation, 'Stats', !checkingTutorial && !showArrowToProfile);
 
   // Report type + period pickers -- both float over the (blurred) Stats
   // screen itself, one after the other, as soon as "Reports" is tapped.
@@ -140,33 +143,15 @@ export default function StatsScreen({ navigation }) {
     }
   };
 
-  useEffect(() => {
-    AsyncStorage.getItem('statsInvertSwipeDirection').then((val) => {
-      if (val != null) setInvertSwipeDirection(val === 'true');
-    });
-  }, []);
-
-  const toggleInvertSwipeDirection = () => {
-    const next = !invertSwipeDirection;
-    setInvertSwipeDirection(next);
-    AsyncStorage.setItem('statsInvertSwipeDirection', String(next));
-  };
-
-  const promptInvertSwipe = () => {
-    Alert.alert(
-      'Swipe Direction',
-      invertSwipeDirection
-        ? 'Panels currently slide in reversed. Switch back to the normal direction?'
-        : 'Invert the direction panels slide in from when you switch tabs?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: invertSwipeDirection ? 'Use Normal' : 'Invert Swipe',
-          onPress: toggleInvertSwipeDirection,
-        },
-      ]
-    );
-  };
+  // Re-read on every focus (not just mount) so a change made in Preferences
+  // takes effect on returning to Stats without needing an app restart.
+  useFocusEffect(
+    React.useCallback(() => {
+      AsyncStorage.getItem('statsInvertSwipeDirection').then((val) => {
+        setInvertSwipeDirection(val === 'true');
+      });
+    }, [])
+  );
 
   // Fetch user profile
   const fetchProfile = async () => {
@@ -441,6 +426,17 @@ export default function StatsScreen({ navigation }) {
     fetchAllData();
   }, []);
 
+  // Apply the user's default-landing-view preference (Preferences screen) on
+  // first mount only -- a direct setActiveTab (not changeTab) just moves the
+  // small pill indicator, it doesn't trigger the full panel-push transition.
+  useEffect(() => {
+    AsyncStorage.getItem('default_stats_tab').then((val) => {
+      if (val === 'month' || val === 'exercise') {
+        setActiveTab(val);
+      }
+    });
+  }, []);
+
   useEffect(() => {
     const index = activeTab === 'week' ? 0 : activeTab === 'month' ? 1 : 2;
     Animated.spring(periodIndicatorAnim, {
@@ -674,7 +670,6 @@ export default function StatsScreen({ navigation }) {
                 <TouchableOpacity
                   style={styles.periodButton}
                   onPress={() => changeTab('week')}
-                  onLongPress={promptInvertSwipe}
                 >
                   <Text style={[styles.periodText, { color: activeTab === 'week' ? '#fff' : theme.textSecondary }]}>
                     {t('stats.week')}
@@ -683,7 +678,6 @@ export default function StatsScreen({ navigation }) {
                 <TouchableOpacity
                   style={styles.periodButton}
                   onPress={() => changeTab('month')}
-                  onLongPress={promptInvertSwipe}
                 >
                   <Text style={[styles.periodText, { color: activeTab === 'month' ? '#fff' : theme.textSecondary }]}>
                     {t('stats.month')}
@@ -692,7 +686,6 @@ export default function StatsScreen({ navigation }) {
                 <TouchableOpacity
                   style={styles.periodButton}
                   onPress={() => changeTab('exercise')}
-                  onLongPress={promptInvertSwipe}
                 >
                   <Text style={[ styles.periodText, { color: activeTab === 'exercise' ? '#fff' : theme.textSecondary }]}>
                     {t('stats.exercise')}

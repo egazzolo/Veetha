@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './supabase';
 
@@ -27,6 +28,20 @@ export function UserProvider({ children }) {
         setMeals([]);
         console.log('✅ User signed in, reloading data');
         loadUserData();
+
+        // Record which platform this account is being used on, independent
+        // of any purchase -- covers every free/non-paying user too, not just
+        // the ones validate-receipt touches. Every login/signup path (email,
+        // Apple, Google) fires SIGNED_IN, so this one spot covers all of them.
+        if (session?.user?.id) {
+          supabase
+            .from('profiles')
+            .update({ store: Platform.OS })
+            .eq('id', session.user.id)
+            .then(({ error }) => {
+              if (error) console.error('Failed to record store/platform:', error);
+            });
+        }
       } else if (event === 'SIGNED_OUT') {
         console.log('👋 User signed out, clearing data');
         clearUserData();

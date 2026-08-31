@@ -111,7 +111,20 @@ export default function OnboardingComplete({ navigation }) {
 
         if (response.error) {
           console.error('❌ Email login failed:', response.error);
-          Alert.alert('Error', response.error.message);
+          // "Invalid login credentials" is what Supabase returns here when
+          // the account exists but hasn't confirmed its email yet (not just
+          // for a genuinely wrong password) -- tapping Start Tracking before
+          // clicking the confirmation link is the normal case, not an error,
+          // so show the same friendly nudge recheckVerification() already
+          // uses instead of the raw Supabase error text.
+          if (
+            response.error.message.includes('Email not confirmed') ||
+            response.error.message.includes('Invalid login credentials')
+          ) {
+            Alert.alert(t('onboarding.emailNotVerified'), t('onboarding.emailNotVerifiedMessage'));
+          } else {
+            Alert.alert('Error', response.error.message);
+          }
           return;
         }
 

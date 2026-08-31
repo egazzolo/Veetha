@@ -252,7 +252,11 @@ export default {
     next: 'Next',
     finish: 'Got it!',
     thankYou: '🎉 Thank you for completing the tutorial! You\'re all set to start tracking your nutrition.',
-    
+    introTitle: 'See the tutorial?',
+    introMessage: "Want a quick walkthrough of the app? If you'd rather skip it, you can still go through it anytime at mealbreak.fit.",
+    introSeeTutorial: 'See Tutorial',
+    introSkip: 'Skip It',
+
     home: {
       step1: {
         title: 'Track Your Daily Calories',
@@ -309,7 +313,7 @@ export default {
       },
       step4: {
         title: 'Export Your Data',
-        content: 'Generate a PDF or Excel report of your nutrition history, anytime you need it.',
+        content: 'Generate a PDF report of your nutrition history, anytime you need it.',
       },
     },
     profile: {
@@ -319,7 +323,7 @@ export default {
       },
       step2: {
         title: 'Edit Your Profile',
-        content: 'Tap here to update your display name, full name, email address, language, unit system, weight and height.',
+        content: 'Tap here to update your display name, full name, email address, weight and height.',
       },
       step3: {
         title: 'Update Your Goals',
@@ -928,14 +932,11 @@ export default {
       selectPeriod: 'Select Period',
       last7Days: 'Last 7 Days',
       currentMonth: 'Current Month',
-      selectFormat: 'Select Format',
       pdfReport: 'PDF Report',
-      excelSpreadsheet: 'Excel Spreadsheet',
       weekly: 'Weekly',
       monthly: 'Monthly',
       nutritionReportTitle: '{{period}} Nutrition Report',
       savePdf: 'Save your PDF report',
-      saveExcel: 'Save your Excel report',
       fetchFailed: 'Failed to fetch data',
       name: 'Name',
       generated: 'Generated',
@@ -1024,6 +1025,7 @@ export default {
     language: 'Language',
     notifications: 'Notifications',
     goalsPreferences: 'Goals & Preferences',
+    preferences: 'Preferences',
     dietaryRestrictions: 'Dietary Restrictions',
     resources: 'Resources',
     learnMore: 'Learn More',
@@ -1052,7 +1054,8 @@ export default {
     deleteError: 'Failed to delete account',
     profilePhoto: 'Profile Photo',
     takePhoto: 'Take Photo',
-    chooseFromLibrary: 'Choose from Library',
+    gallery: 'Gallery',
+    fromPhotos: 'From Photos',
   },
 
   // Edit Profile Screen
@@ -1196,6 +1199,23 @@ export default {
     ok: 'OK',
   },
   
+  // Preferences Screen
+  preferences: {
+    title: 'Preferences',
+    language: 'Language',
+    unitSystem: 'Unit System',
+    defaultView: 'Default Stats View',
+    defaultViewDesc: 'Which tab opens first when you visit Stats',
+    mealReminders: 'Meal Reminders',
+    mealRemindersDesc: 'Daily reminders to log your meals',
+    breakfast: 'Breakfast',
+    lunch: 'Lunch',
+    dinner: 'Dinner',
+    swipeDirection: 'Swipe Direction',
+    swipeDirectionDesc: 'Which way Stats panels slide when you switch tabs',
+    invertSwipe: 'Invert swipe direction',
+  },
+
   // Display Settings
   displaySettings: {
     title: 'Display Settings',

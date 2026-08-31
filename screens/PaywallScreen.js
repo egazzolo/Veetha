@@ -327,9 +327,9 @@ import React, { useState, useRef, useEffect } from 'react';
           {/* Fine print */}
           <Text style={[styles.finePrint, { color: theme.textTertiary }]}>
             By continuing, you agree to our{' '}
-            <Text style={styles.linkText} onPress={() => Linking.openURL('https://nonotenb.com/veetha/terms')}>Terms of Service</Text>
+            <Text style={styles.linkText} onPress={() => Linking.openURL('https://mealbreak.fit/terms.html')}>Terms of Service</Text>
              {' '}and{' '}
-             <Text style={styles.linkText} onPress={() => Linking.openURL('https://nonotenb.com/veetha/privacy')}>Privacy Policy</Text>
+             <Text style={styles.linkText} onPress={() => Linking.openURL('https://mealbreak.fit/privacy.html')}>Privacy Policy</Text>
             Subscriptions auto-renew unless cancelled at least 24 hours before the end of the current period.
           </Text>
 

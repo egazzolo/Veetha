@@ -14,8 +14,7 @@ import { showToast } from '../components/VeethaToast';
 
 export default function EditProfileScreen({ navigation }) {
   const { theme } = useTheme();
-  const { language, t, setLanguage } = useLanguage();
-  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  const { t } = useLanguage();
   const [showGuestSheet, setShowGuestSheet] = useState(false);
   const { profile, refreshProfile } = useUser();
   const { isGuest: isGuestMode } = useUserMode();
@@ -32,7 +31,6 @@ export default function EditProfileScreen({ navigation }) {
   const [displayName, setDisplayName] = useState('');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [tempLanguage, setTempLanguage] = useState(language);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [weight, setWeight] = useState('');
@@ -58,7 +56,7 @@ export default function EditProfileScreen({ navigation }) {
 
       setShowSuccessAfterSave(false);
     }
-  }, [language, showSuccessAfterSave]);
+  }, [showSuccessAfterSave]);
 
   const loadProfile = async () => {
     try {
@@ -84,11 +82,14 @@ export default function EditProfileScreen({ navigation }) {
       setDisplayName(data.display_name || '');
       setFullName(data.full_name || '');
       setEmail(user.email || '');
-      setUnitSystem(data.unit_system || 'metric');
+      // unit_preference (not unit_system) is the field Preferences/Goals &
+      // Preferences/onboarding actually read and write -- this screen only
+      // displays it now (changing it moved to Preferences).
+      setUnitSystem(data.unit_preference || 'metric');
 
       // Load weight
       if (data.weight_kg) {
-        if (data.unit_system === 'imperial') {
+        if (data.unit_preference === 'imperial') {
           setWeight((data.weight_kg * 2.20462).toFixed(1));
         } else {
           setWeight(data.weight_kg.toString());
@@ -97,7 +98,7 @@ export default function EditProfileScreen({ navigation }) {
 
       // Load height
       if (data.height_cm) {
-        if (data.unit_system === 'imperial') {
+        if (data.unit_preference === 'imperial') {
           const totalInches = data.height_cm / 2.54;
           setHeightFeet(Math.floor(totalInches / 12).toString());
           setHeightInches((totalInches % 12).toFixed(0));
@@ -114,12 +115,11 @@ export default function EditProfileScreen({ navigation }) {
   };
 
   const handleSave = async () => {
-    // Guest: only save language to AsyncStorage, skip everything else
+    // Guests have nothing editable on this screen (every field is
+    // guestCheck-gated) -- send them to the same sign-up prompt every other
+    // field already shows instead of silently no-op'ing on Save.
     if (isGuestMode) {
-      if (tempLanguage !== language) {
-        await setLanguage(tempLanguage);
-      }
-      setShowSuccessAfterSave(true);
+      setShowGuestSheet(true);
       return;
     }
     // Validation
@@ -155,11 +155,6 @@ export default function EditProfileScreen({ navigation }) {
       if (!user) {
         navigation.navigate('Login');
         return;
-      }
-
-      // Apply language change NOW (on save)
-      if (tempLanguage !== language) {
-        await setLanguage(tempLanguage);
       }
 
       // Convert measurements to metric for storage
@@ -243,10 +238,7 @@ export default function EditProfileScreen({ navigation }) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
-      <View style={{ flex: 1 }} onStartShouldSetResponder={() => {
-        if (showLanguageDropdown) setShowLanguageDropdown(false);
-        return false;
-      }}>
+      <View style={{ flex: 1 }}>
 
           <KeyboardAwareScrollView
             style={styles.scrollView}
@@ -307,133 +299,12 @@ export default function EditProfileScreen({ navigation }) {
                 </View>
               </View>
 
-              {/* Language */}
-              <View style={styles.inputGroup}>
-                <Text style={[styles.label, { color: theme.text }]}>{t('editProfile.language')}</Text>
-                <TouchableOpacity
-                  style={[styles.dropdown, { backgroundColor: theme.inputBackground, borderColor: theme.border }]}
-                  onPress={() => setShowLanguageDropdown(!showLanguageDropdown)}
-                >
-                  <Text style={[styles.dropdownText, { color: theme.text }]}>
-                    {
-                      tempLanguage === 'en' ? '🇬🇧 English' :
-                      tempLanguage === 'es' ? '🇪🇸 Español' :
-                      tempLanguage === 'fr' ? '🇫🇷 Français' :
-                      tempLanguage === 'tl' ? '🇵🇭 Filipino' :
-                      tempLanguage === 'pt' ? '🇧🇷 Português' :
-                      ''
-                    }
-                  </Text>
-                  <Text style={[styles.dropdownArrow, { color: theme.textSecondary }]}>
-                    {showLanguageDropdown ? '▲' : '▼'}
-                  </Text>
-                </TouchableOpacity>
-                
-                {showLanguageDropdown && (
-                  <View style={[styles.dropdownMenu, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
-                    <TouchableOpacity
-                      style={[styles.dropdownItem, tempLanguage === 'en' && { backgroundColor: theme.primary + '20' }]}
-                      onPress={() => {
-                        setTempLanguage('en');
-                        setShowLanguageDropdown(false);
-                      }}
-                    >
-                      <Text style={[styles.dropdownItemText, { color: theme.text }]}>
-                        🇬🇧 English
-                      </Text>
-                      {tempLanguage === 'en' && <Text style={{ color: theme.primary }}>✓</Text>}
-                    </TouchableOpacity>
-                    
-                    <TouchableOpacity
-                      style={[styles.dropdownItem, tempLanguage === 'es' && { backgroundColor: theme.primary + '20' }]}
-                      onPress={() => {
-                        setTempLanguage('es');
-                        setShowLanguageDropdown(false);
-                      }}
-                    >
-                      <Text style={[styles.dropdownItemText, { color: theme.text }]}>
-                        🇪🇸 Español
-                      </Text>
-                      {tempLanguage === 'es' && <Text style={{ color: theme.primary }}>✓</Text>}
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={[styles.dropdownItem, tempLanguage === 'fr' && { backgroundColor: theme.primary + '20' }]}
-                      onPress={() => {
-                        setTempLanguage('fr');
-                        setShowLanguageDropdown(false);
-                      }}
-                    >
-                      <Text style={[styles.dropdownItemText, { color: theme.text }]}>
-                        🇫🇷 French
-                      </Text>
-                      {tempLanguage === 'fr' && <Text style={{ color: theme.primary }}>✓</Text>}
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={[styles.dropdownItem, tempLanguage === 'tl' && { backgroundColor: theme.primary + '20' }]}
-                      onPress={() => {
-                        setTempLanguage('tl');
-                        setShowLanguageDropdown(false);
-                      }}
-                    >
-                      <Text style={[styles.dropdownItemText, { color: theme.text }]}>
-                        🇵🇭 Filipino
-                      </Text>
-                      {tempLanguage === 'tl' && <Text style={{ color: theme.primary }}>✓</Text>}
-                    </TouchableOpacity>
-                    
-                    <TouchableOpacity
-                      style={[styles.dropdownItem, tempLanguage === 'pt' && { backgroundColor: theme.primary + '20' }]}
-                      onPress={() => {
-                        setTempLanguage('pt');
-                        setShowLanguageDropdown(false);
-                      }}
-                    >
-                      <Text style={[styles.dropdownItemText, { color: theme.text }]}>
-                        🇧🇷 Português
-                      </Text>
-                      {tempLanguage === 'pt' && <Text style={{ color: theme.primary }}>✓</Text>}
-                    </TouchableOpacity>
-                    
-                  </View>
-                )}
-              </View>
-
-              {/* Unit System */}
+              {/* Unit System -- view-only here now; change it in Profile > Preferences */}
               <View style={styles.inputGroup}>
                 <Text style={[styles.label, { color: theme.text }]}>Unit System</Text>
-                <View style={styles.unitToggle}>
-                  <TouchableOpacity
-                    style={[
-                      styles.unitButton,
-                      { 
-                        borderColor: theme.border, 
-                        backgroundColor: unitSystem === 'metric' ? theme.primary : theme.cardBackground 
-                      }
-                    ]}
-                    onPress={() => guestCheck(() => setUnitSystem('metric'))}
-                  >
-                    <Text style={[styles.unitButtonText, { color: unitSystem === 'metric' ? '#fff' : theme.text }]}>
-                      Metric
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.unitButton,
-                      {
-                        borderColor: theme.border,
-                        backgroundColor: unitSystem === 'imperial' ? theme.primary : theme.cardBackground
-                      }
-                    ]}
-                    onPress={() => guestCheck(() => setUnitSystem('imperial'))}
-                  >
-                    <Text style={[styles.unitButtonText, { color: unitSystem === 'imperial' ? '#fff' : theme.text }]}>
-                      Imperial
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                <Text style={[styles.helper, { color: theme.textTertiary }]}>
+                  {unitSystem === 'metric' ? 'Metric' : 'Imperial'} — change this in Preferences
+                </Text>
               </View>
 
               {/* Weight */}
@@ -505,10 +376,7 @@ export default function EditProfileScreen({ navigation }) {
               {/* Cancel Button */}
               <TouchableOpacity 
                 style={[styles.cancelButton, { borderColor: theme.border }]}
-                onPress={() => {
-                  setTempLanguage(language); // Reset to original language
-                  navigation.goBack();
-                }}
+                onPress={() => navigation.goBack()}
               >
                 <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>{t('editProfile.cancel')}</Text>
               </TouchableOpacity>

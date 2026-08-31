@@ -252,6 +252,10 @@ export default {
     next: 'Sunod',
     finish: 'Nakuha ko na!',
     thankYou: "🎉 Salamat sa pagkumpleto ng tutorial! Handa ka nang magsimulang subaybayan ang iyong nutrisyon.",
+    introTitle: 'Tingnan ang tutorial?',
+    introMessage: 'Gusto mo ba ng mabilisang tour ng app? Kung gusto mong laktawan, makikita mo pa rin ito anumang oras sa mealbreak.fit.',
+    introSeeTutorial: 'Tingnan ang Tutorial',
+    introSkip: 'Laktawan',
     
     home: {
       step1: {
@@ -309,7 +313,7 @@ export default {
       },
       step4: {
         title: 'I-export ang Iyong Data',
-        content: 'Gumawa ng PDF o Excel report ng iyong kasaysayan sa nutrisyon, kahit kailan mo kailanganin.',
+        content: 'Gumawa ng PDF report ng iyong kasaysayan sa nutrisyon, kahit kailan mo kailanganin.',
       },
     },
     profile: {
@@ -319,7 +323,7 @@ export default {
       },
       step2: {
         title: 'I-edit ang Iyong Profile',
-        content: 'I-tap dito para i-update ang iyong display name, buong pangalan, email address, wika, sistema ng sukat, timbang at taas.',
+        content: 'I-tap dito para i-update ang iyong display name, buong pangalan, email address, timbang at taas.',
       },
       step3: {
         title: 'I-update ang Iyong Mga Layunin',
@@ -928,14 +932,11 @@ export default {
       selectPeriod: 'Piliin ang period',
       last7Days: 'Huling 7 araw',
       currentMonth: 'Kasalukuyang buwan',
-      selectFormat: 'Piliin ang format',
       pdfReport: 'PDF ulat',
-      excelSpreadsheet: 'Excel spreadsheet',
       weekly: 'Lingguhan',
       monthly: 'Buwanang',
       nutritionReportTitle: 'Ulat sa nutrisyon - {{period}}',
       savePdf: 'I-save ang PDF report',
-      saveExcel: 'I-save ang Excel report',
       fetchFailed: 'Hindi makuha ang data',
       name: 'Pangalan',
       generated: 'Nabuo noong',
@@ -1024,6 +1025,7 @@ export default {
     language: 'Wika',
     notifications: 'Mga Abiso',
     goalsPreferences: 'Mga Layunin at Kagustuhan',
+    preferences: 'Mga Kagustuhan',
     dietaryRestrictions: 'Mga Paghihigpit sa Pagkain',
     resources: 'Mga Resources',
     learnMore: 'Matuto Pa',
@@ -1052,7 +1054,8 @@ export default {
     deleteError: 'Hindi natanggal ang account',
     profilePhoto: 'Larawan sa Profile',
     takePhoto: 'Kumuha ng Larawan',
-    chooseFromLibrary: 'Pumili mula sa Galería',
+    gallery: 'Galería',
+    fromPhotos: 'Mula sa Larawan',
   },
 
   // Edit Profile Screen
@@ -1197,6 +1200,22 @@ export default {
   },
 
   // Display Settings
+  preferences: {
+    title: 'Mga Kagustuhan',
+    language: 'Wika',
+    unitSystem: 'Sistema ng Yunit',
+    defaultView: 'Default na View ng Stats',
+    defaultViewDesc: 'Aling tab ang bubukas muna pagpunta sa Stats',
+    mealReminders: 'Paalala sa Pagkain',
+    mealRemindersDesc: 'Araw-araw na paalala para i-log ang iyong mga pagkain',
+    breakfast: 'Almusal',
+    lunch: 'Tanghalian',
+    dinner: 'Hapunan',
+    swipeDirection: 'Direksyon ng Swipe',
+    swipeDirectionDesc: 'Saang direksyon dumudulas ang mga panel ng Stats kapag lumipat ng tab',
+    invertSwipe: 'Baliktarin ang direksyon ng swipe',
+  },
+
   displaySettings: {
     title: 'Mga Setting ng Display',
     homeScreenLayout: 'Home Screen Layout',

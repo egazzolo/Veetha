@@ -25,13 +25,13 @@ import { useLayout } from '../utils/LayoutContext';
 import { supabase } from '../utils/supabase';
 import { logScreen, logEvent } from '../utils/analytics';
 import { getSuggestionsForMealTime, LOCAL_FOODS, DEFAULT_FOODS } from '../utils/localFoods';
+import { rescheduleMealReminders } from '../utils/mealReminders';
 import { Pedometer } from 'expo-sensors';
 import { Camera } from 'expo-camera';
 import { posthog } from '../utils/posthog';
 import { decode } from 'base64-arraybuffer';
 
 import AppTutorial from '../components/AppTutorial';
-import RenameAnnouncementModal from '../components/RenameAnnouncementModal';
 import AnimatedThemeWrapper from '../components/AnimatedThemeWrapper';
 import ThemedScreenBackground from '../components/ThemedScreenBackground';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -516,7 +516,11 @@ export default function HomeScreen({ navigation }) {
   // silently disabled whenever tutorialCompleted was false for any reason
   // (a stale/missed AsyncStorage flag, a timing hiccup on load), with no
   // indication to the user why nothing was happening.
-  const swipeGesture = useSwipeNavigation(navigation, 'Home');
+  // Disabled during the tutorial's freeze/arrow phases -- those are plain
+  // View overlays (not a native Modal), so unlike the coach-mark steps
+  // themselves they don't stop this Pan gesture from reaching the screen
+  // underneath and swiping the user away mid-tutorial.
+  const swipeGesture = useSwipeNavigation(navigation, 'Home', !checkingTutorial && !showArrowToScanner && !showArrowToStats);
 
   const [calendarMonth, setCalendarMonth] = useState({ 
     year: new Date().getFullYear(), 
@@ -676,33 +680,11 @@ export default function HomeScreen({ navigation }) {
           console.log('🔔 Notification permission denied');
         }
 
-        // Schedule daily meal reminders (always cancel old ones first to prevent duplicates)
+        // Schedule daily meal reminders per the user's Preferences toggles
+        // (defaults to all three enabled, matching the previous behavior).
         if (notificationStatus === 'granted') {
-          // Cancel ALL existing scheduled notifications before scheduling fresh ones
-          await Notifications.cancelAllScheduledNotificationsAsync();
-          console.log('🔔 Cancelled all old scheduled notifications');
-
-          const meals = [
-            { hour: 8, minute: 0, titleKey: 'mealReminders.breakfastTitle', bodyKey: 'mealReminders.breakfastBody' },
-            { hour: 13, minute: 0, titleKey: 'mealReminders.lunchTitle', bodyKey: 'mealReminders.lunchBody' },
-            { hour: 19, minute: 0, titleKey: 'mealReminders.dinnerTitle', bodyKey: 'mealReminders.dinnerBody' },
-          ];
-          for (const meal of meals) {
-            await Notifications.scheduleNotificationAsync({
-              content: {
-                title: t(meal.titleKey),
-                body: t(meal.bodyKey),
-              },
-              trigger: {
-                type: 'daily',
-                hour: meal.hour,
-                minute: meal.minute,
-                repeats: true,
-              },
-            });
-          }
-          await AsyncStorage.setItem('notifications_scheduled', 'true');
-          console.log('🔔 Daily meal reminders scheduled (3 total: breakfast, lunch, dinner)');
+          await rescheduleMealReminders(t);
+          console.log('🔔 Daily meal reminders scheduled per current preferences');
         }
       } catch (err) {
         console.error('Permission request error:', err);
@@ -2496,8 +2478,6 @@ export default function HomeScreen({ navigation }) {
               scannerButtonRef={scannerButtonRef}
               statsButtonRef={statsButtonRef}
             />
-
-            <RenameAnnouncementModal theme={theme} />
 
             {/* Tutorial freeze overlay — MUST be last child to cover everything */}
             {checkingTutorial && (

@@ -23,7 +23,19 @@ export const TutorialProvider = ({ children }) => {
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN') {
         console.log('🔐 User signed in, checking tutorial status');
-        setTimeout(() => checkTutorialStatus(), 500);
+        // These two keys are device-level, not per-account -- they exist so
+        // startTutorial() can skip a Supabase round-trip once this device
+        // has already been through the tutorial. But that means signing
+        // into a DIFFERENT account on the same device (or testing multiple
+        // accounts, like during development) silently inherits whichever
+        // account last completed it here, permanently blocking the
+        // tutorial for every account after the first. Clear them on every
+        // sign-in so each account's own Supabase flags (checked below /
+        // inside startTutorial) are what actually decide, same as
+        // UserContext already does for cached meals/profile on SIGNED_IN.
+        AsyncStorage.multiRemove(['tutorial_ever_shown', 'tutorial_completed_home']).then(() => {
+          setTimeout(() => checkTutorialStatus(), 500);
+        });
       }
     });
 
@@ -63,14 +75,16 @@ export const TutorialProvider = ({ children }) => {
     const userMode = await AsyncStorage.getItem('veetha_user_mode');
     if (userMode === 'guest') return;
 
-    // Once shown on this device, never again -- except Stats, which was
-    // added after this device-level flag was already set for devices that
-    // completed the original Home->Scanner->Profile flow. Stats is gated
-    // solely by its own stats_tutorial_completed column below instead.
-    if (screen !== 'Stats') {
-      const alreadyShown = await AsyncStorage.getItem('tutorial_ever_shown');
-      if (alreadyShown === 'true') return;
-    }
+    // Every screen below (Home included) checks its own *_tutorial_completed
+    // column directly in Supabase -- no device-level shortcut flag anymore.
+    // That used to gate everything except Stats here, as a fast local cache
+    // to skip a Supabase round-trip once this device had been through the
+    // tutorial. But the flag is device-wide, not per-account, so signing
+    // into a second account on the same device (or testing multiple
+    // accounts) inherited whichever account finished it here first,
+    // permanently blocking the tutorial for every account after. The
+    // per-screen checks below are the real, race-free, per-account source
+    // of truth -- this was a redundant shortcut, not a required check.
 
     // For Scanner, check scanner_tutorial_completed
     if (screen === 'Scanner') {
@@ -138,11 +152,32 @@ export const TutorialProvider = ({ children }) => {
       }
     }
 
-    // For Home, check regular tutorial_completed
-    else {
-      if (tutorialCompleted) return;
+    // For Home, check home_tutorial_completed directly in Supabase --
+    // matches Scanner/Profile/Stats above. The local tutorialCompleted
+    // state is only refreshed a beat after sign-in (see the SIGNED_IN
+    // handler), so relying on it here raced against how quickly Home's own
+    // screen-level gate calls startTutorial() after a fresh sign-in --
+    // often losing, reading the stale value from before the refresh landed.
+    else if (screen === 'Home') {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('home_tutorial_completed')
+          .eq('id', user.id)
+          .single();
+
+        if (profile?.home_tutorial_completed) {
+          console.log('🎓 Home tutorial already completed');
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking home tutorial:', error);
+      }
     }
-    
+
     console.log(`✅ Starting ${screen} tutorial`);
     setCurrentScreen(screen);
     setCurrentStep(0);
@@ -154,6 +189,35 @@ export const TutorialProvider = ({ children }) => {
   // ahead of that alert.
   const markAllTutorialsSeen = () => {
     setAllTutorialsCompleted(true);
+  };
+
+  // Called only from the one-time "see the tutorial or skip it entirely?"
+  // choice shown at the very start (Home, before any coach-marks appear).
+  // Marks every screen's tutorial done in one shot, same end state as
+  // finishing all four individually, so nothing re-triggers later.
+  const skipAllTutorials = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error } = await supabase.from('profiles').update({
+          home_tutorial_completed: true,
+          scanner_tutorial_completed: true,
+          stats_tutorial_completed: true,
+          profile_tutorial_completed: true,
+          tutorial_completed: true,
+        }).eq('id', user.id);
+        if (error) console.error('❌ Failed to skip all tutorials:', error);
+      }
+      await AsyncStorage.setItem('tutorial_completed_home', 'true');
+      await AsyncStorage.setItem('tutorial_ever_shown', 'true');
+    } catch (error) {
+      console.error('Error skipping all tutorials:', error);
+    } finally {
+      setTutorialCompleted(true);
+      setAllTutorialsCompleted(true);
+      setCurrentScreen(null);
+      setCurrentStep(0);
+    }
   };
 
   const nextStep = () => {
@@ -266,6 +330,7 @@ export const TutorialProvider = ({ children }) => {
       tutorialCompleted,
       allTutorialsCompleted,
       markAllTutorialsSeen,
+      skipAllTutorials,
       currentStep,
       currentScreen,
       startTutorial,

@@ -252,6 +252,10 @@ export default {
     next: 'Siguiente',
     finish: '¡Entendido!',
     thankYou: "🎉 ¡Gracias por completar el tutorial! Ya estás listo para comenzar a rastrear tu nutrición.",
+    introTitle: '¿Ver el tutorial?',
+    introMessage: '¿Quieres un recorrido rápido por la app? Si prefieres omitirlo, puedes verlo cuando quieras en mealbreak.fit.',
+    introSeeTutorial: 'Ver Tutorial',
+    introSkip: 'Omitir',
     
     home: {
       step1: {
@@ -309,7 +313,7 @@ export default {
       },
       step4: {
         title: 'Exporta Tus Datos',
-        content: 'Genera un informe en PDF o Excel de tu historial nutricional, cuando lo necesites.',
+        content: 'Genera un informe en PDF de tu historial nutricional, cuando lo necesites.',
       },
     },
     profile: {
@@ -319,7 +323,7 @@ export default {
       },
       step2: {
         title: 'Edita Tu Perfil',
-        content: 'Toca aquí para actualizar tu nombre de usuario, nombre completo, dirección de correo, idioma, sistema de unidades, peso y altura.',
+        content: 'Toca aquí para actualizar tu nombre de usuario, nombre completo, dirección de correo, peso y altura.',
       },
       step3: {
         title: 'Actualiza Tus Objetivos',
@@ -928,14 +932,11 @@ export default {
       selectPeriod: 'Seleccionar período',
       last7Days: 'Últimos 7 días',
       currentMonth: 'Mes actual',
-      selectFormat: 'Seleccionar formato',
       pdfReport: 'Reporte PDF',
-      excelSpreadsheet: 'Hoja de cálculo Excel',
       weekly: 'Semanal',
       monthly: 'Mensual',
       nutritionReportTitle: 'Reporte nutricional {{period}}',
       savePdf: 'Guardar reporte PDF',
-      saveExcel: 'Guardar reporte Excel',
       fetchFailed: 'Error al obtener datos',
       name: 'Nombre',
       generated: 'Generado',
@@ -1024,6 +1025,7 @@ export default {
     language: 'Idioma',
     notifications: 'Notificaciones',
     goalsPreferences: 'Objetivos y Preferencias',
+    preferences: 'Preferencias',
     dietaryRestrictions: 'Restricciones Alimentarias',
     resources: 'Recursos',
     learnMore: 'Más Información',
@@ -1052,7 +1054,8 @@ export default {
     deleteError: 'Error al eliminar cuenta',
     profilePhoto: 'Foto de Perfil',
     takePhoto: 'Tomar Foto',
-    chooseFromLibrary: 'Elegir de la Galería',
+    gallery: 'Galería',
+    fromPhotos: 'Desde Fotos',
   },
 
   // Edit Profile Screen
@@ -1197,6 +1200,22 @@ export default {
   },
 
   // Display Settings
+  preferences: {
+    title: 'Preferencias',
+    language: 'Idioma',
+    unitSystem: 'Sistema de Unidades',
+    defaultView: 'Vista Predeterminada de Stats',
+    defaultViewDesc: 'Qué pestaña se abre primero al visitar Stats',
+    mealReminders: 'Recordatorios de Comidas',
+    mealRemindersDesc: 'Recordatorios diarios para registrar tus comidas',
+    breakfast: 'Desayuno',
+    lunch: 'Almuerzo',
+    dinner: 'Cena',
+    swipeDirection: 'Dirección de Deslizamiento',
+    swipeDirectionDesc: 'Hacia dónde se deslizan los paneles de Stats al cambiar de pestaña',
+    invertSwipe: 'Invertir dirección de deslizamiento',
+  },
+
   displaySettings: {
     title: 'Ajustes de Pantalla',
     homeScreenLayout: 'Diseño de Pantalla Principal',

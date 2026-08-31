@@ -146,6 +146,7 @@ async function validateAppleReceipt(transactionJws: string, userId: string) {
       is_premium: false,
       subscription_expires_at: null,
       subscription_product_id: null,
+      store: null,
     }).eq('id', userId)
     return { valid: false, error: 'Subscription expired' }
   }
@@ -156,6 +157,7 @@ async function validateAppleReceipt(transactionJws: string, userId: string) {
     is_premium: true,
     subscription_expires_at: expiresAt,
     subscription_product_id: payload.productId,
+    store: 'ios',
   }).eq('id', userId)
 
   return { valid: true, expiresAt, productId: payload.productId }
@@ -194,6 +196,7 @@ async function validateGooglePurchase(
       is_premium: false,
       subscription_expires_at: null,
       subscription_product_id: null,
+      store: null,
     }).eq('id', userId)
     return { valid: false, error: 'No active subscription' }
   }
@@ -205,6 +208,7 @@ async function validateGooglePurchase(
     subscription_expires_at: expiresAt,
     subscription_product_id: activeItem.productId,
     android_purchase_token: purchaseToken,
+    store: 'android',
   }).eq('id', userId)
 
   return { valid: true, expiresAt, productId: activeItem.productId }

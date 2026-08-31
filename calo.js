@@ -46,13 +46,13 @@ import ProfileScreen from './screens/ProfileScreen';
 import EditProfileScreen from './screens/EditProfileScreen';
 import DisplaySettingsScreen from './screens/DisplaySettingsScreen';
 import GoalsPreferencesScreen from './screens/GoalsPreferencesScreen';
+import PreferencesScreen from './screens/PreferencesScreen';
 import DietaryRestrictionsScreen from './screens/DietaryRestrictionsScreen';
 import QuickEntryScreen from './screens/QuickEntryScreen';
 import GlobalTutorialOverlay from './components/GlobalTutorialOverlay';
 import { VeethaToastRoot } from './components/VeethaToast';
 import MealRecommendationsScreen from './screens/MealRecommendationsScreen';
 import AdminDashboardScreen from './screens/AdminDashboardScreen';
-import TermsOfServiceScreen from './screens/TermsOfServiceScreen';
 import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen';
 import WeeklyReportScreen from './screens/WeeklyReportScreen';
 import TestScreen from './screens/TestScreen';
@@ -419,12 +419,12 @@ function AppNavigator() {
           <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} options={{ title: 'Admin Dashboard' }} />
           <Stack.Screen name="DisplaySettings" component={DisplaySettingsScreen} />
           <Stack.Screen name="GoalsPreferences" component={GoalsPreferencesScreen} />
+          <Stack.Screen name="Preferences" component={PreferencesScreen} />
           <Stack.Screen name="DietaryRestrictions" component={DietaryRestrictionsScreen} />
           <Stack.Screen name="QuickEntry" component={QuickEntryScreen} options={{ headerShown: false }} />
           <Stack.Screen name="MealRecommendations" component={MealRecommendationsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="WeeklyReport" component={WeeklyReportScreen} options={{ headerShown: false }} />
           <Stack.Screen name="TestScreen" component={TestScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} options={{ title: 'Terms of Service', headerShown: true, headerStyle: { backgroundColor: '#4CAF50' }, headerTintColor: '#fff', headerTitleStyle: { fontWeight: 'bold' }, }} />
           <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={{ title: 'Privacy Policy', headerShown: true, headerStyle: { backgroundColor: '#4CAF50' }, headerTintColor: '#fff', headerTitleStyle: { fontWeight: 'bold' }, }} />
           <Stack.Screen name="ReportViewer" component={ReportViewerScreen}/>
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />

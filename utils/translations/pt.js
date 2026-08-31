@@ -252,6 +252,10 @@ export default {
     next: 'Próximo',
     finish: 'Entendi!',
     thankYou: '🎉 Obrigado por concluir o tutorial! Você está pronto para começar a registrar sua nutrição.',
+    introTitle: 'Ver o tutorial?',
+    introMessage: 'Quer um tour rápido pelo app? Se preferir pular, você ainda pode vê-lo a qualquer momento em mealbreak.fit.',
+    introSeeTutorial: 'Ver Tutorial',
+    introSkip: 'Pular',
 
     home: {
       step1: {
@@ -309,7 +313,7 @@ export default {
       },
       step4: {
         title: 'Exporte Seus Dados',
-        content: 'Gere um relatório em PDF ou Excel do seu histórico nutricional, sempre que precisar.',
+        content: 'Gere um relatório em PDF do seu histórico nutricional, sempre que precisar.',
       },
     },
     profile: {
@@ -319,7 +323,7 @@ export default {
       },
       step2: {
         title: 'Edite Seu Perfil',
-        content: 'Toque aqui para atualizar seu nome de exibição, nome completo, endereço de e-mail, idioma, sistema de unidades, peso e altura.',
+        content: 'Toque aqui para atualizar seu nome de exibição, nome completo, endereço de e-mail, peso e altura.',
       },
       step3: {
         title: 'Atualize Seus Objetivos',
@@ -928,14 +932,11 @@ export default {
       selectPeriod: 'Selecionar Período',
       last7Days: 'Últimos 7 Dias',
       currentMonth: 'Mês Atual',
-      selectFormat: 'Selecionar Formato',
       pdfReport: 'Relatório PDF',
-      excelSpreadsheet: 'Planilha Excel',
       weekly: 'Semanal',
       monthly: 'Mensal',
       nutritionReportTitle: 'Relatório Nutricional {{period}}',
       savePdf: 'Salvar seu relatório PDF',
-      saveExcel: 'Salvar seu relatório Excel',
       fetchFailed: 'Falha ao buscar dados',
       name: 'Nome',
       generated: 'Gerado',
@@ -1024,6 +1025,7 @@ export default {
     language: 'Idioma',
     notifications: 'Notificações',
     goalsPreferences: 'Metas e Preferências',
+    preferences: 'Preferências',
     dietaryRestrictions: 'Restrições Alimentares',
     resources: 'Recursos',
     learnMore: 'Saiba Mais',
@@ -1052,7 +1054,8 @@ export default {
     deleteError: 'Falha ao excluir conta',
     profilePhoto: 'Foto de Perfil',
     takePhoto: 'Tirar Foto',
-    chooseFromLibrary: 'Escolher da Biblioteca',
+    gallery: 'Galeria',
+    fromPhotos: 'Das Fotos',
   },
 
   // Edit Profile Screen
@@ -1197,6 +1200,22 @@ export default {
   },
 
   // Display Settings
+  preferences: {
+    title: 'Preferências',
+    language: 'Idioma',
+    unitSystem: 'Sistema de Unidades',
+    defaultView: 'Visualização Padrão do Stats',
+    defaultViewDesc: 'Qual aba abre primeiro ao visitar Stats',
+    mealReminders: 'Lembretes de Refeição',
+    mealRemindersDesc: 'Lembretes diários para registrar suas refeições',
+    breakfast: 'Café da Manhã',
+    lunch: 'Almoço',
+    dinner: 'Jantar',
+    swipeDirection: 'Direção do Deslize',
+    swipeDirectionDesc: 'Para que lado os painéis do Stats deslizam ao trocar de aba',
+    invertSwipe: 'Inverter direção do deslize',
+  },
+
   displaySettings: {
     title: 'Configurações de Exibição',
     homeScreenLayout: 'Layout da Tela Inicial',

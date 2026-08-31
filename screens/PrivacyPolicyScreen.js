@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, Text, StyleSheet, View, TouchableOpacity } from 'react-native';
+import { ScrollView, Text, StyleSheet, View, TouchableOpacity, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../utils/ThemeContext';
 
@@ -26,7 +26,13 @@ export default function PrivacyPolicyScreen({ route }) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView 
+      <TouchableOpacity
+        onPress={() => Linking.openURL(showTerms ? 'https://mealbreak.fit/terms.html' : 'https://mealbreak.fit/privacy.html')}
+      >
+        <Text style={[styles.onlineLink, { color: theme.primary }]}>View the latest version online →</Text>
+      </TouchableOpacity>
+
+      <ScrollView
         style={styles.scrollView} 
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={true}
@@ -54,7 +60,7 @@ Ang mga Tuntunin ng Serbisyo ay ibinibigay sa Ingles lamang.
 
 
 AGREEMENT TO OUR LEGAL TERMS
-We are Enzo Gazzolo, doing business as Veetha ("Company," "we," "us," "our").
+We are Enzo Gazzolo, doing business as Meal Break ("Company," "we," "us," "our").
 
 We operate the mobile application Meal Break (the "App"), as well as any other related products and services that refer or link to these legal terms (the "Legal Terms") (collectively, the "Services").
 
@@ -361,7 +367,7 @@ Estos Términos de Servicio se proporcionan solo en inglés.
 Ces Conditions d'Utilisation sont fournies en anglais uniquement.
 Ang mga Tuntunin ng Serbisyo ay ibinibigay sa Ingles lamang.
 
-This Privacy Notice for Enzo Gazzolo (doing business as Veetha) ("we," "us," or "our"), describes how and why we might access, collect, store, use, and/or share ("process") your personal information when you use our services ("Services"), including when you:
+This Privacy Notice for Enzo Gazzolo (doing business as Meal Break) ("we," "us," or "our"), describes how and why we might access, collect, store, use, and/or share ("process") your personal information when you use our services ("Services"), including when you:
 -	Download and use our mobile application (Meal Break), or any other application of ours that links to this Privacy Notice
 -	Use Meal Break. Meal Break is a mobile nutrition tracking application that helps users monitor their daily food intake, track calories and macronutrients, and achieve their health and fitness goals. The app provides two main ways to log meals: 1. Barcode Scanning (Free): Users can scan product barcodes to quickly log packaged foods and retrieve nutritional information from our database. 2. AI Photo Recognition (Premium - $7.99/month or $59.99/year): Users can take photos of their meals, and our artificial intelligence technology identifies the food items and estimates their nutritional content. Additional features include: - Personalized daily calorie and macro goals based on user profile (age, gender, height, weight, activity level, and health objectives) - Comprehensive nutrition tracking with detailed breakdowns of proteins, carbohydrates, fats, and micronutrients - Progress tracking with daily, weekly, and monthly statistics and charts - Streak tracking to maintain consistent logging habits - Dietary preference and restriction management (vegetarian, vegan, keto, allergies, etc.) - Multi-language support (English, Spanish, French, Portuguese, Filipino) - Meal history and logging features Meal Break uses the Mifflin-St Jeor equation to calculate personalized calorie recommendations. The app is designed to provide nutritional estimates and tracking tools, not medical advice. Users with medical conditions, dietary restrictions, or health concerns should consult healthcare professionals before making dietary changes. The app is available on both Android (Google Play Store) and iOS (Apple App Store).
 -	Engage with us in other related ways, including any marketing or events
@@ -763,6 +769,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
+  },
+  onlineLink: {
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+    paddingVertical: 12,
   },
   tab: {
     flex: 1,

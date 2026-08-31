@@ -4,6 +4,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Modal, Image, Sta
 import { useLanguage } from '../utils/LanguageContext';
 import { useTutorial } from '../utils/TutorialContext';
 import { useTheme } from '../utils/ThemeContext';
+import VeethaModal from './VeethaModal';
 
 const { width, height } = Dimensions.get('window');
 
@@ -27,8 +28,16 @@ export default function AppTutorial({
 
   const { t } = useLanguage();
   const { theme } = useTheme();
-  const { tutorialCompleted, currentStep, currentScreen, nextStep, skipTutorial, markAllTutorialsSeen } = useTutorial();
+  const { tutorialCompleted, currentStep, currentScreen, nextStep, skipTutorial, markAllTutorialsSeen, skipAllTutorials } = useTutorial();
   const [visible, setVisible] = useState(false);
+  const [showIntroChoice, setShowIntroChoice] = useState(false);
+  // Set by the intro-choice "See Tutorial" button, consumed by the effect
+  // below. Can't call measureAndCreateSteps() directly from that button's
+  // handler -- this whole block has to sit before measureAndCreateSteps is
+  // defined further down (see the render-order bug this is fixing), so a
+  // render where showIntroChoice is true never reaches that definition and
+  // the closure would be referencing a variable that was never initialized.
+  const [wantsTutorial, setWantsTutorial] = useState(false);
   const [stepConfig, setStepConfig] = useState([]);
   const [measuring, setMeasuring] = useState(false);
   const insets = useSafeAreaInsets();
@@ -59,8 +68,22 @@ export default function AppTutorial({
     
     // Only check if currentScreen matches - startTutorial already checked the flags
     if (currentScreen === screen && tutorialRefs && !measuring && !hasStartedRef.current ) {
-      console.log('✅ Starting measurement...');
       hasStartedRef.current = true;
+
+      // Home is always the first screen in the Home -> Scanner -> Stats ->
+      // Profile sequence, so this is the one true "start of the tutorial"
+      // moment -- ask once here whether to go through it at all. Skipping
+      // marks every screen done in one shot (skipAllTutorials), so nothing
+      // -- including this same prompt -- can show again. Choosing to see it
+      // just proceeds into the normal per-screen flow below, where each
+      // step's own Skip button still only skips that one screen, same as
+      // always.
+      if (screen === 'Home') {
+        setShowIntroChoice(true);
+        return;
+      }
+
+      console.log('✅ Starting measurement...');
       setMeasuring(true);
       measureAndCreateSteps();
     } else if (currentScreen !== screen) {
@@ -119,6 +142,59 @@ export default function AppTutorial({
     setAnimFrame(0);
     setAnimLoops(0);
   }, [currentStep]);
+
+  // Fires once showIntroChoice has closed (see note by wantsTutorial's
+  // declaration for why this can't just be called directly from the
+  // button). By the time this effect callback actually runs, the render
+  // that set wantsTutorial has already executed past measureAndCreateSteps'
+  // definition, so it's safely in scope here.
+  useEffect(() => {
+    if (wantsTutorial) {
+      setWantsTutorial(false);
+      console.log('✅ Starting measurement...');
+      setMeasuring(true);
+      measureAndCreateSteps();
+    }
+  }, [wantsTutorial]);
+
+  // Must render before the `!visible` guard further down -- this path never
+  // sets visible=true (that only happens inside measureAndCreateSteps,
+  // which this deliberately skips until the user actually chooses to see
+  // the tutorial), so placing this check after that guard meant it always
+  // got intercepted and returned null before ever reaching this modal. That
+  // was the actual bug: the state update ran fine, it just never rendered.
+  if (showIntroChoice) {
+    return (
+      <VeethaModal
+        visible={true}
+        title={t('tutorial.introTitle')}
+        message={t('tutorial.introMessage')}
+        onCancel={() => {
+          setShowIntroChoice(false);
+          skipAllTutorials();
+          onVisible?.();
+        }}
+        buttons={[
+          {
+            text: t('tutorial.introSkip'),
+            style: 'cancel',
+            onPress: () => {
+              setShowIntroChoice(false);
+              skipAllTutorials();
+              onVisible?.();
+            },
+          },
+          {
+            text: t('tutorial.introSeeTutorial'),
+            onPress: () => {
+              setShowIntroChoice(false);
+              setWantsTutorial(true);
+            },
+          },
+        ]}
+      />
+    );
+  }
 
   const measureAndCreateSteps = async () => {
     console.log('📏 Starting measurements...');
@@ -311,6 +387,10 @@ export default function AppTutorial({
             title: t('tutorial.home.step4.title'),
             content: t('tutorial.home.step4.content'),
             scrollTo: scrollAmount,
+            // ScrollView clamps if the requested offset overshoots the
+            // scrollable range, so the element doesn't always land exactly
+            // where scrollTo assumed -- re-measure for real after scrolling.
+            remeasureTarget: async () => measureComponent(tutorialRefs.mealsList.current),
           });
         }
       }
@@ -416,6 +496,14 @@ export default function AppTutorial({
               title: t('tutorial.stats.step3.title'),
               content: t('tutorial.stats.step3.content'),
               scrollTo: scrollAmount,
+              // ScrollView clamps if the requested offset overshoots the
+              // scrollable range (the page got shorter after the notebook
+              // redesign), so re-measure for real after scrolling instead
+              // of trusting the pre-scroll estimate.
+              remeasureTarget: async () => {
+                const c = await measureComponent(tutorialRefs.summary.current);
+                return c ? { ...c, top: c.top + 25 } : null;
+              },
             });
           }
         }
@@ -441,6 +529,7 @@ export default function AppTutorial({
               title: t('tutorial.stats.step4.title'),
               content: t('tutorial.stats.step4.content'),
               scrollTo: scrollAmount,
+              remeasureTarget: async () => measureComponent(tutorialRefs.reports.current),
             });
           }
         }
@@ -629,6 +718,10 @@ export default function AppTutorial({
                 title: t('tutorial.profile.step3.title'),
                 content: t('tutorial.profile.step3.content'),
                 scrollTo: scrollAmount,
+                remeasureTarget: async () => {
+                  const c = await measureComponent(tutorialRefs.goalsButton.current);
+                  return c ? { top: c.top, left: c.left, width: c.width, height: c.height, borderRadius: 16 } : null;
+                },
               });
             }
         }
@@ -812,15 +905,17 @@ export default function AppTutorial({
           animated: true 
         });
         
-        // Wait for scroll to complete, then re-measure the target
+        // Wait for scroll to complete, then re-measure the target -- the
+        // ScrollView clamps if scrollTo's requested offset overshoots the
+        // scrollable range, so the pre-scroll estimate isn't always where
+        // the element actually lands. Any scroll-compensated step can
+        // supply its own remeasureTarget to correct for this.
         setTimeout(async () => {
-          if (nextStepIndex === 3 && tutorialRefs.mealsList?.current) {
-            // Re-measure meals list after scroll
-            const newCoords = await measureComponent(tutorialRefs.mealsList.current);
-            console.log('📏 RE-MEASURED mealsList after scroll:', newCoords);
-            
+          if (nextStepData?.remeasureTarget) {
+            const newCoords = await nextStepData.remeasureTarget();
+            console.log('📏 RE-MEASURED target after scroll:', newCoords);
+
             if (newCoords) {
-              // Update the step config with new coordinates
               const updatedSteps = [...stepConfig];
               updatedSteps[nextStepIndex] = {
                 ...updatedSteps[nextStepIndex],
@@ -829,7 +924,7 @@ export default function AppTutorial({
               setStepConfig(updatedSteps);
             }
           }
-          
+
           // Then advance to next step
           nextStep();
         }, 600); // Wait for scroll animation
@@ -885,7 +980,7 @@ export default function AppTutorial({
   };
 
   // Before return statement
-  const buttonText = currentStep === stepConfig.length - 1 
+  const buttonText = currentStep === stepConfig.length - 1
     ? t('tutorial.finish') 
     : t('tutorial.next');
 

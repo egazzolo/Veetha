@@ -38,7 +38,7 @@ export default function WeeklyReportScreen({ navigation }) {
     const day = date.getDate();
     
     // Imperial: MM/DD, Metric: DD/MM
-    const dateStr = profile?.unit_system === 'imperial' 
+    const dateStr = profile?.unit_preference === 'imperial'
       ? `${month}/${day}`
       : `${day}/${month}`;
     

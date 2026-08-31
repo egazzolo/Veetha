@@ -79,11 +79,11 @@ export default function ExerciseButton({ theme, navigation, isGuestMode, onGuest
 
         if (error) throw error;
         setWeight(data?.weight || null);
-        setUnitSystem(data?.unit_system || 'metric');
+        setUnitSystem(data?.unit_preference || 'metric');
 
         // Load weight
         if (data.weight_kg) {
-            if (data.unit_system === 'imperial') {
+            if (data.unit_preference === 'imperial') {
                 setWeight((data.weight_kg * 2.20462).toFixed(1));
             } else {
                 setWeight(data.weight_kg.toString());

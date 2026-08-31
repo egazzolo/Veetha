@@ -47,9 +47,20 @@ export default function SignUpScreen({ navigation }) {
       const trimmedEmail = emailToCheck.trim().toLowerCase();
       console.log('🔍 Checking:', trimmedEmail);
 
-      const { data, error } = await supabase.rpc('check_email_exists', {
-        email_to_check: trimmedEmail
-      });
+      // A stalled network request would otherwise leave checkingEmail stuck
+      // true forever (the button that gates signup stays disabled) since
+      // the awaited call would never resolve or reject. This is only a
+      // convenience pre-check anyway -- the real duplicate-email check
+      // happens at actual signup time via supabase.auth.signUp()'s own
+      // error -- so it's safe to give up and let the user proceed.
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('check_email_exists timed out')), 8000)
+      );
+
+      const { data, error } = await Promise.race([
+        supabase.rpc('check_email_exists', { email_to_check: trimmedEmail }),
+        timeout,
+      ]);
 
       console.log('📊 Result:', data);
 

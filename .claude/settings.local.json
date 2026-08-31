@@ -131,7 +131,22 @@
       "Bash(grep -i -E \"^sharp$|^pngjs$|^jimp$\")",
       "Bash(where cwebp *)",
       "Bash(where pngquant *)",
-      "Bash(where magick *)"
+      "Bash(where magick *)",
+      "Bash(adb devices *)",
+      "Bash(java -version)",
+      "Bash(./gradlew assembleRelease --console=plain)",
+      "Bash(npx supabase *)",
+      "Bash(awk '{ print length, NR }' \"X:/app docs/website/meal-break-site.html\")",
+      "Bash(awk 'NR>=440 && NR<=479 { print length, NR }' \"X:/app docs/website/meal-break-site.html\")",
+      "Bash(awk '{ if \\(length\\($0\\) < 2000\\) print NR\": \"$0 }' \"X:/app docs/website/meal-break-site.html\")",
+      "Bash(awk 'NR>=1 {print}')",
+      "Bash(awk NR>=305 && NR<=370 { print NR\": \"$0 } *)",
+      "Bash(awk NR>=368 && NR<=395 { print NR\": \"$0 } *)",
+      "Bash(awk NR>=558 && NR<=580 { print NR\": \"$0 } *)",
+      "Bash(awk '/tutorial:/,0' utils/translations/en.js)",
+      "Bash(awk '{print $5, $NF}')",
+      "WebFetch(domain:android-developers.googleblog.com)",
+      "WebFetch(domain:support.google.com)"
     ]
   }
 }

@@ -64,7 +64,11 @@ export default function ScannerScreen({ navigation }) {
   const [lastRequestModalVisible, setLastRequestModalVisible] = useState(false);
   
   // Swipe navigation (only when camera is idle, not during scan)
-  const swipeGesture = useSwipeNavigation(navigation, 'Scanner', mode === 'barcode' && !scanned);
+  // Disabled during the tutorial's freeze/arrow phases too -- those are
+  // plain View overlays, not a native Modal, so unlike AppTutorial's own
+  // coach-mark steps they don't stop this Pan gesture from reaching the
+  // screen underneath and swiping the user away mid-tutorial.
+  const swipeGesture = useSwipeNavigation(navigation, 'Scanner', mode === 'barcode' && !scanned && !checkingTutorial && !showArrowToBack);
   // 🎨 ANIMATION: Photo tips fade out after 3 seconds
   const photoTipsOpacity = useRef(new Animated.Value(0)).current;
   // 🎨 ANIMATION: Instruction text fades out after 5 seconds
