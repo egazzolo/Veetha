@@ -776,6 +776,9 @@ export default {
     galleryUnavailable: 'Hindi available ang gallery',
     galleryPermissionDenied: 'Kailangan ng Meal Break ng access sa gallery para pumili ng larawan. Paki-enable ito sa settings ng iyong device.',
     galleryGenericError: 'Hindi namin nabuksan ang gallery. Subukang muli o kumuha na lang ng larawan.',
+    cropRetake: 'Kunan Muli',
+    cropUsePhoto: 'Gamitin ang Larawan',
+    cropping: 'Kinokropu...',
   },
 
   //Results Screen

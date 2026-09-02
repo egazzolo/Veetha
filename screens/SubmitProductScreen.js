@@ -9,6 +9,7 @@ import { supabase } from '../utils/supabase';
 import { useTheme } from '../utils/ThemeContext';
 import { useLanguage } from '../utils/LanguageContext';
 import { showToast } from '../components/VeethaToast';
+import PhotoCropOverlay from '../components/PhotoCropOverlay';
 
 export default function SubmitProductScreen({ route, navigation }) {
   const { barcode } = route.params;
@@ -30,6 +31,9 @@ export default function SubmitProductScreen({ route, navigation }) {
 
   const [submitting, setSubmitting] = useState(false);
 
+  const [cropUri, setCropUri] = useState(null);
+  const [cropSetter, setCropSetter] = useState(null);
+
   const pickImage = async (setter) => {
     Alert.alert(
       t('submitProduct.photoSource'),
@@ -50,10 +54,11 @@ export default function SubmitProductScreen({ route, navigation }) {
               const result = await ImagePicker.launchCameraAsync({
                 mediaTypes: ['images'],
                 quality: 0.7,
-                allowsEditing: true,
+                allowsEditing: false,
               });
               if (!result.canceled && result.assets?.[0]) {
-                setter(result.assets[0].uri);
+                setCropUri(result.assets[0].uri);
+                setCropSetter(() => setter);
               }
             } catch (err) {
               console.error('Camera error:', err);
@@ -79,10 +84,11 @@ export default function SubmitProductScreen({ route, navigation }) {
               const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ['images'],
                 quality: 0.7,
-                allowsEditing: true,
+                allowsEditing: false,
               });
               if (!result.canceled && result.assets?.[0]) {
-                setter(result.assets[0].uri);
+                setCropUri(result.assets[0].uri);
+                setCropSetter(() => setter);
               }
             } catch (err) {
               console.error('Gallery error:', err);
@@ -190,6 +196,7 @@ export default function SubmitProductScreen({ route, navigation }) {
   );
 
   return (
+    <>
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -343,6 +350,17 @@ export default function SubmitProductScreen({ route, navigation }) {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    <PhotoCropOverlay
+      visible={!!cropUri}
+      imageUri={cropUri}
+      onCancel={() => { setCropUri(null); setCropSetter(null); }}
+      onConfirm={(uri) => {
+        if (cropSetter) cropSetter(uri);
+        setCropUri(null);
+        setCropSetter(null);
+      }}
+    />
+    </>
   );
 }
 

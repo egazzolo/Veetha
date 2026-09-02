@@ -455,23 +455,8 @@ export default function ScannerScreen({ navigation }) {
           navigation.navigate("Result", {
             food: {
               product_name: localResult.name,
-              image_url: null,
-              nutriments: {
-                'energy-kcal_100g': localResult.calories || 0,
-                'energy-kcal': localResult.calories || 0,
-                proteins_100g: localResult.protein || 0,
-                proteins: localResult.protein || 0,
-                carbohydrates_100g: localResult.carbs || 0,
-                carbohydrates: localResult.carbs || 0,
-                fat_100g: localResult.fat || 0,
-                fat: localResult.fat || 0,
-                sodium_100g: localResult.sodium || 0,
-                sodium: localResult.sodium || 0,
-                sugars_100g: localResult.sugar || 0,
-                sugar: localResult.sugar || 0,
-                fiber_100g: localResult.fiber || 0,
-                fiber: localResult.fiber || 0,
-              },
+              image_url: localResult.image_url || null,
+              nutriments: localResult.nutriments,
               nutrition_source: 'local',
             },
             fromMode: 'barcode'

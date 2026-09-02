@@ -245,12 +245,37 @@ export default function ExerciseHistoryScreen({ route, navigation, nestedInScrol
     </View>
   );
 
+  const renderColumnHeader = (key) => (
+    <View key={`header-${key}`} style={[styles.entryRow, styles.columnHeaderRow, { borderBottomColor: theme.border }]}>
+      <View style={styles.entryName} />
+      <View style={[styles.entryCol, { borderLeftColor: theme.border }]}>
+        <Text style={[styles.columnHeaderText, { color: theme.textSecondary }]}>{t('exercise.splitFlow.sets')}</Text>
+      </View>
+      <View style={[styles.entryCol, { borderLeftColor: theme.border }]}>
+        <Text style={[styles.columnHeaderText, { color: theme.textSecondary }]}>{t('exercise.splitFlow.reps')}</Text>
+      </View>
+      <View style={[styles.entryCol, { borderLeftColor: theme.border }]}>
+        <Text style={[styles.columnHeaderText, { color: theme.textSecondary }]}>{t('exercise.weight')}</Text>
+      </View>
+    </View>
+  );
+
   const renderEntryRow = (entry) => (
-    <TouchableOpacity key={entry.id} onPress={() => openEditEntry(entry)}>
-      <Text style={[styles.detailRow, { color: theme.textSecondary }]}>
-        {entry.name} — {entry.sets} × {entry.reps}
-        {entry.weight ? ` @ ${entry.weight}${entry.weight_unit ? ` ${entry.weight_unit}` : ''}` : ''}
+    <TouchableOpacity key={entry.id} onPress={() => openEditEntry(entry)} style={styles.entryRow}>
+      <Text style={[styles.entryName, { color: theme.textSecondary }]} numberOfLines={1}>
+        {entry.name}
       </Text>
+      <View style={[styles.entryCol, { borderLeftColor: theme.border }]}>
+        <Text style={{ color: theme.textSecondary }}>{entry.sets}</Text>
+      </View>
+      <View style={[styles.entryCol, { borderLeftColor: theme.border }]}>
+        <Text style={{ color: theme.textSecondary }}>{entry.reps}</Text>
+      </View>
+      <View style={[styles.entryCol, { borderLeftColor: theme.border }]}>
+        <Text style={{ color: theme.textSecondary }}>
+          {entry.weight ? `${entry.weight}${entry.weight_unit ? ` ${entry.weight_unit}` : ''}` : '—'}
+        </Text>
+      </View>
     </TouchableOpacity>
   );
 
@@ -320,6 +345,7 @@ export default function ExerciseHistoryScreen({ route, navigation, nestedInScrol
                 <Text style={[styles.detailGroupTitle, { color: theme.text }]}>
                   {formatSubCategory(key)}
                 </Text>
+                {(grouped[key] || []).length > 0 && renderColumnHeader(key)}
                 {(grouped[key] || []).map((entry) => renderEntryRow(entry))}
                 <TouchableOpacity onPress={() => openAddEntry(item.rawId, key)}>
                   <Text style={[styles.addEntryText, { color: theme.primary }]}>
@@ -333,6 +359,7 @@ export default function ExerciseHistoryScreen({ route, navigation, nestedInScrol
                 everything (existing entries and the add button) lives here. */}
             {sectionKeys.length === 0 && (
               <View style={styles.detailGroup}>
+                {ungrouped.length > 0 && renderColumnHeader('ungrouped')}
                 {ungrouped.map((entry) => renderEntryRow(entry))}
                 <TouchableOpacity onPress={() => openAddEntry(item.rawId, null)}>
                   <Text style={[styles.addEntryText, { color: theme.primary }]}>
@@ -564,6 +591,11 @@ const styles = StyleSheet.create({
   detailGroup: { marginBottom: 10 },
   detailGroupTitle: { fontSize: 14, fontWeight: '700', marginBottom: 4 },
   detailRow: { fontSize: 14, marginBottom: 2 },
+  entryRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4 },
+  entryName: { flex: 1, fontSize: 14, paddingRight: 8 },
+  entryCol: { width: 56, borderLeftWidth: 1, paddingLeft: 8, alignItems: 'flex-start' },
+  columnHeaderRow: { paddingBottom: 4, marginBottom: 2, borderBottomWidth: 1 },
+  columnHeaderText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
   addEntryText: {
     fontSize: 14,
     fontWeight: '600',

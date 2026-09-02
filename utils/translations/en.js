@@ -776,6 +776,9 @@ export default {
     galleryUnavailable: 'Gallery unavailable',
     galleryPermissionDenied: 'Meal Break needs gallery access to choose a photo. Please enable it in your device settings.',
     galleryGenericError: "We couldn't open your gallery. Please try again or take a photo instead.",
+    cropRetake: 'Retake',
+    cropUsePhoto: 'Use Photo',
+    cropping: 'Cropping...',
   },
 
   //Results Screen

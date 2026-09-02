@@ -65,7 +65,7 @@ export async function searchFood(foodName) {
  * @param {string} foodName - Name to search for
  * @returns {Promise<Object|null>} - Food data or null
  */
-async function searchLocalFoodDatabase(foodName) {
+export async function searchLocalFoodDatabase(foodName) {
   try {
     const normalized = foodName.toLowerCase().trim();
 
@@ -86,6 +86,7 @@ async function searchLocalFoodDatabase(foodName) {
           name: food.name,
           product_name: food.name,
           fdcId: food.usda_fdc_id,
+          image_url: food.image_url || null,
           nutriments: {
             'energy-kcal_100g': food.calories,
             'energy-kcal': food.calories,
@@ -144,6 +145,7 @@ async function searchLocalFoodDatabase(foodName) {
         name: food.name,
         product_name: food.name,
         fdcId: food.usda_fdc_id,
+        image_url: food.image_url || null,
         nutriments: {
           'energy-kcal_100g': food.calories,
           'energy-kcal': food.calories,
