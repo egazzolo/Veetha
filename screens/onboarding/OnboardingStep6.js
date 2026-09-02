@@ -1,15 +1,18 @@
 // *** Agreement ***
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useOnboarding } from '../../utils/OnboardingContext';
 import { useLanguage } from '../../utils/LanguageContext';
 import { scale } from '../../utils/responsive';
+import { posthog } from '../../utils/posthog';
 
 export default function OnboardingStep6({ navigation }) {
   const { updateOnboardingData } = useOnboarding();
   const { t } = useLanguage();
   const [agreed, setAgreed] = useState(false);
+
+  useEffect(() => { posthog.capture('onboarding_step_viewed', { step: 'agreement' }); }, []);
   const [error, setError] = useState('');
 
   const handleContinue = () => {

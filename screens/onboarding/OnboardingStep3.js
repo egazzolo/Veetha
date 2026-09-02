@@ -1,14 +1,17 @@
 // *** Goal: Gain, maintain or lose weight ***
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useOnboarding } from '../../utils/OnboardingContext';
 import { useLanguage } from '../../utils/LanguageContext';
 import { scale } from '../../utils/responsive';
+import { posthog } from '../../utils/posthog';
 
 export default function OnboardingStep3({ navigation }) {
   const { updateOnboardingData, onboardingData } = useOnboarding();
-  const { t } = useLanguage(); 
+  const { t } = useLanguage();
+
+  useEffect(() => { posthog.capture('onboarding_step_viewed', { step: 'goal' }); }, []);
   const [goal, setGoal] = useState('');
   const [targetWeight, setTargetWeight] = useState('');
   const unit = onboardingData.unit || 'imperial';

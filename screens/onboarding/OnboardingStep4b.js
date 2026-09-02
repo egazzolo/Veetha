@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLanguage } from '../../utils/LanguageContext';
 import { scale } from '../../utils/responsive';
+import { posthog } from '../../utils/posthog';
 
 export default function OnboardingStep4b({ navigation }) {
   const { t } = useLanguage();
+
+  useEffect(() => { posthog.capture('onboarding_step_viewed', { step: 'stat_highlight' }); }, []);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>

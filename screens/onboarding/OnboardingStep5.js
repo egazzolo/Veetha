@@ -1,15 +1,18 @@
 // *** Dietary Restrictions ***
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useOnboarding } from '../../utils/OnboardingContext';
 import { useLanguage } from '../../utils/LanguageContext';
 import { scale } from '../../utils/responsive';
+import { posthog } from '../../utils/posthog';
 
 export default function OnboardingStep5({ navigation }) {
   const { updateOnboardingData } = useOnboarding();
   const { t } = useLanguage();
   const [selectedRestrictions, setSelectedRestrictions] = useState([]);
+
+  useEffect(() => { posthog.capture('onboarding_step_viewed', { step: 'dietary_restrictions' }); }, []);
 
   const dietaryOptions = [
     { id: 'vegetarian', label: t('onboarding.vegetarian'), emoji: '🥬' },

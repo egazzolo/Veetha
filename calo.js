@@ -449,11 +449,19 @@ function App() {
     //}, []);
 
   useEffect(() => {
+    posthog.capture('app_opened', { trigger: 'cold_start' });
+
+    let wasBackgrounded = false;
     const subscription = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
         supabase.auth.startAutoRefresh();
+        if (wasBackgrounded) {
+          posthog.capture('app_opened', { trigger: 'foreground' });
+          wasBackgrounded = false;
+        }
       } else {
         supabase.auth.stopAutoRefresh();
+        wasBackgrounded = true;
       }
     });
     return () => subscription.remove();

@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useOnboarding } from '../../utils/OnboardingContext';
 import { useLanguage } from '../../utils/LanguageContext';
 import { scale } from '../../utils/responsive';
+import { posthog } from '../../utils/posthog';
 
 export default function OnboardingStep7({ navigation }) {
   const { updateOnboardingData } = useOnboarding();
-  const { t } = useLanguage(); 
+  const { t } = useLanguage();
   const [source, setSource] = useState('');
+
+  useEffect(() => { posthog.capture('onboarding_step_viewed', { step: 'referral_source' }); }, []);
 
   const sourceOptions = [
     { id: 'tiktok', label: t('onboarding.tiktok'), icon: require('../../assets/icons/Social Media icons/tiktokIcon.png') },

@@ -8,6 +8,7 @@ import { useLanguage } from '../../utils/LanguageContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTutorial } from '../../utils/TutorialContext';
 import { scale } from '../../utils/responsive';
+import { posthog } from '../../utils/posthog';
 
 export default function OnboardingComplete({ navigation }) {
   const { onboardingData, clearOnboardingData } = useOnboarding();
@@ -17,9 +18,11 @@ export default function OnboardingComplete({ navigation }) {
   const { refreshProfile } = useUser();
   const { resetTutorial } = useTutorial();
 
+  useEffect(() => { posthog.capture('onboarding_step_viewed', { step: 'complete' }); }, []);
+
   useEffect(() => {
     console.log('📋 OnboardingComplete - Data received:', onboardingData);
-    
+
     // Calculate calories when component loads
     if (onboardingData.weight && onboardingData.age && onboardingData.gender && onboardingData.activityLevel) {
       try {

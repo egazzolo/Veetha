@@ -1,12 +1,14 @@
 //*** HEIGHT AND WEIGHT SCREEN ***
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useOnboarding } from '../../utils/OnboardingContext';
 import { useLanguage } from '../../utils/LanguageContext';
 import { scale } from '../../utils/responsive';
+import { posthog } from '../../utils/posthog';
 
 export default function OnboardingStep2({ navigation }) {
+  useEffect(() => { posthog.capture('onboarding_step_viewed', { step: 'current_stats' }); }, []);
   const { updateOnboardingData } = useOnboarding();
   const [unit, setUnit] = useState('imperial'); // 'imperial' or 'metric'
   const [heightFeet, setHeightFeet] = useState('');

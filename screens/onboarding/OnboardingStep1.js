@@ -7,6 +7,7 @@ import { useOnboarding } from '../../utils/OnboardingContext';
 import { useLanguage } from '../../utils/LanguageContext';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
 import { scale } from '../../utils/responsive';
+import { posthog } from '../../utils/posthog';
 
 function DOBPicker({ value, onChange, t, language }) {
   const LOCALE_MAP = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', tl: 'fil-PH' };
@@ -149,6 +150,8 @@ export default function OnboardingStep1({ navigation }) {
   const [dateOfBirth, setDateOfBirth] = useState(null);
   const [error, setError] = useState('');
   const { t, language } = useLanguage();
+
+  useEffect(() => { posthog.capture('onboarding_step_viewed', { step: 'basics' }); }, []);
 
   const LOCALE_MAP = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', tl: 'fil-PH' };
 
