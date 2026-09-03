@@ -8,14 +8,17 @@ import { supabase } from '../utils/supabase';
 import { scale } from '../utils/responsive';
 
 const MAX_MEALS = 4;
-const LABEL_COL_WIDTH = scale(70);
-const TRAILING_COL_WIDTH = scale(58);
+const LABEL_COL_WIDTH = scale(64);
+const TRAILING_COL_WIDTH = scale(44);
 
 const MACRO_ROWS = [
-  { key: 'calories', unit: '' },
-  { key: 'protein', unit: 'g' },
-  { key: 'carbs', unit: 'g' },
-  { key: 'fat', unit: 'g' },
+  { key: 'calories', labelKey: 'home.calories', unit: '' },
+  { key: 'protein', labelKey: 'home.protein', unit: 'g' },
+  { key: 'carbs', labelKey: 'home.carbs', unit: 'g' },
+  { key: 'fat', labelKey: 'home.fat', unit: 'g' },
+  { key: 'sugar', labelKey: 'results.sugar', unit: 'g' },
+  { key: 'fiber', labelKey: 'results.fiber', unit: 'g' },
+  { key: 'sodium', labelKey: 'results.sodium', unit: 'mg' },
 ];
 
 function formatMealMeta(loggedAt, t) {
@@ -56,7 +59,10 @@ export default function MealComparisonScreen({ navigation, route }) {
             calories,
             protein,
             carbs,
-            fat
+            fat,
+            sugar,
+            fiber,
+            sodium
           )
         `)
         .eq('user_id', user.id)
@@ -76,6 +82,9 @@ export default function MealComparisonScreen({ navigation, route }) {
           protein: Math.round(((p.protein || 0) * grams) / 100),
           carbs: Math.round(((p.carbs || 0) * grams) / 100),
           fat: Math.round(((p.fat || 0) * grams) / 100),
+          sugar: Math.round(((p.sugar || 0) * grams) / 100),
+          fiber: Math.round(((p.fiber || 0) * grams) / 100),
+          sodium: Math.round(((p.sodium || 0) * grams) / 100),
         };
       });
       setMeals(byId);
@@ -155,7 +164,7 @@ export default function MealComparisonScreen({ navigation, route }) {
                 {MACRO_ROWS.map((row) => (
                   <View key={row.key} style={styles.gridRow}>
                     <View style={{ width: LABEL_COL_WIDTH, justifyContent: 'center' }}>
-                      <Text style={[styles.rowLabel, { color: theme.textSecondary }]}>{t(`home.${row.key}`)}</Text>
+                      <Text style={[styles.rowLabel, { color: theme.textSecondary }]}>{t(row.labelKey)}</Text>
                     </View>
                     {orderedMeals.map((meal) => (
                       <View key={meal.id} style={styles.mealValCol}>
@@ -188,11 +197,11 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 20, paddingTop: 4 },
 
   compareCard: { borderRadius: 16, padding: 16 },
-  gridRow: { flexDirection: 'row', alignItems: 'flex-start', gap: scale(10) },
-  dataRows: { borderTopWidth: 1, marginTop: 12, paddingTop: 8 },
+  gridRow: { flexDirection: 'row', alignItems: 'center', gap: scale(8), paddingVertical: 6 },
+  dataRows: { borderTopWidth: 1, marginTop: 12, paddingTop: 4 },
 
   mealHeadCol: { flex: 1, position: 'relative' },
-  mealValCol: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 10 },
+  mealValCol: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   removeX: {
     position: 'absolute', top: -8, right: 6, zIndex: 2,
