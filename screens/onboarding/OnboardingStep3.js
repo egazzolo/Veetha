@@ -1,4 +1,4 @@
-// *** Goal: Gain, maintain or lose weight ***
+// *** Goal + Activity Level ***
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,8 +14,42 @@ export default function OnboardingStep3({ navigation }) {
   useEffect(() => { posthog.capture('onboarding_step_viewed', { step: 'goal' }); }, []);
   const [goal, setGoal] = useState('');
   const [targetWeight, setTargetWeight] = useState('');
+  const [activityLevel, setActivityLevel] = useState('');
   const unit = onboardingData.unit || 'imperial';
   const [error, setError] = useState('');
+
+  const activityOptions = [
+    {
+      id: 'sedentary',
+      emoji: '🪑',
+      title: t('onboarding.sedentary'),
+      description: t('onboarding.sedentaryDesc'),
+    },
+    {
+      id: 'lightly_active',
+      emoji: '🚶',
+      title: t('onboarding.lightlyActive'),
+      description: t('onboarding.lightlyActiveDesc'),
+    },
+    {
+      id: 'moderately_active',
+      emoji: '🏃',
+      title: t('onboarding.moderatelyActive'),
+      description: t('onboarding.moderatelyActiveDesc'),
+    },
+    {
+      id: 'very_active',
+      emoji: '🏋️',
+      title: t('onboarding.veryActive'),
+      description: t('onboarding.veryActiveDesc'),
+    },
+    {
+      id: 'extremely_active',
+      emoji: '💪',
+      title: t('onboarding.extremelyActive'),
+      description: t('onboarding.extremelyActiveDesc'),
+    },
+  ];
 
   const handleContinue = () => {
     setError('');
@@ -39,30 +73,31 @@ export default function OnboardingStep3({ navigation }) {
       }
     }
 
-    console.log('Goal:', goal);
-    if (goal === 'lose') {
-      console.log('Target Weight:', targetWeight);
-    };
+    if (!activityLevel) {
+      setError(t('onboarding.selectActivityLevel'));
+      return;
+    }
 
     updateOnboardingData({
       goal: goal,
       targetWeight: targetWeight,
-      // Don't save unit here - it was already saved in Step 2!
+      // Don't save unit here - it was already saved in Step 1!
+      activityLevel: activityLevel,
     });
 
-console.log('✅ Step 3 saved:', { goal, targetWeight });
+    console.log('✅ Step 3 saved:', { goal, targetWeight, activityLevel });
 
     // Navigate to next step
-    navigation.navigate('OnboardingStep4');
+    navigation.navigate('OnboardingStep4b');
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
@@ -70,9 +105,9 @@ console.log('✅ Step 3 saved:', { goal, targetWeight });
           {/* Progress Indicator */}
             <View style={styles.progressContainer}>
               <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: '37.5%' }]} />
+                <View style={[styles.progressFill, { width: '33.33%' }]} />
               </View>
-              <Text style={styles.progressText}>{t('onboarding.step')} 3 {t('onboarding.of')} 8</Text>
+              <Text style={styles.progressText}>{t('onboarding.step')} 2 {t('onboarding.of')} 6</Text>
           </View>
 
           {/* Title */}
@@ -137,8 +172,43 @@ console.log('✅ Step 3 saved:', { goal, targetWeight });
             </View>
           )}
 
-          {/* Spacer */}
-          <View style={{ flex: 1 }} />
+          {/* Activity Level */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('onboarding.step4Title')}</Text>
+            {activityOptions.map((option) => (
+              <TouchableOpacity
+                key={option.id}
+                style={[
+                  styles.activityCard,
+                  activityLevel === option.id && styles.activityCardSelected,
+                ]}
+                onPress={() => setActivityLevel(option.id)}
+              >
+                <Text style={styles.activityEmoji}>{option.emoji}</Text>
+                <View style={styles.activityTextContainer}>
+                  <Text
+                    style={[
+                      styles.activityTitle,
+                      activityLevel === option.id && styles.activityTitleSelected,
+                    ]}
+                  >
+                    {option.title}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.activityDescription,
+                      activityLevel === option.id && styles.activityDescriptionSelected,
+                    ]}
+                  >
+                    {option.description}
+                  </Text>
+                </View>
+                {activityLevel === option.id && (
+                  <Text style={styles.checkmark}>✓</Text>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
 
             {/* Continue Button */}
             {/* Navigation Buttons */}
@@ -198,6 +268,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     marginBottom: scale(25),
+  },
+  sectionTitle: {
+    fontSize: scale(19),
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: scale(16),
   },
   errorContainer: {
     backgroundColor: '#ffebee',
@@ -267,29 +343,46 @@ const styles = StyleSheet.create({
     color: '#999',
     marginTop: 8,
   },
-  unitToggle: {
+  activityCard: {
     flexDirection: 'row',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 10,
-    padding: 4,
-    marginBottom: 20,
-  },
-  unitButton: {
-    flex: 1,
-    paddingVertical: scale(10),
     alignItems: 'center',
-    borderRadius: 8,
+    padding: scale(14),
+    borderWidth: 2,
+    borderColor: '#6B5B45',
+    borderRadius: 12,
+    marginBottom: scale(10),
   },
-  unitButtonSelected: {
-    backgroundColor: '#fff',
+  activityCardSelected: {
+    borderColor: '#4CAF50',
+    backgroundColor: '#e8f5e9',
   },
-  unitText: {
-    fontSize: scale(14),
+  activityEmoji: {
+    fontSize: scale(28),
+    marginRight: 12,
+  },
+  activityTextContainer: {
+    flex: 1,
+  },
+  activityTitle: {
+    fontSize: scale(15),
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  activityTitleSelected: {
+    color: '#4CAF50',
+  },
+  activityDescription: {
+    fontSize: scale(12),
     color: '#999',
   },
-  unitTextSelected: {
+  activityDescriptionSelected: {
+    color: '#666',
+  },
+  checkmark: {
+    fontSize: scale(22),
     color: '#4CAF50',
-    fontWeight: '600',
+    marginLeft: 8,
   },
   navigationButtons: {
     flexDirection: 'row',

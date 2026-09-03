@@ -60,7 +60,7 @@ export default function OnboardingStep1b({ navigation }) {
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={[styles.button, { backgroundColor: '#4CAF50' }]}
-          onPress={() => navigation.navigate('OnboardingStep2')}
+          onPress={() => navigation.navigate('OnboardingStep3')}
         >
           <Text style={styles.buttonText}>{t('onboarding.step1bButton')}</Text>
         </TouchableOpacity>

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useCameraPermissions } from 'expo-camera';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Dimensions, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useOnboarding } from '../../utils/OnboardingContext';
@@ -142,14 +142,26 @@ function DOBPicker({ value, onChange, t, language }) {
   );
 }
 
-//*** GENDER AND DOB SCREEN ***
+//*** GENDER, DOB, HEIGHT & WEIGHT SCREEN ***
 export default function OnboardingStep1({ navigation }) {
   const [permission, requestPermission] = useCameraPermissions();
   const { updateOnboardingData } = useOnboarding();
   const [gender, setGender] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState(null);
+  const [unit, setUnit] = useState('imperial'); // 'imperial' or 'metric'
+  const [heightFeet, setHeightFeet] = useState('');
+  const [heightInches, setHeightInches] = useState('');
+  const [heightCm, setHeightCm] = useState('');
+  const [weight, setWeight] = useState('');
   const [error, setError] = useState('');
   const { t, language } = useLanguage();
+
+  const heightInchesRef = useRef(null);
+  const heightCmWeightRef = useRef(null);
+  const weightRef = useRef(null);
+  const scrollRef = useRef(null);
+  const statsY = useRef(0);
+  const hasAutoScrolled = useRef(false);
 
   useEffect(() => { posthog.capture('onboarding_step_viewed', { step: 'basics' }); }, []);
 
@@ -165,6 +177,18 @@ export default function OnboardingStep1({ navigation }) {
     };
     requestCameraIfNeeded();
   }, []);
+
+  // Once gender + DOB are both picked, reveal the rest of the screen by
+  // scrolling down to height/weight -- only the first time, so re-picking
+  // either field afterward doesn't keep yanking the scroll position.
+  useEffect(() => {
+    if (gender && dateOfBirth && !hasAutoScrolled.current) {
+      hasAutoScrolled.current = true;
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({ y: statsY.current, animated: true });
+      }, 300);
+    }
+  }, [gender, dateOfBirth]);
 
   const calculateAge = (dateOfBirth) => {
     if (!dateOfBirth) return null;
@@ -194,12 +218,62 @@ export default function OnboardingStep1({ navigation }) {
       setError(t('onboarding.ageRange'));
       return;
     }
+
+    if (unit === 'imperial') {
+      if (!heightFeet || !heightInches) {
+        setError(t('onboarding.enterHeight'));
+        return;
+      }
+      const feet = parseInt(heightFeet);
+      const inches = parseInt(heightInches);
+      if (isNaN(feet) || isNaN(inches) || feet < 3 || feet > 8 || inches < 0 || inches >= 12) {
+        setError(t('onboarding.validHeightImperial'));
+        return;
+      }
+    } else {
+      if (!heightCm) {
+        setError(t('onboarding.enterHeight'));
+        return;
+      }
+      const cm = parseInt(heightCm);
+      if (isNaN(cm) || cm < 100 || cm > 250) {
+        setError(t('onboarding.validHeightMetric'));
+        return;
+      }
+    }
+
+    if (!weight) {
+      setError(t('onboarding.enterWeight'));
+      return;
+    }
+
+    const weightNum = parseFloat(weight);
+    if (isNaN(weightNum) || weightNum <= 0) {
+      setError('Please enter a valid weight');
+      return;
+    }
+
+    if (unit === 'imperial' && (weightNum < 50 || weightNum > 700)) {
+      setError(t('onboarding.validWeightImperial'));
+      return;
+    }
+
+    if (unit === 'metric' && (weightNum < 20 || weightNum > 300)) {
+      setError(t('onboarding.validWeightMetric'));
+      return;
+    }
+
     updateOnboardingData({
       gender,
       dateOfBirth: dateOfBirth.toISOString(), // Save as ISO string
       age,
+      heightFeet: unit === 'imperial' ? heightFeet : '',
+      heightInches: unit === 'imperial' ? heightInches : '',
+      heightCm: unit === 'metric' ? heightCm : '',
+      weight: weight,
+      unit: unit,
     });
-    console.log('✅ Step 1 saved:', { gender, dateOfBirth, age });
+    console.log('✅ Step 1 saved:', { gender, dateOfBirth, age, heightFeet, heightInches, heightCm, weight, unit });
     navigation.navigate('OnboardingStep1b');
   };
 
@@ -209,67 +283,181 @@ export default function OnboardingStep1({ navigation }) {
         <LanguageSwitcher />
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
       >
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: '12.5%' }]} />
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: '16.67%' }]} />
+            </View>
+            <Text style={styles.progressText}>{t('onboarding.step')} 1 {t('onboarding.of')} 6</Text>
           </View>
-          <Text style={styles.progressText}>{t('onboarding.step')} 1 {t('onboarding.of')} 8</Text>
-        </View>
 
-        {/* Title */}
-        <Text style={styles.title}>{t('onboarding.step1Title')}</Text>
+          {/* Title */}
+          <Text style={styles.title}>{t('onboarding.step1Title')}</Text>
 
-        {/* Error Message */}
-        {error ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
+          {/* Error Message */}
+          {error ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : null}
+
+          {/* Gender Selection */}
+          <View style={styles.section}>
+            <Text style={styles.label}>{t('onboarding.gender')}</Text>
+            <View style={styles.optionsRow}>
+              <TouchableOpacity
+                style={[styles.optionButton, gender === 'male' && styles.optionButtonSelected]}
+                onPress={() => setGender('male')}
+              >
+                <Text style={[styles.optionText, gender === 'male' && styles.optionTextSelected]} numberOfLines={1} adjustsFontSizeToFit>
+                  {t('onboarding.male')}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.optionButton, gender === 'female' && styles.optionButtonSelected]}
+                onPress={() => setGender('female')}
+              >
+                <Text style={[styles.optionText, gender === 'female' && styles.optionTextSelected]} numberOfLines={1} adjustsFontSizeToFit>
+                  {t('onboarding.female')}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        ) : null}
 
-        {/* Gender Selection */}
-        <View style={styles.section}>
-          <Text style={styles.label}>{t('onboarding.gender')}</Text>
-          <View style={styles.optionsRow}>
-            <TouchableOpacity
-              style={[styles.optionButton, gender === 'male' && styles.optionButtonSelected]}
-              onPress={() => setGender('male')}
-            >
-              <Text style={[styles.optionText, gender === 'male' && styles.optionTextSelected]} numberOfLines={1} adjustsFontSizeToFit>
-                {t('onboarding.male')}
+          <View style={styles.section}>
+            <Text style={styles.label}>{t('onboarding.dateOfBirth')}</Text>
+            {dateOfBirth && (
+              <Text style={{ color: '#4CAF50', marginBottom: 8, fontWeight: '600' }}>
+                {dateOfBirth.toLocaleDateString(LOCALE_MAP[language] || 'en-US')}
               </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.optionButton, gender === 'female' && styles.optionButtonSelected]}
-              onPress={() => setGender('female')}
-            >
-              <Text style={[styles.optionText, gender === 'female' && styles.optionTextSelected]} numberOfLines={1} adjustsFontSizeToFit>
-                {t('onboarding.female')}
-              </Text>
-            </TouchableOpacity>
+            )}
+            <DOBPicker
+              value={dateOfBirth}
+              onChange={(date) => setDateOfBirth(date)}
+              t={t}
+              language={language}
+            />
           </View>
-        </View>
 
-        <View style={styles.section}>
-          <Text style={styles.label}>{t('onboarding.dateOfBirth')}</Text>
-          {dateOfBirth && (
-            <Text style={{ color: '#4CAF50', marginBottom: 8, fontWeight: '600' }}>
-              {dateOfBirth.toLocaleDateString(LOCALE_MAP[language] || 'en-US')}
-            </Text>
-          )}
-          <DOBPicker
-            value={dateOfBirth}
-            onChange={(date) => setDateOfBirth(date)}
-            t={t}
-            language={language}
-          />
-        </View>
-      </ScrollView>
+          {/* Height & Weight */}
+          <View style={styles.section} onLayout={(e) => { statsY.current = e.nativeEvent.layout.y; }}>
+            <Text style={styles.sectionTitle}>{t('onboarding.step2Title')}</Text>
+
+            {/* Unit Toggle */}
+            <View style={styles.unitToggle}>
+              <TouchableOpacity
+                style={[styles.unitButton, unit === 'imperial' && styles.unitButtonSelected]}
+                onPress={() => setUnit('imperial')}
+              >
+                <Text
+                  style={[styles.unitText, unit === 'imperial' && styles.unitTextSelected]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                >
+                  {t('onboarding.imperial')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.unitButton, unit === 'metric' && styles.unitButtonSelected]}
+                onPress={() => setUnit('metric')}
+              >
+                <Text
+                  style={[styles.unitText, unit === 'metric' && styles.unitTextSelected]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                >
+                  {t('onboarding.metric')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Height Input */}
+            <View style={styles.section}>
+              <Text style={styles.label}>{t('onboarding.height')}</Text>
+              {unit === 'imperial' ? (
+                <View style={styles.heightRow}>
+                  <View style={styles.heightInput}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="5"
+                      placeholderTextColor="#999"
+                      value={heightFeet}
+                      onChangeText={setHeightFeet}
+                      keyboardType="number-pad"
+                      maxLength={1}
+                      returnKeyType="next"
+                      onSubmitEditing={() => heightInchesRef.current?.focus()}
+                    />
+                    <Text style={styles.unitLabel}>ft</Text>
+                  </View>
+                  <View style={styles.heightInput}>
+                    <TextInput
+                      ref={heightInchesRef}
+                      style={styles.input}
+                      placeholder="7"
+                      placeholderTextColor="#999"
+                      value={heightInches}
+                      onChangeText={setHeightInches}
+                      keyboardType="number-pad"
+                      maxLength={2}
+                      returnKeyType="next"
+                      onSubmitEditing={() => weightRef.current?.focus()}
+                    />
+                    <Text style={styles.unitLabel}>in</Text>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.singleInput}>
+                  <TextInput
+                    ref={heightCmWeightRef}
+                    style={styles.input}
+                    placeholder="170"
+                    placeholderTextColor="#999"
+                    value={heightCm}
+                    onChangeText={setHeightCm}
+                    keyboardType="number-pad"
+                    maxLength={3}
+                    returnKeyType="next"
+                    onSubmitEditing={() => weightRef.current?.focus()}
+                  />
+                  <Text style={styles.unitLabel}>cm</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Weight Input */}
+            <View style={styles.section}>
+              <Text style={styles.label}>{t('onboarding.weight')}</Text>
+              <View style={styles.singleInput}>
+                <TextInput
+                  ref={weightRef}
+                  style={styles.input}
+                  placeholder={unit === 'imperial' ? '165' : '75'}
+                  placeholderTextColor="#999"
+                  value={weight}
+                  onChangeText={setWeight}
+                  keyboardType="decimal-pad"
+                  returnKeyType="done"
+                  onSubmitEditing={handleContinue}
+                />
+                <Text style={styles.unitLabel}>{unit === 'imperial' ? 'lbs' : 'kg'}</Text>
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Continue Button - fixed at bottom */}
       <View style={styles.navigationButtons}>
@@ -320,6 +508,12 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: scale(25),
   },
+  sectionTitle: {
+    fontSize: scale(19),
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: scale(16),
+  },
   errorContainer: {
     backgroundColor: '#ffebee',
     padding: 12,
@@ -366,6 +560,58 @@ const styles = StyleSheet.create({
   optionTextSelected: {
     color: '#4CAF50',
     fontWeight: '600',
+  },
+  unitToggle: {
+    flexDirection: 'row',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 10,
+    padding: 4,
+    marginBottom: scale(25),
+  },
+  unitButton: {
+    flex: 1,
+    paddingVertical: scale(10),
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  unitButtonSelected: {
+    backgroundColor: '#fff',
+  },
+  unitText: {
+    fontSize: scale(14),
+    color: '#999',
+    flexShrink: 1,
+  },
+  unitTextSelected: {
+    color: '#4CAF50',
+    fontWeight: '600',
+  },
+  heightRow: {
+    flexDirection: 'row',
+    gap: 15,
+  },
+  heightInput: {
+    flex: 1,
+    position: 'relative',
+  },
+  singleInput: {
+    position: 'relative',
+  },
+  input: {
+    borderWidth: 2,
+    borderColor: '#6B5B45',
+    borderRadius: 10,
+    padding: scale(14),
+    fontSize: scale(15),
+    paddingRight: 50,
+    color: '#333',
+  },
+  unitLabel: {
+    position: 'absolute',
+    right: 15,
+    top: scale(14),
+    fontSize: scale(15),
+    color: '#999',
   },
   navigationButtons: {
     flexDirection: 'row',
