@@ -1,6 +1,6 @@
 // *** Welcome / "why we're asking for data" screen -- shown once, right after signup ***
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Animated, Easing } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Animated, Easing, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 import { useLanguage } from '../../utils/LanguageContext';
@@ -33,6 +33,8 @@ export default function OnboardingIntro({ navigation }) {
   const segmentAnims = useRef(SEGMENTS.map(() => new Animated.Value(0))).current;
   const centerAnim = useRef(new Animated.Value(0)).current;
   const legendAnims = useRef([0, 1, 2, 3].map(() => new Animated.Value(0))).current;
+  const eyeOpenAnim = useRef(new Animated.Value(1)).current; // 1 = open, ~0.15 = closed
+  const bowAnim = useRef(new Animated.Value(0)).current; // 0 = upright, 1 = bowed
 
   useEffect(() => { posthog.capture('onboarding_step_viewed', { step: 'intro' }); }, []);
 
@@ -68,6 +70,22 @@ export default function OnboardingIntro({ navigation }) {
         })
       )
     ).start();
+
+    // Little thank-you gesture: eyes close, avocado bows forward, holds,
+    // rises back up, eyes open again -- runs once alongside the donut.
+    Animated.sequence([
+      Animated.delay(400),
+      Animated.timing(eyeOpenAnim, { toValue: 0.15, duration: 250, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      Animated.delay(1000),
+      Animated.timing(eyeOpenAnim, { toValue: 1, duration: 300, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+    ]).start();
+
+    Animated.sequence([
+      Animated.delay(550),
+      Animated.timing(bowAnim, { toValue: 1, duration: 450, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      Animated.delay(400),
+      Animated.timing(bowAnim, { toValue: 0, duration: 450, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+    ]).start();
   }, []);
 
   const legendLabels = [
@@ -92,7 +110,29 @@ export default function OnboardingIntro({ navigation }) {
           <Text style={styles.calloutCaption}>{t('onboarding.introProgressCallout')}</Text>
         </View>
 
-        <Text style={styles.mainEmoji}>👋</Text>
+        <Animated.View
+          style={[
+            styles.avocadoWrap,
+            {
+              transform: [
+                { rotate: bowAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '14deg'] }) },
+                { translateY: bowAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 4] }) },
+              ],
+            },
+          ]}
+        >
+          <Image
+            source={require('../../assets/icons/icon_avocado_clr.png')}
+            style={styles.avocadoImage}
+            resizeMode="contain"
+          />
+          <Animated.View style={[styles.avocadoEye, styles.avocadoEyeLeft, { transform: [{ scaleY: eyeOpenAnim }] }]}>
+            <View style={styles.avocadoPupil} />
+          </Animated.View>
+          <Animated.View style={[styles.avocadoEye, styles.avocadoEyeRight, { transform: [{ scaleY: eyeOpenAnim }] }]}>
+            <View style={styles.avocadoPupil} />
+          </Animated.View>
+        </Animated.View>
         <Text style={styles.title}>{t('onboarding.introTitle')}</Text>
         <Text style={styles.body}>{t('onboarding.introBody')}</Text>
         <Text style={styles.promise}>{t('onboarding.introPromise')}</Text>
@@ -224,10 +264,40 @@ const styles = StyleSheet.create({
     color: '#999',
     textAlign: 'center',
   },
-  mainEmoji: {
-    fontSize: scale(56),
-    textAlign: 'center',
+  avocadoWrap: {
+    alignSelf: 'center',
+    width: 80,
+    height: 80,
     marginVertical: 10,
+  },
+  avocadoImage: {
+    width: 80,
+    height: 80,
+  },
+  avocadoEye: {
+    position: 'absolute',
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#2E7D32',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avocadoEyeLeft: {
+    top: 26,
+    left: 24,
+  },
+  avocadoEyeRight: {
+    top: 26,
+    left: 46,
+  },
+  avocadoPupil: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: '#3E2723',
   },
   title: {
     fontSize: scale(24),
