@@ -50,6 +50,7 @@ export default function MealComparisonScreen({ navigation, route }) {
           logged_at,
           product:food_database!meals_product_fk (
             name,
+            image_url,
             calories,
             protein,
             carbs,
@@ -67,7 +68,7 @@ export default function MealComparisonScreen({ navigation, route }) {
         byId[m.id] = {
           id: m.id,
           name: p.name || t('compare.unnamedMeal'),
-          image_url: m.image_url,
+          image_url: m.image_url || p.image_url,
           logged_at: m.logged_at,
           calories: Math.round(((p.calories || 0) * grams) / 100),
           protein: Math.round(((p.protein || 0) * grams) / 100),

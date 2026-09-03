@@ -41,7 +41,7 @@ export default function MealPickerScreen({ navigation, route }) {
             id,
             image_url,
             logged_at,
-            product:food_database!meals_product_fk ( name )
+            product:food_database!meals_product_fk ( name, image_url )
           `)
           .eq('user_id', user.id)
           .order('logged_at', { ascending: false })
@@ -51,7 +51,7 @@ export default function MealPickerScreen({ navigation, route }) {
           setMeals((data || []).map((m) => ({
             id: m.id,
             name: m.product?.name || t('compare.unnamedMeal'),
-            image_url: m.image_url,
+            image_url: m.image_url || m.product?.image_url,
             logged_at: m.logged_at,
           })));
         }
