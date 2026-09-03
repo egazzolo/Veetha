@@ -8,12 +8,14 @@ import { supabase } from '../utils/supabase';
 import { scale } from '../utils/responsive';
 
 const MAX_MEALS = 4;
+const LABEL_COL_WIDTH = scale(70);
+const TRAILING_COL_WIDTH = scale(58);
 
 const MACRO_ROWS = [
-  { key: 'calories', color: '#4CAF50', unit: '' },
-  { key: 'protein', color: '#2196F3', unit: 'g' },
-  { key: 'carbs', color: '#FF9800', unit: 'g' },
-  { key: 'fat', color: '#9C27B0', unit: 'g' },
+  { key: 'calories', unit: '' },
+  { key: 'protein', unit: 'g' },
+  { key: 'carbs', unit: 'g' },
+  { key: 'fat', unit: 'g' },
 ];
 
 function formatMealMeta(loggedAt, t) {
@@ -98,10 +100,6 @@ export default function MealComparisonScreen({ navigation, route }) {
   };
 
   const orderedMeals = mealIds.map((id) => meals[id]).filter(Boolean);
-  const maxByRow = MACRO_ROWS.reduce((acc, row) => {
-    acc[row.key] = Math.max(1, ...orderedMeals.map((m) => m[row.key] || 0));
-    return acc;
-  }, {});
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
@@ -117,56 +115,59 @@ export default function MealComparisonScreen({ navigation, route }) {
         <ActivityIndicator style={{ marginTop: 40 }} color={theme.primary} />
       ) : (
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <View style={styles.mealCols}>
-            {orderedMeals.map((meal) => (
-              <View key={meal.id} style={styles.mealCol}>
-                <TouchableOpacity style={styles.removeX} onPress={() => handleRemove(meal.id)}>
-                  <Text style={styles.removeXText}>✕</Text>
-                </TouchableOpacity>
-                <View style={[styles.thumb, { backgroundColor: theme.cardBackground }]}>
-                  {meal.image_url ? (
-                    <Image source={{ uri: meal.image_url }} style={styles.thumbImage} resizeMode="cover" />
-                  ) : (
-                    <Text style={styles.thumbPlaceholder}>🍽️</Text>
-                  )}
-                </View>
-                <Text style={[styles.mealName, { color: theme.text }]} numberOfLines={2}>{meal.name}</Text>
-                <Text style={[styles.mealMeta, { color: theme.textSecondary }]}>{formatMealMeta(meal.logged_at, t)}</Text>
-              </View>
-            ))}
-
-            {orderedMeals.length < MAX_MEALS && (
-              <TouchableOpacity style={styles.addCol} onPress={handleAddMeal}>
-                <Text style={styles.addPlus}>+</Text>
-                <Text style={styles.addColText}>{t('compare.olderMeals')}</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {orderedMeals.length < 2 ? (
-            <Text style={[styles.emptyHint, { color: theme.textSecondary }]}>{t('compare.needTwo')}</Text>
-          ) : (
-            <View style={[styles.macroRows, { backgroundColor: theme.cardBackground }]}>
-              {MACRO_ROWS.map((row) => (
-                <View key={row.key} style={styles.macroRow}>
-                  <Text style={[styles.macroLabel, { color: theme.textSecondary }]}>{t(`home.${row.key}`)}</Text>
-                  {orderedMeals.map((meal) => {
-                    const value = meal[row.key] || 0;
-                    const pct = Math.max(6, (value / maxByRow[row.key]) * 100);
-                    return (
-                      <View key={meal.id} style={styles.barLine}>
-                        <View style={styles.barTrack}>
-                          <View style={[styles.barFill, { width: `${pct}%`, backgroundColor: row.color }]}>
-                            <Text style={styles.barVal}>{value}{row.unit}</Text>
-                          </View>
-                        </View>
-                      </View>
-                    );
-                  })}
+          <View style={[styles.compareCard, { backgroundColor: theme.cardBackground }]}>
+            {/* Header row -- photo/name/date columns. Every data row below
+                reuses this exact same column layout (fixed label width,
+                one flex:1 per meal, fixed trailing width) so each meal's
+                numbers land directly under its own photo. */}
+            <View style={styles.gridRow}>
+              <View style={{ width: LABEL_COL_WIDTH }} />
+              {orderedMeals.map((meal) => (
+                <View key={meal.id} style={styles.mealHeadCol}>
+                  <TouchableOpacity style={styles.removeX} onPress={() => handleRemove(meal.id)}>
+                    <Text style={styles.removeXText}>✕</Text>
+                  </TouchableOpacity>
+                  <View style={[styles.thumb, { backgroundColor: theme.background }]}>
+                    {meal.image_url ? (
+                      <Image source={{ uri: meal.image_url }} style={styles.thumbImage} resizeMode="cover" />
+                    ) : (
+                      <Text style={styles.thumbPlaceholder}>🍽️</Text>
+                    )}
+                  </View>
+                  <Text style={[styles.mealName, { color: theme.text }]} numberOfLines={2}>{meal.name}</Text>
+                  <Text style={[styles.mealMeta, { color: theme.textSecondary }]}>{formatMealMeta(meal.logged_at, t)}</Text>
                 </View>
               ))}
+              <View style={{ width: TRAILING_COL_WIDTH }}>
+                {orderedMeals.length < MAX_MEALS && (
+                  <TouchableOpacity style={styles.addCol} onPress={handleAddMeal}>
+                    <Text style={styles.addPlus}>+</Text>
+                    <Text style={styles.addColText}>{t('compare.olderMeals')}</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
-          )}
+
+            {orderedMeals.length < 2 ? (
+              <Text style={[styles.emptyHint, { color: theme.textSecondary }]}>{t('compare.needTwo')}</Text>
+            ) : (
+              <View style={[styles.dataRows, { borderTopColor: theme.border }]}>
+                {MACRO_ROWS.map((row) => (
+                  <View key={row.key} style={styles.gridRow}>
+                    <View style={{ width: LABEL_COL_WIDTH, justifyContent: 'center' }}>
+                      <Text style={[styles.rowLabel, { color: theme.textSecondary }]}>{t(`home.${row.key}`)}</Text>
+                    </View>
+                    {orderedMeals.map((meal) => (
+                      <View key={meal.id} style={styles.mealValCol}>
+                        <Text style={[styles.rowVal, { color: theme.text }]}>{meal[row.key] || 0}{row.unit}</Text>
+                      </View>
+                    ))}
+                    <View style={{ width: TRAILING_COL_WIDTH }} />
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
         </ScrollView>
       )}
     </SafeAreaView>
@@ -185,10 +186,16 @@ const styles = StyleSheet.create({
   backBtn: { fontSize: scale(22), fontWeight: '600' },
   headerTitle: { fontSize: scale(18), fontWeight: '700' },
   scrollContent: { padding: 20, paddingTop: 4 },
-  mealCols: { flexDirection: 'row', gap: 10, marginBottom: 20 },
-  mealCol: { flex: 1 },
+
+  compareCard: { borderRadius: 16, padding: 16 },
+  gridRow: { flexDirection: 'row', alignItems: 'flex-start', gap: scale(10) },
+  dataRows: { borderTopWidth: 1, marginTop: 12, paddingTop: 8 },
+
+  mealHeadCol: { flex: 1, position: 'relative' },
+  mealValCol: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 10 },
+
   removeX: {
-    position: 'absolute', top: -6, right: 6, zIndex: 2,
+    position: 'absolute', top: -8, right: 6, zIndex: 2,
     width: 18, height: 18, borderRadius: 9,
     backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd',
     justifyContent: 'center', alignItems: 'center',
@@ -196,24 +203,21 @@ const styles = StyleSheet.create({
   removeXText: { fontSize: 10, color: '#999' },
   thumb: {
     width: '100%', aspectRatio: 1, borderRadius: 12,
-    justifyContent: 'center', alignItems: 'center', overflow: 'hidden', marginBottom: 8,
+    justifyContent: 'center', alignItems: 'center', overflow: 'hidden', marginBottom: 6,
   },
   thumbImage: { width: '100%', height: '100%' },
-  thumbPlaceholder: { fontSize: scale(28) },
-  mealName: { fontSize: scale(12), fontWeight: '700', textAlign: 'center', marginBottom: 2 },
-  mealMeta: { fontSize: scale(10), textAlign: 'center' },
+  thumbPlaceholder: { fontSize: scale(26) },
+  mealName: { fontSize: scale(11.5), fontWeight: '700', textAlign: 'center', lineHeight: scale(14) },
+  mealMeta: { fontSize: scale(9.5), textAlign: 'center', marginTop: 2 },
+
   addCol: {
-    flex: 1, aspectRatio: 1, borderWidth: 2, borderStyle: 'dashed', borderColor: '#C9BFA8',
-    borderRadius: 12, justifyContent: 'center', alignItems: 'center',
+    flex: 1, borderWidth: 2, borderStyle: 'dashed', borderColor: '#C9BFA8',
+    borderRadius: 12, justifyContent: 'center', alignItems: 'center', aspectRatio: 1,
   },
-  addPlus: { fontSize: scale(20), color: '#8a8265', lineHeight: scale(22) },
-  addColText: { fontSize: scale(10), fontWeight: '700', color: '#8a8265', textAlign: 'center' },
+  addPlus: { fontSize: scale(16), color: '#8a8265', lineHeight: scale(18) },
+  addColText: { fontSize: scale(9.5), fontWeight: '700', color: '#8a8265', textAlign: 'center' },
+
   emptyHint: { textAlign: 'center', fontSize: scale(13), marginTop: 20 },
-  macroRows: { borderRadius: 14, padding: 14 },
-  macroRow: { marginBottom: 14 },
-  macroLabel: { fontSize: scale(11.5), fontWeight: '700', marginBottom: 6 },
-  barLine: { marginBottom: 4 },
-  barTrack: { height: 14, borderRadius: 7, overflow: 'hidden', backgroundColor: '#E8E2D2' },
-  barFill: { height: '100%', borderRadius: 7, justifyContent: 'center', alignItems: 'flex-end', paddingRight: 6 },
-  barVal: { fontSize: scale(9.5), fontWeight: '800', color: '#fff' },
+  rowLabel: { fontSize: scale(12.5), fontWeight: '700' },
+  rowVal: { fontSize: scale(14), fontWeight: '700' },
 });
