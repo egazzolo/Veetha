@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-  import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Linking, Animated, ActivityIndicator, Alert, } from 'react-native';
+  import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Linking, Animated, ActivityIndicator, Alert, Image } from 'react-native';
   import { SafeAreaView } from 'react-native-safe-area-context';
   import { useTheme } from '../utils/ThemeContext';
   import { useUser } from '../utils/UserContext';
@@ -230,21 +230,10 @@ import React, { useState, useRef, useEffect } from 'react';
         </TouchableOpacity>
 
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-          <Text style={[styles.header, { color: theme.text }]}>Start your 7-day free trial</Text>
-          <Text style={[styles.subhead, { color: theme.textSecondary }]}>
-            Cancel anytime. No charge until your trial ends.
-          </Text>
+          <Text style={[styles.logo, { color: theme.textSecondary }]}>MEAL BREAK PREMIUM</Text>
 
           {/* Plan toggle */}
           <View style={styles.toggleRow}>
-            <TouchableOpacity
-              style={[styles.togglePill, plan === 'yearly' && styles.togglePillActive]}
-              onPress={() => setPlan('yearly')}
-            >
-              <Text style={[styles.toggleText, plan === 'yearly' && styles.toggleTextActive]}>
-                Yearly
-              </Text>
-            </TouchableOpacity>
             <TouchableOpacity
               style={[styles.togglePill, plan === 'monthly' && styles.togglePillActive]}
               onPress={() => setPlan('monthly')}
@@ -253,27 +242,37 @@ import React, { useState, useRef, useEffect } from 'react';
                 Monthly
               </Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.togglePill, plan === 'yearly' && styles.togglePillActive]}
+              onPress={() => setPlan('yearly')}
+            >
+              <Text style={[styles.toggleText, plan === 'yearly' && styles.toggleTextActive]}>
+                Yearly
+              </Text>
+            </TouchableOpacity>
           </View>
 
-          {/* Pricing card */}
-          <View style={[styles.pricingCard, { backgroundColor: theme.cardBackground }]}>
-            {plan === 'yearly' ? (
-              <>
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>Best Value — Save 37%</Text>
-                </View>
-                <Text style={[styles.priceMain, { color: theme.text }]}>$59.99/year</Text>
-                <Text style={[styles.priceSub, { color: theme.textSecondary }]}>$5/mo effective</Text>
-              </>
-            ) : (
-              <Text style={[styles.priceMain, { color: theme.text }]}>$7.99/month</Text>
-            )}
-            <Text style={[styles.trialTransitionText, { color: theme.textSecondary }]}>
-              7 days free, then {plan === 'yearly' ? '$59.99/year' : '$7.99/month'} — cancel anytime before {formattedDate}
+          {/* Price -- the most prominent element on the page, per Apple's review guidance on subscription transparency */}
+          <View style={styles.priceBlock}>
+            <Text style={[styles.priceBig, { color: theme.text }]}>
+              {plan === 'yearly' ? '$59.99' : '$7.99'}
+              <Text style={styles.priceUnit}>{plan === 'yearly' ? '/year' : '/month'}</Text>
             </Text>
+            {plan === 'yearly' && (
+              <>
+                <Text style={styles.priceCalc}>that's $5.00 / month</Text>
+                <View style={styles.saveBadge}>
+                  <Text style={styles.saveBadgeText}>Save 37%</Text>
+                </View>
+              </>
+            )}
           </View>
 
-          {/* CTA */}
+          <Text style={[styles.trialLine, { color: theme.text }]}>
+            <Text style={styles.trialLineBold}>7 days free</Text>, then {plan === 'yearly' ? '$59.99/year' : '$7.99/month'} — cancel anytime before {formattedDate}
+          </Text>
+
+          {/* CTA -- states the price and duration directly on the button, per Apple's guidance */}
           <TouchableOpacity
             style={[styles.ctaButton, purchasing && { opacity: 0.7 }]}
             onPress={() => setModalVisible(true)}
@@ -281,9 +280,82 @@ import React, { useState, useRef, useEffect } from 'react';
           >
             {purchasing
               ? <ActivityIndicator color="#fff" />
-              : <Text style={styles.ctaText}>Try Free — Then {plan === 'yearly' ? '$59.99/year' : '$7.99/month'}</Text>
+              : <Text style={styles.ctaText}>Start Free Trial — then {plan === 'yearly' ? '$59.99/year' : '$7.99/month'}</Text>
             }
           </TouchableOpacity>
+
+          <View style={[styles.divider, { backgroundColor: theme.border }]} />
+
+          {/* Marketing content -- demoted below the price/CTA, smaller and quieter throughout */}
+          <Text style={[styles.headline, { color: theme.textSecondary }]}>
+            Take a photo. Track your food. See your progress — Meal Break Premium makes staying consistent easier.
+          </Text>
+
+          <View style={styles.storyRow}>
+            <View style={styles.storyStep}>
+              <View style={[styles.storyIcon, { backgroundColor: theme.cardBackground }]}>
+                <Image source={require('../assets/icons/icon_plate.png')} style={styles.storyImg} resizeMode="contain" />
+              </View>
+              <Text style={[styles.storyCaption, { color: theme.textTertiary }]}>You snap</Text>
+            </View>
+            <Text style={styles.storyArrow}>→</Text>
+            <View style={styles.storyStep}>
+              <View style={[styles.storyIcon, { backgroundColor: theme.cardBackground }]}>
+                <Image source={require('../assets/icons/icon_camera.png')} style={styles.storyImg} resizeMode="contain" />
+              </View>
+              <Text style={[styles.storyCaption, { color: theme.textTertiary }]}>We do the rest</Text>
+            </View>
+            <Text style={styles.storyArrow}>→</Text>
+            <View style={styles.storyStep}>
+              <View style={[styles.storyIcon, { backgroundColor: theme.cardBackground }]}>
+                <Image source={require('../assets/icons/icon_chart.png')} style={styles.storyImg} resizeMode="contain" />
+              </View>
+              <Text style={[styles.storyCaption, { color: theme.textTertiary }]}>You see results</Text>
+            </View>
+          </View>
+
+          <View style={styles.featuresGrid}>
+            <View style={styles.featureCard}>
+              <View style={styles.heroBadge}>
+                <Text style={styles.heroBadgeText}>Biggest upgrade</Text>
+              </View>
+              <View style={styles.featureIcon}>
+                <Image source={require('../assets/icons/icon_camera.png')} style={styles.featureImg} resizeMode="contain" />
+              </View>
+              <Text style={[styles.featureLabel, { color: theme.textSecondary }]}>AI photo scans</Text>
+              <Text style={styles.heroCompare}><Text style={styles.heroCompareOld}>5/mo</Text> 5/day</Text>
+            </View>
+            <View style={styles.featureCard}>
+              <View style={[styles.heroBadge, styles.badgeSpacer]}>
+                <Text style={styles.heroBadgeText}>Biggest upgrade</Text>
+              </View>
+              <View style={styles.featureIcon}>
+                <Image source={require('../assets/icons/icon_lifting.png')} style={styles.featureImg} resizeMode="contain" />
+              </View>
+              <Text style={[styles.featureLabel, { color: theme.textSecondary }]}>All exercise categories</Text>
+            </View>
+            <View style={styles.featureCard}>
+              <View style={styles.featureIcon}>
+                <Image source={require('../assets/icons/icon_stats.png')} style={styles.featureImg} resizeMode="contain" />
+              </View>
+              <Text style={[styles.featureLabel, { color: theme.textSecondary }]}>Monthly history</Text>
+            </View>
+            <View style={styles.featureCard}>
+              <View style={styles.featureIcon}>
+                <Image source={require('../assets/icons/icon_export.png')} style={styles.featureImg} resizeMode="contain" />
+              </View>
+              <Text style={[styles.featureLabel, { color: theme.textSecondary }]}>Exercise report</Text>
+            </View>
+          </View>
+
+          <View style={styles.trustRow}>
+            <View style={styles.trustItem}>
+              <Image source={require('../assets/icons/icon_lock.png')} style={styles.trustImg} resizeMode="contain" />
+              <Text style={[styles.trustText, { color: theme.textTertiary }]}>Secure & private</Text>
+            </View>
+            <Text style={[styles.trustText, { color: theme.textTertiary }]}>Cancel anytime</Text>
+            <Text style={[styles.trustText, { color: theme.textTertiary }]}>Used by real people</Text>
+          </View>
 
           {/* Comparison table */}
           <View style={[styles.table, { backgroundColor: theme.cardBackground }]}>
@@ -373,17 +445,12 @@ import React, { useState, useRef, useEffect } from 'react';
       paddingHorizontal: 20,
       paddingBottom: 40,
     },
-    header: {
-      fontSize: 26,
+    logo: {
+      fontSize: 13,
       fontWeight: '700',
       textAlign: 'center',
-      marginBottom: 8,
-    },
-    subhead: {
-      fontSize: 14,
-      textAlign: 'center',
-      marginBottom: 24,
-      lineHeight: 20,
+      letterSpacing: 0.5,
+      marginBottom: 14,
     },
     table: {
       borderRadius: 14,
@@ -451,35 +518,167 @@ import React, { useState, useRef, useEffect } from 'react';
       color: '#1B1B1B',
       fontWeight: '700',
     },
-    pricingCard: {
-      borderRadius: 14,
-      padding: 20,
-      alignItems: 'center',
-      marginBottom: 20,
-    },
-    badge: {
-      backgroundColor: '#1F9B39',
-      borderRadius: 20,
-      paddingVertical: 4,
-      paddingHorizontal: 14,
-      marginBottom: 10,
-    },
-    badgeText: {
-      color: '#fff',
-      fontSize: 12,
-      fontWeight: '700',
-    },
     linkText: {
       color: '#4A90E2',
       textDecorationLine: 'underline',
     },
-    priceMain: {
-      fontSize: 28,
-      fontWeight: '800',
-      marginBottom: 4,
+    priceBlock: {
+      alignItems: 'center',
+      marginBottom: 6,
     },
-    priceSub: {
-      fontSize: 14,
+    priceBig: {
+      fontSize: 42,
+      fontWeight: '800',
+      letterSpacing: -0.5,
+    },
+    priceUnit: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: '#888',
+    },
+    priceCalc: {
+      fontSize: 13,
+      color: '#1F9B39',
+      fontWeight: '700',
+      marginTop: 2,
+    },
+    saveBadge: {
+      backgroundColor: '#E8F5E9',
+      borderRadius: 8,
+      paddingVertical: 3,
+      paddingHorizontal: 10,
+      marginTop: 6,
+    },
+    saveBadgeText: {
+      color: '#1F9B39',
+      fontSize: 11,
+      fontWeight: '800',
+    },
+    trialLine: {
+      fontSize: 13.5,
+      fontWeight: '600',
+      textAlign: 'center',
+      lineHeight: 19,
+      marginVertical: 14,
+      paddingHorizontal: 10,
+    },
+    trialLineBold: {
+      color: '#1F9B39',
+      fontWeight: '800',
+    },
+    divider: {
+      height: 1,
+      marginVertical: 20,
+    },
+    headline: {
+      fontSize: 15.5,
+      fontWeight: '600',
+      textAlign: 'center',
+      lineHeight: 21,
+      marginBottom: 20,
+      paddingHorizontal: 10,
+    },
+    storyRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 10,
+      marginBottom: 24,
+    },
+    storyStep: {
+      alignItems: 'center',
+      gap: 6,
+    },
+    storyIcon: {
+      width: 54,
+      height: 54,
+      borderRadius: 12,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    storyImg: {
+      width: 26,
+      height: 26,
+    },
+    storyArrow: {
+      fontSize: 16,
+      color: '#ccc',
+    },
+    storyCaption: {
+      fontSize: 10,
+      textAlign: 'center',
+      width: 68,
+    },
+    featuresGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      marginBottom: 22,
+    },
+    featureCard: {
+      width: '50%',
+      alignItems: 'center',
+      paddingVertical: 10,
+      paddingHorizontal: 6,
+    },
+    heroBadge: {
+      backgroundColor: '#1F9B39',
+      borderRadius: 8,
+      paddingVertical: 2,
+      paddingHorizontal: 8,
+      marginBottom: 6,
+    },
+    badgeSpacer: {
+      opacity: 0,
+    },
+    heroBadgeText: {
+      color: '#fff',
+      fontSize: 9,
+      fontWeight: '700',
+    },
+    featureIcon: {
+      marginBottom: 6,
+    },
+    featureImg: {
+      width: 24,
+      height: 24,
+    },
+    featureLabel: {
+      fontSize: 10.5,
+      fontWeight: '600',
+      textAlign: 'center',
+      lineHeight: 13,
+    },
+    heroCompare: {
+      fontSize: 12,
+      fontWeight: '800',
+      color: '#1F9B39',
+      marginTop: 4,
+    },
+    heroCompareOld: {
+      color: '#aaa',
+      fontWeight: '600',
+      fontSize: 10.5,
+      textDecorationLine: 'line-through',
+    },
+    trustRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      flexWrap: 'wrap',
+      gap: 14,
+      marginBottom: 22,
+    },
+    trustItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    trustImg: {
+      width: 11,
+      height: 11,
+    },
+    trustText: {
+      fontSize: 10,
+      fontWeight: '600',
     },
     ctaButton: {
       backgroundColor: '#1F9B39',
@@ -504,10 +703,5 @@ import React, { useState, useRef, useEffect } from 'react';
       textAlign: 'center',
       textDecorationLine: 'underline',
       marginBottom: 8,
-    },
-    trialTransitionText: {
-      fontSize: 12,
-      textAlign: 'center',
-      marginTop: 10,
     },
   });
