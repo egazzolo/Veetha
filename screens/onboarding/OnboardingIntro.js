@@ -80,11 +80,11 @@ export default function OnboardingIntro({ navigation }) {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.calloutRing}>
-          <View style={styles.progressContainer}>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: '11.11%' }]} />
-            </View>
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: '11.11%' }]} />
+          </View>
+          <View style={styles.calloutRing}>
             <Text style={styles.progressText}>{t('onboarding.step')} 1 {t('onboarding.of')} 9</Text>
           </View>
         </View>
@@ -186,12 +186,13 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   calloutRing: {
+    alignSelf: 'center',
     borderWidth: 2,
     borderColor: '#E53935',
     borderRadius: 999,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    marginBottom: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    marginTop: 4,
   },
   calloutCaptionRow: {
     flexDirection: 'row',
@@ -227,7 +228,6 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: scale(12),
     color: '#999',
-    marginTop: 8,
     textAlign: 'center',
   },
   mainEmoji: {
