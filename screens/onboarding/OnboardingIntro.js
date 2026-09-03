@@ -89,7 +89,6 @@ export default function OnboardingIntro({ navigation }) {
           </View>
         </View>
         <View style={styles.calloutCaptionRow}>
-          <Text style={styles.calloutArrow}>↑</Text>
           <Text style={styles.calloutCaption}>{t('onboarding.introProgressCallout')}</Text>
         </View>
 
@@ -200,11 +199,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     marginBottom: scale(20),
-  },
-  calloutArrow: {
-    fontSize: scale(16),
-    color: '#E53935',
-    fontWeight: '700',
   },
   calloutCaption: {
     fontSize: scale(12),
