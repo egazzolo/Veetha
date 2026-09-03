@@ -7,9 +7,9 @@ import { useLanguage } from '../utils/LanguageContext';
 import { supabase } from '../utils/supabase';
 import { scale } from '../utils/responsive';
 
-const MAX_MEALS = 4;
-const LABEL_COL_WIDTH = scale(64);
-const TRAILING_COL_WIDTH = scale(44);
+const MAX_MEALS = 3;
+const LABEL_COL_WIDTH = scale(56);
+const TRAILING_COL_WIDTH = scale(34);
 
 const MACRO_ROWS = [
   { key: 'calories', labelKey: 'home.calories', unit: '' },
@@ -149,9 +149,12 @@ export default function MealComparisonScreen({ navigation, route }) {
               ))}
               <View style={{ width: TRAILING_COL_WIDTH }}>
                 {orderedMeals.length < MAX_MEALS && (
-                  <TouchableOpacity style={styles.addCol} onPress={handleAddMeal}>
+                  <TouchableOpacity
+                    style={styles.addCol}
+                    onPress={handleAddMeal}
+                    accessibilityLabel={t('compare.olderMeals')}
+                  >
                     <Text style={styles.addPlus}>+</Text>
-                    <Text style={styles.addColText}>{t('compare.olderMeals')}</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -221,10 +224,9 @@ const styles = StyleSheet.create({
 
   addCol: {
     flex: 1, borderWidth: 2, borderStyle: 'dashed', borderColor: '#C9BFA8',
-    borderRadius: 12, justifyContent: 'center', alignItems: 'center', aspectRatio: 1,
+    borderRadius: 10, justifyContent: 'center', alignItems: 'center', aspectRatio: 1,
   },
-  addPlus: { fontSize: scale(16), color: '#8a8265', lineHeight: scale(18) },
-  addColText: { fontSize: scale(9.5), fontWeight: '700', color: '#8a8265', textAlign: 'center' },
+  addPlus: { fontSize: scale(18), color: '#8a8265', lineHeight: scale(20) },
 
   emptyHint: { textAlign: 'center', fontSize: scale(13), marginTop: 20 },
   rowLabel: { fontSize: scale(12.5), fontWeight: '700' },
