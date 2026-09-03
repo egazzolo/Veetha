@@ -531,25 +531,62 @@ export default function ProfileScreen({ navigation }) {
 
               {!isGuest && !isPremium && (
                 <TouchableOpacity
-                  style={{
-                    backgroundColor: '#1F9B39',
-                    borderRadius: 12,
-                    padding: 20,
-                    marginHorizontal: 20,
-                    marginBottom: 16,
-                  }}
+                  style={premiumCardStyles.card}
                   onPress={() => navigation.navigate('Paywall')}
                   activeOpacity={0.85}
                 >
-                  <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>
-                    Meal Break Premium
+                  <View style={premiumCardStyles.topRow}>
+                    <View style={premiumCardStyles.badgeRow}>
+                      <Text style={{ fontSize: 14 }}>👑</Text>
+                      <Text style={premiumCardStyles.badgeText}>PREMIUM</Text>
+                    </View>
+                    <View style={premiumCardStyles.trialPill}>
+                      <Text style={premiumCardStyles.trialPillText}>7-DAY FREE TRIAL</Text>
+                    </View>
+                  </View>
+
+                  <Text style={premiumCardStyles.headline}>
+                    Unlock your <Text style={premiumCardStyles.headlineAccent}>best results</Text>
                   </Text>
-                  <Text style={{ color: '#fff', fontSize: 14, marginTop: 4 }}>
-                    Unlock all features with a 7-day free trial
+                  <Text style={premiumCardStyles.sub}>
+                    Smarter tracking. More insights. Better progress.
                   </Text>
-                  <Text style={{ color: '#fff', fontWeight: '600', marginTop: 12 }}>
-                    Go Premium →
-                  </Text>
+
+                  <View style={premiumCardStyles.previewRow}>
+                    <View style={premiumCardStyles.statsSide}>
+                      <View style={premiumCardStyles.ring}>
+                        <Text style={premiumCardStyles.ringVal}>1,550{'\n'}kcal</Text>
+                      </View>
+                      <View style={premiumCardStyles.macroMini}>
+                        <Text style={premiumCardStyles.macroLine}>
+                          <Text style={premiumCardStyles.macroVal}>110g</Text>
+                          <Text style={premiumCardStyles.macroLabel}> Protein</Text>
+                        </Text>
+                        <Text style={premiumCardStyles.macroLine}>
+                          <Text style={premiumCardStyles.macroVal}>195g</Text>
+                          <Text style={premiumCardStyles.macroLabel}> Carbs</Text>
+                        </Text>
+                        <Text style={premiumCardStyles.macroLine}>
+                          <Text style={premiumCardStyles.macroVal}>60g</Text>
+                          <Text style={premiumCardStyles.macroLabel}> Fat</Text>
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={premiumCardStyles.resultMini}>
+                      <View style={premiumCardStyles.resultPhoto}>
+                        <Text style={{ fontSize: 16 }}>🍗</Text>
+                      </View>
+                      <View>
+                        <Text style={premiumCardStyles.resultName}>Chicken Bowl</Text>
+                        <Text style={premiumCardStyles.resultKcal}>520 kcal</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={premiumCardStyles.goBtn}>
+                    <Text style={premiumCardStyles.goBtnText}>Go Premium  →</Text>
+                  </View>
                 </TouchableOpacity>
               )}
 
@@ -868,6 +905,141 @@ export default function ProfileScreen({ navigation }) {
     </GestureHandlerRootView>
   );
 }
+
+const premiumCardStyles = StyleSheet.create({
+  card: {
+    backgroundColor: '#17371F',
+    borderRadius: 16,
+    padding: 20,
+    marginHorizontal: 20,
+    marginBottom: 16,
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#A8E890',
+    letterSpacing: 0.5,
+  },
+  trialPill: {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 10,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+  },
+  trialPillText: {
+    color: '#fff',
+    fontSize: 10.5,
+    fontWeight: '700',
+  },
+  headline: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#fff',
+    lineHeight: 27,
+    marginBottom: 8,
+  },
+  headlineAccent: {
+    color: '#7ED957',
+  },
+  sub: {
+    fontSize: 13,
+    color: '#C9D6C9',
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  previewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 18,
+  },
+  statsSide: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  ring: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    borderWidth: 5,
+    borderColor: '#2E5C3A',
+    borderTopColor: '#7ED957',
+    borderRightColor: '#7ED957',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  ringVal: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#fff',
+    textAlign: 'center',
+    lineHeight: 13,
+  },
+  macroMini: {
+    gap: 4,
+  },
+  macroLine: {
+    fontSize: 12,
+  },
+  macroVal: {
+    fontWeight: '800',
+    color: '#fff',
+  },
+  macroLabel: {
+    fontSize: 9,
+    color: '#9BB89B',
+  },
+  resultMini: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+  },
+  resultPhoto: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    backgroundColor: '#2A4A32',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  resultName: {
+    fontSize: 10,
+    color: '#C9D6C9',
+    fontWeight: '600',
+  },
+  resultKcal: {
+    fontSize: 12.5,
+    color: '#fff',
+    fontWeight: '800',
+  },
+  goBtn: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 12,
+    paddingVertical: 13,
+    alignItems: 'center',
+  },
+  goBtnText: {
+    color: '#fff',
+    fontSize: 14.5,
+    fontWeight: '700',
+  },
+});
 
 const styles = StyleSheet.create({
   container: {

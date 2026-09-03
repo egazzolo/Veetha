@@ -2350,6 +2350,7 @@ export default function HomeScreen({ navigation }) {
                 buttons={[
                   { text: t('home.cancel'), style: 'cancel', onPress: () => setMealActionModal({ visible: false, meal: null }) },
                   { text: t('home.edit'), onPress: () => { setMealActionModal({ visible: false, meal: null }); navigation.navigate('EditMeal', { meal: mealActionModal.meal }); } },
+                  { text: t('home.compare'), onPress: () => { setMealActionModal({ visible: false, meal: null }); handleDeleteMeal(mealActionModal.meal); } },
                   { text: t('home.delete'), style: 'destructive', onPress: () => { setMealActionModal({ visible: false, meal: null }); handleDeleteMeal(mealActionModal.meal); } },
                 ]}
               />
