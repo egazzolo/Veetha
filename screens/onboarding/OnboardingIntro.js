@@ -80,11 +80,17 @@ export default function OnboardingIntro({ navigation }) {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: '11.11%' }]} />
+        <View style={styles.calloutRing}>
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: '11.11%' }]} />
+            </View>
+            <Text style={styles.progressText}>{t('onboarding.step')} 1 {t('onboarding.of')} 9</Text>
           </View>
-          <Text style={styles.progressText}>{t('onboarding.step')} 1 {t('onboarding.of')} 9</Text>
+        </View>
+        <View style={styles.calloutCaptionRow}>
+          <Text style={styles.calloutArrow}>↑</Text>
+          <Text style={styles.calloutCaption}>{t('onboarding.introProgressCallout')}</Text>
         </View>
 
         <Text style={styles.mainEmoji}>👋</Text>
@@ -179,8 +185,34 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 20,
   },
+  calloutRing: {
+    borderWidth: 2,
+    borderColor: '#E53935',
+    borderRadius: 999,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 6,
+  },
+  calloutCaptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginBottom: scale(20),
+  },
+  calloutArrow: {
+    fontSize: scale(16),
+    color: '#E53935',
+    fontWeight: '700',
+  },
+  calloutCaption: {
+    fontSize: scale(12),
+    color: '#E53935',
+    fontWeight: '700',
+    textAlign: 'center',
+  },
   progressContainer: {
-    marginBottom: scale(25),
+    marginBottom: 0,
   },
   progressBar: {
     height: 4,

@@ -111,6 +111,7 @@ export default {
     introCarbs: 'Carbs',
     introFat: 'Fat',
     introCta: "Let's Go",
+    introProgressCallout: 'Here you can see how many more screens there are',
 
     // Progress
     step: 'Step',

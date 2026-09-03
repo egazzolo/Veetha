@@ -111,6 +111,7 @@ export default {
     introCarbs: 'Glucides',
     introFat: 'Lipides',
     introCta: "C'est parti",
+    introProgressCallout: 'Ici, vous voyez combien il reste d\'écrans',
 
     // Progress
     step: 'Étape',

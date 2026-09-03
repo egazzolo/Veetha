@@ -111,6 +111,7 @@ export default {
     introCarbs: 'Carboidratos',
     introFat: 'Gordura',
     introCta: 'Vamos lá',
+    introProgressCallout: 'Aqui você vê quantas telas ainda faltam',
 
     // Progress
     step: 'Etapa',

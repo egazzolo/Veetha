@@ -111,6 +111,7 @@ export default {
     introCarbs: 'Carbs',
     introFat: 'Taba',
     introCta: 'Simulan Na',
+    introProgressCallout: 'Dito mo makikita kung ilan pang screens ang natitira',
 
     // Progress
     step: 'Hakbang',
