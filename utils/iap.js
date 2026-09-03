@@ -1,6 +1,14 @@
+// react-native-iap pinned to ^13.x (pre-Nitro Modules) -- v14+ requires
+// react-native-nitro-modules as a peer dep, which broke Android's Gradle
+// variant resolution project-wide. Only connection/cleanup utilities are
+// still used here; the actual purchase call goes through NativeBillingModule
+// (Android) / NativeStoreKitModule (iOS) directly, untouched by this.
+// getPendingTransactionsIOS is named getPendingPurchasesIOS in this version;
+// syncIOS doesn't exist here at all -- the library's own docs say
+// getAvailablePurchases() alone is sufficient for restoring purchases.
 const {
   initConnection, endConnection, finishTransaction, getAvailablePurchases,
-  getPendingTransactionsIOS, syncIOS, clearTransactionIOS,
+  getPendingPurchasesIOS, clearTransactionIOS,
 } = require('react-native-iap');
 const { Platform, AppState, NativeModules, NativeEventEmitter } = require('react-native');
 const { supabase } = require('./supabase');
@@ -60,7 +68,7 @@ const directlyHandledTransactionIds = new Set();
 async function finishStuckTransactionsIOS() {
   if (Platform.OS !== 'ios') return;
   try {
-    const pending = await getPendingTransactionsIOS();
+    const pending = await getPendingPurchasesIOS();
     for (const purchase of pending) {
       try {
         await finishTransaction({ purchase, isConsumable: false });
@@ -95,7 +103,7 @@ export async function initIAP() {
       }
       await finishStuckTransactionsIOS();
       try {
-        const pendingAtReady = await getPendingTransactionsIOS();
+        const pendingAtReady = await getPendingPurchasesIOS();
         console.log('🔍 [initIAP] pending StoreKit transactions:', JSON.stringify(
           pendingAtReady.map((p) => ({ transactionId: p.transactionId, productId: p.productId }))
         ));
@@ -280,9 +288,8 @@ export async function validateReceipt(purchase) {
 // ── Restore purchases ────────────────────────────────────────────
 export async function restorePurchases() {
   try {
-    if (Platform.OS === 'ios') {
-      await syncIOS();
-    }
+    // v13.x has no syncIOS() -- the library's own docs say
+    // getAvailablePurchases() alone is the documented way to restore.
     const purchases = await getAvailablePurchases();
     if (!purchases || purchases.length === 0) {
       return { restored: false };
