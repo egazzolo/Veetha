@@ -43,10 +43,7 @@ import React, { useState, useRef, useEffect } from 'react';
     { label: 'All exercise categories',   free: '✗',         premium: '✓'         },
     { label: 'PDF & Excel exports',       free: '✗',         premium: '✓'         },
     { label: 'Historical monthly stats',  free: '✗',         premium: '✓'         },
-    { label: 'Weight target tracking',    free: '✗',         premium: '✓'         },
-    { label: 'Custom step goals',         free: '✗',         premium: '✓'         },
     { label: 'Individual food breakdown', free: '✗',         premium: '✓'         },
-    { label: 'Premium badges & themes',   free: '✗',         premium: '✓'         },
   ];
 
   export default function PaywallScreen({ navigation, route }) {
