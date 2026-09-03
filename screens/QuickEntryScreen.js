@@ -24,6 +24,7 @@ export default function QuickEntryScreen({ navigation }) {
   const [carbs, setCarbs] = useState('');
   const [fat, setFat] = useState('');
   const [saving, setSaving] = useState(false);
+  const [loggingIndex, setLoggingIndex] = useState(null); // which Quick Add row is currently being saved, so it can show a spinner
     // Per-gram base values from AI estimation — used to recalculate macros when serving size changes
   const [baseCaloriesPerGram, setBaseCaloriesPerGram] = useState(null);
   const [baseProteinPerGram, setBaseProteinPerGram] = useState(null);
@@ -146,10 +147,11 @@ Values are for the total amount described. Be accurate, not inflated.`
     }
   };
 
-  const handleQuickLog = async (food) => {
+  const handleQuickLog = async (food, index) => {
     try {
 
       setSaving(true); // loading indicator
+      setLoggingIndex(index);
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -216,6 +218,7 @@ Values are for the total amount described. Be accurate, not inflated.`
       );
     } finally {
       setSaving(false);
+      setLoggingIndex(null);
     }
   };
 
@@ -364,15 +367,17 @@ Values are for the total amount described. Be accurate, not inflated.`
               <View style={styles.suggestionsList}>
                 {quickSuggestions.map((food, index) => {
                   const isLocked = !isPremium && index >= 2;
+                  const isLogging = loggingIndex === index;
                   return (
                     <TouchableOpacity
                       key={index}
                       style={[styles.suggestionItem, { borderBottomColor: theme.border, opacity: isLocked ? 0.5 : 1 }]}
+                      disabled={loggingIndex !== null}
                       onPress={() => {
                         if (isLocked) {
                           navigation.navigate('Paywall', { highlightFeature: 'All meal recommendations in Quick Add' });
                         } else {
-                          handleQuickLog(food);
+                          handleQuickLog(food, index);
                         }
                       }}
                     >
@@ -394,9 +399,13 @@ Values are for the total amount described. Be accurate, not inflated.`
                         </Text>
                       </View>
 
-                      <Text style={[styles.addButton, { color: isLocked ? theme.textTertiary : theme.primary }]}>
-                        {isLocked ? '🔒' : t('stats.quickEntry.add')}
-                      </Text>
+                      {isLogging ? (
+                        <ActivityIndicator size="small" color={theme.primary} />
+                      ) : (
+                        <Text style={[styles.addButton, { color: isLocked ? theme.textTertiary : theme.primary }]}>
+                          {isLocked ? '🔒' : t('stats.quickEntry.add')}
+                        </Text>
+                      )}
                     </TouchableOpacity>
                   );
                 })}

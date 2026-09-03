@@ -8,8 +8,11 @@ import { supabase } from '../utils/supabase';
 import { scale } from '../utils/responsive';
 
 const MAX_MEALS = 3;
-const LABEL_COL_WIDTH = scale(56);
-const TRAILING_COL_WIDTH = scale(34);
+// Flex ratios, not fixed pixel widths -- guarantees the row can never be
+// wider than its container regardless of device width or scale(), unlike
+// fixed px columns which just get clipped once their sum exceeds the screen.
+const LABEL_COL_FLEX = 0.65;
+const TRAILING_COL_FLEX = 0.4;
 
 const MACRO_ROWS = [
   { key: 'calories', labelKey: 'home.calories', unit: '' },
@@ -130,7 +133,7 @@ export default function MealComparisonScreen({ navigation, route }) {
                 one flex:1 per meal, fixed trailing width) so each meal's
                 numbers land directly under its own photo. */}
             <View style={styles.gridRow}>
-              <View style={{ width: LABEL_COL_WIDTH }} />
+              <View style={{ flex: LABEL_COL_FLEX }} />
               {orderedMeals.map((meal) => (
                 <View key={meal.id} style={styles.mealHeadCol}>
                   <TouchableOpacity style={styles.removeX} onPress={() => handleRemove(meal.id)}>
@@ -147,7 +150,7 @@ export default function MealComparisonScreen({ navigation, route }) {
                   <Text style={[styles.mealMeta, { color: theme.textSecondary }]}>{formatMealMeta(meal.logged_at, t)}</Text>
                 </View>
               ))}
-              <View style={{ width: TRAILING_COL_WIDTH }}>
+              <View style={{ flex: TRAILING_COL_FLEX }}>
                 {orderedMeals.length < MAX_MEALS && (
                   <TouchableOpacity
                     style={styles.addCol}
@@ -166,7 +169,7 @@ export default function MealComparisonScreen({ navigation, route }) {
               <View style={[styles.dataRows, { borderTopColor: theme.border }]}>
                 {MACRO_ROWS.map((row) => (
                   <View key={row.key} style={styles.gridRow}>
-                    <View style={{ width: LABEL_COL_WIDTH, justifyContent: 'center' }}>
+                    <View style={{ flex: LABEL_COL_FLEX, justifyContent: 'center' }}>
                       <Text style={[styles.rowLabel, { color: theme.textSecondary }]}>{t(row.labelKey)}</Text>
                     </View>
                     {orderedMeals.map((meal) => (
@@ -174,7 +177,7 @@ export default function MealComparisonScreen({ navigation, route }) {
                         <Text style={[styles.rowVal, { color: theme.text }]}>{meal[row.key] || 0}{row.unit}</Text>
                       </View>
                     ))}
-                    <View style={{ width: TRAILING_COL_WIDTH }} />
+                    <View style={{ flex: TRAILING_COL_FLEX }} />
                   </View>
                 ))}
               </View>
