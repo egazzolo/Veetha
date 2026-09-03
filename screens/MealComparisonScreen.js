@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: scale(18), fontWeight: '700' },
   scrollContent: { padding: 20, paddingTop: 4 },
 
-  compareCard: { borderRadius: 16, padding: 16 },
+  compareCard: { borderRadius: 16, padding: 16, overflow: 'hidden' },
   gridRow: { flexDirection: 'row', alignItems: 'center', gap: scale(8), paddingVertical: 6 },
   dataRows: { borderTopWidth: 1, marginTop: 12, paddingTop: 4 },
 
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
 
   addCol: {
     flex: 1, borderWidth: 2, borderStyle: 'dashed', borderColor: '#C9BFA8',
-    borderRadius: 10, justifyContent: 'center', alignItems: 'center', aspectRatio: 1,
+    borderRadius: 10, justifyContent: 'center', alignItems: 'center', height: scale(66),
   },
   addPlus: { fontSize: scale(18), color: '#8a8265', lineHeight: scale(20) },
 
