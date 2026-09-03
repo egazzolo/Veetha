@@ -148,13 +148,13 @@ export default function MealComparisonScreen({ navigation, route }) {
             <View style={[styles.macroRows, { backgroundColor: theme.cardBackground }]}>
               {MACRO_ROWS.map((row) => (
                 <View key={row.key} style={styles.macroRow}>
-                  <Text style={[styles.macroLabel, { color: theme.text }]}>{t(`home.${row.key}`)}</Text>
+                  <Text style={[styles.macroLabel, { color: theme.textSecondary }]}>{t(`home.${row.key}`)}</Text>
                   {orderedMeals.map((meal) => {
                     const value = meal[row.key] || 0;
                     const pct = Math.max(6, (value / maxByRow[row.key]) * 100);
                     return (
                       <View key={meal.id} style={styles.barLine}>
-                        <View style={[styles.barTrack, { backgroundColor: theme.border }]}>
+                        <View style={styles.barTrack}>
                           <View style={[styles.barFill, { width: `${pct}%`, backgroundColor: row.color }]}>
                             <Text style={styles.barVal}>{value}{row.unit}</Text>
                           </View>
@@ -203,16 +203,16 @@ const styles = StyleSheet.create({
   mealMeta: { fontSize: scale(10), textAlign: 'center' },
   addCol: {
     flex: 1, aspectRatio: 1, borderWidth: 2, borderStyle: 'dashed', borderColor: '#C9BFA8',
-    borderRadius: 12, justifyContent: 'center', alignItems: 'center', alignSelf: 'flex-end',
+    borderRadius: 12, justifyContent: 'center', alignItems: 'center',
   },
   addPlus: { fontSize: scale(20), color: '#8a8265', lineHeight: scale(22) },
   addColText: { fontSize: scale(10), fontWeight: '700', color: '#8a8265', textAlign: 'center' },
   emptyHint: { textAlign: 'center', fontSize: scale(13), marginTop: 20 },
   macroRows: { borderRadius: 14, padding: 14 },
   macroRow: { marginBottom: 14 },
-  macroLabel: { fontSize: scale(12), fontWeight: '700', marginBottom: 6 },
+  macroLabel: { fontSize: scale(11.5), fontWeight: '700', marginBottom: 6 },
   barLine: { marginBottom: 4 },
-  barTrack: { height: 16, borderRadius: 8, overflow: 'hidden' },
-  barFill: { height: '100%', borderRadius: 8, justifyContent: 'center', alignItems: 'flex-end', paddingRight: 6 },
+  barTrack: { height: 14, borderRadius: 7, overflow: 'hidden', backgroundColor: '#E8E2D2' },
+  barFill: { height: '100%', borderRadius: 7, justifyContent: 'center', alignItems: 'flex-end', paddingRight: 6 },
   barVal: { fontSize: scale(9.5), fontWeight: '800', color: '#fff' },
 });
