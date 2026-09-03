@@ -3,7 +3,7 @@ module.exports = {
     name: "Meal Break",
     slug: "Veetha",
     scheme: "veetha",
-    version: "1.2.11",
+    version: "1.2.12",
     orientation: "portrait",
     icon: "./assets/LogoAppStore.png",
     userInterfaceStyle: "light",
@@ -42,7 +42,7 @@ module.exports = {
     android: {
       package: "com.yourname.veetha",
       googleServicesFile: "./google-services.json",
-      versionCode: 53,
+      versionCode: 54,
       icon: "./assets/adaptive-icon.png",
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
@@ -74,7 +74,7 @@ module.exports = {
     ios: {
       icon: "./assets/LogoAppStore.png",
       bundleIdentifier: "com.yourname.veetha",
-      buildNumber: "109",
+      buildNumber: "110",
       usesAppleSignIn: true,
       associatedDomains: ["applinks:nonotenb.com"],
       infoPlist: {
