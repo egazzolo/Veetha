@@ -371,6 +371,19 @@ export default {
     profile: 'Profile',
   },
 
+  // Meal comparison
+  compare: {
+    title: 'Ihambing ang mga Meal',
+    olderMeals: 'Mas lumang meals',
+    needTwo: 'Pumili ng hindi bababa sa 2 meal para ihambing',
+    unnamedMeal: 'Meal',
+    addMeal: 'Magdagdag ng Meal',
+    sortRecent: 'Kamakailan',
+    sortName: 'A–Z',
+    noMeals: 'Wala pang naka-log na meals',
+    alreadyAdded: 'nadagdag na',
+  },
+
   // Home Screen
   home: {
     greeting: 'Kumusta',
@@ -409,6 +422,7 @@ export default {
     delete: 'Tanggalin',
     selectMealsToDelete: 'Pumili ng mga pagkain para tanggalin',
     mealsSelected: 'napili',
+    compare: 'Ihambing',
     deleteSelected: 'Tanggalin ang napili',
     deleteMealsConfirm: 'Sigurado ka bang gusto mong tanggalin ang mga pagkain na ito?',
     mealsDeleted: 'pagkain ang tinanggal',

@@ -44,6 +44,7 @@ import React, { useState, useRef, useEffect } from 'react';
     { label: 'PDF & Excel exports',       free: '✗',         premium: '✓'         },
     { label: 'Historical monthly stats',  free: '✗',         premium: '✓'         },
     { label: 'Individual food breakdown', free: '✗',         premium: '✓'         },
+    { label: 'Meal comparison',           free: '✗',         premium: '✓'         },
   ];
 
   export default function PaywallScreen({ navigation, route }) {

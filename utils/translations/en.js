@@ -371,6 +371,19 @@ export default {
     profile: 'Profile',
   },
 
+  // Meal comparison
+  compare: {
+    title: 'Compare Meals',
+    olderMeals: 'Older meals',
+    needTwo: 'Select at least 2 meals to compare',
+    unnamedMeal: 'Meal',
+    addMeal: 'Add a Meal',
+    sortRecent: 'Recent',
+    sortName: 'A–Z',
+    noMeals: 'No meals logged yet',
+    alreadyAdded: 'already added',
+  },
+
   // Home Screen
   home: {
     greeting: 'Hello',
@@ -409,6 +422,7 @@ export default {
     delete: 'Delete',
     selectMealsToDelete: 'Select meals to delete',
     mealsSelected: 'selected',
+    compare: 'Compare',
     deleteSelected: 'Delete selected',
     deleteMealsConfirm: 'Are you sure you want to delete these meals?',
     mealsDeleted: 'meals deleted',

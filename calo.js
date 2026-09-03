@@ -67,6 +67,8 @@ import ReportViewerScreen from './screens/ReportViewerScreen';
 import ForgotPasswordScreen from './screens/auth/ForgotPasswordScreen';
 import ResetPasswordScreen from './screens/onboarding/ResetPasswordScreen';
 import PaywallScreen from './screens/PaywallScreen';
+import MealComparisonScreen from './screens/MealComparisonScreen';
+import MealPickerScreen from './screens/MealPickerScreen';
 
 // Import contexts and utilities
 import { OnboardingProvider } from './utils/OnboardingContext';
@@ -428,6 +430,8 @@ function AppNavigator() {
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
           <Stack.Screen name="Paywall" component={PaywallScreen} options={{ presentation: 'modal', headerShown: false }} />
+          <Stack.Screen name="MealComparison" component={MealComparisonScreen} />
+          <Stack.Screen name="MealPicker" component={MealPickerScreen} />
         </Stack.Navigator>
         {/* <GlobalTutorialOverlay /> */}
         <GracePeriodAlert />

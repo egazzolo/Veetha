@@ -371,6 +371,19 @@ export default {
     profile: 'Perfil',
   },
 
+  // Meal comparison
+  compare: {
+    title: 'Comparar Refeições',
+    olderMeals: 'Refeições anteriores',
+    needTwo: 'Selecione pelo menos 2 refeições para comparar',
+    unnamedMeal: 'Refeição',
+    addMeal: 'Adicionar uma Refeição',
+    sortRecent: 'Recentes',
+    sortName: 'A–Z',
+    noMeals: 'Nenhuma refeição registrada ainda',
+    alreadyAdded: 'já adicionada',
+  },
+
   // Home Screen
   home: {
     greeting: 'Olá',
@@ -409,6 +422,7 @@ export default {
     delete: 'Excluir',
     selectMealsToDelete: 'Selecione as refeições a excluir',
     mealsSelected: 'selecionadas',
+    compare: 'Comparar',
     deleteSelected: 'Excluir selecionadas',
     deleteMealsConfirm: 'Tem certeza de que deseja excluir essas refeições?',
     mealsDeleted: 'refeições excluídas',

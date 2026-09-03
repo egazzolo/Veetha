@@ -222,6 +222,26 @@ export default function MealsList({
               <TouchableOpacity
                 style={[
                   styles.copyMealsButton,
+                  { backgroundColor: '#4CAF50', opacity: (isPremium && selectedCount < 2) ? 0.5 : 1 }
+                ]}
+                onPress={() => {
+                  if (!isPremium) {
+                    navigation.navigate('Paywall', { highlightFeature: 'Meal comparison' });
+                    return;
+                  }
+                  if (selectedCount < 2) return;
+                  navigation.navigate('MealComparison', { mealIds: Array.from(selectedMealIds) });
+                }}
+                disabled={isPremium && selectedCount < 2}
+              >
+                <Text style={styles.copyMealsButtonText}>
+                  {t('home.compare')}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.copyMealsButton,
                   { backgroundColor: '#E53935', opacity: selectedCount === 0 ? 0.5 : 1 }
                 ]}
                 onPress={onConfirmDelete}
