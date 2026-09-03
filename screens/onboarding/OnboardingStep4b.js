@@ -17,9 +17,9 @@ export default function OnboardingStep4b({ navigation }) {
         {/* Progress */}
         <View style={styles.progressContainer}>
           <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: '33.33%' }]} />
+            <View style={[styles.progressFill, { width: '55.56%' }]} />
           </View>
-          <Text style={styles.progressText}>{t('onboarding.step')} 2 {t('onboarding.of')} 6</Text>
+          <Text style={styles.progressText}>{t('onboarding.step')} 5 {t('onboarding.of')} 9</Text>
         </View>
 
         {/* Main Icon */}

@@ -1,5 +1,5 @@
 // *** Agreement ***
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useOnboarding } from '../../utils/OnboardingContext';
@@ -11,9 +11,20 @@ export default function OnboardingStep6({ navigation }) {
   const { updateOnboardingData } = useOnboarding();
   const { t } = useLanguage();
   const [agreed, setAgreed] = useState(false);
+  const scrollRef = useRef(null);
+  const hasAutoScrolled = useRef(false);
 
   useEffect(() => { posthog.capture('onboarding_step_viewed', { step: 'agreement' }); }, []);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (agreed && !hasAutoScrolled.current) {
+      hasAutoScrolled.current = true;
+      setTimeout(() => {
+        scrollRef.current?.scrollToEnd({ animated: true });
+      }, 200);
+    }
+  }, [agreed]);
 
   const handleContinue = () => {
     setError('');
@@ -41,7 +52,8 @@ export default function OnboardingStep6({ navigation }) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <ScrollView 
+        <ScrollView
+          ref={scrollRef}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
@@ -49,9 +61,9 @@ export default function OnboardingStep6({ navigation }) {
             {/* Progress Indicator */}
             <View style={styles.progressContainer}>
               <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: '66.67%' }]} />
+                <View style={[styles.progressFill, { width: '77.78%' }]} />
               </View>
-              <Text style={styles.progressText}>{t('onboarding.step')} 4 {t('onboarding.of')} 6</Text>
+              <Text style={styles.progressText}>{t('onboarding.step')} 7 {t('onboarding.of')} 9</Text>
             </View>
 
             {/* Icon */}

@@ -100,10 +100,22 @@ export default {
   },
   // Onboarding
   onboarding: {
+    // Intro / welcome
+    introTitle: 'Salamat sa pagpili ng Meal Break',
+    introBody: 'Kailangan namin ng ilang impormasyon mo para makalkula ang iyong calories at macros.',
+    introPromise: 'Hindi ito magtatagal, pangako.',
+    introYourPlan: 'Ang Plano Mo',
+    introCalculatedForYou: 'kinalkula para sa iyo',
+    introCalories: 'Calories',
+    introProtein: 'Protina',
+    introCarbs: 'Carbs',
+    introFat: 'Taba',
+    introCta: 'Simulan Na',
+
     // Progress
     step: 'Hakbang',
     of: 'sa',
-    
+
     // Step 1 - Gender & DOB
     step1Title: "Kilalanin natin ang isa't isa",
     gender: 'Kasarian',

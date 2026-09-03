@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useOnboarding } from '../../utils/OnboardingContext';
@@ -10,8 +10,19 @@ export default function OnboardingStep7({ navigation }) {
   const { updateOnboardingData } = useOnboarding();
   const { t } = useLanguage();
   const [source, setSource] = useState('');
+  const scrollRef = useRef(null);
+  const hasAutoScrolled = useRef(false);
 
   useEffect(() => { posthog.capture('onboarding_step_viewed', { step: 'referral_source' }); }, []);
+
+  useEffect(() => {
+    if (source && !hasAutoScrolled.current) {
+      hasAutoScrolled.current = true;
+      setTimeout(() => {
+        scrollRef.current?.scrollToEnd({ animated: true });
+      }, 200);
+    }
+  }, [source]);
 
   const sourceOptions = [
     { id: 'tiktok', label: t('onboarding.tiktok'), icon: require('../../assets/icons/Social Media icons/tiktokIcon.png') },
@@ -49,7 +60,8 @@ export default function OnboardingStep7({ navigation }) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <ScrollView 
+        <ScrollView
+          ref={scrollRef}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
@@ -57,9 +69,9 @@ export default function OnboardingStep7({ navigation }) {
             {/* Progress Indicator */}
             <View style={styles.progressContainer}>
               <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: '83.33%' }]} />
+                <View style={[styles.progressFill, { width: '88.89%' }]} />
               </View>
-              <Text style={styles.progressText}>{t('onboarding.step')} 5 {t('onboarding.of')} 6</Text>
+              <Text style={styles.progressText}>{t('onboarding.step')} 8 {t('onboarding.of')} 9</Text>
             </View>
 
             {/* Title */}

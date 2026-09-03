@@ -295,9 +295,9 @@ export default function OnboardingStep1({ navigation }) {
         >
           <View style={styles.progressContainer}>
             <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: '16.67%' }]} />
+              <View style={[styles.progressFill, { width: '22.22%' }]} />
             </View>
-            <Text style={styles.progressText}>{t('onboarding.step')} 1 {t('onboarding.of')} 6</Text>
+            <Text style={styles.progressText}>{t('onboarding.step')} 2 {t('onboarding.of')} 9</Text>
           </View>
 
           {/* Title */}

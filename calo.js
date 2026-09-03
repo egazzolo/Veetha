@@ -25,6 +25,7 @@ import { TutorialProvider } from './utils/TutorialContext';
 import LandingScreen from './screens/onboarding/LandingScreen';
 import LoginScreen from './screens/onboarding/LoginScreen';
 import SignUpScreen from './screens/onboarding/SignUpScreen';
+import OnboardingIntro from './screens/onboarding/OnboardingIntro';
 import OnboardingStep1 from './screens/onboarding/OnboardingStep1';
 import OnboardingStep1b from './screens/onboarding/OnboardingStep1b';
 import OnboardingStep3 from './screens/onboarding/OnboardingStep3';
@@ -385,6 +386,7 @@ function AppNavigator() {
           <Stack.Screen name="Landing" component={LandingScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="SignUp" component={SignUpScreen} />
+          <Stack.Screen name="OnboardingIntro" component={OnboardingIntro} />
           <Stack.Screen name="OnboardingStep1" component={OnboardingStep1} />
           <Stack.Screen name="OnboardingStep1b" component={OnboardingStep1b} options={{ headerShown: false }} />
           <Stack.Screen name="OnboardingStep3" component={OnboardingStep3} />

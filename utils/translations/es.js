@@ -100,10 +100,22 @@ export default {
   },
   // Onboarding
   onboarding: {
+    // Intro / welcome
+    introTitle: 'Gracias por elegir Meal Break',
+    introBody: 'Necesitamos algunos datos tuyos para calcular tus calorías y macros.',
+    introPromise: 'No tardará mucho, lo prometemos.',
+    introYourPlan: 'Tu Plan',
+    introCalculatedForYou: 'calculado para ti',
+    introCalories: 'Calorías',
+    introProtein: 'Proteína',
+    introCarbs: 'Carbohidratos',
+    introFat: 'Grasa',
+    introCta: 'Vamos',
+
     // Progress
     step: 'Paso',
     of: 'de',
-    
+
     // Step 1 - Gender & DOB
     step1Title: 'Permítenos conocerte',
     gender: 'Género',

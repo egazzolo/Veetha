@@ -1,5 +1,5 @@
 // *** Goal + Activity Level ***
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useOnboarding } from '../../utils/OnboardingContext';
@@ -17,6 +17,22 @@ export default function OnboardingStep3({ navigation }) {
   const [activityLevel, setActivityLevel] = useState('');
   const unit = onboardingData.unit || 'imperial';
   const [error, setError] = useState('');
+
+  const scrollRef = useRef(null);
+  const navButtonsY = useRef(0);
+  const hasAutoScrolled = useRef(false);
+
+  // Activity level is the last thing to pick on this screen -- once it's
+  // set, reveal the Continue button so the user doesn't have to hunt for
+  // it below a 5-option list (they still have to tap it themselves).
+  useEffect(() => {
+    if (activityLevel && !hasAutoScrolled.current) {
+      hasAutoScrolled.current = true;
+      setTimeout(() => {
+        scrollRef.current?.scrollToEnd({ animated: true });
+      }, 200);
+    }
+  }, [activityLevel]);
 
   const activityOptions = [
     {
@@ -98,6 +114,7 @@ export default function OnboardingStep3({ navigation }) {
         style={{ flex: 1 }}
       >
         <ScrollView
+          ref={scrollRef}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
@@ -105,9 +122,9 @@ export default function OnboardingStep3({ navigation }) {
           {/* Progress Indicator */}
             <View style={styles.progressContainer}>
               <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: '33.33%' }]} />
+                <View style={[styles.progressFill, { width: '44.44%' }]} />
               </View>
-              <Text style={styles.progressText}>{t('onboarding.step')} 2 {t('onboarding.of')} 6</Text>
+              <Text style={styles.progressText}>{t('onboarding.step')} 4 {t('onboarding.of')} 9</Text>
           </View>
 
           {/* Title */}

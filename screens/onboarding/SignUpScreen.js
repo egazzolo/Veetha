@@ -259,7 +259,7 @@ export default function SignUpScreen({ navigation }) {
           t('signup.success'),t('signup.accountCreated'),
           [{
             text: 'Continue',
-            onPress: () => navigation.navigate('OnboardingStep1')
+            onPress: () => navigation.navigate('OnboardingIntro')
           }]
         );
       }

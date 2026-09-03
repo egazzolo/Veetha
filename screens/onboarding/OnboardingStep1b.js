@@ -15,6 +15,13 @@ export default function OnboardingStep1b({ navigation }) {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: '33.33%' }]} />
+          </View>
+          <Text style={styles.progressText}>{t('onboarding.step')} 3 {t('onboarding.of')} 9</Text>
+        </View>
+
         {/* Main Icon */}
         <Text style={styles.mainEmoji}>📊</Text>
         
@@ -78,6 +85,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: scale(35),
     paddingBottom: 100,
+  },
+  progressContainer: {
+    marginBottom: scale(25),
+  },
+  progressBar: {
+    height: 4,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#4CAF50',
+  },
+  progressText: {
+    fontSize: scale(12),
+    color: '#999',
+    marginTop: 8,
+    textAlign: 'center',
   },
   mainEmoji: {
     fontSize: scale(60),

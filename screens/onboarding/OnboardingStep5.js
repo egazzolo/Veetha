@@ -1,5 +1,5 @@
 // *** Dietary Restrictions ***
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useOnboarding } from '../../utils/OnboardingContext';
@@ -11,8 +11,21 @@ export default function OnboardingStep5({ navigation }) {
   const { updateOnboardingData } = useOnboarding();
   const { t } = useLanguage();
   const [selectedRestrictions, setSelectedRestrictions] = useState([]);
+  const scrollRef = useRef(null);
+  const hasAutoScrolled = useRef(false);
 
   useEffect(() => { posthog.capture('onboarding_step_viewed', { step: 'dietary_restrictions' }); }, []);
+
+  // Reveal the Continue button after the first pick, since the option list
+  // can run past the fold -- they still have to tap it themselves.
+  useEffect(() => {
+    if (selectedRestrictions.length > 0 && !hasAutoScrolled.current) {
+      hasAutoScrolled.current = true;
+      setTimeout(() => {
+        scrollRef.current?.scrollToEnd({ animated: true });
+      }, 200);
+    }
+  }, [selectedRestrictions]);
 
   const dietaryOptions = [
     { id: 'vegetarian', label: t('onboarding.vegetarian'), emoji: '🥬' },
@@ -69,7 +82,8 @@ export default function OnboardingStep5({ navigation }) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <ScrollView 
+        <ScrollView
+          ref={scrollRef}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
@@ -77,9 +91,9 @@ export default function OnboardingStep5({ navigation }) {
             {/* Progress Indicator */}
             <View style={styles.progressContainer}>
               <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: '50%' }]} />
+                <View style={[styles.progressFill, { width: '66.67%' }]} />
               </View>
-              <Text style={styles.progressText}>{t('onboarding.step')} 3 {t('onboarding.of')} 6</Text>
+              <Text style={styles.progressText}>{t('onboarding.step')} 6 {t('onboarding.of')} 9</Text>
             </View>
 
             {/* Title */}
