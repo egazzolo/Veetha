@@ -63,6 +63,32 @@ function withNativeBillingModuleGradleDep(config) {
   });
 }
 
+// react-native-iap's Android module ships two product flavors (Amazon
+// Appstore vs Google Play), left over from when it still supported both --
+// without picking one, Gradle can't disambiguate which variant to resolve
+// and every consuming build fails with a flavor-ambiguity error, even
+// though nothing here actually uses react-native-iap's Android purchase
+// path at all (see NativeBillingModule.kt).
+function withNativeBillingModuleStoreFlavor(config) {
+  return withAppBuildGradle(config, (config) => {
+    if (config.modResults.language !== 'groovy') {
+      throw new Error(
+        'withNativeBillingModule: expected a Groovy app/build.gradle, got ' + config.modResults.language
+      );
+    }
+    const merged = mergeContents({
+      src: config.modResults.contents,
+      newSrc: `        missingDimensionStrategy 'store', 'play'`,
+      tag: 'native-billing-module-store-flavor',
+      anchor: /defaultConfig\s*\{/,
+      offset: 1,
+      comment: '//',
+    });
+    config.modResults.contents = merged.contents;
+    return config;
+  });
+}
+
 function withNativeBillingModuleRegistration(config) {
   return withMainApplication(config, (config) => {
     const merged = mergeContents({
@@ -81,6 +107,7 @@ function withNativeBillingModuleRegistration(config) {
 module.exports = function withNativeBillingModule(config) {
   config = withNativeBillingModuleSource(config);
   config = withNativeBillingModuleGradleDep(config);
+  config = withNativeBillingModuleStoreFlavor(config);
   config = withNativeBillingModuleRegistration(config);
   return config;
 };
