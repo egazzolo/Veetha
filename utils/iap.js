@@ -83,7 +83,12 @@ async function finishStuckTransactionsIOS() {
 }
 
 // ── Initialize IAP connection ────────────────────────────────────
+// react-native-iap is excluded from the Android build entirely (see
+// react-native.config.js) -- NativeBillingModule manages its own Play
+// Billing connection lifecycle internally, so there's nothing to init here
+// on Android.
 export async function initIAP() {
+  if (Platform.OS !== 'ios') return true;
   try {
     console.log('🔍 [initIAP] BEFORE initConnection(), timestamp:', new Date().toISOString());
     const initConnectionResult = await initConnection();
@@ -129,6 +134,7 @@ export async function initIAP() {
 // it, so the request silently gets no response. It must only run once,
 // at session start (inside initIAP()), never right before a purchase.
 export async function ensureIAPConnection() {
+  if (Platform.OS !== 'ios') return true;
   try {
     await initConnection();
     return true;
@@ -140,6 +146,7 @@ export async function ensureIAPConnection() {
 
 // ── End IAP connection ───────────────────────────────────────────
 export async function endIAP() {
+  if (Platform.OS !== 'ios') return;
   try {
     await endConnection();
   } catch (error) {
@@ -286,7 +293,17 @@ export async function validateReceipt(purchase) {
 }
 
 // ── Restore purchases ────────────────────────────────────────────
+// TODO(android): react-native-iap is excluded from the Android build (see
+// react-native.config.js), so there's currently no working "Restore
+// Purchases" path on Android -- NativeBillingModule has no purchase-query
+// method yet (Play Billing's queryPurchasesAsync would need to be added
+// there). Failing safe with { restored: false } rather than crashing or
+// silently pretending it worked.
 export async function restorePurchases() {
+  if (Platform.OS === 'android') {
+    console.warn('⚠️ restorePurchases() has no Android implementation yet');
+    return { restored: false };
+  }
   try {
     // v13.x has no syncIOS() -- the library's own docs say
     // getAvailablePurchases() alone is the documented way to restore.
