@@ -69,6 +69,10 @@ import ResetPasswordScreen from './screens/onboarding/ResetPasswordScreen';
 import PaywallScreen from './screens/PaywallScreen';
 import MealComparisonScreen from './screens/MealComparisonScreen';
 import MealPickerScreen from './screens/MealPickerScreen';
+import ProgressCheckInScreen from './screens/ProgressCheckInScreen';
+import ProgressCompareScreen from './screens/ProgressCompareScreen';
+import PhotoTipsScreen from './screens/PhotoTipsScreen';
+import HelpSupportScreen from './screens/HelpSupportScreen';
 
 // Import contexts and utilities
 import { OnboardingProvider } from './utils/OnboardingContext';
@@ -432,6 +436,10 @@ function AppNavigator() {
           <Stack.Screen name="Paywall" component={PaywallScreen} options={{ presentation: 'modal', headerShown: false }} />
           <Stack.Screen name="MealComparison" component={MealComparisonScreen} />
           <Stack.Screen name="MealPicker" component={MealPickerScreen} />
+          <Stack.Screen name="ProgressCheckIn" component={ProgressCheckInScreen} />
+          <Stack.Screen name="ProgressCompare" component={ProgressCompareScreen} />
+          <Stack.Screen name="PhotoTips" component={PhotoTipsScreen} />
+          <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
         </Stack.Navigator>
         {/* <GlobalTutorialOverlay /> */}
         <GracePeriodAlert />

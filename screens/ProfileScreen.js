@@ -234,8 +234,7 @@ export default function ProfileScreen({ navigation }) {
   };
 
   const handleSupport = () => {
-    // TODO: Navigate to support/help
-    showToast('info', t('profile.helpSupport'), t('profile.contactSupport'));
+    navigation.navigate('HelpSupport');
   };
 
   const handleLogout = () => {

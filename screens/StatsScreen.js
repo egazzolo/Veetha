@@ -15,6 +15,7 @@ import AnimatedThemeWrapper from '../components/AnimatedThemeWrapper';
 import ThemedScreenBackground from '../components/ThemedScreenBackground';
 import BottomNav from '../components/BottomNav';
 import ExerciseHistoryScreen from './ExerciseHistoryScreen';
+import ProgressPanel from './ProgressPanel';
 import AppIcon from '../components/AppIcon';
 import { usePremiumStatus } from '../utils/usePremiumStatus';
 import AppTutorial from '../components/AppTutorial';
@@ -438,7 +439,7 @@ export default function StatsScreen({ navigation }) {
   }, []);
 
   useEffect(() => {
-    const index = activeTab === 'week' ? 0 : activeTab === 'month' ? 1 : 2;
+    const index = activeTab === 'week' ? 0 : activeTab === 'month' ? 1 : activeTab === 'exercise' ? 2 : 3;
     Animated.spring(periodIndicatorAnim, {
       toValue: index,
       friction: 8,
@@ -476,7 +477,7 @@ export default function StatsScreen({ navigation }) {
     }
   }, [activeTab, monthlyData]);
 
-  const tabIndexOf = (tab) => (tab === 'week' ? 0 : tab === 'month' ? 1 : 2);
+  const tabIndexOf = (tab) => (tab === 'week' ? 0 : tab === 'month' ? 1 : tab === 'exercise' ? 2 : 3);
   const changeTab = (newTab) => {
     if (newTab === activeTab) return;
     let direction = tabIndexOf(newTab) > tabIndexOf(activeTab) ? -1 : 1;
@@ -661,8 +662,8 @@ export default function StatsScreen({ navigation }) {
                     {
                       backgroundColor: theme.primary,
                       left: periodIndicatorAnim.interpolate({
-                        inputRange: [0, 1, 2],
-                        outputRange: ['0%', '33.3333%', '66.6667%'],
+                        inputRange: [0, 1, 2, 3],
+                        outputRange: ['0%', '25%', '50%', '75%'],
                       }),
                     },
                   ]}
@@ -689,6 +690,14 @@ export default function StatsScreen({ navigation }) {
                 >
                   <Text style={[ styles.periodText, { color: activeTab === 'exercise' ? '#fff' : theme.textSecondary }]}>
                     {t('stats.exercise')}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.periodButton}
+                  onPress={() => changeTab('progress')}
+                >
+                  <Text style={[ styles.periodText, { color: activeTab === 'progress' ? '#fff' : theme.textSecondary }]}>
+                    {t('stats.progress')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -1096,7 +1105,29 @@ export default function StatsScreen({ navigation }) {
                 </>
                 );
 
-                const panelFor = (tab) => (tab === 'week' ? weekPanel : tab === 'month' ? monthPanel : exercisePanel);
+                const progressPanel = (
+                <>
+                  {isGuestMode && (
+                    <View style={[styles.guestBanner, { backgroundColor: theme.cardBackground, borderColor: theme.primary }]}>
+                      <Text style={[styles.guestBannerText, { color: theme.text }]}>
+                        {t('guest.progress')}
+                      </Text>
+                      <TouchableOpacity
+                        style={[styles.guestBannerBtn, { backgroundColor: theme.primary }]}
+                        onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Landing' }] })}
+                      >
+                        <Text style={styles.guestBannerBtnText}>{t('guest.signUpLogIn')}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                  <ProgressPanel
+                    navigation={navigation}
+                    route={{ params: { theme, isPremium } }}
+                  />
+                </>
+                );
+
+                const panelFor = (tab) => (tab === 'week' ? weekPanel : tab === 'month' ? monthPanel : tab === 'exercise' ? exercisePanel : progressPanel);
 
                 if (pushState) {
                   const { from, to, direction } = pushState;
@@ -1137,6 +1168,7 @@ export default function StatsScreen({ navigation }) {
               <View ref={reportsRef} style={[
                 styles.section,
                 activeTab === 'exercise' && { marginTop: -20 },
+                activeTab === 'progress' && { marginTop: -20 },
                 activeTab === 'week' && { marginTop: -10 },
               ]}>
                 <View style={[styles.settingItem, { backgroundColor: 'transparent' }]}>
@@ -1369,7 +1401,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     bottom: 0,
-    width: '33.3333%',
+    width: '25%',
     borderRadius: 10,
   },
   periodButton: {
