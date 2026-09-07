@@ -1,13 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Switch, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Switch, ActivityIndicator, Platform, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../utils/ThemeContext';
 import { useLanguage } from '../utils/LanguageContext';
 import { useUser } from '../utils/UserContext';
 import { useUserMode } from '../utils/UserModeContext';
+import { usePremiumStatus } from '../utils/usePremiumStatus';
 import { supabase } from '../utils/supabase';
-import { getMealReminderPrefs, setMealReminderPref, rescheduleMealReminders } from '../utils/mealReminders';
+import { showToast } from '../components/VeethaToast';
+import {
+  getMealReminderPrefs,
+  setMealReminderPref,
+  getMealReminderTimes,
+  setMealReminderTime,
+  rescheduleMealReminders,
+} from '../utils/mealReminders';
+
+function formatTime(hour, minute) {
+  const d = new Date();
+  d.setHours(hour, minute, 0, 0);
+  return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
+function timeToDate(hour, minute) {
+  const d = new Date();
+  d.setHours(hour, minute, 0, 0);
+  return d;
+}
 
 const LANGUAGES = [
   { code: 'en', label: '🇬🇧 English' },
@@ -22,12 +43,19 @@ export default function PreferencesScreen({ navigation }) {
   const { language, t, setLanguage } = useLanguage();
   const { profile, loading: profileLoading, refreshProfile } = useUser();
   const { isGuest: isGuestMode } = useUserMode();
+  const { isPremium } = usePremiumStatus();
 
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [savingUnit, setSavingUnit] = useState(false);
   const [defaultStatsTab, setDefaultStatsTab] = useState('week');
   const [invertSwipe, setInvertSwipe] = useState(false);
   const [mealPrefs, setMealPrefs] = useState({ breakfast: true, lunch: true, dinner: true });
+  const [mealTimes, setMealTimes] = useState({
+    breakfast: { hour: 8, minute: 0 },
+    lunch: { hour: 13, minute: 0 },
+    dinner: { hour: 19, minute: 0 },
+  });
+  const [activeTimePicker, setActiveTimePicker] = useState(null);
   // Local AsyncStorage-backed prefs resolve a beat after first render --
   // without this, the screen briefly shows defaults (e.g. Metric, Week)
   // before flipping to the real saved values, which read as "took a
@@ -43,6 +71,7 @@ export default function PreferencesScreen({ navigation }) {
         setInvertSwipe(val === 'true');
       }),
       getMealReminderPrefs().then(setMealPrefs),
+      getMealReminderTimes().then(setMealTimes),
     ]).then(() => setPrefsLoaded(true));
   }, []);
 
@@ -76,7 +105,63 @@ export default function PreferencesScreen({ navigation }) {
   const toggleMealReminder = async (meal, value) => {
     setMealPrefs((prev) => ({ ...prev, [meal]: value }));
     await setMealReminderPref(meal, value);
-    await rescheduleMealReminders(t);
+    await rescheduleMealReminders(t, isPremium);
+  };
+
+  // Reminders repeat daily at a fixed clock time -- if that time already
+  // passed today, the next firing is tomorrow, not "in a few minutes."
+  // Surfacing which one it is here head off the confusing "I set it and
+  // nothing happened" report when someone tests with a near time that's
+  // already behind the current clock.
+  const confirmReminderSet = (hour, minute) => {
+    const now = new Date();
+    let target = timeToDate(hour, minute);
+    const firesToday = target > now;
+    if (!firesToday) target = new Date(target.getTime() + 24 * 60 * 60 * 1000);
+    const day = firesToday ? t('common.today') : t('common.tomorrow');
+
+    const totalMinutes = Math.max(0, Math.round((target - now) / 60000));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    const relative = hours === 0
+      ? t('common.inMinutes', { minutes })
+      : minutes === 0
+        ? t('common.inHours', { hours })
+        : t('common.inHoursMinutes', { hours, minutes });
+
+    showToast(
+      'info',
+      t('preferences.mealReminders'),
+      `${t('preferences.reminderTimeSet', { day, time: formatTime(hour, minute) })} (${relative})`
+    );
+  };
+
+  const handleTimeChange = async (event, selectedDate) => {
+    const meal = activeTimePicker;
+    // Android's dialog dismisses itself and reports the outcome via
+    // event.type; iOS's inline spinner has no dismiss event and keeps
+    // firing onChange as the user scrolls, so it stays open until Done.
+    if (Platform.OS === 'android') {
+      setActiveTimePicker(null);
+      if (event.type !== 'set' || !selectedDate || !meal) return;
+    } else if (!selectedDate || !meal) {
+      return;
+    }
+
+    const hour = selectedDate.getHours();
+    const minute = selectedDate.getMinutes();
+    setMealTimes((prev) => ({ ...prev, [meal]: { hour, minute } }));
+    await setMealReminderTime(meal, hour, minute);
+    await rescheduleMealReminders(t, isPremium);
+    if (Platform.OS === 'android') confirmReminderSet(hour, minute);
+  };
+
+  const closeTimePicker = () => {
+    if (activeTimePicker) {
+      const { hour, minute } = mealTimes[activeTimePicker];
+      confirmReminderSet(hour, minute);
+    }
+    setActiveTimePicker(null);
   };
 
   const currentLanguageLabel = LANGUAGES.find((l) => l.code === language)?.label || '';
@@ -109,74 +194,114 @@ export default function PreferencesScreen({ navigation }) {
       </View>
 
       <ScrollView style={styles.content}>
-        {/* Language */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('preferences.language')}</Text>
-          <TouchableOpacity
-            style={[styles.dropdown, { backgroundColor: theme.inputBackground || theme.cardBackground, borderColor: theme.border }]}
-            onPress={() => setShowLanguageDropdown(!showLanguageDropdown)}
-          >
-            <Text style={[styles.dropdownText, { color: theme.text }]}>{currentLanguageLabel}</Text>
-            <Text style={[styles.dropdownArrow, { color: theme.textSecondary }]}>{showLanguageDropdown ? '▲' : '▼'}</Text>
-          </TouchableOpacity>
-          {showLanguageDropdown && (
-            <View style={[styles.dropdownMenu, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
-              {LANGUAGES.map((l) => (
-                <TouchableOpacity
-                  key={l.code}
-                  style={[styles.dropdownItem, language === l.code && { backgroundColor: theme.primary + '20' }]}
-                  onPress={async () => {
-                    setShowLanguageDropdown(false);
-                    if (l.code !== language) await setLanguage(l.code);
-                  }}
-                >
-                  <Text style={[styles.dropdownItemText, { color: theme.text }]}>{l.label}</Text>
-                  {language === l.code && <Text style={{ color: theme.primary }}>✓</Text>}
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </View>
+        {/* Language + Unit System -- side by side */}
+        <View style={styles.sideBySideRow}>
+          <View style={styles.sideBySideCard}>
+            <Text style={[styles.sideBySideTitle, { color: theme.text }]}>{t('preferences.language')}</Text>
+            <Text style={styles.sideBySideDesc}> </Text>
+            <TouchableOpacity
+              style={[styles.dropdown, { backgroundColor: theme.inputBackground || theme.cardBackground, borderColor: theme.border }]}
+              onPress={() => setShowLanguageDropdown(!showLanguageDropdown)}
+            >
+              <Text style={[styles.dropdownText, { color: theme.text }]} numberOfLines={1}>{currentLanguageLabel}</Text>
+              <Text style={[styles.dropdownArrow, { color: theme.textSecondary }]}>{showLanguageDropdown ? '▲' : '▼'}</Text>
+            </TouchableOpacity>
+            {showLanguageDropdown && (
+              <View style={[styles.dropdownMenu, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+                {LANGUAGES.map((l) => (
+                  <TouchableOpacity
+                    key={l.code}
+                    style={[styles.dropdownItem, language === l.code && { backgroundColor: theme.primary + '20' }]}
+                    onPress={async () => {
+                      setShowLanguageDropdown(false);
+                      if (l.code !== language) await setLanguage(l.code);
+                    }}
+                  >
+                    <Text style={[styles.dropdownItemText, { color: theme.text }]}>{l.label}</Text>
+                    {language === l.code && <Text style={{ color: theme.primary }}>✓</Text>}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
 
-        {/* Unit System */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('preferences.unitSystem')}</Text>
-          <View style={styles.segmentedControl}>
-            <TouchableOpacity
-              style={[styles.segment, unitSystem === 'metric' && [styles.segmentActive, { backgroundColor: theme.primary }]]}
-              onPress={() => changeUnitSystem('metric')}
-            >
-              <Text style={[styles.segmentText, { color: theme.textSecondary }, unitSystem === 'metric' && styles.segmentTextActive]}>
-                {t('editProfile.metric')}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.segment, unitSystem === 'imperial' && [styles.segmentActive, { backgroundColor: theme.primary }]]}
-              onPress={() => changeUnitSystem('imperial')}
-            >
-              <Text style={[styles.segmentText, { color: theme.textSecondary }, unitSystem === 'imperial' && styles.segmentTextActive]}>
-                {t('editProfile.imperial')}
-              </Text>
-            </TouchableOpacity>
+          <View style={styles.sideBySideCard}>
+            <Text style={[styles.sideBySideTitle, { color: theme.text }]}>{t('preferences.unitSystem')}</Text>
+            <Text style={styles.sideBySideDesc}> </Text>
+            <View style={styles.segmentedControl}>
+              <TouchableOpacity
+                style={[styles.segment, unitSystem === 'metric' && [styles.segmentActive, { backgroundColor: theme.primary }]]}
+                onPress={() => changeUnitSystem('metric')}
+              >
+                <Text
+                  style={[styles.segmentText, { color: theme.textSecondary }, unitSystem === 'metric' && styles.segmentTextActive]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                >
+                  {t('editProfile.metric')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.segment, unitSystem === 'imperial' && [styles.segmentActive, { backgroundColor: theme.primary }]]}
+                onPress={() => changeUnitSystem('imperial')}
+              >
+                <Text
+                  style={[styles.segmentText, { color: theme.textSecondary }, unitSystem === 'imperial' && styles.segmentTextActive]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                >
+                  {t('editProfile.imperial')}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
-        {/* Default Stats View */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('preferences.defaultView')}</Text>
-          <Text style={[styles.sectionDesc, { color: theme.textSecondary }]}>{t('preferences.defaultViewDesc')}</Text>
-          <View style={styles.segmentedControl}>
-            {['week', 'month', 'exercise'].map((tab) => (
-              <TouchableOpacity
-                key={tab}
-                style={[styles.segment, defaultStatsTab === tab && [styles.segmentActive, { backgroundColor: theme.primary }]]}
-                onPress={() => changeDefaultStatsTab(tab)}
-              >
-                <Text style={[styles.segmentText, { color: theme.textSecondary }, defaultStatsTab === tab && styles.segmentTextActive]}>
-                  {t(`stats.${tab}`)}
-                </Text>
-              </TouchableOpacity>
-            ))}
+        {/* Swipe Direction + Default Stats View -- side by side */}
+        <View style={styles.sideBySideRow}>
+          <View style={styles.sideBySideCard}>
+            <Text style={[styles.sideBySideTitle, { color: theme.text }]}>{t('preferences.swipeDirection')}</Text>
+            <Text style={[styles.sideBySideDesc, { color: theme.textSecondary }]} numberOfLines={2}>
+              {t('preferences.swipeDirectionDesc')}
+            </Text>
+            <View style={styles.sideBySideToggleRow}>
+              <Text style={[styles.rowLabel, styles.sideBySideToggleLabel, { color: theme.text }]} numberOfLines={1}>
+                {t('preferences.invertSwipe')}
+              </Text>
+              <Switch
+                value={invertSwipe}
+                onValueChange={toggleInvertSwipe}
+                trackColor={{ false: theme.border, true: theme.primary }}
+              />
+            </View>
+          </View>
+
+          <View style={styles.sideBySideCard}>
+            <Text style={[styles.sideBySideTitle, { color: theme.text }]}>{t('preferences.defaultView')}</Text>
+            <Text style={[styles.sideBySideDesc, { color: theme.textSecondary }]} numberOfLines={2}>
+              {t('preferences.defaultViewDesc')}
+            </Text>
+            <View style={styles.segmentedControl}>
+              {['week', 'month', 'exercise'].map((tab) => (
+                <TouchableOpacity
+                  key={tab}
+                  style={[styles.segment, defaultStatsTab === tab && [styles.segmentActive, { backgroundColor: theme.primary }]]}
+                  onPress={() => changeDefaultStatsTab(tab)}
+                >
+                  <Text
+                    style={[
+                      styles.segmentText,
+                      styles.defaultViewSegmentText,
+                      { color: theme.textSecondary },
+                      defaultStatsTab === tab && styles.segmentTextActive,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {t(`stats.${tab}`)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         </View>
 
@@ -188,6 +313,17 @@ export default function PreferencesScreen({ navigation }) {
           {['breakfast', 'lunch', 'dinner'].map((meal) => (
             <View key={meal} style={[styles.row, { borderBottomColor: theme.border }]}>
               <Text style={[styles.rowLabel, { color: theme.text }]}>{t(`preferences.${meal}`)}</Text>
+              <TouchableOpacity
+                style={[styles.timeChip, { borderColor: theme.border }]}
+                onPress={() => (isPremium
+                  ? setActiveTimePicker(meal)
+                  : navigation.navigate('Paywall', { highlightFeature: 'Custom reminder times' }))}
+              >
+                <Text style={[styles.timeChipText, { color: mealPrefs[meal] ? theme.primary : theme.textTertiary }]}>
+                  {formatTime(mealTimes[meal].hour, mealTimes[meal].minute)}
+                </Text>
+                {!isPremium && <Text style={styles.timeChipLock}>🔒</Text>}
+              </TouchableOpacity>
               <Switch
                 value={mealPrefs[meal]}
                 onValueChange={(value) => toggleMealReminder(meal, value)}
@@ -197,19 +333,35 @@ export default function PreferencesScreen({ navigation }) {
           ))}
         </View>
 
-        {/* Swipe Direction */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('preferences.swipeDirection')}</Text>
-          <Text style={[styles.sectionDesc, { color: theme.textSecondary }]}>{t('preferences.swipeDirectionDesc')}</Text>
-          <View style={[styles.row, { borderBottomColor: theme.border }]}>
-            <Text style={[styles.rowLabel, { color: theme.text }]}>{t('preferences.invertSwipe')}</Text>
-            <Switch
-              value={invertSwipe}
-              onValueChange={toggleInvertSwipe}
-              trackColor={{ false: theme.border, true: theme.primary }}
-            />
-          </View>
-        </View>
+        {activeTimePicker && Platform.OS === 'android' && (
+          <DateTimePicker
+            value={timeToDate(mealTimes[activeTimePicker].hour, mealTimes[activeTimePicker].minute)}
+            mode="time"
+            display="default"
+            onChange={handleTimeChange}
+          />
+        )}
+
+        {activeTimePicker && Platform.OS === 'ios' && (
+          <Modal transparent animationType="fade" visible onRequestClose={closeTimePicker}>
+            <View style={styles.timePickerOverlay}>
+              <View style={[styles.timePickerSheet, { backgroundColor: theme.cardBackground }]}>
+                <DateTimePicker
+                  value={timeToDate(mealTimes[activeTimePicker].hour, mealTimes[activeTimePicker].minute)}
+                  mode="time"
+                  display="spinner"
+                  onChange={handleTimeChange}
+                />
+                <TouchableOpacity
+                  style={[styles.timePickerDoneBtn, { backgroundColor: theme.primary }]}
+                  onPress={closeTimePicker}
+                >
+                  <Text style={styles.timePickerDoneBtnText}>{t('common.done')}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -233,6 +385,36 @@ const styles = StyleSheet.create({
   section: { padding: 20 },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
   sectionDesc: { fontSize: 13, lineHeight: 18, marginBottom: 15 },
+  sideBySideRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    gap: 12,
+  },
+  sideBySideCard: { flex: 1 },
+  sideBySideTitle: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  // Reserves the same vertical space whether a card has real helper text
+  // (Swipe Direction, Default View) or none (Language, Unit System) -- so
+  // the control below it (dropdown / segmented / toggle) starts at the same
+  // Y in every card in the row instead of drifting with text length.
+  sideBySideDesc: {
+    fontSize: 11,
+    lineHeight: 14,
+    minHeight: 28,
+    marginBottom: 8,
+  },
+  sideBySideToggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  sideBySideToggleLabel: { flex: 1, marginRight: 8, fontSize: 13 },
   dropdown: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -269,6 +451,11 @@ const styles = StyleSheet.create({
   },
   segmentText: { fontSize: 13, fontWeight: '600' },
   segmentTextActive: { color: '#fff', fontWeight: 'bold' },
+  // Fixed (not auto-shrinking) so Week/Month/Exercise render at one matching
+  // size -- adjustsFontSizeToFit sized each label independently off its own
+  // text width, so the short "Week" stayed near the base size while the
+  // long "Exercise" shrank much further, leaving all three visibly mismatched.
+  defaultViewSegmentText: { fontSize: 11.5 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -277,4 +464,20 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   rowLabel: { fontSize: 15, fontWeight: '500' },
+  timeChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, marginRight: 12,
+  },
+  timeChipText: { fontSize: 14, fontWeight: '700' },
+  timeChipLock: { fontSize: 11 },
+  timePickerOverlay: {
+    flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  timePickerSheet: {
+    borderTopLeftRadius: 16, borderTopRightRadius: 16, paddingTop: 8, paddingBottom: 24, paddingHorizontal: 16,
+  },
+  timePickerDoneBtn: {
+    borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 8,
+  },
+  timePickerDoneBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });

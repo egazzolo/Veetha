@@ -8,6 +8,8 @@ import { useUserMode } from '../utils/UserModeContext';
 import { blockIfGuest } from '../utils/guestBlock';
 import { showToast } from '../components/VeethaToast';
 import GuestUpsellSheet from '../components/GuestUpsellSheet';
+import PopIcon from '../components/PopIcon';
+import SpinCheckmark from '../components/SpinCheckmark';
 
 const ALLERGIES = [
   { id: 'peanuts', icon: require('../assets/icons/dietary/allergy_peanuts.png') },
@@ -174,7 +176,7 @@ export default function DietaryRestrictionsScreen({ navigation }) {
           </View>
 
           {/* Allergies Section */}
-          <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
+          <View style={[styles.card, { backgroundColor: theme.background }]}>
             <Text style={[styles.cardTitle, { color: theme.text }]}>{t('dietaryRestrictions.allergiesTitle')}</Text>
             <Text style={[styles.helperText, { color: theme.textTertiary, marginBottom: 15 }]}>
               {t('dietaryRestrictions.allergiesHelper')}
@@ -187,9 +189,9 @@ export default function DietaryRestrictionsScreen({ navigation }) {
                   style={[
                     styles.chip,
                     { 
-                      backgroundColor: selectedAllergies.includes(allergy.id) 
-                        ? theme.primary 
-                        : theme.background,
+                      backgroundColor: selectedAllergies.includes(allergy.id)
+                        ? theme.primary
+                        : theme.cardBackground,
                       borderColor: selectedAllergies.includes(allergy.id)
                         ? theme.primary
                         : theme.border,
@@ -197,8 +199,10 @@ export default function DietaryRestrictionsScreen({ navigation }) {
                   ]}
                   onPress={() => toggleAllergy(allergy.id)}
                 >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Image source={allergy.icon} style={{ width: 22, height: 22 }} resizeMode="contain" />
+                  <PopIcon trigger={selectedAllergies.includes(allergy.id)} pulseOnDeselect style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <View style={{ width: 22, height: 22, borderRadius: 11, overflow: 'hidden' }}>
+                      <Image source={allergy.icon} style={{ width: 22, height: 22 }} resizeMode="cover" />
+                    </View>
                     <Text style={[
                       styles.chipText,
                       {
@@ -209,14 +213,14 @@ export default function DietaryRestrictionsScreen({ navigation }) {
                     ]}>
                       {t(`dietaryRestrictions.${allergy.id.replace('_', '')}`)}
                     </Text>
-                  </View>
+                  </PopIcon>
                 </TouchableOpacity>
               ))}
             </View>
           </View>
 
           {/* Diet Type Section */}
-          <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
+          <View style={[styles.card, { backgroundColor: theme.background }]}>
             <Text style={[styles.cardTitle, { color: theme.text }]}>{t('dietaryRestrictions.dietTypeTitle')}</Text>
             <Text style={[styles.helperText, { color: theme.textTertiary, marginBottom: 15 }]}>
               {t('dietaryRestrictions.dietTypeHelper')}
@@ -227,31 +231,36 @@ export default function DietaryRestrictionsScreen({ navigation }) {
                 key={diet.value}
                 style={[
                   styles.dietOption,
-                  { 
-                    backgroundColor: theme.background,
+                  {
+                    backgroundColor: dietType === diet.value ? `${theme.primary}22` : theme.cardBackground,
                     borderColor: dietType === diet.value ? theme.primary : theme.border,
                     borderWidth: dietType === diet.value ? 2 : 1,
                   }
                 ]}
                 onPress={() => guestCheck(() => setDietType(diet.value))}
               >
-                <View style={styles.dietOptionContent}>
-                  <Text style={[styles.dietLabel, { color: theme.text }]}>
-                    {t(`dietaryRestrictions.${diet.value}`)}
-                  </Text>
-                  <Text style={[styles.dietDescription, { color: theme.textSecondary }]}>
-                    {t(`dietaryRestrictions.${diet.value}Desc`)}
-                  </Text>
-                </View>
-                {dietType === diet.value && (
-                  <Text style={[styles.checkmark, { color: theme.primary }]}>✓</Text>
-                )}
+                <PopIcon trigger={dietType === diet.value} style={{ flex: 1 }}>
+                  <View style={styles.dietOptionContent}>
+                    <Text style={[styles.dietLabel, { color: theme.text }]}>
+                      {t(`dietaryRestrictions.${diet.value}`)}
+                    </Text>
+                    <Text style={[styles.dietDescription, { color: theme.textSecondary }]}>
+                      {t(`dietaryRestrictions.${diet.value}Desc`)}
+                    </Text>
+                  </View>
+                </PopIcon>
+                <SpinCheckmark
+                  trigger={dietType === diet.value}
+                  style={[styles.checkmark, { color: theme.primary, opacity: dietType === diet.value ? 1 : 0 }]}
+                >
+                  ✓
+                </SpinCheckmark>
               </TouchableOpacity>
             ))}
           </View>
 
           {/* Other Preferences Section */}
-          <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
+          <View style={[styles.card, { backgroundColor: theme.background }]}>
             <Text style={[styles.cardTitle, { color: theme.text }]}>{t('dietaryRestrictions.preferencesTitle')}s</Text>
             <Text style={[styles.helperText, { color: theme.textTertiary, marginBottom: 15 }]}>
               {t('dietaryRestrictions.preferencesHelper')}
@@ -264,9 +273,9 @@ export default function DietaryRestrictionsScreen({ navigation }) {
                   style={[
                     styles.chip,
                     { 
-                      backgroundColor: selectedPreferences.includes(pref.id) 
-                        ? theme.primary 
-                        : theme.background,
+                      backgroundColor: selectedPreferences.includes(pref.id)
+                        ? theme.primary
+                        : theme.cardBackground,
                       borderColor: selectedPreferences.includes(pref.id)
                         ? theme.primary
                         : theme.border,
@@ -274,7 +283,7 @@ export default function DietaryRestrictionsScreen({ navigation }) {
                   ]}
                   onPress={() => togglePreference(pref.id)}
                 >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <PopIcon trigger={selectedPreferences.includes(pref.id)} pulseOnDeselect style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <Image source={pref.icon} style={{ width: 22, height: 22 }} resizeMode="contain" />
                     <Text style={[styles.chipText, { color: selectedPreferences.includes(pref.id) ? '#fff' : theme.text }]}>
                       {t(`dietaryRestrictions.${
@@ -285,7 +294,7 @@ export default function DietaryRestrictionsScreen({ navigation }) {
                         'organic'
                       }`)}
                     </Text>
-                  </View>
+                  </PopIcon>
                 </TouchableOpacity>
               ))}
             </View>
@@ -300,12 +309,12 @@ export default function DietaryRestrictionsScreen({ navigation }) {
           </View>
 
           {/* Save Button */}
-          <TouchableOpacity 
-            style={[styles.saveButton, { backgroundColor: theme.primary }, saving && { opacity: 0.6 }]}
+          <TouchableOpacity
+            style={[styles.saveButton, saving && { opacity: 0.6 }]}
             onPress={handleSave}
             disabled={saving}
           >
-            <Text style={styles.saveButtonText}>
+            <Text style={[styles.saveButtonText, { color: theme.primary }]}>
               {saving ? t('dietaryRestrictions.saving') : t('dietaryRestrictions.saveRestrictions')}
             </Text>
           </TouchableOpacity>
@@ -430,25 +439,24 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     marginHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 2,
   },
   saveButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    fontSize: 19,
     fontWeight: 'bold',
   },
   cancelButton: {
     marginHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 18,
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 10,
     borderWidth: 1,
   },
   cancelButtonText: {
-    fontSize: 16,
+    fontSize: 18,
   },
 });

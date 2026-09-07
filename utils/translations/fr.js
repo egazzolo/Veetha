@@ -16,8 +16,12 @@ export default {
     kcal: 'kcal',
     today: 'Aujourd\'hui',
     yesterday: 'Hier',
+    tomorrow: 'Demain',
     confirm: 'Confirmer',
     done: 'Terminé',
+    inMinutes: 'dans {{minutes}} min',
+    inHours: 'dans {{hours}} h',
+    inHoursMinutes: 'dans {{hours}} h {{minutes}} min',
   },
   // Landing Screen
   landing: {
@@ -480,6 +484,7 @@ export default {
     noWaterYet: "Pas encore d'eau",
     comingSoon: 'Bientôt disponible',
     fromExercise: 'de l\'exercice',
+    fromSteps: 'des pas',
 
     // Calendar
     months: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'],
@@ -1101,6 +1106,8 @@ export default {
     privacyPolicy: 'Politique de confidentialité',
     termsOfService: 'Conditions d\'utilisation',
     aboutVeetha: 'À propos de Meal Break',
+    aboutDescription: 'Meal Break est une application de suivi nutritionnel qui vous aide à surveiller votre apport alimentaire quotidien, suivre les calories et les macronutriments, et atteindre vos objectifs de santé et de forme physique — en scannant des codes-barres, en prenant une photo de votre repas ou en enregistrant manuellement.',
+    visitWebsite: 'Visiter mealbreak.fit',
     version: 'Version',
     logOut: 'Se déconnecter',
     logOutConfirm: 'Êtes-vous sûr de vouloir vous déconnecter?',
@@ -1183,6 +1190,7 @@ export default {
     fat: '🥑 Lipides',
     targetWeight: 'Poids Cible',
     targetWeightHelper: 'Optionnel - votre poids cible en kg',
+    unitChangeHint: 'L\'unité peut être modifiée dans Profil → Préférences',
     toGain: 'à gagner',
     toLose: 'à perdre',
     saveGoals: '✓ Enregistrer les Objectifs',
@@ -1275,6 +1283,7 @@ export default {
     defaultViewDesc: 'Quel onglet s\'ouvre en premier sur Stats',
     mealReminders: 'Rappels de repas',
     mealRemindersDesc: 'Rappels quotidiens pour enregistrer vos repas',
+    reminderTimeSet: 'Rappel programmé pour {{day}} à {{time}}',
     breakfast: 'Petit-déjeuner',
     lunch: 'Déjeuner',
     dinner: 'Dîner',

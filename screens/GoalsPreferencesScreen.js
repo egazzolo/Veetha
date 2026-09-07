@@ -11,6 +11,8 @@ import { logScreen, logEvent } from '../utils/analytics';
 import { showToast } from '../components/VeethaToast';
 import VeethaModal from '../components/VeethaModal';
 import GuestUpsellSheet from '../components/GuestUpsellSheet';
+import { CupIcon, PitcherIcon } from '../components/WaterUnitIcons';
+import SpinCheckmark from '../components/SpinCheckmark';
 
 const ACTIVITY_LEVELS = [
   { value: 'sedentary', multiplier: 1.2 },
@@ -285,12 +287,12 @@ export default function GoalsPreferencesScreen({ navigation }) {
           </View>
 
           {/* Daily Calorie Goal */}
-          <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
+          <View style={[styles.card, { backgroundColor: theme.background }]}>
             <Text style={[styles.cardTitle, { color: theme.text }]}>
               {t('goalsPreferences.dailyCalorieGoal')}
             </Text>
             <TextInput
-              style={[styles.input, styles.largeInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+              style={[styles.input, styles.largeInput, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
               placeholder="2000"
               placeholderTextColor={theme.textTertiary}
               keyboardType="numeric"
@@ -304,7 +306,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
           </View>
 
           {/* Activity Level */}
-          <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
+          <View style={[styles.card, { backgroundColor: theme.background }]}>
             <Text style={[styles.cardTitle, { color: theme.text }]}>
               {t('goalsPreferences.activityLevel')}
             </Text>
@@ -316,8 +318,8 @@ export default function GoalsPreferencesScreen({ navigation }) {
                 key={level.value}
                 style={[
                   styles.activityOption,
-                  { 
-                    backgroundColor: theme.background,
+                  {
+                    backgroundColor: activityLevel === level.value ? `${theme.primary}22` : theme.cardBackground,
                     borderColor: activityLevel === level.value ? theme.primary : theme.border,
                     borderWidth: activityLevel === level.value ? 2 : 1,
                   }
@@ -339,9 +341,12 @@ export default function GoalsPreferencesScreen({ navigation }) {
                     {t('goalsPreferences.recalculate')}
                   </Text>
                 </View>
-                {activityLevel === level.value && (
-                  <Text style={styles.checkmark}>✓</Text>
-                )}
+                <SpinCheckmark
+                  trigger={activityLevel === level.value}
+                  style={[styles.checkmark, { opacity: activityLevel === level.value ? 1 : 0 }]}
+                >
+                  ✓
+                </SpinCheckmark>
               </TouchableOpacity>
             ))}
           </View>
@@ -357,7 +362,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
           </TouchableOpacity>
 
           {/* Macro Goals */}
-          <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
+          <View style={[styles.card, { backgroundColor: theme.background }]}>
             <Text style={[styles.cardTitle, { color: theme.text }]}>
               {t('goalsPreferences.macroTargets')}
             </Text>
@@ -371,7 +376,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
                 {t('goalsPreferences.protein')}
               </Text>
               <TextInput
-                style={[styles.macroInput, { backgroundColor: theme.background, color: theme.text, borderColor: '#2196F3' }]}
+                style={[styles.macroInput, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: '#2196F3' }]}
                 placeholder="150"
                 placeholderTextColor={theme.textTertiary}
                 keyboardType="numeric"
@@ -388,7 +393,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
                 {t('goalsPreferences.carbs')}
               </Text>
               <TextInput
-                style={[styles.macroInput, { backgroundColor: theme.background, color: theme.text, borderColor: '#FF9800' }]}
+                style={[styles.macroInput, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: '#FF9800' }]}
                 placeholder="200"
                 placeholderTextColor={theme.textTertiary}
                 keyboardType="numeric"
@@ -405,7 +410,7 @@ export default function GoalsPreferencesScreen({ navigation }) {
                 {t('goalsPreferences.fat')}
               </Text>
               <TextInput
-                style={[styles.macroInput, { backgroundColor: theme.background, color: theme.text, borderColor: '#9C27B0' }]}
+                style={[styles.macroInput, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: '#9C27B0' }]}
                 placeholder="65"
                 placeholderTextColor={theme.textTertiary}
                 keyboardType="numeric"
@@ -417,89 +422,76 @@ export default function GoalsPreferencesScreen({ navigation }) {
             </View>
           </View>
 
-          {/* Weight Goal */}
-          <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
-            <Text style={[styles.cardTitle, { color: theme.text }]}>
-              {t('goalsPreferences.targetWeight')}
-            </Text>
-            <Text style={[styles.helperText, { color: theme.textTertiary, marginBottom: 10 }]}>
-              {t('goalsPreferences.targetWeightHelper')}
-            </Text>
-            <View style={styles.weightInputRow}>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, flex: 1 }]}
-                placeholder={profile?.unit_preference === 'metric' ? '75' : '165'}
-                placeholderTextColor={theme.textTertiary}
-                keyboardType="numeric"
-                value={targetWeight}
-                onChangeText={(v) => guestCheck(() => setTargetWeight(v))}
-                maxLength={5}
-              />
-              <Text style={[styles.weightUnit, { color: theme.textSecondary }]}>
-                {profile?.unit_preference === 'metric' ? 'kg' : 'lbs'}
+          {/* Weight Goal + Water Goal -- side by side */}
+          <View style={styles.sideBySideRow}>
+            <View style={[styles.card, styles.sideBySideCard, { backgroundColor: theme.background }]}>
+              <Text style={[styles.cardTitle, { color: theme.text }]}>
+                {t('goalsPreferences.targetWeight')}
+              </Text>
+              <Text style={[styles.helperText, styles.sideBySideHelper, { color: theme.textTertiary }]}>
+                {t('goalsPreferences.targetWeightHelper')}
+              </Text>
+              <View style={styles.weightInputRow}>
+                <TextInput
+                  style={[styles.input, styles.numberInput, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
+                  placeholder={profile?.unit_preference === 'metric' ? '75' : '165'}
+                  placeholderTextColor={theme.textTertiary}
+                  keyboardType="numeric"
+                  value={targetWeight}
+                  onChangeText={(v) => guestCheck(() => setTargetWeight(v))}
+                  maxLength={5}
+                />
+                <Text style={[styles.weightUnit, { color: theme.textSecondary }]}>
+                  {profile?.unit_preference === 'metric' ? 'kg' : 'lbs'}
+                </Text>
+              </View>
+              <Text style={[styles.unitChangeHint, { color: theme.textTertiary }]}>
+                {t('goalsPreferences.unitChangeHint')}
               </Text>
             </View>
-          </View>
 
-          {/* Water Goal */}
-          <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
-            <Text style={[styles.cardTitle, { color: theme.text }]}>
-              {t('goalsPreferences.dailyWaterGoal')}
-            </Text>
-            <Text style={[styles.helperText, { color: theme.textTertiary, marginBottom: 15 }]}>
-              {t('goalsPreferences.waterGoalHelper')} 
-            </Text>
-            
-            {/* Unit Toggle */}
-            <View style={styles.macroRow}>
-              <TouchableOpacity
-                style={[
-                  styles.unitToggle,
-                  { backgroundColor: waterUnit === 'cups' ? theme.primary : theme.background }
-                ]}
-                onPress={() => guestCheck(() => setWaterUnit('cups'))}
-              >
-                <Text style={{ color: waterUnit === 'cups' ? '#fff' : theme.text }}>
-                  {t('goalsPreferences.cups')}
-                </Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[
-                  styles.unitToggle,
-                  { backgroundColor: waterUnit === 'liters' ? theme.primary : theme.background }
-                ]}
-                onPress={() => guestCheck(() => setWaterUnit('liters'))}
-              >
-                <Text style={{ color: waterUnit === 'liters' ? '#fff' : theme.text }}>
-                  {t('goalsPreferences.liters')}
-                </Text>
-              </TouchableOpacity>
-            </View>
-            
-            <View style={styles.weightInputRow}>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, flex: 1 }]}
-                placeholder={waterUnit === 'cups' ? '8' : '2'}
-                placeholderTextColor={theme.textTertiary}
-                keyboardType="numeric"
-                value={waterGoal}
-                onChangeText={(v) => guestCheck(() => setWaterGoal(v))}
-                maxLength={3}
-              />
-              <Text style={[styles.weightUnit, { color: theme.textSecondary }]}>
-                {waterUnit === 'cups' ? t('goalsPreferences.cups') : t('goalsPreferences.liters')}
+            <View style={[styles.card, styles.sideBySideCard, { backgroundColor: theme.background }]}>
+              <Text style={[styles.cardTitle, { color: theme.text }]}>
+                {t('goalsPreferences.dailyWaterGoal')}
               </Text>
+              <Text style={[styles.helperText, styles.sideBySideHelper, { color: theme.textTertiary }]}>
+                {t('goalsPreferences.waterGoalHelper')}
+              </Text>
+
+              <View style={styles.weightInputRow}>
+                <TextInput
+                  style={[styles.input, styles.numberInput, { backgroundColor: theme.cardBackground, color: theme.text, borderColor: theme.border }]}
+                  placeholder={waterUnit === 'cups' ? '8' : '2'}
+                  placeholderTextColor={theme.textTertiary}
+                  keyboardType="numeric"
+                  value={waterGoal}
+                  onChangeText={(v) => guestCheck(() => setWaterGoal(v))}
+                  maxLength={3}
+                />
+                <TouchableOpacity
+                  style={styles.unitOption}
+                  onPress={() => guestCheck(() => setWaterUnit(waterUnit === 'cups' ? 'liters' : 'cups'))}
+                >
+                  {waterUnit === 'cups' ? (
+                    <CupIcon size={20} color={theme.primary} />
+                  ) : (
+                    <PitcherIcon size={20} color={theme.primary} />
+                  )}
+                  <Text style={[styles.weightUnit, { marginLeft: 6, color: theme.primary }]}>
+                    {waterUnit === 'cups' ? t('goalsPreferences.cups') : t('goalsPreferences.liters')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
 
           {/* Save Button */}
-          <TouchableOpacity 
-            style={[styles.saveButton, { backgroundColor: theme.primary }, saving && { opacity: 0.6 }]}
+          <TouchableOpacity
+            style={[styles.saveButton, saving && { opacity: 0.6 }]}
             onPress={handleSave}
             disabled={saving}
           >
-            <Text style={styles.saveButtonText}>
+            <Text style={[styles.saveButtonText, { color: theme.primary }]}>
               {saving ? t('goalsPreferences.saving') : t('goalsPreferences.saveGoals')}
             </Text>
           </TouchableOpacity>
@@ -570,6 +562,31 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     padding: 20,
     borderRadius: 16,
+  },
+  sideBySideRow: {
+    flexDirection: 'row',
+    marginHorizontal: 20,
+    marginBottom: 6,
+    gap: 12,
+  },
+  sideBySideCard: {
+    flex: 1,
+    marginHorizontal: 0,
+    marginBottom: 0,
+    padding: 14,
+  },
+  // Fixed height regardless of how many lines each card's helper text wraps
+  // to (they're different lengths) -- without this, the number input below
+  // lands at a different Y in each card and the two rows read as misaligned.
+  sideBySideHelper: {
+    minHeight: 32,
+    marginTop: 4,
+    marginBottom: 10,
+  },
+  unitChangeHint: {
+    fontSize: 10,
+    fontStyle: 'italic',
+    marginTop: 8,
   },
   cardTitle: {
     fontSize: 18,
@@ -643,7 +660,8 @@ const styles = StyleSheet.create({
   weightInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    justifyContent: 'center',
+    gap: 6,
   },
   weightUnit: {
     fontSize: 18,
@@ -651,26 +669,25 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     marginHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 2,
   },
   saveButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    fontSize: 19,
     fontWeight: 'bold',
   },
   cancelButton: {
     marginHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 18,
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 10,
     borderWidth: 1,
   },
   cancelButtonText: {
-    fontSize: 16,
+    fontSize: 18,
   },
   recalculateButtonBottom: {
     marginHorizontal: 20,
@@ -680,12 +697,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
   },
-  unitToggle: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 10,
+  unitOption: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 5,
+    paddingVertical: 8,
+  },
+  numberInput: {
+    width: 64,
+    paddingHorizontal: 6,
+    textAlign: 'center',
   },
 });

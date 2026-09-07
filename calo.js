@@ -73,6 +73,7 @@ import ProgressCheckInScreen from './screens/ProgressCheckInScreen';
 import ProgressCompareScreen from './screens/ProgressCompareScreen';
 import PhotoTipsScreen from './screens/PhotoTipsScreen';
 import HelpSupportScreen from './screens/HelpSupportScreen';
+import AboutScreen from './screens/AboutScreen';
 
 // Import contexts and utilities
 import { OnboardingProvider } from './utils/OnboardingContext';
@@ -440,9 +441,10 @@ function AppNavigator() {
           <Stack.Screen name="ProgressCompare" component={ProgressCompareScreen} />
           <Stack.Screen name="PhotoTips" component={PhotoTipsScreen} />
           <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+          <Stack.Screen name="About" component={AboutScreen} />
         </Stack.Navigator>
         {/* <GlobalTutorialOverlay /> */}
-        <GracePeriodAlert />
+        <GracePeriodAlert navigationRef={navigationRef} />
       </NavigationContainer>
       <UpdateAlert />
       <VeethaToastRoot />
@@ -478,7 +480,17 @@ function App() {
   }, []);
 
   return (
-    <PostHogProvider>
+    // `client={posthog}` reuses the already-configured singleton (utils/posthog.js)
+    // instead of letting the provider spin up its own unconfigured client with no
+    // API key. `captureScreens: false` is required on React Navigation v7 per
+    // posthog-react-native's own docs -- its auto screen-tracking assumes it can
+    // read the nav state from inside this provider, but PostHogProvider sits above
+    // NavigationContainer here, so those hooks have nothing to attach to and just
+    // error on every render.
+    <PostHogProvider
+      client={posthog}
+      autocapture={{ captureScreens: false }}
+    >
       <SafeAreaProvider>
         <LanguageProvider>
           <TutorialProvider>

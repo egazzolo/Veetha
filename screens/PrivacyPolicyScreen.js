@@ -66,7 +66,7 @@ We operate the mobile application Meal Break (the "App"), as well as any other r
 
 The app measures daily consumption of macro nutrients by scanning barcodes, taking pictures of meals or manual entry. The app also provides meal recommendations that align with the user's specifications in preference and restrictions.
 
-You can contact us by email at veetha.app@gmail.com.
+You can contact us by email at hello@mealbreak.fit.
 
 These Legal Terms constitute a legally binding agreement made between you, whether personally or on behalf of an entity ("you"), and Enzo Gazzolo, concerning your access to and use of the Services. You agree that by accessing the Services, you have read, understood, and agreed to be bound by all of these Legal Terms. IF YOU DO NOT AGREE WITH ALL OF THESE LEGAL TERMS, THEN YOU ARE EXPRESSLY PROHIBITED FROM USING THE SERVICES AND YOU MUST DISCONTINUE USE IMMEDIATELY.
 
@@ -132,7 +132,7 @@ solely for your personal, non-commercial use.
 
 Except as set out in this section or elsewhere in our Legal Terms, no part of the Services and no Content or Marks may be copied, reproduced, aggregated, republished, uploaded, posted, publicly displayed, encoded, translated, transmitted, distributed, sold, licensed, or otherwise exploited for any commercial purpose whatsoever, without our express prior written permission.
 
-If you wish to make any use of the Services, Content, or Marks other than as set out in this section or elsewhere in our Legal Terms, please address your request to: veetha.app@gmail.com. If we ever grant you the permission to post, reproduce, or publicly display any part of our Services or Content, you must identify us as the owners or licensors of the Services, Content, or Marks and ensure that any copyright or proprietary notice appears or is visible on posting, reproducing, or displaying our Content.
+If you wish to make any use of the Services, Content, or Marks other than as set out in this section or elsewhere in our Legal Terms, please address your request to: hello@mealbreak.fit. If we ever grant you the permission to post, reproduce, or publicly display any part of our Services or Content, you must identify us as the owners or licensors of the Services, Content, or Marks and ensure that any copyright or proprietary notice appears or is visible on posting, reproducing, or displaying our Content.
 
 We reserve all rights not expressly granted to you in and to the Services, Content, and Marks.
 
@@ -173,7 +173,7 @@ We reserve the right to refuse any order placed through the Services. We may, in
 Billing and Renewal
 Your subscription will continue and automatically renew unless canceled. You consent to our charging your payment method on a recurring basis without requiring your prior approval for each recurring charge, until such time as you cancel the applicable order. The length of your billing cycle will depend on the type of subscription plan you choose when you subscribed to the Services.
 Cancellation
-All purchases are non-refundable. You can cancel your subscription at any time by logging into your account. Your cancellation will take effect at the end of the current paid term. If you have any questions or are unsatisfied with our Services, please email us at veetha.app@gmail.com.
+All purchases are non-refundable. You can cancel your subscription at any time by logging into your account. Your cancellation will take effect at the end of the current paid term. If you have any questions or are unsatisfied with our Services, please email us at hello@mealbreak.fit.
 Fee Changes
 We may, from time to time, make changes to the subscription fee and will communicate any price changes to you in accordance with applicable law.
 
@@ -341,7 +341,7 @@ Premium subscriptions are billed monthly through Google Play Store or Apple App 
 In order to resolve a complaint regarding the Services or to receive further information regarding use of the Services, please contact us at:
 
 Enzo Gazzolo
-veetha.app@gmail.com
+hello@mealbreak.fit
 
 `}
             </Text>
@@ -371,7 +371,7 @@ This Privacy Notice for Enzo Gazzolo (doing business as Meal Break) ("we," "us,"
 -	Download and use our mobile application (Meal Break), or any other application of ours that links to this Privacy Notice
 -	Use Meal Break. Meal Break is a mobile nutrition tracking application that helps users monitor their daily food intake, track calories and macronutrients, and achieve their health and fitness goals. The app provides two main ways to log meals: 1. Barcode Scanning (Free): Users can scan product barcodes to quickly log packaged foods and retrieve nutritional information from our database. 2. AI Photo Recognition (Premium - $7.99/month or $59.99/year): Users can take photos of their meals, and our artificial intelligence technology identifies the food items and estimates their nutritional content. Additional features include: - Personalized daily calorie and macro goals based on user profile (age, gender, height, weight, activity level, and health objectives) - Comprehensive nutrition tracking with detailed breakdowns of proteins, carbohydrates, fats, and micronutrients - Progress tracking with daily, weekly, and monthly statistics and charts - Streak tracking to maintain consistent logging habits - Dietary preference and restriction management (vegetarian, vegan, keto, allergies, etc.) - Multi-language support (English, Spanish, French, Portuguese, Filipino) - Meal history and logging features Meal Break uses the Mifflin-St Jeor equation to calculate personalized calorie recommendations. The app is designed to provide nutritional estimates and tracking tools, not medical advice. Users with medical conditions, dietary restrictions, or health concerns should consult healthcare professionals before making dietary changes. The app is available on both Android (Google Play Store) and iOS (Apple App Store).
 -	Engage with us in other related ways, including any marketing or events
-Questions or concerns? Reading this Privacy Notice will help you understand your privacy rights and choices. We are responsible for making decisions about how your personal information is processed. If you do not agree with our policies and practices, please do not use our Services. If you still have any questions or concerns, please contact us at veetha.app@gmail.com.
+Questions or concerns? Reading this Privacy Notice will help you understand your privacy rights and choices. We are responsible for making decisions about how your personal information is processed. If you do not agree with our policies and practices, please do not use our Services. If you still have any questions or concerns, please contact us at hello@mealbreak.fit.
 
 
 SUMMARY OF KEY POINTS
@@ -604,7 +604,7 @@ We have implemented appropriate and reasonable technical and organizational secu
 11. DO WE COLLECT INFORMATION FROM MINORS?
 In Short: We do not knowingly collect data from or market to children under 18 years of age or the equivalent age as specified by law in your jurisdiction.
 
-We do not knowingly collect, solicit data from, or market to children under 18 years of age or the equivalent age as specified by law in your jurisdiction, nor do we knowingly sell such personal information. By using the Services, you represent that you are at least 18 or the equivalent age as specified by law in your jurisdiction or that you are the parent or guardian of such a minor and consent to such minor dependent’s use of the Services. If we learn that personal information from users less than 18 years of age or the equivalent age as specified by law in your jurisdiction has been collected, we will deactivate the account and take reasonable measures to promptly delete such data from our records. If you become aware of any data we may have collected from children under age 18 or the equivalent age as specified by law in your jurisdiction, please contact us at veetha.app@gmail.com.
+We do not knowingly collect, solicit data from, or market to children under 18 years of age or the equivalent age as specified by law in your jurisdiction, nor do we knowingly sell such personal information. By using the Services, you represent that you are at least 18 or the equivalent age as specified by law in your jurisdiction or that you are the parent or guardian of such a minor and consent to such minor dependent’s use of the Services. If we learn that personal information from users less than 18 years of age or the equivalent age as specified by law in your jurisdiction has been collected, we will deactivate the account and take reasonable measures to promptly delete such data from our records. If you become aware of any data we may have collected from children under age 18 or the equivalent age as specified by law in your jurisdiction, please contact us at hello@mealbreak.fit.
 
 12. WHAT ARE YOUR PRIVACY RIGHTS?
 In Short: Depending on your state of residence in the US or in some regions, such as the European Economic Area (EEA), United Kingdom (UK), Switzerland, and Canada, you have rights that allow you greater access to and control over your personal information. You may review, change, or terminate your account at any time, depending on your country, province, or state of residence.
@@ -628,7 +628,7 @@ If you would at any time like to review or change the information in your accoun
 -	To delete your account: Open the Meal Break app, go to the Profile screen, scroll to the "Legal" section, and tap "Delete Account." This will permanently remove all your data including meal logs, photos, and profile information within 30 days.
 Upon your request to terminate your account, we will deactivate or delete your account and information from our active databases. However, we may retain some information in our files to prevent fraud, troubleshoot problems, assist with any investigations, enforce our legal terms and/or comply with applicable legal requirements.
 
-If you have questions or comments about your privacy rights, you may email us at veetha.app@gmail.com.
+If you have questions or comments about your privacy rights, you may email us at hello@mealbreak.fit.
 
 13. CONTROLS FOR DO-NOT-TRACK FEATURES
 Most web browsers and some mobile operating systems and mobile applications include a Do-Not-Track ("DNT") feature or setting you can activate to signal your privacy preference not to have data about your online browsing activities monitored and collected. At this stage, no uniform technology standard for recognizing and implementing DNT signals has been finalized. As such, we do not currently respond to DNT browser signals or any other mechanism that automatically communicates your choice not to be tracked online. If a standard for online tracking is adopted that we must follow in the future, we will inform you about that practice in a revised version of this Privacy Notice.
@@ -728,7 +728,7 @@ Depending upon the state where you live, you may also have the following rights:
 -	Right to limit use and disclosure of sensitive personal data (as permitted by applicable law, including the privacy law in California)
 -	Right to opt out of the collection of sensitive data and personal data collected through the operation of a voice or facial recognition feature (as permitted by applicable law, including the privacy law in Florida)
 How to Exercise Your Rights
-To exercise these rights, you can contact us by submitting a data subject access request, by emailing us at veetha.app@gmail.com, or by referring to the contact details at the bottom of this document.
+To exercise these rights, you can contact us by submitting a data subject access request, by emailing us at hello@mealbreak.fit, or by referring to the contact details at the bottom of this document.
 
 Under certain US state data protection laws, you can designate an authorized agent to make a request on your behalf. We may deny a request from an authorized agent that does not submit proof that they have been validly authorized to act on your behalf in accordance with applicable laws.
 
@@ -737,7 +737,7 @@ Upon receiving your request, we will need to verify your identity to determine y
 
 If you submit the request through an authorized agent, we may need to collect additional information to verify your identity before processing your request and the agent will need to provide a written and signed permission from you to submit such request on your behalf.
 Appeals
-Under certain US state data protection laws, if we decline to take action regarding your request, you may appeal our decision by emailing us at veetha.app@gmail.com. We will inform you in writing of any action taken or not taken in response to the appeal, including a written explanation of the reasons for the decisions. If your appeal is denied, you may submit a complaint to your state attorney general.
+Under certain US state data protection laws, if we decline to take action regarding your request, you may appeal our decision by emailing us at hello@mealbreak.fit. We will inform you in writing of any action taken or not taken in response to the appeal, including a written explanation of the reasons for the decisions. If your appeal is denied, you may submit a complaint to your state attorney general.
 California "Shine The Light" Law
 California Civil Code Section 1798.83, also known as the "Shine The Light" law, permits our users who are California residents to request and obtain from us, once a year and free of charge, information about categories of personal information (if any) we disclosed to third parties for direct marketing purposes and the names and addresses of all third parties with which we shared personal information in the immediately preceding calendar year. If you are a California resident and would like to make such a request, please submit your request in writing to us by using the contact details provided in the section "HOW CAN YOU CONTACT US ABOUT THIS NOTICE?"
 
@@ -747,7 +747,7 @@ In Short: Yes, we will update this notice as necessary to stay compliant with re
 We may update this Privacy Notice from time to time. The updated version will be indicated by an updated "Revised" date at the top of this Privacy Notice. If we make material changes to this Privacy Notice, we may notify you either by prominently posting a notice of such changes or by directly sending you a notification. We encourage you to review this Privacy Notice frequently to be informed of how we are protecting your information.
 
 16. HOW CAN YOU CONTACT US ABOUT THIS NOTICE?
-If you have questions or comments about this notice, you may email us at veetha.app@gmail.com.
+If you have questions or comments about this notice, you may email us at hello@mealbreak.fit.
 
 17. HOW CAN YOU REVIEW, UPDATE, OR DELETE THE DATA WE COLLECT FROM YOU?
 Based on the applicable laws of your country or state of residence in the US, you may have the right to request access to the personal information we collect from you, details about how we have processed it, correct inaccuracies, or delete your personal information. You may also have the right to withdraw your consent to our processing of your personal information. These rights may be limited in some circumstances by applicable law. To request to review, update, or delete your personal information, please fill out and submit a data subject access request.

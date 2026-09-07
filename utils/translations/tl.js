@@ -16,8 +16,12 @@ export default {
     kcal: 'kcal',
     today: 'Ngayon',
     yesterday: 'Kahapon',
+    tomorrow: 'Bukas',
     confirm: 'Kumpirmahin',
     done: 'Tapos',
+    inMinutes: 'sa {{minutes}} min',
+    inHours: 'sa {{hours}} h',
+    inHoursMinutes: 'sa {{hours}} h {{minutes}} min',
   },
   // Landing Screen
   landing: {
@@ -480,6 +484,7 @@ export default {
     noWaterYet: 'Wala pang tubig',
     comingSoon: 'Malapit na',
     fromExercise: 'mula sa ehersisyo',
+    fromSteps: 'mula sa mga hakbang',
 
     // Calendar
     months: ['Enero', 'Pebrero', 'Marso', 'Abril', 'Mayo', 'Hunyo', 'Hulyo', 'Agosto', 'Setyembre', 'Oktubre', 'Nobyembre', 'Disyembre'],
@@ -1101,6 +1106,8 @@ export default {
     privacyPolicy: 'Patakaran sa Privacy',
     termsOfService: 'Mga Tuntunin ng Serbisyo',
     aboutVeetha: 'Tungkol sa Meal Break',
+    aboutDescription: 'Ang Meal Break ay isang nutrition tracking app na tumutulong sa iyong subaybayan ang iyong pang-araw-araw na pagkain, i-track ang calories at macronutrients, at abutin ang iyong mga layunin sa kalusugan at fitness — sa pamamagitan ng pag-scan ng barcode, pagkuha ng larawan ng iyong pagkain, o manual na pag-log.',
+    visitWebsite: 'Bisitahin ang mealbreak.fit',
     version: 'Bersyon',
     logOut: 'Mag-log Out',
     logOutConfirm: 'Sigurado ka bang gusto mong mag-log out?',
@@ -1183,6 +1190,7 @@ export default {
     fat: '🥑 Taba',
     targetWeight: 'Target na Timbang',
     targetWeightHelper: 'Opsyonal - ang iyong target na timbang sa kg',
+    unitChangeHint: 'Puwedeng baguhin ang unit sa Profile → Preferences',
     toGain: 'upang dagdagan',
     toLose: 'upang mawala',
     saveGoals: '✓ I-save ang mga Layunin',
@@ -1275,6 +1283,7 @@ export default {
     defaultViewDesc: 'Aling tab ang bubukas muna pagpunta sa Stats',
     mealReminders: 'Paalala sa Pagkain',
     mealRemindersDesc: 'Araw-araw na paalala para i-log ang iyong mga pagkain',
+    reminderTimeSet: 'Naka-set ang paalala sa {{day}} ng {{time}}',
     breakfast: 'Almusal',
     lunch: 'Tanghalian',
     dinner: 'Hapunan',

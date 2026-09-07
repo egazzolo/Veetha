@@ -30,7 +30,7 @@ export default function HelpSupportScreen({ navigation }) {
 
         <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
-        <TouchableOpacity style={styles.row} onPress={() => Linking.openURL('mailto:support@veetha.com')}>
+        <TouchableOpacity style={styles.row} onPress={() => Linking.openURL('mailto:hello@mealbreak.fit')}>
           <View style={styles.rowLeft}>
             <Text style={styles.rowIcon}>💬</Text>
             <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.contactSupport')}</Text>

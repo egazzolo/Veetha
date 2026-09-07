@@ -2,15 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../utils/supabase';
-import { useNavigation } from '@react-navigation/native';
 import { PAYWALL_ENABLED } from '../utils/paywallConfig';
+import { posthog } from '../utils/posthog';
 
 const WARNING_DAYS = [30, 15, 7, 3, 1];
 
-export default function GracePeriodAlert() {
+// Rendered as a sibling of <Stack.Navigator>, not as one of its screens, so
+// it sits outside the part of the tree that provides navigation context --
+// useNavigation() would throw "Couldn't find a navigation object" here.
+// navigationRef (attached to NavigationContainer in calo.js) works from
+// anywhere regardless of where the component is mounted.
+export default function GracePeriodAlert({ navigationRef }) {
   const [visible, setVisible] = useState(false);
   const [daysLeft, setDaysLeft] = useState(null);
-  const navigation = useNavigation();
 
   useEffect(() => {
     if (!PAYWALL_ENABLED) return;
@@ -60,7 +64,7 @@ export default function GracePeriodAlert() {
   const handleCompare = () => {
     posthog.capture('grace_alert_compare_tapped', { days_left: daysLeft });
     setVisible(false);
-    navigation.navigate('Paywall');
+    navigationRef?.current?.navigate('Paywall');
   };
 
   if (!visible || daysLeft === null) return null;

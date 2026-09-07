@@ -4,6 +4,7 @@ import { useLanguage } from '../utils/LanguageContext';
 import { useUser } from '../utils/UserContext';
 import { supabase } from '../utils/supabase';
 import { scale } from '../utils/responsive';
+import PosterRevealImage from '../components/PosterRevealImage';
 
 const LBS_PER_KG = 2.20462;
 
@@ -14,8 +15,9 @@ function formatDate(iso, t) {
 
 export default function ProgressPanel({ route, navigation }) {
   const { theme, isPremium } = route?.params || {};
-  const { user } = useUser();
+  const { user, profile } = useUser();
   const { t } = useLanguage();
+  const isImperial = profile?.unit_preference === 'imperial';
 
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +59,12 @@ export default function ProgressPanel({ route, navigation }) {
     return unsubscribe;
   }, [navigation, loadLogs]);
 
+  const goToPaywall = () => {
+    navigation.navigate('Paywall', { highlightFeature: 'Progress photos' });
+  };
+
   const toggleSelect = (id) => {
+    if (!isPremium) { goToPaywall(); return; }
     setSelectedIds((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id);
       if (prev.length < 2) return [...prev, id];
@@ -78,18 +85,18 @@ export default function ProgressPanel({ route, navigation }) {
 
   const current = logs[0];
   const oldest = logs[logs.length - 1];
-  const weightUnit = 'lbs'; // display consistently; conversion handled at render
-  const toDisplay = (kg) => Math.round(kg * LBS_PER_KG);
+  const weightUnit = isImperial ? 'lbs' : 'kg';
+  const toDisplay = (kg) => Math.round(isImperial ? kg * LBS_PER_KG : kg);
 
   if (loading) {
     return <ActivityIndicator style={{ marginTop: 40 }} color={theme?.primary || '#4CAF50'} />;
   }
 
   return (
-    <View>
+    <View style={styles.container}>
       <TouchableOpacity
         style={[styles.checkInBtn, { backgroundColor: theme?.primary || '#4CAF50' }]}
-        onPress={() => navigation.navigate('ProgressCheckIn')}
+        onPress={() => (isPremium ? navigation.navigate('ProgressCheckIn') : goToPaywall())}
       >
         <Text style={styles.checkInBtnText}>+ {t('progress.checkIn')}</Text>
       </TouchableOpacity>
@@ -98,7 +105,7 @@ export default function ProgressPanel({ route, navigation }) {
         <View style={[styles.weightCard, { backgroundColor: theme?.cardBackground }]}>
           <Text style={[styles.weightCardTitle, { color: theme?.textSecondary }]}>{t('progress.currentWeightLabel')}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
-            <Text style={[styles.weightNow, { color: theme?.text }]}>{toDisplay(current.weight_kg)} lbs</Text>
+            <Text style={[styles.weightNow, { color: theme?.text }]}>{toDisplay(current.weight_kg)} {weightUnit}</Text>
             {oldest && oldest.id !== current.id && (
               <Text style={styles.weightDelta}>
                 {toDisplay(current.weight_kg) - toDisplay(oldest.weight_kg) <= 0 ? '↓' : '↑'}
@@ -125,7 +132,7 @@ export default function ProgressPanel({ route, navigation }) {
                   disabled={!log.signedUrl}
                 >
                   {log.signedUrl ? (
-                    <Image source={{ uri: log.signedUrl }} style={styles.photoTileImg} resizeMode="cover" />
+                    <PosterRevealImage source={{ uri: log.signedUrl }} style={styles.photoTileImg} resizeMode="cover" borderRadius={10} />
                   ) : (
                     <View style={styles.photoTileNoPhoto}>
                       <Text style={{ fontSize: scale(11), color: theme?.textTertiary }}>{t('progress.noPhoto')}</Text>
@@ -152,6 +159,7 @@ export default function ProgressPanel({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
+  container: { paddingHorizontal: 20 },
   checkInBtn: {
     alignSelf: 'center', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 18, marginBottom: 16,
   },
@@ -165,8 +173,9 @@ const styles = StyleSheet.create({
   photoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   photoTile: {
     width: '31.5%', aspectRatio: 0.8, borderRadius: 10, overflow: 'hidden', position: 'relative',
+    borderWidth: 3, borderColor: 'transparent',
   },
-  photoTileSelected: { borderWidth: 3, borderColor: '#4CAF50' },
+  photoTileSelected: { borderColor: '#4CAF50' },
   photoTileImg: { width: '100%', height: '100%' },
   photoTileNoPhoto: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   photoTileDate: {

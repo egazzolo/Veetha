@@ -741,7 +741,7 @@ export default function ProfileScreen({ navigation }) {
 
               {/* App Info */}
               <View style={[styles.section, { paddingTop: 0 }]}>
-                <TouchableOpacity style={[styles.settingItem, { backgroundColor: 'transparent' }]}>
+                <TouchableOpacity style={[styles.settingItem, { backgroundColor: 'transparent' }]} onPress={() => navigation.navigate('About')}>
                   <View style={styles.settingLeft}>
                     <AppIcon name="info" size={24} style={{ marginRight: 15 }} />
                     <Text style={[styles.settingLabel, { color: theme.text }]}>{t('profile.aboutVeetha')}</Text>

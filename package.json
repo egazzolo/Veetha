@@ -87,6 +87,13 @@
         "react",
         "react-native"
       ]
+    },
+    "autolinking": {
+      "android": {
+        "buildFromSource": [
+          "expo-sensors"
+        ]
+      }
     }
   }
 }

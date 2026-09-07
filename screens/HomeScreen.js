@@ -26,6 +26,7 @@ import { supabase } from '../utils/supabase';
 import { logScreen, logEvent } from '../utils/analytics';
 import { getSuggestionsForMealTime, LOCAL_FOODS, DEFAULT_FOODS } from '../utils/localFoods';
 import { rescheduleMealReminders } from '../utils/mealReminders';
+import { usePremiumStatus } from '../utils/usePremiumStatus';
 import { Pedometer } from 'expo-sensors';
 import { Camera } from 'expo-camera';
 import { posthog } from '../utils/posthog';
@@ -422,6 +423,7 @@ export default function HomeScreen({ navigation }) {
   const LOCALE_MAP = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', tl: 'fil-PH' };
   const { user, isGuest, profile, loading: userLoading, refreshProfile } = useUser();
   const { isGuest: isGuestMode } = useUserMode();
+  const { isPremium } = usePremiumStatus();
   const [, requestCameraPermission] = useCameraPermissions();
   // (removed verbose render-time console.log to reduce Metro spam)
   const { layout } = useLayout();
@@ -683,7 +685,7 @@ export default function HomeScreen({ navigation }) {
         // Schedule daily meal reminders per the user's Preferences toggles
         // (defaults to all three enabled, matching the previous behavior).
         if (notificationStatus === 'granted') {
-          await rescheduleMealReminders(t);
+          await rescheduleMealReminders(t, isPremium);
           console.log('🔔 Daily meal reminders scheduled per current preferences');
         }
       } catch (err) {
@@ -692,7 +694,10 @@ export default function HomeScreen({ navigation }) {
     };
 
     requestPermissions();
-  }, []);
+    // isPremium starts false until the profile loads, then settles -- rerun
+    // once it does so a premium user's custom times don't get silently
+    // clobbered back to defaults by the stale initial value.
+  }, [isPremium]);
 
   const showGuestAlert = (message) => {
     setGuestSheetMessage(message || t('guest.signUpToLog'));
@@ -2012,6 +2017,11 @@ export default function HomeScreen({ navigation }) {
                             +{Math.round(exerciseCaloriesBurned)} {t('home.fromExercise')}
                           </Text>
                         )}
+                        {stepCalories > 0 && (
+                          <Text style={[styles.remainingBadgeExerciseText, { color: '#4CAF50' }]}>
+                            +{Math.round(stepCalories)} {t('home.fromSteps')}
+                          </Text>
+                        )}
                       </>
                     ) : (
                       <Text style={[styles.remainingBadgeNumber, { color: remaining >= 0 ? theme.success : theme.error }]}>
@@ -2581,9 +2591,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: 6,
+    flexShrink: 0,
   },
   remainingBadge: {
     alignItems: 'flex-end',
+    flex: 1,
+    marginLeft: 10,
   },
   remainingBadgeNumber: {
     fontSize: 15,
@@ -3165,6 +3178,7 @@ const styles = StyleSheet.create({
   activityCardsRow: {
     flexDirection: 'row',
     marginHorizontal: 20,
+    marginTop: 19,
     marginBottom: 15,
     gap: 10,
   },

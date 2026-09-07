@@ -6,6 +6,7 @@ import { useUser } from '../utils/UserContext';
 import { useLanguage } from '../utils/LanguageContext';
 import { supabase } from '../utils/supabase';
 import { scale } from '../utils/responsive';
+import PosterRevealImage from '../components/PosterRevealImage';
 
 const LBS_PER_KG = 2.20462;
 const MACRO_ROWS = [
@@ -68,8 +69,10 @@ function formatDate(iso) {
 export default function ProgressCompareScreen({ navigation, route }) {
   const { earlier, later } = route.params;
   const { theme } = useTheme();
-  const { user } = useUser();
+  const { user, profile } = useUser();
   const { t } = useLanguage();
+  const isImperial = profile?.unit_preference === 'imperial';
+  const weightUnit = isImperial ? 'lbs' : 'kg';
 
   const [loading, setLoading] = useState(true);
   const [avgEarlier, setAvgEarlier] = useState(null);
@@ -92,8 +95,8 @@ export default function ProgressCompareScreen({ navigation, route }) {
     })();
   }, [earlier.logged_at, later.logged_at, user.id]);
 
-  const toLbs = (kg) => Math.round(kg * LBS_PER_KG);
-  const weightDiff = toLbs(later.weight_kg) - toLbs(earlier.weight_kg);
+  const toDisplay = (kg) => Math.round(isImperial ? kg * LBS_PER_KG : kg);
+  const weightDiff = toDisplay(later.weight_kg) - toDisplay(earlier.weight_kg);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
@@ -110,19 +113,24 @@ export default function ProgressCompareScreen({ navigation, route }) {
           {[earlier, later].map((log) => (
             <View key={log.id} style={styles.compareCol}>
               {log.signedUrl ? (
-                <Image source={{ uri: log.signedUrl }} style={[styles.comparePhoto, { backgroundColor: theme.cardBackground }]} resizeMode="cover" />
+                <PosterRevealImage
+                  source={{ uri: log.signedUrl }}
+                  style={[styles.comparePhoto, { backgroundColor: theme.cardBackground }]}
+                  resizeMode="cover"
+                  borderRadius={12}
+                />
               ) : (
                 <View style={[styles.comparePhoto, { backgroundColor: theme.cardBackground }]} />
               )}
               <Text style={[styles.compareDate, { color: theme.text }]}>{formatDate(log.logged_at)}</Text>
-              <Text style={[styles.compareWeight, { color: theme.textSecondary }]}>{toLbs(log.weight_kg)} lbs</Text>
+              <Text style={[styles.compareWeight, { color: theme.textSecondary }]}>{toDisplay(log.weight_kg)} {weightUnit}</Text>
             </View>
           ))}
         </View>
 
         <View style={[styles.diffCard, { backgroundColor: theme.cardBackground }]}>
           <Text style={[styles.diffVal, { color: weightDiff <= 0 ? '#1F9B39' : theme.text }]}>
-            {weightDiff > 0 ? '+' : ''}{weightDiff} lbs
+            {weightDiff > 0 ? '+' : ''}{weightDiff} {weightUnit}
           </Text>
           <Text style={[styles.diffLabel, { color: theme.textSecondary }]}>{t('progress.overSpan')}</Text>
         </View>

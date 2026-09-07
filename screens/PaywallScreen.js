@@ -45,6 +45,8 @@ import React, { useState, useRef, useEffect } from 'react';
     { label: 'Historical monthly stats',  free: '✗',         premium: '✓'         },
     { label: 'Individual food breakdown', free: '✗',         premium: '✓'         },
     { label: 'Meal comparison',           free: '✗',         premium: '✓'         },
+    { label: 'Progress photos',           free: '✗',         premium: '✓'         },
+    { label: 'Custom reminder times',     free: '✗',         premium: '✓'         },
   ];
 
   export default function PaywallScreen({ navigation, route }) {

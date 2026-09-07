@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, Image, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, Image, ActivityIndicator, Alert, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView } from 'expo-camera';
+import * as ImageManipulator from 'expo-image-manipulator';
 import * as FileSystem from 'expo-file-system/legacy';
 import { decode } from 'base64-arraybuffer';
 import { useTheme } from '../utils/ThemeContext';
@@ -16,7 +17,7 @@ export default function ProgressCheckInScreen({ navigation }) {
   const { theme } = useTheme();
   const { user, profile } = useUser();
   const { t } = useLanguage();
-  const unit = profile?.unit_preference || 'imperial';
+  const unit = profile?.unit_preference === 'imperial' ? 'imperial' : 'metric';
 
   const [weight, setWeight] = useState('');
   const [facing, setFacing] = useState('back');
@@ -27,7 +28,16 @@ export default function ProgressCheckInScreen({ navigation }) {
   const handleCapture = async () => {
     try {
       const photo = await cameraRef.current?.takePictureAsync({ quality: 0.8, base64: false });
-      if (photo?.uri) setPhotoUri(photo.uri);
+      if (photo?.uri) {
+        // Bakes EXIF orientation into the pixels — Android's Image component
+        // ignores EXIF, so an unprocessed capture shows up rotated.
+        const corrected = await ImageManipulator.manipulateAsync(
+          photo.uri,
+          [{ resize: { width: 1080 } }],
+          { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+        );
+        setPhotoUri(corrected.uri);
+      }
     } catch (error) {
       console.error('Progress photo capture error:', error);
       Alert.alert(t('common.error'), t('progress.captureFailed'));
@@ -86,55 +96,57 @@ export default function ProgressCheckInScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.cameraWrap}>
+        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+          <View style={styles.cameraWrap}>
+            {photoUri ? (
+              <Image source={{ uri: photoUri }} style={styles.preview} resizeMode="cover" />
+            ) : (
+              <CameraView ref={cameraRef} style={styles.camera} facing={facing} mirror={facing === 'front'}>
+                <View style={styles.silhouette} pointerEvents="none" />
+                <Text style={styles.cameraHint}>{t('progress.lineUpHint')}</Text>
+                <TouchableOpacity
+                  style={styles.flipBtn}
+                  onPress={() => setFacing((f) => (f === 'back' ? 'front' : 'back'))}
+                >
+                  <Text style={styles.flipBtnText}>🔄</Text>
+                </TouchableOpacity>
+              </CameraView>
+            )}
+          </View>
+
           {photoUri ? (
-            <Image source={{ uri: photoUri }} style={styles.preview} resizeMode="cover" />
+            <TouchableOpacity style={styles.retakeBtn} onPress={() => setPhotoUri(null)}>
+              <Text style={[styles.retakeBtnText, { color: theme.primary }]}>{t('progress.retake')}</Text>
+            </TouchableOpacity>
           ) : (
-            <CameraView ref={cameraRef} style={styles.camera} facing={facing}>
-              <View style={styles.silhouette} pointerEvents="none" />
-              <Text style={styles.cameraHint}>{t('progress.lineUpHint')}</Text>
-              <TouchableOpacity
-                style={styles.flipBtn}
-                onPress={() => setFacing((f) => (f === 'back' ? 'front' : 'back'))}
-              >
-                <Text style={styles.flipBtnText}>🔄</Text>
-              </TouchableOpacity>
-            </CameraView>
+            <View style={styles.shutterRow}>
+              <TouchableOpacity style={styles.shutterBtn} onPress={handleCapture} />
+            </View>
           )}
-        </View>
 
-        {photoUri ? (
-          <TouchableOpacity style={styles.retakeBtn} onPress={() => setPhotoUri(null)}>
-            <Text style={[styles.retakeBtnText, { color: theme.primary }]}>{t('progress.retake')}</Text>
+          <View style={styles.weightSection}>
+            <Text style={[styles.weightLabel, { color: theme.textSecondary }]}>{t('progress.currentWeight')}</Text>
+            <View style={styles.weightInputRow}>
+              <TextInput
+                style={[styles.weightInput, { color: theme.text, borderColor: theme.border }]}
+                placeholder={unit === 'imperial' ? '165' : '75'}
+                placeholderTextColor={theme.textTertiary}
+                keyboardType="decimal-pad"
+                value={weight}
+                onChangeText={setWeight}
+              />
+              <Text style={[styles.weightUnit, { color: theme.textSecondary }]}>{unit === 'imperial' ? 'lbs' : 'kg'}</Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.saveBtn, { backgroundColor: theme.primary, opacity: saving ? 0.7 : 1 }]}
+            onPress={handleSave}
+            disabled={saving}
+          >
+            {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveBtnText}>{t('progress.saveCheckIn')}</Text>}
           </TouchableOpacity>
-        ) : (
-          <View style={styles.shutterRow}>
-            <TouchableOpacity style={styles.shutterBtn} onPress={handleCapture} />
-          </View>
-        )}
-
-        <View style={styles.weightSection}>
-          <Text style={[styles.weightLabel, { color: theme.textSecondary }]}>{t('progress.currentWeight')}</Text>
-          <View style={styles.weightInputRow}>
-            <TextInput
-              style={[styles.weightInput, { color: theme.text, borderColor: theme.border }]}
-              placeholder={unit === 'imperial' ? '165' : '75'}
-              placeholderTextColor={theme.textTertiary}
-              keyboardType="decimal-pad"
-              value={weight}
-              onChangeText={setWeight}
-            />
-            <Text style={[styles.weightUnit, { color: theme.textSecondary }]}>{unit === 'imperial' ? 'lbs' : 'kg'}</Text>
-          </View>
-        </View>
-
-        <TouchableOpacity
-          style={[styles.saveBtn, { backgroundColor: theme.primary, opacity: saving ? 0.7 : 1 }]}
-          onPress={handleSave}
-          disabled={saving}
-        >
-          {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveBtnText}>{t('progress.saveCheckIn')}</Text>}
-        </TouchableOpacity>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -149,6 +161,7 @@ const styles = StyleSheet.create({
   backBtn: { fontSize: scale(22), fontWeight: '600' },
   headerTitle: { fontSize: scale(16), fontWeight: '700' },
   tipsLink: { fontSize: scale(12.5), fontWeight: '700' },
+  scrollContent: { flexGrow: 1 },
   cameraWrap: { marginHorizontal: 20, borderRadius: 16, overflow: 'hidden', height: scale(360) },
   camera: { flex: 1 },
   preview: { flex: 1 },

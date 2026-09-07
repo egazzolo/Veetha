@@ -1,0 +1,13 @@
+diff --git a/node_modules/expo-sensors/android/src/main/java/expo/modules/sensors/modules/PedometerModule.kt b/node_modules/expo-sensors/android/src/main/java/expo/modules/sensors/modules/PedometerModule.kt
+index c59ef6e..9ce86fb 100644
+--- a/node_modules/expo-sensors/android/src/main/java/expo/modules/sensors/modules/PedometerModule.kt
++++ b/node_modules/expo-sensors/android/src/main/java/expo/modules/sensors/modules/PedometerModule.kt
+@@ -23,7 +23,7 @@ class PedometerModule : Module() {
+   private val sensorProxy by lazy {
+     createSensorProxy(EventName, Sensor.TYPE_STEP_COUNTER, appContext) { sensorEvent ->
+       if (stepsAtTheBeginning == null) {
+-        stepsAtTheBeginning = sensorEvent.values[0].toInt() - 1
++        stepsAtTheBeginning = sensorEvent.values[0].toInt()
+       }
+       Bundle().apply {
+         putDouble("steps", (sensorEvent.values[0] - (stepsAtTheBeginning ?: (sensorEvent.values[0].toInt() - 1))).toDouble())
