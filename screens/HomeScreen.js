@@ -27,6 +27,7 @@ import { logScreen, logEvent } from '../utils/analytics';
 import { getSuggestionsForMealTime, LOCAL_FOODS, DEFAULT_FOODS } from '../utils/localFoods';
 import { rescheduleMealReminders } from '../utils/mealReminders';
 import { usePremiumStatus } from '../utils/usePremiumStatus';
+import { addFrequentMeal, getFrequentMeals, FREE_FREQUENT_MEALS_LIMIT } from '../utils/frequentMeals';
 import { Pedometer } from 'expo-sensors';
 import { Camera } from 'expo-camera';
 import { posthog } from '../utils/posthog';
@@ -464,6 +465,7 @@ export default function HomeScreen({ navigation }) {
   const [guestSheetVisible, setGuestSheetVisible] = useState(false);
   const [guestSheetMessage, setGuestSheetMessage] = useState('');
   const [mealActionModal, setMealActionModal] = useState({ visible: false, meal: null });
+  const [frequentProductIds, setFrequentProductIds] = useState(new Set());
   const [deleteMealModal, setDeleteMealModal] = useState({ visible: false, meal: null });
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedMealIds, setSelectedMealIds] = useState(new Set());
@@ -1641,6 +1643,63 @@ export default function HomeScreen({ navigation }) {
     setMealActionModal({ visible: true, meal });
   };
 
+  const loadFrequentProductIds = async () => {
+    if (!user?.id) return;
+    try {
+      const rows = await getFrequentMeals(user.id);
+      setFrequentProductIds(new Set(rows.filter((r) => r.product_id).map((r) => r.product_id)));
+    } catch (e) {
+      console.error('Error loading frequent meals:', e);
+    }
+  };
+
+  // Barcode/database meals have a product_id, so we can tell whether one's
+  // already saved and toggle it back off. AI-photo meals (individual_foods,
+  // no product_id) have nothing stable to dedupe against, so those always
+  // go through the "add" path here -- removing a duplicate is done from the
+  // Frequent Meals list itself instead of this long-press toggle.
+  const handleToggleFrequent = async (meal) => {
+    if (!meal?.product_id && !meal?.individual_foods?.length) return;
+    const alreadyFrequent = meal.product_id && frequentProductIds.has(meal.product_id);
+
+    if (alreadyFrequent) {
+      try {
+        await supabase.from('frequent_meals').delete().eq('user_id', user.id).eq('product_id', meal.product_id);
+        setFrequentProductIds((prev) => {
+          const next = new Set(prev);
+          next.delete(meal.product_id);
+          return next;
+        });
+        showToast('success', t('home.removeFrequent'), meal.product?.name || '');
+      } catch (e) {
+        console.error('Error removing frequent meal:', e);
+      }
+      return;
+    }
+
+    const result = await addFrequentMeal(user.id, meal, isPremium);
+    if (result.success) {
+      if (meal.product_id) setFrequentProductIds((prev) => new Set(prev).add(meal.product_id));
+      showToast('success', t('home.markFrequent'), meal.product?.name || meal.individual_foods?.map((f) => f.food_name).join(', ') || '');
+    } else if (result.reason === 'cap') {
+      Alert.alert(
+        t('home.frequentMealCapTitle'),
+        t('home.frequentMealCapBody', { limit: FREE_FREQUENT_MEALS_LIMIT }),
+        [
+          { text: t('home.cancel'), style: 'cancel' },
+          { text: 'Go Premium', onPress: () => navigation.navigate('Paywall', { highlightFeature: 'Frequent meals' }) },
+        ]
+      );
+    } else {
+      console.error('Error adding frequent meal:', result.reason);
+    }
+  };
+
+  useEffect(() => {
+    loadFrequentProductIds();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
   const handleMealImageUpload = async (meal) => {
     if (isGuestMode) { showGuestAlert(); return; }
     try {
@@ -2360,6 +2419,12 @@ export default function HomeScreen({ navigation }) {
                 buttons={[
                   { text: t('home.cancel'), style: 'cancel', onPress: () => setMealActionModal({ visible: false, meal: null }) },
                   { text: t('home.edit'), onPress: () => { setMealActionModal({ visible: false, meal: null }); navigation.navigate('EditMeal', { meal: mealActionModal.meal }); } },
+                  ...((mealActionModal.meal?.product_id || mealActionModal.meal?.individual_foods?.length) ? [{
+                    text: (mealActionModal.meal?.product_id && frequentProductIds.has(mealActionModal.meal.product_id))
+                      ? t('home.removeFrequent')
+                      : t('home.markFrequent'),
+                    onPress: () => { const meal = mealActionModal.meal; setMealActionModal({ visible: false, meal: null }); handleToggleFrequent(meal); },
+                  }] : []),
                   { text: t('home.compare'), onPress: () => { setMealActionModal({ visible: false, meal: null }); handleDeleteMeal(mealActionModal.meal); } },
                   { text: t('home.delete'), style: 'destructive', onPress: () => { setMealActionModal({ visible: false, meal: null }); handleDeleteMeal(mealActionModal.meal); } },
                 ]}

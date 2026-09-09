@@ -189,7 +189,7 @@ export default function ExerciseButton({ theme, navigation, isGuestMode, onGuest
       >
         <Image
           source={CURL_FRAMES[curlFrame]}
-          style={[{ width: 104, height: 104, marginBottom: 8, tintColor: theme.primary }, iconStyle]}
+          style={[{ width: 104, height: 104, marginBottom: -28, tintColor: theme.primary }, iconStyle]}
           resizeMode="contain"
         />
         <Text style={[styles.buttonText, { color: theme.text }, labelStyle]}>

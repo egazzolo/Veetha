@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, Pressable, Alert } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Modal, Pressable, Alert, Animated, Easing } from 'react-native';
+import { Svg, Line, Circle } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as ImageManipulator from 'expo-image-manipulator';
@@ -24,6 +25,57 @@ function LoadingDots({ style }) {
   }, []);
 
   return <Text style={style}>{'.'.repeat(count)}</Text>;
+}
+
+// List rows with a "+" badge -- the manual-log button that stands in for
+// Copy Yesterday / Quick Entry / List-Grid View / Frequent Meals until
+// tapped, since showing all four at once on Home reads as cluttered.
+function ListPlusIcon({ size = 22, color = '#fff' }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Line x1="3" y1="6" x2="15" y2="6" stroke={color} strokeWidth={2} strokeLinecap="round" />
+      <Line x1="3" y1="12" x2="15" y2="12" stroke={color} strokeWidth={2} strokeLinecap="round" />
+      <Line x1="3" y1="18" x2="11" y2="18" stroke={color} strokeWidth={2} strokeLinecap="round" />
+      <Circle cx="19" cy="18" r="4.5" fill={color} />
+      <Line x1="19" y1="16" x2="19" y2="20" stroke="#4CAF50" strokeWidth={1.6} strokeLinecap="round" />
+      <Line x1="17" y1="18" x2="21" y2="18" stroke="#4CAF50" strokeWidth={1.6} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+// Breathes a button in and out (scale up, back to normal) on a loop while
+// `active`, each instance picking its own random duration/start delay so
+// four of these sitting next to each other visibly drift out of sync
+// instead of pulsing in lockstep.
+function PulsingWrapper({ active, children, style }) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const loopRef = useRef(null);
+
+  useEffect(() => {
+    if (!active) {
+      loopRef.current?.stop();
+      scale.setValue(1);
+      return;
+    }
+
+    const halfCycle = 900 + Math.random() * 700;
+    const startDelay = Math.random() * 600;
+
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scale, { toValue: 1.1, duration: halfCycle, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(scale, { toValue: 1, duration: halfCycle, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ])
+    );
+    loopRef.current = loop;
+    const timer = setTimeout(() => loop.start(), startDelay);
+    return () => {
+      clearTimeout(timer);
+      loop.stop();
+    };
+  }, [active]);
+
+  return <Animated.View style={[style, { transform: [{ scale }] }]}>{children}</Animated.View>;
 }
 
 export default function MealsList({
@@ -54,6 +106,7 @@ export default function MealsList({
   const [guestSheetVisible, setGuestSheetVisible] = useState(false);
   const [postItView, setPostItView] = useState('whole'); // 'whole' or 'individual'
   const [listViewMode, setListViewModeState] = useState('grid'); // 'grid' or 'list'
+  const [showQuickActions, setShowQuickActions] = useState(false);
   const [enlargedImage, setEnlargedImage] = useState(null);
   const { isDark } = useTheme();
   const { isPremium } = usePremiumStatus();
@@ -261,45 +314,98 @@ export default function MealsList({
             </Text>
             
             {isToday() && (
-              <View style={styles.mealsHeaderButtons}>
-                <TouchableOpacity
-                  style={styles.copyMealsButton}
-                  onPress={copyYesterdaysMeals}
-                  disabled={copyingMeals}
-                >
-                  {copyingMeals ? (
-                    <LoadingDots style={[styles.copyMealsButtonText, { color: theme.primary }]} />
-                  ) : (
-                    <Text style={[styles.copyMealsButtonText, { color: theme.primary }]}>
-                      {t('home.copyYesterday')}
-                    </Text>
-                  )}
-                </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.manualLogButton, { backgroundColor: theme.primary }]}
+                onPress={() => setShowQuickActions(true)}
+              >
+                <ListPlusIcon size={22} color="#fff" />
+              </TouchableOpacity>
+            )}
 
+            {showQuickActions && (
+              <Modal
+                transparent
+                visible={showQuickActions}
+                animationType="fade"
+                onRequestClose={() => setShowQuickActions(false)}
+              >
                 <TouchableOpacity
-                  style={[styles.quickEntryButton, { backgroundColor: theme.border }]}
-                  onPress={() => setListViewMode(listViewMode === 'grid' ? 'list' : 'grid')}
+                  style={styles.quickActionsOverlay}
+                  activeOpacity={1}
+                  onPress={() => setShowQuickActions(false)}
                 >
-                  <Text style={[styles.quickEntryButtonText, { color: theme.text }]}>
-                    {listViewMode === 'grid' ? '☰' : '▦'}
-                  </Text>
-                </TouchableOpacity>
+                  <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()} style={styles.quickActionsSheet}>
+                    <View style={styles.mealsHeaderButtons}>
+                      <View style={styles.mealsHeaderRow}>
+                        <PulsingWrapper active={showQuickActions}>
+                          <TouchableOpacity
+                            style={[styles.copyMealsButton, { backgroundColor: theme.cardBackground }]}
+                            onPress={() => { setShowQuickActions(false); copyYesterdaysMeals(); }}
+                            disabled={copyingMeals}
+                          >
+                            {copyingMeals ? (
+                              <LoadingDots style={[styles.copyMealsButtonText, { color: theme.primary }]} />
+                            ) : (
+                              <Text style={[styles.copyMealsButtonText, { color: theme.primary }]}>
+                                {t('home.copyYesterday')}
+                              </Text>
+                            )}
+                          </TouchableOpacity>
+                        </PulsingWrapper>
 
-                <TouchableOpacity
-                  style={styles.quickEntryButton}
-                  onPress={() => {
-                    if (isGuestMode) {
-                      setGuestSheetVisible(true);
-                      return;
-                    }
-                    navigation.navigate('QuickEntry');
-                  }}
-                >
-                  <Text style={[styles.quickEntryButtonText, { color: '#2196F3' }]}>
-                    {t('home.quickEntry')}
-                  </Text>
+                        <PulsingWrapper active={showQuickActions}>
+                          <TouchableOpacity
+                            style={[styles.quickEntryButton, { backgroundColor: theme.cardBackground }]}
+                            onPress={() => { setShowQuickActions(false); setListViewMode(listViewMode === 'grid' ? 'list' : 'grid'); }}
+                          >
+                            <Text style={[styles.quickEntryButtonText, { color: theme.text }]}>
+                              {listViewMode === 'grid' ? t('home.listView') : t('home.gridView')}
+                            </Text>
+                          </TouchableOpacity>
+                        </PulsingWrapper>
+                      </View>
+
+                      <View style={styles.mealsHeaderRow}>
+                        <PulsingWrapper active={showQuickActions}>
+                          <TouchableOpacity
+                            style={[styles.quickEntryButton, { backgroundColor: theme.cardBackground }]}
+                            onPress={() => {
+                              setShowQuickActions(false);
+                              if (isGuestMode) {
+                                setGuestSheetVisible(true);
+                                return;
+                              }
+                              navigation.navigate('QuickEntry');
+                            }}
+                          >
+                            <Text style={[styles.quickEntryButtonText, { color: '#2196F3' }]}>
+                              {t('home.quickEntry')}
+                            </Text>
+                          </TouchableOpacity>
+                        </PulsingWrapper>
+
+                        <PulsingWrapper active={showQuickActions}>
+                          <TouchableOpacity
+                            style={[styles.quickEntryButton, { backgroundColor: theme.cardBackground }]}
+                            onPress={() => {
+                              setShowQuickActions(false);
+                              if (isGuestMode) {
+                                setGuestSheetVisible(true);
+                                return;
+                              }
+                              navigation.navigate('FrequentMeals');
+                            }}
+                          >
+                            <Text style={[styles.quickEntryButtonText, { color: theme.primary }]}>
+                              {t('home.frequentMeals')}
+                            </Text>
+                          </TouchableOpacity>
+                        </PulsingWrapper>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
                 </TouchableOpacity>
-              </View>
+              </Modal>
             )}
           </>
         )}
@@ -807,16 +913,36 @@ const styles = StyleSheet.create({
   mealsHeader: { 
     marginBottom: 15 
   },
+  manualLogButton: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginTop: 12,
+  },
+  quickActionsOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+  },
+  quickActionsSheet: {
+    paddingHorizontal: 30,
+  },
   mealsHeaderButtons: {
+    marginTop: 12,
+    gap: 10,
+  },
+  mealsHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 12
   },
-  copyMealsButton: { 
-    paddingHorizontal: 14, 
-    paddingVertical: 8, 
-    borderRadius: 8 
+  copyMealsButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
   },
   copyMealsButtonText: {
     color: '#fff',

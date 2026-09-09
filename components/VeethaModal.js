@@ -25,6 +25,17 @@ export default function VeethaModal({
 
   const { isDark } = useTheme();
 
+  // Horizontal pills read fine for 2-3 choices (the common case elsewhere in
+  // the app), but cramp badly beyond that -- text wraps mid-word and every
+  // button loses its own identity. A vertical list of full-width rows scales
+  // to any number of options, so switch to it once there are more than 3.
+  // Cancel/dismiss reads better last in a vertical list (standard action-
+  // sheet convention) even when the caller listed it first for the pill row.
+  const isVertical = buttons && buttons.length > 3;
+  const orderedButtons = isVertical
+    ? [...buttons].sort((a, b) => (a.style === 'cancel' ? 1 : 0) - (b.style === 'cancel' ? 1 : 0))
+    : buttons;
+
   return (
     <Modal
       visible={visible}
@@ -40,13 +51,13 @@ export default function VeethaModal({
           {title ? <Text style={[styles.title, isDark && { color: '#F5E6A3' }]}>{title}</Text> : null}
           {message ? <Text style={[styles.message, isDark && { color: '#B8B8B8' }]}>{message}</Text> : null}
 
-          <View style={styles.buttonRow}>
-            {buttons ? (
-              buttons.map((btn, i) => (
+          <View style={isVertical ? styles.buttonColumn : styles.buttonRow}>
+            {orderedButtons ? (
+              orderedButtons.map((btn, i) => (
                 <TouchableOpacity
                   key={i}
                   style={[
-                    styles.button,
+                    isVertical ? styles.buttonVertical : styles.button,
                     btn.style === 'destructive'
                       ? styles.destructiveButton
                       : btn.style === 'cancel'
@@ -161,6 +172,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 10,
+  },
+  buttonColumn: {
+    gap: 10,
+  },
+  buttonVertical: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
   },
   button: {
     flex: 1,

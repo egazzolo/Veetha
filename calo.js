@@ -74,6 +74,7 @@ import ProgressCompareScreen from './screens/ProgressCompareScreen';
 import PhotoTipsScreen from './screens/PhotoTipsScreen';
 import HelpSupportScreen from './screens/HelpSupportScreen';
 import AboutScreen from './screens/AboutScreen';
+import FrequentMealsScreen from './screens/FrequentMealsScreen';
 
 // Import contexts and utilities
 import { OnboardingProvider } from './utils/OnboardingContext';
@@ -442,6 +443,7 @@ function AppNavigator() {
           <Stack.Screen name="PhotoTips" component={PhotoTipsScreen} />
           <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
           <Stack.Screen name="About" component={AboutScreen} />
+          <Stack.Screen name="FrequentMeals" component={FrequentMealsScreen} />
         </Stack.Navigator>
         {/* <GlobalTutorialOverlay /> */}
         <GracePeriodAlert navigationRef={navigationRef} />
