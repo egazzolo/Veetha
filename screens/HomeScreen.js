@@ -5,6 +5,8 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Notifications from 'expo-notifications';
 import * as StoreReview from 'expo-store-review';
 import * as Location from 'expo-location';
+import * as Sharing from 'expo-sharing';
+import { captureRef } from 'react-native-view-shot';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, RefreshControl, Alert, Modal, Platform, Animated, Easing, ActivityIndicator, Linking, TextInput, Image, useWindowDimensions } from 'react-native';
 import { showToast } from '../components/VeethaToast';
 import VeethaModal from '../components/VeethaModal';
@@ -51,6 +53,7 @@ import { useCameraPermissions } from 'expo-camera';
 import ExerciseButton from '../components/ExerciseButton';
 import WaterPitcher from '../components/WaterPitcher';
 import AppIcon from '../components/AppIcon';
+import MealShareCard from '../components/MealShareCard';
 
 // Circular Progress Component
 function CircularProgress({ percentage, size = 100, strokeWidth = 8, color = '#4CAF50', children }) {
@@ -465,6 +468,11 @@ export default function HomeScreen({ navigation }) {
   const [guestSheetVisible, setGuestSheetVisible] = useState(false);
   const [guestSheetMessage, setGuestSheetMessage] = useState('');
   const [mealActionModal, setMealActionModal] = useState({ visible: false, meal: null });
+  // Meal currently being rendered off-screen for capture -- cleared once
+  // captureAndShareMeal finishes (success or failure) so the hidden card
+  // unmounts instead of lingering.
+  const [shareMeal, setShareMeal] = useState(null);
+  const shareCardRef = useRef(null);
   const [frequentProductIds, setFrequentProductIds] = useState(new Set());
   const [deleteMealModal, setDeleteMealModal] = useState({ visible: false, meal: null });
   const [selectionMode, setSelectionMode] = useState(false);
@@ -1765,6 +1773,26 @@ export default function HomeScreen({ navigation }) {
     setSelectionMode(true);
   };
 
+  const handleShareMeal = (meal) => {
+    setShareMeal(meal);
+  };
+
+  // Fires once the hidden MealShareCard (and its photo, if any) has finished
+  // rendering -- captures it to a PNG and hands that off to the native share
+  // sheet. shareMeal is cleared in `finally` so the off-screen card unmounts
+  // whether the capture/share succeeded, was cancelled, or errored.
+  const captureAndShareMeal = async () => {
+    try {
+      const uri = await captureRef(shareCardRef, { format: 'png', quality: 1 });
+      await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: t('home.shareMeal') });
+    } catch (error) {
+      console.error('Error sharing meal:', error);
+      Alert.alert(t('home.error'), t('home.shareFailed'));
+    } finally {
+      setShareMeal(null);
+    }
+  };
+
   const toggleMealSelection = (mealId) => {
     setSelectedMealIds(prev => {
       const next = new Set(prev);
@@ -2419,6 +2447,7 @@ export default function HomeScreen({ navigation }) {
                 buttons={[
                   { text: t('home.cancel'), style: 'cancel', onPress: () => setMealActionModal({ visible: false, meal: null }) },
                   { text: t('home.edit'), onPress: () => { setMealActionModal({ visible: false, meal: null }); navigation.navigate('EditMeal', { meal: mealActionModal.meal }); } },
+                  { text: t('home.share'), onPress: () => { const meal = mealActionModal.meal; setMealActionModal({ visible: false, meal: null }); handleShareMeal(meal); } },
                   ...((mealActionModal.meal?.product_id || mealActionModal.meal?.individual_foods?.length) ? [{
                     text: (mealActionModal.meal?.product_id && frequentProductIds.has(mealActionModal.meal.product_id))
                       ? t('home.removeFrequent')
@@ -2429,6 +2458,19 @@ export default function HomeScreen({ navigation }) {
                   { text: t('home.delete'), style: 'destructive', onPress: () => { setMealActionModal({ visible: false, meal: null }); handleDeleteMeal(mealActionModal.meal); } },
                 ]}
               />
+
+              {/* Hidden off-screen render used only to capture the shareable
+                  meal card -- never visible to the user. */}
+              {shareMeal && (
+                <View style={styles.shareCardOffscreen} pointerEvents="none">
+                  <MealShareCard
+                    ref={shareCardRef}
+                    meal={shareMeal}
+                    t={t}
+                    onReady={captureAndShareMeal}
+                  />
+                </View>
+              )}
 
               {/* Delete Meal Confirmation */}
               <VeethaModal
@@ -2588,6 +2630,11 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  shareCardOffscreen: {
+    position: 'absolute',
+    top: 0,
+    left: -9999,
   },
   guestBanner: {
     flexDirection: 'row',

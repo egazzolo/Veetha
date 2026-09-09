@@ -463,11 +463,15 @@ export default function MealsList({
                   if (selectionMode) return;
                   handleMealLongPress({
                     ...meal,
-                    product_name: meal.product?.name ?? meal.product_name,
-                    calories: meal.product?.calories ?? meal.calories,
-                    protein: meal.product?.protein ?? meal.protein,
-                    carbs: meal.product?.carbs ?? meal.carbs,
-                    fat: meal.product?.fat ?? meal.fat,
+                    product_name: product.name,
+                    calories: actualCalories,
+                    protein: actualProtein,
+                    carbs: actualCarbs,
+                    fat: actualFat,
+                    sodium: actualSodium,
+                    sugar: actualSugar,
+                    fiber: actualFiber,
+                    serving_unit: product.serving_unit,
                   });
                 }}
                 activeOpacity={0.7}
@@ -549,11 +553,15 @@ export default function MealsList({
                 if (selectionMode) return;
                 handleMealLongPress({
                   ...meal,
-                  product_name: meal.product?.name ?? meal.product_name,
-                  calories: meal.product?.calories ?? meal.calories,
-                  protein: meal.product?.protein ?? meal.protein,
-                  carbs: meal.product?.carbs ?? meal.carbs,
-                  fat: meal.product?.fat ?? meal.fat,
+                  product_name: product.name,
+                  calories: actualCalories,
+                  protein: actualProtein,
+                  carbs: actualCarbs,
+                  fat: actualFat,
+                  sodium: actualSodium,
+                  sugar: actualSugar,
+                  fiber: actualFiber,
+                  serving_unit: product.serving_unit,
                 });
               }}
               activeOpacity={0.7}
@@ -618,11 +626,15 @@ export default function MealsList({
                   if (selectionMode) return;
                   handleMealLongPress({
                     ...meal,
-                    product_name: meal.product?.name ?? meal.product_name,
-                    calories: meal.product?.calories ?? meal.calories,
-                    protein: meal.product?.protein ?? meal.protein,
-                    carbs: meal.product?.carbs ?? meal.carbs,
-                    fat: meal.product?.fat ?? meal.fat,
+                    product_name: product.name,
+                    calories: actualCalories,
+                    protein: actualProtein,
+                    carbs: actualCarbs,
+                    fat: actualFat,
+                    sodium: actualSodium,
+                    sugar: actualSugar,
+                    fiber: actualFiber,
+                    serving_unit: product.serving_unit,
                   });
                 }}
                 activeOpacity={0.7}

@@ -66,6 +66,7 @@
     "react-native-svg": "15.12.1",
     "react-native-toast-message": "^2.3.3",
     "react-native-url-polyfill": "^3.0.0",
+    "react-native-view-shot": "4.0.3",
     "react-native-walkthrough-tooltip": "^1.6.0",
     "react-native-web": "^0.21.0",
     "react-native-webview": "13.15.0",
