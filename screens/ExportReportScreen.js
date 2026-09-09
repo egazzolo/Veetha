@@ -400,7 +400,7 @@ export default function ExportReportScreen({ navigation, route }) {
 
   const generateReport = async () => {
     if (!isPremium) {
-      navigation.replace('Paywall', { highlightFeature: 'PDF export' });
+      navigation.replace('Paywall', { highlightFeature: 'PDF exports' });
       return;
     }
 

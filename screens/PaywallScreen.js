@@ -41,12 +41,14 @@ import React, { useState, useRef, useEffect } from 'react';
     { label: 'Manual logging',            free: 'Unlimited', premium: 'Unlimited' },
     { label: 'AI photo recognition',      free: '5/month',   premium: '5/day'     },
     { label: 'All exercise categories',   free: '✗',         premium: '✓'         },
-    { label: 'PDF & Excel exports',       free: '✗',         premium: '✓'         },
+    { label: 'PDF exports',               free: '✗',         premium: '✓'         },
     { label: 'Historical monthly stats',  free: '✗',         premium: '✓'         },
     { label: 'Individual food breakdown', free: '✗',         premium: '✓'         },
     { label: 'Meal comparison',           free: '✗',         premium: '✓'         },
     { label: 'Progress photos',           free: '✗',         premium: '✓'         },
     { label: 'Custom reminder times',     free: '✗',         premium: '✓'         },
+    { label: 'Frequent meals',            free: '5 max',     premium: 'Unlimited' },
+    { label: 'Quick Add recommendations', free: '2 shown',   premium: 'All'       },
   ];
 
   export default function PaywallScreen({ navigation, route }) {
