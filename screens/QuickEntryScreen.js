@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, KeyboardAvoidingView, Platform, ActivityIndicator, Image } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Alert, KeyboardAvoidingView, Platform, ActivityIndicator, Image, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { supabase } from '../utils/supabase';
@@ -36,6 +36,16 @@ export default function QuickEntryScreen({ navigation }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
   const [searchingNutrition, setSearchingNutrition] = useState(false);
+
+  // Keyboard "Next" chain: Meal Name -> Serving Size -> Calories -> Protein
+  // -> Carbs -> Fat (Done). Each ref is focused from the previous field's
+  // onSubmitEditing so the return key walks the whole form top to bottom.
+  const mealNameRef = useRef(null);
+  const servingGramsRef = useRef(null);
+  const caloriesRef = useRef(null);
+  const proteinRef = useRef(null);
+  const carbsRef = useRef(null);
+  const fatRef = useRef(null);
 
   // Load suggestions on mount
   useEffect(() => {
@@ -337,7 +347,7 @@ Values are for the total amount described. Be accurate, not inflated.`
           }}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={[styles.suggestionsCard, { backgroundColor: theme.cardBackground }]}>
+          <View style={[styles.suggestionsCard, { backgroundColor: theme.background }]}>
 
             <TouchableOpacity
               style={styles.suggestionsHeader}
@@ -375,7 +385,7 @@ Values are for the total amount described. Be accurate, not inflated.`
                       disabled={loggingIndex !== null}
                       onPress={() => {
                         if (isLocked) {
-                          navigation.navigate('Paywall', { highlightFeature: 'All meal recommendations in Quick Add' });
+                          navigation.navigate('Paywall', { highlightFeature: 'Quick Add recommendations' });
                         } else {
                           handleQuickLog(food, index);
                         }
@@ -416,7 +426,7 @@ Values are for the total amount described. Be accurate, not inflated.`
           </View>
 
           {/* Manual Entry Form */}
-          <View style={[styles.card, { backgroundColor: theme.cardBackground }]}>
+          <View style={[styles.card, { backgroundColor: theme.background }]}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>
               {t('stats.quickEntry.mealDetails')}
             </Text>
@@ -426,15 +436,19 @@ Values are for the total amount described. Be accurate, not inflated.`
                 {t('stats.quickEntry.mealName')}
               </Text>
               <TextInput
-                style={[styles.input, { 
-                  backgroundColor: theme.background, 
+                ref={mealNameRef}
+                style={[styles.input, {
+                  backgroundColor: theme.cardBackground,
                   color: theme.text,
-                  borderColor: theme.border 
+                  borderColor: theme.border
                 }]}
                 placeholder={t('stats.quickEntry.mealNamePlaceholder')}
                 placeholderTextColor={theme.textTertiary}
                 value={mealName}
                 onChangeText={setMealName}
+                returnKeyType="next"
+                onSubmitEditing={() => servingGramsRef.current?.focus()}
+                blurOnSubmit={false}
               />
             </View>
 
@@ -450,15 +464,16 @@ Values are for the total amount described. Be accurate, not inflated.`
               )}
             </TouchableOpacity>
 
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.textSecondary }]}>
-                {t('stats.quickEntry.servingSize')}
+            <View style={styles.inputRowInline}>
+              <Text style={[styles.inlineLabel, { color: theme.textSecondary }]}>
+                {t('stats.quickEntry.servingSize')}:
               </Text>
               <TextInput
-                style={[styles.input, { 
-                  backgroundColor: theme.background, 
+                ref={servingGramsRef}
+                style={[styles.inlineInput, {
+                  backgroundColor: theme.cardBackground,
                   color: theme.text,
-                  borderColor: theme.border 
+                  borderColor: theme.border
                 }]}
                 placeholder="100"
                 placeholderTextColor={theme.textTertiary}
@@ -475,24 +490,31 @@ Values are for the total amount described. Be accurate, not inflated.`
                     setFat((baseFatPerGram * grams).toFixed(1));
                   }
                 }}
+                returnKeyType="next"
+                onSubmitEditing={() => caloriesRef.current?.focus()}
+                blurOnSubmit={false}
               />
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.textSecondary }]}>
-                {t('stats.quickEntry.calories')}
+            <View style={styles.inputRowInline}>
+              <Text style={[styles.inlineLabel, { color: theme.textSecondary }]}>
+                {t('stats.quickEntry.calories')}:
               </Text>
               <TextInput
-                style={[styles.input, { 
-                  backgroundColor: theme.background, 
+                ref={caloriesRef}
+                style={[styles.inlineInput, {
+                  backgroundColor: theme.cardBackground,
                   color: theme.text,
-                  borderColor: theme.border 
+                  borderColor: theme.border
                 }]}
                 placeholder="0"
                 placeholderTextColor={theme.textTertiary}
                 keyboardType="numeric"
                 value={calories}
                 onChangeText={setCalories}
+                returnKeyType="next"
+                onSubmitEditing={() => proteinRef.current?.focus()}
+                blurOnSubmit={false}
               />
             </View>
 
@@ -500,57 +522,68 @@ Values are for the total amount described. Be accurate, not inflated.`
               {t('stats.quickEntry.macros')}
             </Text>
 
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.textSecondary }]}>
-                {t('stats.quickEntry.protein')}
+            <View style={styles.inputRowInline}>
+              <Text style={[styles.inlineLabel, { color: theme.textSecondary }]}>
+                {t('stats.quickEntry.protein')}:
               </Text>
               <TextInput
-                style={[styles.input, { 
-                  backgroundColor: theme.background, 
+                ref={proteinRef}
+                style={[styles.inlineInput, {
+                  backgroundColor: theme.cardBackground,
                   color: theme.text,
-                  borderColor: theme.border 
+                  borderColor: theme.border
                 }]}
                 placeholder="0"
                 placeholderTextColor={theme.textTertiary}
                 keyboardType="numeric"
                 value={protein}
                 onChangeText={setProtein}
+                returnKeyType="next"
+                onSubmitEditing={() => carbsRef.current?.focus()}
+                blurOnSubmit={false}
               />
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.textSecondary }]}>
-                {t('stats.quickEntry.carbs')}
+            <View style={styles.inputRowInline}>
+              <Text style={[styles.inlineLabel, { color: theme.textSecondary }]}>
+                {t('stats.quickEntry.carbs')}:
               </Text>
               <TextInput
-                style={[styles.input, { 
-                  backgroundColor: theme.background, 
+                ref={carbsRef}
+                style={[styles.inlineInput, {
+                  backgroundColor: theme.cardBackground,
                   color: theme.text,
-                  borderColor: theme.border 
+                  borderColor: theme.border
                 }]}
                 placeholder="0"
                 placeholderTextColor={theme.textTertiary}
                 keyboardType="numeric"
                 value={carbs}
                 onChangeText={setCarbs}
+                returnKeyType="next"
+                onSubmitEditing={() => fatRef.current?.focus()}
+                blurOnSubmit={false}
               />
             </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.textSecondary }]}>
-                {t('stats.quickEntry.fat')}
+            <View style={styles.inputRowInline}>
+              <Text style={[styles.inlineLabel, { color: theme.textSecondary }]}>
+                {t('stats.quickEntry.fat')}:
               </Text>
               <TextInput
-                style={[styles.input, { 
-                  backgroundColor: theme.background, 
+                ref={fatRef}
+                style={[styles.inlineInput, {
+                  backgroundColor: theme.cardBackground,
                   color: theme.text,
-                  borderColor: theme.border 
+                  borderColor: theme.border
                 }]}
                 placeholder="0"
                 placeholderTextColor={theme.textTertiary}
                 keyboardType="numeric"
                 value={fat}
                 onChangeText={setFat}
+                returnKeyType="done"
+                onSubmitEditing={() => Keyboard.dismiss()}
               />
             </View>
 
@@ -687,6 +720,26 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 15,
     fontSize: 16,
+  },
+  inputRowInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  inlineLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    flex: 1,
+  },
+  inlineInput: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    fontSize: 16,
+    width: 100,
+    textAlign: 'right',
   },
   saveButton: {
     paddingVertical: 16,

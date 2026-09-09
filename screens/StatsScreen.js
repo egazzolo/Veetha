@@ -432,7 +432,7 @@ export default function StatsScreen({ navigation }) {
   // small pill indicator, it doesn't trigger the full panel-push transition.
   useEffect(() => {
     AsyncStorage.getItem('default_stats_tab').then((val) => {
-      if (val === 'month' || val === 'exercise') {
+      if (val === 'month' || val === 'exercise' || val === 'progress') {
         setActiveTab(val);
       }
     });

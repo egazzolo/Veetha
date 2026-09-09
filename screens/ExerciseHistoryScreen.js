@@ -148,22 +148,6 @@ export default function ExerciseHistoryScreen({ route, navigation, nestedInScrol
     });
   };
 
-  // id: null marks a new row rather than an edit of an existing one --
-  // exerciseLogId/subCategory are only needed for that insert path, so the
-  // update path (openEditEntry above) doesn't carry them.
-  const openAddEntry = (exerciseLogId, subCategory) => {
-    setEditingEntry({
-      id: null,
-      exerciseLogId,
-      subCategory,
-      name: '',
-      sets: '',
-      reps: '',
-      weight: '',
-      weight_unit: 'kg',
-    });
-  };
-
   const saveEditedEntry = async () => {
     if (!editingEntry.name.trim() || !editingEntry.sets || !editingEntry.reps) {
       Alert.alert(t('common.error'), 'Please fill in the exercise name, sets, and reps.');
@@ -181,13 +165,10 @@ export default function ExerciseHistoryScreen({ route, navigation, nestedInScrol
         weight_unit: hasWeight ? editingEntry.weight_unit : null,
       };
 
-      const { error } = editingEntry.id
-        ? await supabase.from('exercise_log_entries').update(payload).eq('id', editingEntry.id)
-        : await supabase.from('exercise_log_entries').insert({
-            ...payload,
-            exercise_log_id: editingEntry.exerciseLogId,
-            sub_category: editingEntry.subCategory,
-          });
+      const { error } = await supabase
+        .from('exercise_log_entries')
+        .update(payload)
+        .eq('id', editingEntry.id);
 
       if (error) throw error;
 
@@ -217,7 +198,11 @@ export default function ExerciseHistoryScreen({ route, navigation, nestedInScrol
   };
 
   const renderLegacyItem = (item) => (
-    <View style={[styles.exerciseCard, { backgroundColor: theme.cardBackground }]}>
+    <TouchableOpacity
+      style={[styles.exerciseCard, { backgroundColor: theme.cardBackground }]}
+      onLongPress={() => handleDelete(item)}
+      activeOpacity={0.7}
+    >
       <View style={styles.exerciseInfo}>
         <Text style={[styles.activityName, { color: theme.text }]}>
           {t(`exercise.activities.${item.raw.activity_name}`)}
@@ -238,11 +223,7 @@ export default function ExerciseHistoryScreen({ route, navigation, nestedInScrol
           {t('common.kcal')}
         </Text>
       </View>
-
-      <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(item)}>
-        <Text style={styles.deleteIcon}>🗑️</Text>
-      </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
 
   const renderColumnHeader = (key) => (
@@ -311,6 +292,7 @@ export default function ExerciseHistoryScreen({ route, navigation, nestedInScrol
         <TouchableOpacity
           style={styles.splitCardHeader}
           onPress={() => setExpandedId(isExpanded ? null : item.id)}
+          onLongPress={() => handleDelete(item)}
         >
           <View style={styles.exerciseInfo}>
             <Text style={[styles.activityName, { color: theme.text }]}>
@@ -332,10 +314,6 @@ export default function ExerciseHistoryScreen({ route, navigation, nestedInScrol
               {t('common.kcal')}
             </Text>
           </View>
-
-          <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(item)}>
-            <Text style={styles.deleteIcon}>🗑️</Text>
-          </TouchableOpacity>
         </TouchableOpacity>
 
         {isExpanded && (
@@ -347,25 +325,15 @@ export default function ExerciseHistoryScreen({ route, navigation, nestedInScrol
                 </Text>
                 {(grouped[key] || []).length > 0 && renderColumnHeader(key)}
                 {(grouped[key] || []).map((entry) => renderEntryRow(entry))}
-                <TouchableOpacity onPress={() => openAddEntry(item.rawId, key)}>
-                  <Text style={[styles.addEntryText, { color: theme.primary }]}>
-                    + {t('exercise.splitFlow.addExercise')}
-                  </Text>
-                </TouchableOpacity>
               </View>
             ))}
 
             {/* Full Body / "Other" workouts have no sub-category sections --
-                everything (existing entries and the add button) lives here. */}
+                existing entries just list here ungrouped. */}
             {sectionKeys.length === 0 && (
               <View style={styles.detailGroup}>
                 {ungrouped.length > 0 && renderColumnHeader('ungrouped')}
                 {ungrouped.map((entry) => renderEntryRow(entry))}
-                <TouchableOpacity onPress={() => openAddEntry(item.rawId, null)}>
-                  <Text style={[styles.addEntryText, { color: theme.primary }]}>
-                    + {t('exercise.splitFlow.addExercise')}
-                  </Text>
-                </TouchableOpacity>
               </View>
             )}
           </View>
@@ -397,8 +365,6 @@ export default function ExerciseHistoryScreen({ route, navigation, nestedInScrol
             theme={theme}
             navigation={navigation}
             startAnimation={false}
-            iconStyle={{ marginTop: -8 }}
-            labelStyle={{ marginTop: -28 }}
           />
         </View>
       </View>
@@ -440,7 +406,7 @@ export default function ExerciseHistoryScreen({ route, navigation, nestedInScrol
         <View style={styles.editModalOverlay}>
           <View style={[styles.editModalContent, { backgroundColor: theme.cardBackground }]}>
             <Text style={[styles.editModalTitle, { color: theme.text }]}>
-              {editingEntry?.id ? t('exercise.splitFlow.exerciseName') : t('exercise.splitFlow.addExercise')}
+              {t('exercise.splitFlow.exerciseName')}
             </Text>
 
             {editingEntry && (
@@ -576,8 +542,6 @@ const styles = StyleSheet.create({
     marginBottom: 2
   },
   caloriesLabel: { fontSize: 13 },
-  deleteButton: { padding: 8 },
-  deleteIcon: { fontSize: 20 },
   emptyText: {
     fontSize: 16,
     textAlign: 'center'
@@ -596,11 +560,6 @@ const styles = StyleSheet.create({
   entryCol: { width: 56, borderLeftWidth: 1, paddingLeft: 8, alignItems: 'flex-start' },
   columnHeaderRow: { paddingBottom: 4, marginBottom: 2, borderBottomWidth: 1 },
   columnHeaderText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
-  addEntryText: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginTop: 10,
-  },
   editModalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',

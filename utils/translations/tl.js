@@ -19,6 +19,7 @@ export default {
     tomorrow: 'Bukas',
     confirm: 'Kumpirmahin',
     done: 'Tapos',
+    next: 'Susunod',
     inMinutes: 'sa {{minutes}} min',
     inHours: 'sa {{hours}} h',
     inHoursMinutes: 'sa {{hours}} h {{minutes}} min',

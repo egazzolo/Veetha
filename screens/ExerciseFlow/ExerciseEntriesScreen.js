@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback, InputAccessoryView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLanguage } from '../../utils/LanguageContext';
 import { supabase } from '../../utils/supabase';
@@ -8,6 +8,14 @@ let nextRowId = 0;
 const makeRow = () => ({ id: `row-${nextRowId++}`, name: '', sets: '', reps: '', weight: '' });
 
 const MAX_SUGGESTIONS = 5;
+
+// iOS's number-pad/decimal-pad keyboards (used by the sets/reps/weight
+// fields below) render with no return key at all, so returnKeyType has
+// nothing to attach to there -- an InputAccessoryView toolbar is the only
+// way to offer a "Next"/"Done" button for those fields on iOS. Android's
+// numeric keyboards do show a return-key action, so they're covered by
+// returnKeyType/onSubmitEditing directly.
+const ACCESSORY_ID = 'exerciseEntriesAccessory';
 
 export default function ExerciseEntriesScreen({ navigation, route }) {
   const { t } = useLanguage();
@@ -54,6 +62,25 @@ export default function ExerciseEntriesScreen({ navigation, route }) {
   // key since row ids alone aren't guaranteed unique across sections.
   const [activeSuggestionKey, setActiveSuggestionKey] = useState(null);
 
+  // Continue only makes sense once the keyboard is out of the way -- while
+  // it's up, the button sat awkwardly mid-flow just under the field being
+  // typed into, so it's hidden entirely until the keyboard closes and it
+  // can sit pinned at the true bottom of the screen.
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  useEffect(() => {
+    const showSub = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  // Which field is currently focused (section-row-field composite key) --
+  // drives the iOS accessory bar's Next/Done label and target.
+  const [activeFieldKey, setActiveFieldKey] = useState(null);
+  const fieldRefs = useRef({});
+
   // One section per selected sub-category, plus one more for the "Other"
   // free-text label if it was filled in. Full Body (and any edge case with
   // no sub-categories/custom label at all) gets a single unlabeled section.
@@ -98,6 +125,31 @@ export default function ExerciseEntriesScreen({ navigation, route }) {
       ...prev,
       [sectionKey]: prev[sectionKey].map((r) => (r.id === rowId ? { ...r, [field]: value } : r))
     }));
+  };
+
+  // Flat top-to-bottom field order (name -> sets -> reps -> weight, per row,
+  // per section) that "Next" walks through -- recomputed whenever a row is
+  // added/removed so the chain always matches what's on screen.
+  const fieldOrder = useMemo(() => {
+    const order = [];
+    for (const section of sections) {
+      for (const row of rowsBySection[section.key] || []) {
+        order.push(`${section.key}-${row.id}-name`);
+        order.push(`${section.key}-${row.id}-sets`);
+        order.push(`${section.key}-${row.id}-reps`);
+        order.push(`${section.key}-${row.id}-weight`);
+      }
+    }
+    return order;
+  }, [sections, rowsBySection]);
+
+  const focusNextField = (key) => {
+    const nextKey = fieldOrder[fieldOrder.indexOf(key) + 1];
+    if (nextKey) {
+      fieldRefs.current[nextKey]?.focus();
+    } else {
+      Keyboard.dismiss();
+    }
   };
 
   const suggestionsFor = (query, sectionKey) => {
@@ -189,11 +241,15 @@ export default function ExerciseEntriesScreen({ navigation, route }) {
                         )}
                       </View>
                       <TextInput
+                        ref={(el) => { fieldRefs.current[`${section.key}-${row.id}-name`] = el; }}
                         style={[styles.nameInput, { color: theme.text, borderColor: theme.border }]}
                         placeholder={t('exercise.splitFlow.exerciseName')}
                         placeholderTextColor={theme.textSecondary}
                         value={row.name}
-                        onFocus={() => setActiveSuggestionKey(suggestionKey)}
+                        onFocus={() => {
+                          setActiveSuggestionKey(suggestionKey);
+                          setActiveFieldKey(`${section.key}-${row.id}-name`);
+                        }}
                         onChangeText={(v) => {
                           updateRow(section.key, row.id, 'name', v);
                           setActiveSuggestionKey(suggestionKey);
@@ -207,6 +263,10 @@ export default function ExerciseEntriesScreen({ navigation, route }) {
                             setActiveSuggestionKey((prev) => (prev === suggestionKey ? null : prev));
                           }, 150);
                         }}
+                        returnKeyType="next"
+                        onSubmitEditing={() => focusNextField(`${section.key}-${row.id}-name`)}
+                        blurOnSubmit={false}
+                        inputAccessoryViewID={Platform.OS === 'ios' ? ACCESSORY_ID : undefined}
                       />
                       {suggestions.length > 0 && (
                         <View style={[styles.suggestionBox, { borderColor: theme.border, backgroundColor: theme.background }]}>
@@ -229,28 +289,46 @@ export default function ExerciseEntriesScreen({ navigation, route }) {
                         <View style={styles.numberField}>
                           <Text style={[styles.numberLabel, { color: theme.textSecondary }]}>{t('exercise.splitFlow.sets')}</Text>
                           <TextInput
+                            ref={(el) => { fieldRefs.current[`${section.key}-${row.id}-sets`] = el; }}
                             style={[styles.numberInput, { color: theme.text, borderColor: theme.border }]}
                             keyboardType="number-pad"
                             value={row.sets}
                             onChangeText={(v) => updateRow(section.key, row.id, 'sets', v)}
+                            onFocus={() => setActiveFieldKey(`${section.key}-${row.id}-sets`)}
+                            returnKeyType="next"
+                            onSubmitEditing={() => focusNextField(`${section.key}-${row.id}-sets`)}
+                            blurOnSubmit={false}
+                            inputAccessoryViewID={Platform.OS === 'ios' ? ACCESSORY_ID : undefined}
                           />
                         </View>
                         <View style={styles.numberField}>
                           <Text style={[styles.numberLabel, { color: theme.textSecondary }]}>{t('exercise.splitFlow.reps')}</Text>
                           <TextInput
+                            ref={(el) => { fieldRefs.current[`${section.key}-${row.id}-reps`] = el; }}
                             style={[styles.numberInput, { color: theme.text, borderColor: theme.border }]}
                             keyboardType="number-pad"
                             value={row.reps}
                             onChangeText={(v) => updateRow(section.key, row.id, 'reps', v)}
+                            onFocus={() => setActiveFieldKey(`${section.key}-${row.id}-reps`)}
+                            returnKeyType="next"
+                            onSubmitEditing={() => focusNextField(`${section.key}-${row.id}-reps`)}
+                            blurOnSubmit={false}
+                            inputAccessoryViewID={Platform.OS === 'ios' ? ACCESSORY_ID : undefined}
                           />
                         </View>
                         <View style={styles.numberField}>
                           <Text style={[styles.numberLabel, { color: theme.textSecondary }]}>{t('exercise.weight')} ({weightUnit})</Text>
                           <TextInput
+                            ref={(el) => { fieldRefs.current[`${section.key}-${row.id}-weight`] = el; }}
                             style={[styles.numberInput, { color: theme.text, borderColor: theme.border }]}
                             keyboardType="decimal-pad"
                             value={row.weight}
                             onChangeText={(v) => updateRow(section.key, row.id, 'weight', v)}
+                            onFocus={() => setActiveFieldKey(`${section.key}-${row.id}-weight`)}
+                            returnKeyType={fieldOrder[fieldOrder.length - 1] === `${section.key}-${row.id}-weight` ? 'done' : 'next'}
+                            onSubmitEditing={() => focusNextField(`${section.key}-${row.id}-weight`)}
+                            blurOnSubmit={false}
+                            inputAccessoryViewID={Platform.OS === 'ios' ? ACCESSORY_ID : undefined}
                           />
                         </View>
                       </View>
@@ -265,22 +343,36 @@ export default function ExerciseEntriesScreen({ navigation, route }) {
             ))}
           </ScrollView>
 
-          <TouchableOpacity
-            style={[styles.continueButton, { backgroundColor: theme.primary, opacity: canContinue ? 1 : 0.5 }]}
-            disabled={!canContinue}
-            onPress={() => navigation.navigate('ExerciseSplitIntensityScreen', {
-              splits,
-              subCategories,
-              customLabel,
-              entries: completeEntries,
-              weight,
-              theme
-            })}
-          >
-            <Text style={styles.continueText}>{t('exercise.splitFlow.continue')}</Text>
-          </TouchableOpacity>
+          {!keyboardVisible && (
+            <TouchableOpacity
+              style={[styles.continueButton, { backgroundColor: theme.primary, opacity: canContinue ? 1 : 0.5 }]}
+              disabled={!canContinue}
+              onPress={() => navigation.navigate('ExerciseSplitIntensityScreen', {
+                splits,
+                subCategories,
+                customLabel,
+                entries: completeEntries,
+                weight,
+                theme
+              })}
+            >
+              <Text style={styles.continueText}>{t('exercise.splitFlow.continue')}</Text>
+            </TouchableOpacity>
+          )}
         </SafeAreaView>
       </TouchableWithoutFeedback>
+
+      {Platform.OS === 'ios' && (
+        <InputAccessoryView nativeID={ACCESSORY_ID}>
+          <View style={[styles.accessoryBar, { backgroundColor: theme.cardBackground, borderTopColor: theme.border }]}>
+            <TouchableOpacity onPress={() => activeFieldKey && focusNextField(activeFieldKey)}>
+              <Text style={[styles.accessoryButtonText, { color: theme.primary }]}>
+                {activeFieldKey === fieldOrder[fieldOrder.length - 1] ? t('common.done') : t('common.next')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </InputAccessoryView>
+      )}
     </KeyboardAvoidingView>
   );
 }
@@ -371,5 +463,14 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center'
   },
-  continueText: { color: '#fff', fontSize: 17, fontWeight: '700' }
+  continueText: { color: '#fff', fontSize: 17, fontWeight: '700' },
+  accessoryBar: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  accessoryButtonText: { fontSize: 16, fontWeight: '600' },
 });

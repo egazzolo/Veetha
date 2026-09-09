@@ -19,6 +19,7 @@ export default {
     tomorrow: 'Tomorrow',
     confirm: 'Confirm',
     done: 'Done',
+    next: 'Next',
     inMinutes: 'in {{minutes}} min',
     inHours: 'in {{hours}} h',
     inHoursMinutes: 'in {{hours}} h {{minutes}} min',

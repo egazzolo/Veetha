@@ -65,7 +65,7 @@ export default function PreferencesScreen({ navigation }) {
   useEffect(() => {
     Promise.all([
       AsyncStorage.getItem('default_stats_tab').then((val) => {
-        if (val === 'month' || val === 'exercise') setDefaultStatsTab(val);
+        if (val === 'month' || val === 'exercise' || val === 'progress') setDefaultStatsTab(val);
       }),
       AsyncStorage.getItem('statsInvertSwipeDirection').then((val) => {
         setInvertSwipe(val === 'true');
@@ -281,11 +281,11 @@ export default function PreferencesScreen({ navigation }) {
             <Text style={[styles.sideBySideDesc, { color: theme.textSecondary }]} numberOfLines={2}>
               {t('preferences.defaultViewDesc')}
             </Text>
-            <View style={styles.segmentedControl}>
-              {['week', 'month', 'exercise'].map((tab) => (
+            <View style={[styles.segmentedControl, styles.segmentedControlWrap]}>
+              {['week', 'month', 'exercise', 'progress'].map((tab) => (
                 <TouchableOpacity
                   key={tab}
-                  style={[styles.segment, defaultStatsTab === tab && [styles.segmentActive, { backgroundColor: theme.primary }]]}
+                  style={[styles.segment, styles.segmentQuad, defaultStatsTab === tab && [styles.segmentActive, { backgroundColor: theme.primary }]]}
                   onPress={() => changeDefaultStatsTab(tab)}
                 >
                   <Text
@@ -442,6 +442,11 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   segment: { flex: 1, paddingVertical: 12, paddingHorizontal: 10, borderRadius: 8, alignItems: 'center' },
+  // Default Stats View has 4 options (Week/Month/Exercise/Progress) inside a
+  // half-width card -- a single row would squeeze every label unreadably, so
+  // this variant wraps them into a 2x2 grid instead.
+  segmentedControlWrap: { flexWrap: 'wrap' },
+  segmentQuad: { flexBasis: '48%', marginVertical: 3 },
   segmentActive: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
