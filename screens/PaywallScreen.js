@@ -39,6 +39,7 @@ import React, { useState, useRef, useEffect } from 'react';
   const TABLE_ROWS = [
     { label: 'Barcode scanning',          free: 'Unlimited', premium: 'Unlimited' },
     { label: 'Manual logging',            free: 'Unlimited', premium: 'Unlimited' },
+    { label: 'Step counter',              free: 'Unlimited', premium: 'Unlimited' },
     { label: 'AI photo recognition',      free: '5/month',   premium: '5/day'     },
     { label: 'All exercise categories',   free: '✗',         premium: '✓'         },
     { label: 'PDF exports',               free: '✗',         premium: '✓'         },

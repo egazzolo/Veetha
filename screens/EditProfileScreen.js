@@ -363,12 +363,12 @@ export default function EditProfileScreen({ navigation }) {
               )}
 
               {/* Save Button */}
-              <TouchableOpacity 
-                style={[styles.saveButton, { backgroundColor: theme.primary }, saving && { opacity: 0.6 }]}
+              <TouchableOpacity
+                style={[styles.saveButton, saving && { opacity: 0.6 }]}
                 onPress={handleSave}
                 disabled={saving}
               >
-                <Text style={styles.saveButtonText}>
+                <Text style={[styles.saveButtonText, { color: theme.primary }]}>
                   {saving ? t('editProfile.saving') : t('editProfile.saveChanges')}
                 </Text>
               </TouchableOpacity>
@@ -450,14 +450,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   saveButton: {
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 10,
   },
   saveButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    fontSize: 19,
     fontWeight: 'bold',
   },
   cancelButton: {

@@ -363,13 +363,15 @@ Values are for the total amount described. Be accurate, not inflated.`
                     : t('stats.quickEntry.commonFoods')}
                 </Text>
               </View>
-              {loadingSuggestions ? (
-                <ActivityIndicator color={theme.primary} />
-              ) : (
-                <Text style={[styles.dropdownArrow, { color: theme.text }]}>
-                  {showSuggestions ? '▲' : '▼'}
-                </Text>
-              )}
+              <View style={styles.dropdownArrowWrap}>
+                {loadingSuggestions ? (
+                  <ActivityIndicator color={theme.primary} />
+                ) : (
+                  <Text style={[styles.dropdownArrow, { color: theme.text }]}>
+                    {showSuggestions ? '▲' : '▼'}
+                  </Text>
+                )}
+              </View>
             </TouchableOpacity>
 
             {showSuggestions && quickSuggestions.length > 0 && (
@@ -453,7 +455,7 @@ Values are for the total amount described. Be accurate, not inflated.`
             </View>
 
             <TouchableOpacity
-              style={[styles.saveButton, { backgroundColor: theme.primary, marginTop: 8, marginBottom: 0 }, (!mealName.trim() || searchingNutrition) && { opacity: 0.5 }]}
+              style={[styles.saveButton, { backgroundColor: theme.primary, marginTop: 8, marginBottom: 20 }, (!mealName.trim() || searchingNutrition) && { opacity: 0.5 }]}
               onPress={handleGPTNutrition}
               disabled={!mealName.trim() || searchingNutrition}
             >
@@ -587,15 +589,15 @@ Values are for the total amount described. Be accurate, not inflated.`
               />
             </View>
 
-            <TouchableOpacity 
-              style={[styles.saveButton, { backgroundColor: theme.primary }, saving && { opacity: 0.6 }]}
+            <TouchableOpacity
+              style={[styles.saveButton, saving && { opacity: 0.6 }]}
               onPress={handleSave}
               disabled={saving}
             >
               {saving ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={theme.primary} />
               ) : (
-                <Text style={styles.saveButtonText}>
+                <Text style={[styles.saveButtonText, { color: theme.primary }]}>
                   {t('stats.quickEntry.saveMeal')}
                 </Text>
               )}
@@ -651,6 +653,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingLeft: 6,
   },
   suggestionsTitle: {
     fontSize: 18,
@@ -659,6 +662,9 @@ const styles = StyleSheet.create({
   suggestionsSubtitle: {
     fontSize: 12,
     marginTop: 2,
+  },
+  dropdownArrowWrap: {
+    marginRight: 100,
   },
   dropdownArrow: {
     fontSize: 16,

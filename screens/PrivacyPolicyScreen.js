@@ -329,9 +329,9 @@ By uploading photos to Meal Break, you grant us a non-exclusive, worldwide licen
 33. FREE AND PREMIUM FEATURES
 Meal Break offers both free and premium features.
 
-FREE FEATURES (No subscription required): Unlimited barcode scanning for packaged foods. Unlimited manual meal logging. AI-powered photo food recognition limited to 5 scans per month. Strength & Fitness exercise category logging. Daily and current-month nutrition statistics. Water and streak tracking. Allergen warnings on scanned foods. Badge system for streaks and goals. Multi-language support and dark mode.
+FREE FEATURES (No subscription required): Unlimited barcode scanning for packaged foods. Unlimited manual meal logging. AI-powered photo food recognition limited to 5 scans per month. Strength & Fitness exercise category logging. Unlimited step counter. Daily and current-month nutrition statistics. Water and streak tracking. Allergen warnings on scanned foods. Badge system for streaks and goals. Multi-language support and dark mode.
 
-PREMIUM FEATURES ($7.99/month or $59.99/year, with a 7-day free trial): Unlimited AI-powered photo food recognition (5 scans per day). All exercise categories (Cardio, Strength & Fitness, Lifestyle & Low Impact, Sports). All meal recommendations in Quick Add. Historical monthly analytics. Custom meal photo uploads. Individual food breakdown in post-its. Weight target tracking. Custom step goals and weekly step trend charts. PDF report exports. Pro Mode minimal theme. Exclusive premium badges.
+PREMIUM FEATURES ($7.99/month or $59.99/year, with a 7-day free trial): Unlimited AI-powered photo food recognition (5 scans per day). All exercise categories (Cardio, Strength & Fitness, Lifestyle & Low Impact, Sports). All meal recommendations in Quick Add. Historical monthly analytics. Custom meal photo uploads. Individual food breakdown in post-its. Weight target tracking. PDF report exports. Pro Mode minimal theme. Exclusive premium badges.
 
 Free Trial: New users receive a 7-day free trial of all premium features. No payment method is required during the trial. After the trial ends, users automatically revert to free features unless they choose to subscribe. Repeated trial abuse (e.g., creating multiple accounts on the same device) may result in trial ineligibility.
 

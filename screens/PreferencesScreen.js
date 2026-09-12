@@ -257,6 +257,8 @@ export default function PreferencesScreen({ navigation }) {
           </View>
         </View>
 
+        <View style={styles.divider} />
+
         {/* Swipe Direction + Default Stats View -- side by side */}
         <View style={styles.sideBySideRow}>
           <View style={styles.sideBySideCard}>
@@ -304,6 +306,8 @@ export default function PreferencesScreen({ navigation }) {
             </View>
           </View>
         </View>
+
+        <View style={styles.divider} />
 
         {/* Meal Reminders */}
         <View style={styles.section}>
@@ -392,6 +396,15 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   sideBySideCard: { flex: 1 },
+  // A fixed 1px dark-translucent line rather than theme.border -- theme.border
+  // (#e0e0e0) is nearly the same lightness as this screen's beige background,
+  // so it was rendering but effectively invisible. Matches the hairline-divider
+  // color already used elsewhere (e.g. ExerciseHistoryScreen.js).
+  divider: {
+    height: 1,
+    backgroundColor: '#00000022',
+    marginVertical: 18,
+  },
   sideBySideTitle: {
     fontSize: 13,
     fontWeight: 'bold',

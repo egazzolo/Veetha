@@ -140,11 +140,11 @@ export default function ProgressCheckInScreen({ navigation }) {
           </View>
 
           <TouchableOpacity
-            style={[styles.saveBtn, { backgroundColor: theme.primary, opacity: saving ? 0.7 : 1 }]}
+            style={[styles.saveBtn, { opacity: saving ? 0.7 : 1 }]}
             onPress={handleSave}
             disabled={saving}
           >
-            {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveBtnText}>{t('progress.saveCheckIn')}</Text>}
+            {saving ? <ActivityIndicator color={theme.primary} /> : <Text style={[styles.saveBtnText, { color: theme.primary }]}>{t('progress.saveCheckIn')}</Text>}
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -199,5 +199,5 @@ const styles = StyleSheet.create({
   saveBtn: {
     marginHorizontal: 20, marginBottom: 20, borderRadius: 14, paddingVertical: 16, alignItems: 'center',
   },
-  saveBtnText: { color: '#fff', fontSize: scale(16), fontWeight: '700' },
+  saveBtnText: { fontSize: scale(19), fontWeight: '700' },
 });

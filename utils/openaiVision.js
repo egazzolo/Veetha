@@ -18,7 +18,7 @@ export async function analyzePhotoOpenAI(photoUri, language = 'en') {
     const { data, error: invokeError } = await supabase.functions.invoke('openai-proxy', {
       body: {
         model: 'gpt-4o-mini',
-        max_tokens: 300,
+        max_tokens: 800,
         messages: [
           {
             role: 'user',

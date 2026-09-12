@@ -186,12 +186,12 @@ export default function EditMealScreen({ route, navigation }) {
             </View>
 
             {/* Save Button */}
-            <TouchableOpacity 
-              style={[styles.saveButton, { backgroundColor: theme.primary }]}
+            <TouchableOpacity
+              style={styles.saveButton}
               onPress={handleSave}
               disabled={saving}
             >
-              <Text style={styles.saveButtonText}>
+              <Text style={[styles.saveButtonText, { color: theme.primary }]}>
                 {saving ? t('editMeal.saving') : t('editMeal.saveChanges')}
               </Text>
             </TouchableOpacity>
@@ -246,14 +246,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   saveButton: {
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 20,
   },
   saveButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    fontSize: 19,
     fontWeight: 'bold',
   },
   cancelButton: {
