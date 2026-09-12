@@ -107,11 +107,17 @@ export default function FrequentMealsScreen({ navigation }) {
           : t('home.frequentMealsCountFree', { count: items.length, limit: FREE_FREQUENT_MEALS_LIMIT })}
       </Text>
 
+      {/* This "how to add" hint used to only show in the empty state below --
+          once a user saved their first meal it vanished along with the empty
+          state, leaving no way to discover how to add more. Keeping it
+          visible regardless of list size fixes that. */}
+      {!loading && (
+        <Text style={[styles.hintText, { color: theme.textSecondary }]}>{t('home.noFrequentMeals')}</Text>
+      )}
+
       {loading ? (
         <ActivityIndicator style={{ marginTop: 40 }} color={theme.primary} />
-      ) : items.length === 0 ? (
-        <Text style={[styles.emptyText, { color: theme.textSecondary }]}>{t('home.noFrequentMeals')}</Text>
-      ) : (
+      ) : items.length === 0 ? null : (
         <FlatList
           data={items}
           keyExtractor={(item) => item.id}
@@ -163,7 +169,7 @@ const styles = StyleSheet.create({
   backBtn: { fontSize: 22, fontWeight: '600' },
   headerTitle: { fontSize: 17, fontWeight: '700' },
   capText: { fontSize: 12.5, textAlign: 'center', marginBottom: 12 },
-  emptyText: { textAlign: 'center', fontSize: 14, marginTop: 40, paddingHorizontal: 30, lineHeight: 20 },
+  hintText: { textAlign: 'center', fontSize: 13, marginTop: 4, marginBottom: 16, paddingHorizontal: 30, lineHeight: 19 },
   list: { paddingHorizontal: 20, paddingBottom: 30, gap: 10 },
   row: {
     flexDirection: 'row', alignItems: 'center', borderRadius: 14, padding: 10, gap: 12,
