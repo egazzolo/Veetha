@@ -459,6 +459,7 @@ export default {
     frequentMealsCountFree: '{{count}}/{{limit}} free slots used',
     frequentMealsCountPremium: '{{count}} saved',
     noFrequentMeals: 'No frequent meals yet. Long-press any logged meal and tap "Mark as Frequent" to save it here.',
+    howToAddFrequent: 'Long-press any logged meal and tap "Mark as Frequent," or tap + above to add one from your history.',
     customMeal: 'Custom meal',
     added: 'Added',
     failedToAdd: 'Could not add this meal. Please try again.',

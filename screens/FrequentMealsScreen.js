@@ -140,17 +140,22 @@ export default function FrequentMealsScreen({ navigation }) {
           : t('home.frequentMealsCountFree', { count: items.length, limit: FREE_FREQUENT_MEALS_LIMIT })}
       </Text>
 
-      {/* This "how to add" hint used to only show in the empty state below --
-          once a user saved their first meal it vanished along with the empty
-          state, leaving no way to discover how to add more. Keeping it
-          visible regardless of list size fixes that. */}
-      {!loading && (
-        <Text style={[styles.hintText, { color: theme.textSecondary }]}>{t('home.noFrequentMeals')}</Text>
+      {/* "How to add" instructions used to only show in the empty state below
+          -- once a user saved their first meal it vanished along with the
+          empty state, leaving no way to discover how to add more. Keeping
+          a hint visible regardless of list size fixes that, but it has to
+          be worded differently once items exist -- noFrequentMeals opens
+          with "No frequent meals yet," which reads as flatly wrong sitting
+          above a populated list. */}
+      {!loading && items.length > 0 && (
+        <Text style={[styles.hintText, { color: theme.textSecondary }]}>{t('home.howToAddFrequent')}</Text>
       )}
 
       {loading ? (
         <ActivityIndicator style={{ marginTop: 40 }} color={theme.primary} />
-      ) : items.length === 0 ? null : (
+      ) : items.length === 0 ? (
+        <Text style={[styles.hintText, { color: theme.textSecondary, marginTop: 40 }]}>{t('home.noFrequentMeals')}</Text>
+      ) : (
         <FlatList
           data={items}
           keyExtractor={(item) => item.id}

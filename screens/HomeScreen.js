@@ -476,6 +476,7 @@ export default function HomeScreen({ navigation }) {
   const [frequentProductIds, setFrequentProductIds] = useState(new Set());
   const [deleteMealModal, setDeleteMealModal] = useState({ visible: false, meal: null });
   const [selectionMode, setSelectionMode] = useState(false);
+  const [selectionIntent, setSelectionIntent] = useState(null); // 'compare' | 'delete'
   const [selectedMealIds, setSelectedMealIds] = useState(new Set());
   const [bulkDeleteModalVisible, setBulkDeleteModalVisible] = useState(false);
   const [rateGateVisible, setRateGateVisible] = useState(false);
@@ -1767,10 +1768,15 @@ export default function HomeScreen({ navigation }) {
     });
   };
 
-  const handleDeleteMeal = (meal) => {
+  // intent distinguishes which action the long-press modal was actually
+  // used for ('compare' or 'delete') -- MealsList's selection-mode toolbar
+  // uses this to show only that one action (plus Cancel), instead of both
+  // Compare and Delete regardless of which was tapped.
+  const handleDeleteMeal = (meal, intent) => {
     // Enter selection mode with the long-pressed meal already checked
     setSelectedMealIds(new Set([meal.id]));
     setSelectionMode(true);
+    setSelectionIntent(intent);
   };
 
   const handleShareMeal = (meal) => {
@@ -1804,6 +1810,7 @@ export default function HomeScreen({ navigation }) {
 
   const cancelSelection = () => {
     setSelectionMode(false);
+    setSelectionIntent(null);
     setSelectedMealIds(new Set());
   };
 
@@ -2350,6 +2357,7 @@ export default function HomeScreen({ navigation }) {
                   mealsListRef={mealsListRef}
                   isGuestMode={isGuestMode}
                   selectionMode={selectionMode}
+                  selectionIntent={selectionIntent}
                   selectedMealIds={selectedMealIds}
                   onToggleSelection={toggleMealSelection}
                   onCancelSelection={cancelSelection}
@@ -2454,8 +2462,8 @@ export default function HomeScreen({ navigation }) {
                       : t('home.markFrequent'),
                     onPress: () => { const meal = mealActionModal.meal; setMealActionModal({ visible: false, meal: null }); handleToggleFrequent(meal); },
                   }] : []),
-                  { text: t('home.compare'), onPress: () => { setMealActionModal({ visible: false, meal: null }); handleDeleteMeal(mealActionModal.meal); } },
-                  { text: t('home.delete'), style: 'destructive', onPress: () => { setMealActionModal({ visible: false, meal: null }); handleDeleteMeal(mealActionModal.meal); } },
+                  { text: t('home.compare'), onPress: () => { setMealActionModal({ visible: false, meal: null }); handleDeleteMeal(mealActionModal.meal, 'compare'); } },
+                  { text: t('home.delete'), style: 'destructive', onPress: () => { setMealActionModal({ visible: false, meal: null }); handleDeleteMeal(mealActionModal.meal, 'delete'); } },
                 ]}
               />
 

@@ -459,6 +459,7 @@ export default {
     frequentMealsCountFree: '{{count}}/{{limit}} emplacements gratuits utilisés',
     frequentMealsCountPremium: '{{count}} enregistrés',
     noFrequentMeals: 'Aucun repas fréquent pour le moment. Appuyez longuement sur un repas enregistré et appuyez sur "Marquer comme Fréquent" pour l\'enregistrer ici.',
+    howToAddFrequent: 'Appuyez longuement sur un repas enregistré et appuyez sur "Marquer comme Fréquent", ou appuyez sur + ci-dessus pour en ajouter un depuis votre historique.',
     customMeal: 'Repas personnalisé',
     added: 'Ajouté',
     failedToAdd: 'Impossible d\'ajouter ce repas. Veuillez réessayer.',

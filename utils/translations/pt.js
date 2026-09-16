@@ -459,6 +459,7 @@ export default {
     frequentMealsCountFree: '{{count}}/{{limit}} vagas gratuitas usadas',
     frequentMealsCountPremium: '{{count}} salvas',
     noFrequentMeals: 'Ainda não há refeições frequentes. Mantenha pressionada uma refeição registrada e toque em "Marcar como Frequente" para salvá-la aqui.',
+    howToAddFrequent: 'Mantenha pressionada uma refeição registrada e toque em "Marcar como Frequente", ou toque em + acima para adicionar uma do seu histórico.',
     customMeal: 'Refeição personalizada',
     added: 'Adicionado',
     failedToAdd: 'Não foi possível adicionar esta refeição. Tente novamente.',

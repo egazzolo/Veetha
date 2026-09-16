@@ -459,6 +459,7 @@ export default {
     frequentMealsCountFree: '{{count}}/{{limit}} libreng slot ang nagamit',
     frequentMealsCountPremium: '{{count}} na naka-save',
     noFrequentMeals: 'Wala pang madalas na pagkain. I-long-press ang naka-log na pagkain at i-tap ang "Markahan bilang Madalas" para i-save ito dito.',
+    howToAddFrequent: 'I-long-press ang naka-log na pagkain at i-tap ang "Markahan bilang Madalas," o i-tap ang + sa itaas para magdagdag mula sa iyong history.',
     customMeal: 'Custom na pagkain',
     added: 'Idinagdag',
     failedToAdd: 'Hindi maidagdag ang pagkaing ito. Pakisubukang muli.',
