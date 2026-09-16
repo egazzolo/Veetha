@@ -387,6 +387,7 @@ export default {
     sortName: 'A–Z',
     noMeals: 'No meals logged yet',
     alreadyAdded: 'already added',
+    duplicatesHidden: 'Meals you\'ve logged more than once are shown only one time here, using the most recent.',
   },
 
   // Progress photos & weight check-ins

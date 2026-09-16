@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image, ActivityIndicator, FlatList } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Image, ActivityIndicator, FlatList, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../utils/ThemeContext';
 import { useLanguage } from '../utils/LanguageContext';
@@ -8,6 +8,7 @@ import { usePremiumStatus } from '../utils/usePremiumStatus';
 import { showToast } from '../components/VeethaToast';
 import {
   getFrequentMeals,
+  addFrequentMeal,
   removeFrequentMeal,
   logFrequentMealNow,
   FREE_FREQUENT_MEALS_LIMIT,
@@ -91,6 +92,36 @@ export default function FrequentMealsScreen({ navigation }) {
     }
   };
 
+  // Lets users pull in a meal logged before this screen's long-press
+  // shortcut existed, instead of only being able to add whatever they
+  // happen to log next.
+  const handlePickPastMeal = async (meal) => {
+    const result = await addFrequentMeal(user.id, meal, isPremium);
+    if (result.success) {
+      load();
+    } else if (result.reason === 'cap') {
+      Alert.alert(
+        t('home.frequentMealCapTitle'),
+        t('home.frequentMealCapBody', { limit: FREE_FREQUENT_MEALS_LIMIT }),
+        [
+          { text: t('home.cancel'), style: 'cancel' },
+          { text: 'Go Premium', onPress: () => navigation.navigate('Paywall', { highlightFeature: 'Frequent meals' }) },
+        ]
+      );
+    } else {
+      console.error('Error adding frequent meal:', result.reason);
+      showToast('error', t('home.error'), t('home.failedToAdd'));
+    }
+  };
+
+  const openMealPicker = () => {
+    navigation.navigate('MealPicker', {
+      excludeProductIds: items.map((i) => i.product_id).filter(Boolean),
+      returnFullMeal: true,
+      onSelect: handlePickPastMeal,
+    });
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
       <View style={styles.header}>
@@ -98,7 +129,9 @@ export default function FrequentMealsScreen({ navigation }) {
           <Text style={[styles.backBtn, { color: theme.text }]}>←</Text>
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: theme.text }]}>{t('home.frequentMeals')}</Text>
-        <View style={{ width: 24 }} />
+        <TouchableOpacity onPress={openMealPicker} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <Text style={[styles.addBtn, { color: theme.primary }]}>+</Text>
+        </TouchableOpacity>
       </View>
 
       <Text style={[styles.capText, { color: theme.textTertiary }]}>
@@ -168,6 +201,7 @@ const styles = StyleSheet.create({
   },
   backBtn: { fontSize: 22, fontWeight: '600' },
   headerTitle: { fontSize: 17, fontWeight: '700' },
+  addBtn: { fontSize: 26, fontWeight: '600', width: 24, textAlign: 'center' },
   capText: { fontSize: 12.5, textAlign: 'center', marginBottom: 12 },
   hintText: { textAlign: 'center', fontSize: 13, marginTop: 4, marginBottom: 16, paddingHorizontal: 30, lineHeight: 19 },
   list: { paddingHorizontal: 20, paddingBottom: 30, gap: 10 },

@@ -24,6 +24,15 @@ export default function MealPickerScreen({ navigation, route }) {
   const { user } = useUser();
   const { t } = useLanguage();
   const excludeIds = route.params?.excludeIds || [];
+  // Product-level exclusion (vs. excludeIds' per-log-entry exclusion) --
+  // used by callers like Frequent Meals where re-picking the same product
+  // under a different logged_at would otherwise slip past excludeIds.
+  const excludeProductIds = route.params?.excludeProductIds || [];
+  // When true, onSelect receives the full meal row (product_id, barcode,
+  // serving_grams, etc.) instead of just the id -- needed by callers like
+  // Frequent Meals that save a standalone copy of the meal, not just a
+  // reference to this specific log entry.
+  const returnFullMeal = route.params?.returnFullMeal || false;
   const onSelect = route.params?.onSelect;
 
   const [meals, setMeals] = useState([]);
@@ -41,6 +50,12 @@ export default function MealPickerScreen({ navigation, route }) {
             id,
             image_url,
             logged_at,
+            product_id,
+            barcode,
+            serving_grams,
+            serving_unit,
+            meal_type,
+            individual_foods,
             product:food_database!meals_product_fk ( name, image_url )
           `)
           .eq('user_id', user.id)
@@ -48,12 +63,35 @@ export default function MealPickerScreen({ navigation, route }) {
           .limit(RECENT_MEALS_LIMIT);
         if (error) throw error;
         if (!cancelled) {
-          setMeals((data || []).map((m) => ({
+          const mapped = (data || []).map((m) => ({
             id: m.id,
             name: m.product?.name || t('compare.unnamedMeal'),
             image_url: m.image_url || m.product?.image_url,
             logged_at: m.logged_at,
-          })));
+            product_id: m.product_id,
+            barcode: m.barcode,
+            serving_grams: m.serving_grams,
+            serving_unit: m.serving_unit,
+            meal_type: m.meal_type,
+            individual_foods: m.individual_foods,
+          }));
+          // Logging the same food repeatedly (e.g. a daily breakfast) was
+          // flooding this list with near-identical rows. Keep just one --
+          // the most recent, since `mapped` is already sorted newest-first
+          // -- per distinct product/food, same identity rule the Frequent
+          // Meals cap already uses for product_id.
+          const seen = new Set();
+          const deduped = mapped.filter((m) => {
+            const key = m.product_id
+              ? `p:${m.product_id}`
+              : m.individual_foods?.length
+                ? `i:${m.individual_foods.map((f) => f.food_name).filter(Boolean).join(',').toLowerCase()}`
+                : `n:${(m.name || '').toLowerCase()}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+          setMeals(deduped);
         }
       } catch (e) {
         console.error('MealPickerScreen load error:', e);
@@ -84,9 +122,12 @@ export default function MealPickerScreen({ navigation, route }) {
     return groups;
   }, [meals, sortMode, t]);
 
+  const isExcluded = (meal) =>
+    excludeIds.includes(meal.id) || (meal.product_id && excludeProductIds.includes(meal.product_id));
+
   const handlePick = (meal) => {
-    if (excludeIds.includes(meal.id)) return;
-    onSelect?.(meal.id);
+    if (isExcluded(meal)) return;
+    onSelect?.(returnFullMeal ? meal : meal.id);
     navigation.goBack();
   };
 
@@ -115,6 +156,10 @@ export default function MealPickerScreen({ navigation, route }) {
         </TouchableOpacity>
       </View>
 
+      <Text style={[styles.duplicatesNote, { color: theme.textSecondary }]}>
+        {t('compare.duplicatesHidden')}
+      </Text>
+
       {loading ? (
         <ActivityIndicator style={{ marginTop: 40 }} color={theme.primary} />
       ) : (
@@ -126,7 +171,7 @@ export default function MealPickerScreen({ navigation, route }) {
             <View key={gi}>
               {group.label && <Text style={[styles.dateGroup, { color: theme.textSecondary }]}>{group.label}</Text>}
               {group.items.map((meal) => {
-                const disabled = excludeIds.includes(meal.id);
+                const disabled = isExcluded(meal);
                 return (
                   <TouchableOpacity
                     key={meal.id}
@@ -171,6 +216,7 @@ const styles = StyleSheet.create({
   backBtn: { fontSize: scale(22), fontWeight: '600' },
   headerTitle: { fontSize: scale(18), fontWeight: '700' },
   sortRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 12 },
+  duplicatesNote: { textAlign: 'center', fontSize: scale(11.5), paddingHorizontal: 24, marginBottom: 10, lineHeight: 16 },
   sortPill: { paddingVertical: 6, paddingHorizontal: 16, borderRadius: 16, backgroundColor: '#F0E9D8' },
   sortPillActive: { backgroundColor: '#4CAF50' },
   sortPillText: { fontSize: scale(12), fontWeight: '700', color: '#8a8265' },

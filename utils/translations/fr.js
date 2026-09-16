@@ -387,6 +387,7 @@ export default {
     sortName: 'A–Z',
     noMeals: 'Aucun repas enregistré pour le moment',
     alreadyAdded: 'déjà ajouté',
+    duplicatesHidden: 'Les repas enregistrés plusieurs fois n\'apparaissent qu\'une seule fois ici, avec la version la plus récente.',
   },
 
   // Progress photos & weight check-ins

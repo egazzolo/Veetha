@@ -387,6 +387,7 @@ export default {
     sortName: 'A–Z',
     noMeals: 'Nenhuma refeição registrada ainda',
     alreadyAdded: 'já adicionada',
+    duplicatesHidden: 'Refeições registradas mais de uma vez aparecem aqui apenas uma vez, usando a mais recente.',
   },
 
   // Progress photos & weight check-ins

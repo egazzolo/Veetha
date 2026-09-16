@@ -387,6 +387,7 @@ export default {
     sortName: 'A–Z',
     noMeals: 'Wala pang naka-log na meals',
     alreadyAdded: 'nadagdag na',
+    duplicatesHidden: 'Ang mga pagkaing na-log nang higit sa isang beses ay minsan lang ipinapakita dito, gamit ang pinakabago.',
   },
 
   // Progress photos & weight check-ins
